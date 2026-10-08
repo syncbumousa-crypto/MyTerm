@@ -1,7 +1,9 @@
 /* ============================================================ */
 /* # 🔤 CSS */
-/* # 🎯 شكل الموقع كله: خلفية رمادية تملأ الشاشة بلا فراغات حولها */
-/* # 🔗 يُستدعى هذا الملف من index.html بوسم link، ولا أثر له بدون ذلك السطر */
+/* # 🎯 The whole look of the site: a gray background that fills */
+/* #    the screen, with no white gaps around the edges */
+/* # 🔗 index.html calls this file with a link tag. */
+/* #    Without that one line, this file does nothing */
 /* ============================================================ */
 html, body {
   margin: 0;

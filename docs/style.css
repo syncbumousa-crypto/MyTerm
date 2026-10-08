@@ -21,18 +21,75 @@ body {
 
 /* ============================================================ */
 /* # 🔤 CSS */
-/* # 🎯 The look of the two buttons: white text in a rounded frame, */
-/* #    and the first one filled white so it stands out as the main choice */
-/* # 🔗 Works on the auth div and the buttons inside it in index.html. */
-/* #    The gap and wrap keep them side by side on a wide screen, */
-/* #    and stacked on a narrow phone */
+/* # 🎯 The look of the three panels and their text: a column in the */
+/* #    middle of the page, with a title, a greeting, and a message line */
+/* # 🔗 Only one panel shows at a time. The hidden rule is what makes the */
+/* #    switch work: script.js hides a panel, and this rule beats the */
+/* #    display of box, which would otherwise keep it on screen */
 /* ============================================================ */
-.auth {
+[hidden] {
+  display: none !important;
+}
+
+.box {
   display: flex;
+  flex-direction: column;
   gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
+  width: 100%;
+  max-width: 320px;
   padding: 16px;
+  box-sizing: border-box;
+}
+
+.title {
+  margin: 0 0 4px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+}
+
+.who {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  color: #ffffff;
+  text-align: center;
+  word-break: break-all;
+}
+
+.note {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 0.9rem;
+  color: #ffeaea;
+  text-align: center;
+}
+
+/* ============================================================ */
+/* # 🔤 CSS */
+/* # 🎯 The look of the text boxes and the buttons: rounded white frames, */
+/* #    the main button filled white so it reads as the first choice, */
+/* #    and the flat one plain for a side action like going back */
+/* # 🔗 Used by the field and btn classes in the panels in index.html. */
+/* #    They fill the panel width, so they stack neatly on a phone */
+/* ============================================================ */
+.field {
+  font: inherit;
+  font-size: 1rem;
+  padding: 12px 14px;
+  border: 1px solid #ffffff;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.field::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.field:focus {
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
 }
 
 .btn {
@@ -50,6 +107,11 @@ body {
   background: rgba(255, 255, 255, 0.14);
 }
 
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .btn-main {
   background: #ffffff;
   color: #4a4a4a;
@@ -58,4 +120,10 @@ body {
 
 .btn-main:hover {
   background: #f0f0f0;
+}
+
+.btn-flat {
+  border-color: transparent;
+  font-size: 0.9rem;
+  padding: 8px;
 }

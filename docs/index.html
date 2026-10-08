@@ -2,7 +2,7 @@
 <!-- # 🔤 HTML -->
 <!-- # 🎯 Sets up the page: its type, Arabic language, right to left text, -->
 <!-- #    letter encoding so Arabic shows the right way, phone screen size, -->
-<!-- #    and the name on the browser tab -->
+<!-- #    the tab name, and it calls the style file -->
 <!-- # 🔗 None of this shows on the page. It all runs before the content is drawn -->
 <!-- ============================================================ -->
 <!DOCTYPE html>
@@ -11,29 +11,61 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-
-<!-- ============================================================ -->
-<!-- # 🔤 HTML -->
-<!-- # 🎯 Calls the style file, so the CSS rules live in their own file -->
-<!-- # 🔗 Sits in head so the look is ready before the page is drawn. -->
-<!-- #    style.css is right next to this file, inside docs -->
-<!-- ============================================================ -->
 <link rel="stylesheet" href="style.css">
 </head>
+<body>
 
 <!-- ============================================================ -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 The content: two buttons in the middle of the page, one to make -->
-<!-- #    a new account and one to log in -->
-<!-- # 🔗 They get their look from the button rules in style.css. -->
-<!-- #    Clicking them does nothing yet. They need a sign-in service first, -->
-<!-- #    and that service is not picked yet -->
+<!-- # 🎯 The first panel: two buttons to pick what to do, -->
+<!-- #    make a new account or log in -->
+<!-- # 🔗 script.js hides this panel and shows the form panel below -->
+<!-- #    when one of the buttons is clicked -->
 <!-- ============================================================ -->
-<body>
-  <div class="auth">
-    <button class="btn btn-main" type="button">إنشاء حساب</button>
-    <button class="btn" type="button">تسجيل الدخول</button>
-  </div>
-</body>
+<div class="box" id="choice">
+  <button class="btn btn-main" type="button" id="go-signup">إنشاء حساب</button>
+  <button class="btn" type="button" id="go-login">تسجيل الدخول</button>
+</div>
 
+<!-- ============================================================ -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 The form panel: an email box, a password box, a send button, -->
+<!-- #    a back button, and a line for messages -->
+<!-- # 🔗 Hidden until a button above is clicked. script.js changes the -->
+<!-- #    title and the send button text, because the same form is used -->
+<!-- #    for both signing up and logging in -->
+<!-- ============================================================ -->
+<form class="box" id="form" hidden>
+  <h1 class="title" id="form-title"></h1>
+  <input class="field" id="email" type="email" placeholder="البريد" required autocomplete="email">
+  <input class="field" id="password" type="password" placeholder="كلمة السر" required minlength="6" autocomplete="current-password">
+  <button class="btn btn-main" type="submit" id="submit"></button>
+  <button class="btn btn-flat" type="button" id="back">رجوع</button>
+  <p class="note" id="note"></p>
+</form>
+
+<!-- ============================================================ -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 The logged in panel: shows which account is open, -->
+<!-- #    and a button to leave it -->
+<!-- # 🔗 script.js shows this one after a good login, and also on page -->
+<!-- #    load if the visitor is still logged in from an earlier visit -->
+<!-- ============================================================ -->
+<div class="box" id="session" hidden>
+  <p class="who" id="who"></p>
+  <button class="btn" type="button" id="logout">خروج</button>
+</div>
+
+<!-- ============================================================ -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 Brings in the sign in service library from a CDN, -->
+<!-- #    then this site's own script -->
+<!-- # 🔗 Sits at the end of body so the panels above already exist -->
+<!-- #    when script.js looks for them. The library must come first, -->
+<!-- #    because script.js uses it -->
+<!-- ============================================================ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+
+</body>
 </html>

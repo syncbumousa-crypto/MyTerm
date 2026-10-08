@@ -1,0 +1,39 @@
+<!-- ============================================================ -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 Sets up the page: its type, Arabic language, right to left text, -->
+<!-- #    letter encoding so Arabic shows the right way, phone screen size, -->
+<!-- #    and the name on the browser tab -->
+<!-- # 🔗 None of this shows on the page. It all runs before the content is drawn -->
+<!-- ============================================================ -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyTerm</title>
+
+<!-- ============================================================ -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 Calls the style file, so the CSS rules live in their own file -->
+<!-- # 🔗 Sits in head so the look is ready before the page is drawn. -->
+<!-- #    style.css is right next to this file, inside docs -->
+<!-- ============================================================ -->
+<link rel="stylesheet" href="style.css">
+</head>
+
+<!-- ============================================================ -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 The content: two buttons in the middle of the page, one to make -->
+<!-- #    a new account and one to log in -->
+<!-- # 🔗 They get their look from the button rules in style.css. -->
+<!-- #    Clicking them does nothing yet. They need a sign-in service first, -->
+<!-- #    and that service is not picked yet -->
+<!-- ============================================================ -->
+<body>
+  <div class="auth">
+    <button class="btn btn-main" type="button">إنشاء حساب</button>
+    <button class="btn" type="button">تسجيل الدخول</button>
+  </div>
+</body>
+
+</html>

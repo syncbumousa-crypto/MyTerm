@@ -1,0 +1,61 @@
+/* ============================================================ */
+/* # 🔤 CSS */
+/* # 🎯 The base of the page: a gray background that fills the screen */
+/* #    with no white gaps, and it puts whatever is inside in the middle */
+/* # 🔗 index.html calls this file with a link tag. */
+/* #    Without that one line, this file does nothing */
+/* ============================================================ */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #808080;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+
+/* ============================================================ */
+/* # 🔤 CSS */
+/* # 🎯 The look of the two buttons: white text in a rounded frame, */
+/* #    and the first one filled white so it stands out as the main choice */
+/* # 🔗 Works on the auth div and the buttons inside it in index.html. */
+/* #    The gap and wrap keep them side by side on a wide screen, */
+/* #    and stacked on a narrow phone */
+/* ============================================================ */
+.auth {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 16px;
+}
+
+.btn {
+  font: inherit;
+  font-size: 1rem;
+  padding: 12px 28px;
+  border: 1px solid #ffffff;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.btn-main {
+  background: #ffffff;
+  color: #4a4a4a;
+  font-weight: 600;
+}
+
+.btn-main:hover {
+  background: #f0f0f0;
+}

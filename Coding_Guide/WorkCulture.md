@@ -611,15 +611,17 @@ MyTerm
 │   └── style.css       التنسيق
 └── 📁 Coding_Guide    ← مراجعي. لا تُنشر
     ├── WorkCulture.md
-    └── code-rules.md
+    ├── code-rules.md
+    └── ProfilesCulture.md
 ```
 
 | الملف | ماذا هو |
 |---|---|
 | `docs/index.html` | البنية، ويستدعي `style.css`. لا قواعد CSS فيه |
-| `docs/style.css` | التنسيق: الخلفية الرمادية تملأ الشاشة |
+| `docs/style.css` | التنسيق: خلفية رمادية، وزرّا الحساب في الوسط |
 | `Coding_Guide/WorkCulture.md` | هذا الملف. **مرجع لي**، وليس صفحة يراها زائر |
 | `Coding_Guide/code-rules.md` | قواعد بناء الأكواد والملفات |
+| `Coding_Guide/ProfilesCulture.md` | الحسابات وبيانات المستخدمين: لماذا لا تُخزَّن في المستودع، والخدمة الوسيطة، وأمان المفاتيح |
 
 **ولا `script.js` بعد**، لأنه لا توجد برمجة في الموقع. يُنشأ عند أول وظيفة تحتاجه، لا قبلها.
 

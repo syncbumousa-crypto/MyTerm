@@ -591,34 +591,3 @@ body.board-on {
 }
 
 .col-open:hover { color: #ffffff; background: rgba(255, 255, 255, 0.12); }
-
-/* ============================================================ */
-/* # 📊 🔢  THE STATISTICS STRIP */
-/* # 🔤 CSS */
-/* # 🎯 A row of small boxes, each a number over the word for what it */
-/* #    counts. It wraps onto more lines rather than shrinking */
-/* # 🔗 The number is the loud part and the label the quiet one, so the */
-/* #    strip is read at a glance and only then in detail */
-/* ============================================================ */
-.stats {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 86px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.stat b { font-size: 0.95rem; color: #ffffff; }
-.stat span { font-size: 0.7rem; color: rgba(255, 255, 255, 0.5); }

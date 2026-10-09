@@ -16,7 +16,7 @@
   const setBtn = $('term-set'), nameBox = $('term-input'), title = $('term-title');
   const columns = $('columns'), addBtn = $('add-course'), moreBtn = $('board-more');
   const state = $('save-state'), renewBtn = $('renew-access'), empty = $('board-empty');
-  const termScore = $('term-score'), termGpa = $('term-gpa'), statsBox = $('stats');
+  const termScore = $('term-score'), termGpa = $('term-gpa');
 
   const arabic = n => String(n);
   const now = () => new Date().toISOString();
@@ -308,66 +308,12 @@
     return wrap;
   };
 
-  // ============================================================
-  // # 📊 🧮  THE STATISTICS
-  // # 🔤 JavaScript
-  // # 🎯 Six numbers about the term as a whole, each one counted from
-  // #    what is on the board — never typed in, never guessed
-  // # 🔗 A number with nothing behind it is left out rather than shown
-  // #    as a zero: no graded item means no standing, not a standing of
-  // #    nothing. The pace compares what is finished against how much
-  // #    of the term has gone, which is the only honest "are you behind"
-  // ============================================================
-  const stats = () => {
-    const courses = living();
-    const chapters = courses.flatMap(c => alive(c));
-    const done = chapters.filter(h => h.done).length;
-    const d = window.MyTermDaysReading;
-
-    const rows = [];
-    rows.push(['Courses', arabic(courses.length)]);
-    rows.push(['Chapters', chapters.length ? `${done} of ${chapters.length}` : '—']);
-    rows.push(['Finished', chapters.length ? Math.round((done / chapters.length) * 100) + '%' : '—']);
-
-    if (d && d.all) {
-      rows.push(['Term elapsed', Math.round((d.past / d.all) * 100) + '%']);
-      rows.push(['Days worked', `${d.done} of ${d.past}`]);
-      if (chapters.length) {
-        const ahead = Math.round((done / chapters.length) * 100) - Math.round((d.past / d.all) * 100);
-        rows.push(['Your pace', ahead >= 0 ? `${ahead}% ahead` : `${-ahead}% behind`]);
-      }
-    }
-
-    const graded = courses.map(c => ({ s: standingOf(c), h: Number(c.credits) || 0 })).filter(x => x.s && x.h > 0);
-    if (graded.length) {
-      const hours = graded.reduce((s, x) => s + x.h, 0);
-      const pts = graded.reduce((s, x) => s + x.s.points * x.h, 0);
-      rows.push(['GPA now', (pts / hours).toFixed(2) + ' / 4']);
-    }
-    return rows;
-  };
-
-  const drawStats = () => {
-    statsBox.textContent = '';
-    stats().forEach(([label, value]) => {
-      const cell = document.createElement('div');
-      cell.className = 'stat';
-      const v = document.createElement('b');
-      v.textContent = value;
-      const l = document.createElement('span');
-      l.textContent = label;
-      cell.append(v, l);
-      statsBox.append(cell);
-    });
-  };
-
   const refreshTermGpa = () => {
     const graded = living().map(c => ({ s: standingOf(c), credits: Number(c.credits) || 0 })).filter(x => x.s && x.credits > 0);
     if (!graded.length) { termGpa.textContent = ''; return; }
     const hours = graded.reduce((s, x) => s + x.credits, 0);
     const points = graded.reduce((s, x) => s + x.s.points * x.credits, 0);
     termGpa.textContent = `Term GPA ${(points / hours).toFixed(2)} / 4 · ${hours} hours`;
-    drawStats();
   };
 
   // ============================================================
@@ -505,7 +451,6 @@
     showName();
     drawColumns();
     window.MyTermDays?.show(data);
-    drawStats();
   };
 
   const openBoard = async event => {

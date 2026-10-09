@@ -66,6 +66,23 @@ body {
   word-break: break-all;
 }
 
+/* ============================================================ */
+/* # 💬 🪶  THE ONE LINE THAT EXPLAINS */
+/* # 🔤 CSS */
+/* # 🎯 A small faint line under a title or a button, saying why the */
+/* #    thing above it is there. For somebody opening the site for the */
+/* #    first time, who was never told what any of it is for */
+/* # 🔗 Faint on purpose: it must be readable to whoever looks for it, */
+/* #    and silent to whoever already knows */
+/* ============================================================ */
+.lede {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+
 .note {
   margin: 0;
   min-height: 1.2em;

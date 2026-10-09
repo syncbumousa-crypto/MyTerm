@@ -14,9 +14,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=43">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=43">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=43">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=44">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=44">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=44">
 </head>
 <body>
 
@@ -103,9 +103,9 @@
 <!-- ============================================================ -->
 <!-- # 🧱 📚  THE TERM BOARD -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 The main screen once the saving place is ready: a name for the -->
-<!-- #    term at the top, a button that adds a course, and one column -->
-<!-- #    for every course added -->
+<!-- # 🎯 The main screen once the saving place is ready: the term dates -->
+<!-- #    at the very top, then its name, a button that adds a course, and -->
+<!-- #    one column for every course added -->
 <!-- # 🔗 The name spot holds three things that take turns: the button -->
 <!-- #    before there is a name, the box while typing, and the title -->
 <!-- #    after. The columns box starts empty and the screen file fills -->
@@ -113,6 +113,11 @@
 <!-- #    the left of the one before it with no rule for that -->
 <!-- ============================================================ -->
 <div class="board" id="board" hidden>
+
+  <div class="days-when">
+    <label class="days-label">From <input class="field days-date" id="term-from" type="date"></label>
+    <label class="days-label">To <input class="field days-date" id="term-to" type="date"></label>
+  </div>
 
   <div class="term">
     <button class="btn btn-main" type="button" id="term-set">Name your term</button>
@@ -126,10 +131,6 @@
   <button class="btn" type="button" id="add-course">Add a course</button>
 
   <div class="days" id="days">
-    <div class="days-when">
-      <label class="days-label">From <input class="field days-date" id="term-from" type="date"></label>
-      <label class="days-label">To <input class="field days-date" id="term-to" type="date"></label>
-    </div>
     <div class="days-grid" id="days-grid"></div>
     <p class="lede" id="days-line"></p>
   </div>
@@ -168,7 +169,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v43</p>
+<p class="build">v44</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -191,16 +192,16 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=43"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=43"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=43"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=43"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=43"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=43"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=43"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=43"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=43"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=43"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=44"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=44"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=44"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=44"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=44"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=44"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=44"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=44"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=44"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=44"></script>
 
 </body>
 </html>

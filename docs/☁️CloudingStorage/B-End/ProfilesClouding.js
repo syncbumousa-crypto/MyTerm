@@ -111,16 +111,44 @@
     return { id: (await made.json()).id, name: FOLDER };
   }
 
-  async function createFile(folderId, content) {
+  async function createJson(parentId, name, content) {
     const edge = 'myterm' + Date.now();
     const part = o => `--${edge}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(o, null, 2)}\r\n`;
     const made = await drive(`${UPLOAD}?uploadType=multipart`, {
       method: 'POST',
       headers: { 'Content-Type': `multipart/related; boundary=${edge}` },
-      body: part({ name: FILE, mimeType: 'application/json', parents: [folderId] }) + part(content) + `--${edge}--`
+      body: part({ name, mimeType: 'application/json', parents: [parentId] }) + part(content) + `--${edge}--`
     });
     if (!made.ok) throw new Error(`Drive create failed: ${made.status}`);
     return (await made.json()).id;
+  }
+
+  // ============================================================
+  // # 📁 🌳  FOLDERS INSIDE THE TERM FOLDER
+  // # 🔤 JavaScript
+  // # 🎯 The three things a course folder needs: find the folder the
+  // #    term paper sits in, make a folder beside it, and rename one
+  // # 🔗 The term folder's own id was never written down, and it does
+  // #    not need to be: Drive knows the parent of any file it holds,
+  // #    so it is asked. The narrow permission reaches these folders
+  // #    because the app made them, or the user handed the term folder
+  // #    to it through the Google window
+  // ============================================================
+  async function parentOf(fileId) {
+    const r = await drive(`${DRIVE}/${fileId}?fields=parents`);
+    if (!r.ok) throw new Error(`Drive parent failed: ${r.status}`);
+    return (await r.json()).parents?.[0] || null;
+  }
+
+  async function makeFolder(name, parentId) {
+    const made = await drive(DRIVE, json('POST', { name, mimeType: FOLDER_TYPE, parents: [parentId] }));
+    if (!made.ok) throw new Error(`Drive folder failed: ${made.status}`);
+    return (await made.json()).id;
+  }
+
+  async function rename(id, name) {
+    const r = await drive(`${DRIVE}/${id}`, json('PATCH', { name }));
+    if (!r.ok) throw new Error(`Drive rename failed: ${r.status}`);
   }
 
   async function fileAlive(id) {
@@ -221,12 +249,13 @@
   };
 
   window.MyTermCloud = {
-    FOLDER, now,
+    FOLDER, FILE, now,
     hasToken: () => Boolean(token),
     remember: () => Boolean(token = store.read()),
     forgetToken: () => { token = null; store.clear(); },
     askGoogle,
-    findOrMakeFolder, createFile, fileAlive, readFile, writeFile,
+    findOrMakeFolder, createJson, fileAlive, readFile, writeFile,
+    parentOf, makeFolder, rename,
     pickFolder, probePicker,
     loadProfile, savePlace, forgetPlace
   };

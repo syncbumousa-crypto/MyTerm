@@ -13,7 +13,7 @@
   const CLIENT_ID = '730425860367-ptdsv9f8u1vf9vvap7r8hpivd4v4be9n.apps.googleusercontent.com';
   const API_KEY = 'AIzaSyCQzcpzKR842f2CE9yoPQqKTQWWN4Ny3sg';
   const SCOPE = 'https://www.googleapis.com/auth/drive.file';
-  const FOLDER = 'MyTerm', FILE = 'myterm.json';
+  const FOLDER = 'MyTerm', FILE = 'term.json';
   const FOLDER_TYPE = 'application/vnd.google-apps.folder';
   const MEMO = 'myterm.googleToken';
 

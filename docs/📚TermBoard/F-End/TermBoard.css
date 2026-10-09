@@ -113,6 +113,22 @@ body.board-on {
   flex: 1;
 }
 
+/* ============================================================ */
+/* # 🗒️ 🤫  THE QUIET SAVING LINE */
+/* # 🔤 CSS */
+/* # 🎯 One small faint line under the columns that says whether the */
+/* #    work has reached the user's Drive yet */
+/* # 🔗 It keeps its height even when empty, so the buttons under it do */
+/* #    not jump up and down as the words come and go */
+/* ============================================================ */
+.save-state {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+}
+
 .board-foot {
   color: rgba(255, 255, 255, 0.6);
 }

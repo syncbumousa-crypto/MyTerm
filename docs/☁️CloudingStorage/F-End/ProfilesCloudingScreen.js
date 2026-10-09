@@ -35,14 +35,16 @@
   };
 
   // Tells the board file one of two things: the saving place is ready,
-  // or it still needs setting up. The board listens and steps aside
-  const tell = name => document.dispatchEvent(new CustomEvent(name));
+  // or it still needs setting up. The board listens and steps aside.
+  // When ready it is handed the file to work in, because the board is
+  // the one that writes the term paper from now on
+  const tell = (name, detail) => document.dispatchEvent(new CustomEvent(name, { detail }));
 
   const showFile = (name, id) => {
     $('drive-where').textContent = `ملفك في مجلد: ${name}`;
     $('drive-open').href = `https://drive.google.com/file/d/${id}/view`;
     show('done');
-    tell('place-ready');
+    tell('place-ready', { fileId: id, folderName: name });
   };
 
   // ============================================================
@@ -134,18 +136,6 @@
       allowPick(false);
     }
   };
-
-  $('save-test').onclick = act(async () => {
-    note.textContent = 'لحظة…';
-    if (!cloud.hasToken()) await cloud.askGoogle();
-    const id = place.drive_file_id;
-    if (!(await cloud.fileAlive(id))) return fileIsGone();
-    const data = (await cloud.readFile(id)) || { app: 'MyTerm', notes: [] };
-    if (!Array.isArray(data.notes)) data.notes = [];
-    data.notes.push({ at: cloud.now(), text: 'تجربة حفظ' });
-    await cloud.writeFile(id, data);
-    note.textContent = `حُفظ. عدد السطور في ملفك: ${data.notes.length}`;
-  });
 
   document.addEventListener('signed-in', onSignedIn);
   if (window.myTermSignedIn) onSignedIn();

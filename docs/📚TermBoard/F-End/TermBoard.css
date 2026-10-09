@@ -150,6 +150,102 @@ body.board-on {
 
 .col-body {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ============================================================ */
+/* # 📑 ✅  A CHAPTER ROW */
+/* # 🔤 CSS */
+/* # 🎯 One line per chapter: a small square that fills in when it is */
+/* #    finished, the name beside it, and a faint way to remove it */
+/* # 🔗 The square keeps its size whether marked or not, so a column */
+/* #    does not shift as chapters are ticked. The name takes the rest */
+/* #    of the room, and cuts off rather than widening the column */
+/* ============================================================ */
+.ch {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ch-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 5px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.ch-mark.done {
+  background: #ffffff;
+  color: #3a3a3a;
+  border-color: #ffffff;
+}
+
+.ch-name {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 3px 4px;
+  border: 0;
+  background: transparent;
+  color: #f0f0f0;
+}
+
+.ch-name::placeholder { color: rgba(255, 255, 255, 0.4); }
+.ch-name:focus { outline: none; background: rgba(255, 255, 255, 0.08); border-radius: 4px; }
+
+.ch-off {
+  flex: none;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+}
+
+.ch-off:hover { color: #ffffff; }
+
+.col-add {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 5px;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+
+.col-add:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.5); }
+
+.col-score {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  min-height: 1em;
+}
+
+.term-score {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+  min-height: 1.2em;
 }
 
 /* ============================================================ */

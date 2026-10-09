@@ -16,14 +16,17 @@
   const setBtn = $('term-set'), nameBox = $('term-input'), title = $('term-title');
   const columns = $('columns'), addBtn = $('add-course'), moreBtn = $('board-more');
   const state = $('save-state'), renewBtn = $('renew-access'), empty = $('board-empty');
+  const termScore = $('term-score');
 
   const arabic = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
   const now = () => new Date().toISOString();
   const newId = () => 'c-' + Math.random().toString(36).slice(2, 8);
+  const newChapterId = () => 'h-' + Math.random().toString(36).slice(2, 8);
 
   let data = { term: { name: '', updatedAt: null }, courses: [] };
 
   const touched = () => keep.change(data);
+  const changed = course => { keep.touchCourse(course.id); touched(); };
   const living = () => data.courses.filter(c => !c.deleted);
 
   const showName = () => {
@@ -108,15 +111,113 @@
       drawColumns();
     };
 
-    const body = document.createElement('div');
-    body.className = 'col-body';
-
     const top = document.createElement('div');
     top.className = 'col-top';
     top.append(head, drop);
 
-    column.append(top, body);
+    const body = document.createElement('div');
+    body.className = 'col-body';
+    drawChapters(course, body);
+
+    const add = document.createElement('button');
+    add.className = 'col-add';
+    add.type = 'button';
+    add.textContent = '+ فصل';
+    add.onclick = () => {
+      course.chapters = course.chapters || [];
+      course.chapters.push({ id: newChapterId(), name: 'فصل ' + arabic(alive(course).length + 1), done: false, updatedAt: now(), deleted: false });
+      changed(course);
+      drawChapters(course, body);
+      const fresh = body.lastElementChild?.querySelector('.ch-name');
+      fresh?.focus();
+      fresh?.select();
+    };
+
+    column.append(top, body, add, scoreLine(course));
     return column;
+  };
+
+  // ============================================================
+  // # 📑 ✅  THE CHAPTER ROWS, AND THE NUMBER UNDER THEM
+  // # 🔤 JavaScript
+  // # 🎯 Draws one row per chapter: a mark that is pressed when it is
+  // #    finished, a name that is typed into, and a way to remove it.
+  // #    Under them the one number that says how far this course is
+  // # 🔗 The number is never typed by anybody: it is counted from the
+  // #    marks above it, so it cannot disagree with what is on screen.
+  // #    A course with no chapters shows no number at all, because
+  // #    nothing out of nothing is not zero, it is unknown
+  // ============================================================
+  const alive = course => (course.chapters || []).filter(h => !h.deleted);
+
+  const scoreOf = course => {
+    const list = alive(course);
+    if (!list.length) return null;
+    const done = list.filter(h => h.done).length;
+    return { done, total: list.length, pct: Math.round((done / list.length) * 100) };
+  };
+
+  const scoreLine = course => {
+    const line = document.createElement('p');
+    line.className = 'col-score';
+    const s = scoreOf(course);
+    line.textContent = s ? `${arabic(s.done)} من ${arabic(s.total)} · ${arabic(s.pct)}٪` : '';
+    return line;
+  };
+
+  const drawChapters = (course, body) => {
+    body.textContent = '';
+    alive(course).forEach(ch => {
+      const row = document.createElement('div');
+      row.className = 'ch';
+
+      const mark = document.createElement('button');
+      mark.className = 'ch-mark' + (ch.done ? ' done' : '');
+      mark.type = 'button';
+      mark.textContent = ch.done ? '✓' : '';
+      mark.title = ch.done ? 'أنجزته' : 'لم تنجزه بعد';
+      mark.onclick = () => {
+        ch.done = !ch.done;
+        ch.updatedAt = now();
+        changed(course);
+        drawChapters(course, body);
+        refreshScores();
+      };
+
+      const name = document.createElement('input');
+      name.className = 'ch-name';
+      name.value = ch.name;
+      name.placeholder = 'اسم الفصل';
+      name.oninput = () => { ch.name = name.value; ch.updatedAt = now(); changed(course); };
+
+      const off = document.createElement('button');
+      off.className = 'ch-off';
+      off.type = 'button';
+      off.textContent = '×';
+      off.title = 'احذف الفصل';
+      off.onclick = () => {
+        ch.deleted = true;
+        ch.updatedAt = now();
+        changed(course);
+        drawChapters(course, body);
+        refreshScores();
+      };
+
+      row.append(mark, name, off);
+      body.append(row);
+    });
+  };
+
+  const refreshScores = () => {
+    [...columns.children].forEach((col, i) => {
+      const course = living()[i];
+      const line = col.querySelector('.col-score');
+      const s = course && scoreOf(course);
+      if (line) line.textContent = s ? `${arabic(s.done)} من ${arabic(s.total)} · ${arabic(s.pct)}٪` : '';
+    });
+    const all = living().flatMap(c => alive(c));
+    const done = all.filter(h => h.done).length;
+    termScore.textContent = all.length ? `${arabic(done)} من ${arabic(all.length)} · ${arabic(Math.round((done / all.length) * 100))}٪ من ترمك` : '';
   };
 
   const drawColumns = () => {
@@ -124,6 +225,7 @@
     const here = living();
     here.forEach(course => columns.append(makeColumn(course)));
     empty.hidden = here.length > 0;
+    refreshScores();
   };
 
   addBtn.onclick = () => {

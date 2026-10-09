@@ -85,11 +85,16 @@
   // #    small. A course's chapters are read once beside it and written
   // #    only when that course changed — not on every save of anything
   // ============================================================
+  // Every field a chapter is allowed to carry is named here, and a field
+  // that is not named is dropped on the next read — so a new one must be
+  // added here first or it is written once and gone by the next open
   const shapeChapters = list => Array.isArray(list)
     ? list.filter(c => c && typeof c.name === 'string').map(c => ({
         id: typeof c.id === 'string' ? c.id : 'h-' + Math.random().toString(36).slice(2, 8),
         name: c.name,
         done: c.done === true,
+        minutes: Math.max(0, Number(c.minutes) || 0),
+        doneMinutes: Math.max(0, Number(c.doneMinutes) || 0),
         updatedAt: c.updatedAt ?? null,
         deleted: c.deleted === true
       }))

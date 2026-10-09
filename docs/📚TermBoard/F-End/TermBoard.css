@@ -58,23 +58,21 @@ body.board-on {
 }
 
 /* ============================================================ */
-/* # 🧱 🗃️  THE GRID OF COURSE CARDS */
+/* # 🧱 🗃️  THE ROW OF COURSE CARDS */
 /* # 🔤 CSS */
-/* # 🎯 Equal columns that reflow as the screen narrows, aligned to */
-/* #    their tops because courses have different numbers of chapters */
-/* # 🔗 They were a centred flex row of fixed width cards, so four */
-/* #    courses left a ragged gap and eight wrapped into a staircase. */
-/* #    A grid gives every course the same width whatever their number, */
-/* #    and the top alignment is deliberate: forcing equal heights */
-/* #    would pad short courses with empty room that says nothing */
+/* # 🎯 Cards of one width, laid in a centred row that wraps, and all */
+/* #    aligned to their tops because courses differ in how many */
+/* #    chapters they hold */
+/* # 🔗 Centring is what keeps the margin on the right equal to the one */
+/* #    on the left: five fixed columns put three courses in the first */
+/* #    three and left the whole right side blank, so the board looked */
+/* #    pushed against its own edge. The widths are set on the children */
+/* #    and not on tracks, because the row holds one thing that is not a */
+/* #    card — the tile that adds one — and a track would have given it */
+/* #    the width of a card and stranded it in its own empty space. The */
+/* #    top alignment is deliberate too: forcing equal heights would pad */
+/* #    short courses with empty room that says nothing */
 /* ============================================================ */
-/* Centring the row is what keeps the margin on the right equal to the
-   one on the left. Five fixed columns did not: three courses sat in the
-   first three and left the whole right side blank, so the board looked
-   pushed against its own edge. And the widths are set on the children,
-   not on tracks, because the row holds one thing that is not a card —
-   the small tile that adds one — and a track would have given it the
-   width of a card and stranded it in the middle of its own empty space */
 .columns {
   display: flex;
   flex-wrap: wrap;
@@ -87,14 +85,14 @@ body.board-on {
 /* ============================================================ */
 /* # ➕ 🟦  THE TILE THAT ADDS A COURSE */
 /* # 🔤 CSS */
-/* # 🎯 A square with a plus in it, standing in the row at the near end */
-/* #    of the cards */
+/* # 🎯 A square with a plus in it, standing in the row after the last */
+/* #    card */
 /* # 🔗 It was a wide button floating over the row, wearing the white */
 /* #    frame the sign in screens use: on a near black board beside */
 /* #    dense dark cards it was the loudest thing on the page, and it is */
 /* #    not the most important. Here it is quiet, and it stands where */
 /* #    the course it adds will stand. It keeps the top of the row, */
-/* #    because the cards below it grow and it must not drift down */
+/* #    because the cards beside it grow and it must not drift down */
 /* ============================================================ */
 .col-new {
   flex: none;
@@ -291,20 +289,22 @@ body.board-on {
 .col-icon.asking { background: #31323a; color: var(--orange); font-size: 9px; }
 
 /* ============================================================ */
-/* # 📑 ✅  THE CHAPTER ROWS */
+/* # 📑 📏  THE CHAPTER ROWS */
 /* # 🔤 CSS */
-/* # 🎯 One tight line per chapter: a square that fills when it is */
-/* #    finished, its number, its name, and a faint way to remove it */
-/* # 🔗 The list is what folds away, not some detail inside it, so a */
-/* #    folded card is one strip and a screen holds twenty of them. The */
-/* #    number column is fixed width so the names start in one place */
-/* #    down the card, and a name that is too long is cut rather than */
-/* #    allowed to widen the column and break the grid */
+/* # 🎯 One tight line per chapter, read left to right: the arrow to */
+/* #    what is inside it, its place in the course, its name, how long */
+/* #    it takes, and the three shapes */
+/* # 🔗 Fixed columns, not a flexible row: the names all begin on one */
+/* #    line down the card and the shapes all end on another, so two */
+/* #    chapters are compared by where their bars reach and not by */
+/* #    reading either of them. A name too long is cut rather than */
+/* #    allowed to push the shapes out of their column. And the list */
+/* #    itself is what folds away, so a folded card is one strip */
 /* ============================================================ */
 .col-body {
   display: none;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   padding: 7px 8px 9px;
 }
 
@@ -312,7 +312,7 @@ body.board-on {
 
 .ch {
   display: grid;
-  grid-template-columns: 14px 20px minmax(0, 1fr) 16px;
+  grid-template-columns: 14px 20px minmax(0, 1fr) auto 64px;
   align-items: center;
   gap: 5px;
   padding: 3px 4px;
@@ -321,23 +321,25 @@ body.board-on {
 
 .ch:hover { background: #25262c; }
 
-/* A vessel filling from the bottom, not a bar crossing from the side.
-   Empty it is still plainly a square with a floor, because an outline
-   alone on a dark ground reads as nothing at all */
-.ch-mark {
+/* Smaller than the arrow on the card: its rank is lower, and the two
+   must not be mistaken for each other down a narrow column */
+.ch-twist {
   width: 14px;
   height: 14px;
   padding: 0;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  background: var(--well);
+  font: inherit;
+  font-size: 9px;
+  line-height: 1;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim2);
   cursor: pointer;
+  transition: transform .14s ease, color .14s ease, background .14s ease;
 }
 
-.ch-mark:hover { border-color: var(--ready); }
-.ch-mark.done { background: var(--ready); border-color: var(--ready); }
+.ch-twist:hover { color: #ffffff; background: #32333b; }
+.ch.open .ch-twist { transform: rotate(90deg); color: var(--ink); }
 
 .ch-no {
   font-family: var(--mono);
@@ -362,22 +364,122 @@ body.board-on {
 .ch-name:focus { outline: none; color: #ffffff; box-shadow: 0 1px 0 0 var(--blue); }
 .ch.done .ch-name { color: var(--dim); }
 
-.ch-off {
-  font: inherit;
-  font-size: 11px;
-  line-height: 1;
-  padding: 0;
+/* Green for what is finished and orange for what is left, here and in
+   the head of the card and nowhere differently */
+.ch-hours {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  line-height: 1.25;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.hDone { color: var(--green); }
+.hLeft { color: var(--orange); }
+.hSep  { color: var(--dim2); }
+
+.ch .trio { flex: none; width: 64px; }
+
+/* ============================================================ */
+/* # 📂 🧾  WHAT THE ARROW OPENS */
+/* # 🔤 CSS */
+/* # 🎯 Under the line: how long the chapter is meant to take, how much */
+/* #    of that is done, a bar for the two together, the way to call it */
+/* #    finished, and the way to remove it */
+/* # 🔗 It spans the whole row because it belongs to the chapter, not */
+/* #    to any one column of it. The number boxes lose their spinner */
+/* #    arrows, which at this size would eat half of each box */
+/* ============================================================ */
+.ch-detail {
+  display: none;
+  grid-column: 1 / -1;
+  padding: 5px 4px 7px 19px;
+}
+
+.ch.open .ch-detail { display: block; }
+
+.dline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.dk {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 9.5px;
+  color: var(--dim);
+}
+
+.dnum {
+  flex: none;
+  width: 44px;
+  font-family: var(--mono);
+  font-size: 10px;
+  text-align: center;
+  padding: 2px 1px;
   border: 0;
+  border-bottom: 1px solid var(--line);
   background: transparent;
-  color: transparent;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+
+.dnum::-webkit-outer-spin-button,
+.dnum::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.dnum::placeholder { color: var(--dim2); }
+.dnum:focus { outline: none; border-bottom-color: var(--blue); }
+
+.dunit { font-size: 9px; color: var(--dim2); }
+
+.dbar {
+  height: 3px;
+  margin: 2px 0 6px;
+  background: var(--well);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.dbar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue-dk), var(--blue));
+}
+
+.dtog {
+  display: block;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  padding: 4px;
+  margin-bottom: 4px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--dim);
   cursor: pointer;
 }
 
-.ch:hover .ch-off { color: var(--dim2); }
-.ch-off:hover { color: #ffffff; }
+.dtog:hover { color: #ffffff; border-color: var(--dim2); background: #25262c; }
+.dtog.on { color: var(--ready); border-color: var(--ready); }
+
+/* The one thing here that cannot be undone, so it is the quietest and
+   it is last — and it is behind an arrow nobody opens by accident */
+.ch-off {
+  font-size: 9px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dim2);
+  cursor: pointer;
+}
+
+.ch-off:hover { color: var(--mBad); text-decoration: underline; }
 
 .col-add {
-  margin-top: 2px;
+  margin-top: 4px;
   font-family: var(--mono);
   font-size: 9.5px;
   padding: 4px;

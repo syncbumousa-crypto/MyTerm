@@ -4,7 +4,9 @@
 <!-- # 🎯 Sets up the page: its type, Arabic language, right to left text, -->
 <!-- #    letter encoding so Arabic shows the right way, phone screen size, -->
 <!-- #    the tab name, and it calls the style file -->
-<!-- # 🔗 None of this shows on the page. It all runs before the content is drawn -->
+<!-- # 🔗 None of this shows on the page. It all runs before the content is -->
+<!-- #    drawn. The v number on the style file is bumped on every publish, -->
+<!-- #    so a visitor never gets an old copy out of the browser memory -->
 <!-- ============================================================ -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -12,7 +14,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -87,13 +89,15 @@
 <!-- # 🔗 Sits at the end of body so the panels above already exist when the -->
 <!-- #    scripts look for them. The libraries come first because the two -->
 <!-- #    site files use them. The third one is only needed by the pick your -->
-<!-- #    own place path, and a strict browser may block the frame it opens -->
+<!-- #    own place path, and a strict browser may block the frame it opens. -->
+<!-- #    The v number on the two site files is bumped on every publish, so -->
+<!-- #    a reload always brings the new code and never an old copy -->
 <!-- ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="script.js"></script>
-<script src="drive.js"></script>
+<script src="script.js?v=9"></script>
+<script src="drive.js?v=9"></script>
 
 </body>
 </html>

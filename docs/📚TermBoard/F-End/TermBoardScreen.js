@@ -15,7 +15,7 @@
   const board = $('board'), session = $('session'), backBtn = $('to-board');
   const setBtn = $('term-set'), nameBox = $('term-input'), title = $('term-title');
   const columns = $('columns'), addBtn = $('add-course'), moreBtn = $('board-more');
-  const state = $('save-state');
+  const state = $('save-state'), renewBtn = $('renew-access');
 
   const arabic = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
   const now = () => new Date().toISOString();
@@ -108,18 +108,34 @@
   };
 
   // ============================================================
-  // # 🪟 🔀  WHEN THE BOARD SHOWS, AND WHAT IT SAYS WHILE SAVING
+  // # 🪟 🔀  WHEN THE BOARD SHOWS, AND WHAT IT SAYS ABOUT SAVING
   // # 🔤 JavaScript
   // # 🎯 Opens the board once the saving place is ready, draws the fast
   // #    copy at once, then draws again from what Drive says. And it
   // #    keeps one quiet line telling whether the work is safe yet
   // # 🔗 The board is drawn twice on purpose: the copy next to the user
   // #    appears with no wait, and Drive is the one that decides. If
-  // #    they differ, Drive wins. The page is also flushed on the way
-  // #    out, so closing the tab right after typing loses nothing
+  // #    they differ, Drive wins. But a Drive that could not be read is
+  // #    never drawn as an empty term — that would read as lost work,
+  // #    which is worse than a plain complaint. Google's permission
+  // #    lasts about an hour, so it runs out while the page sits open,
+  // #    and the only cure is one press by the user: a browser will not
+  // #    open that window without a press
   // ============================================================
-  const WORDS = { waiting: '…', saving: 'يُحفظ في درايفك…', saved: 'محفوظ في درايفك', failed: 'تعذّر الحفظ — سنعيد المحاولة' };
-  keep.onStatus(name => { state.textContent = WORDS[name] || ''; });
+  const WORDS = {
+    waiting: '…',
+    saving: 'يُحفظ في درايفك…',
+    saved: 'محفوظ في درايفك',
+    failed: 'لم يُحفظ — الوصول إلى درايفك انتهى. عملك محفوظ هنا ولم يضع.',
+    unread: 'تعذّر قراءة ملفك من درايف — ما تراه قد لا يكون كامله.'
+  };
+
+  const say = name => { state.textContent = WORDS[name] || ''; };
+  keep.onStatus(name => {
+    say(name);
+    if (name === 'failed') renewBtn.hidden = false;
+    if (name === 'saved') renewBtn.hidden = true;
+  });
 
   const paint = () => { showName(); drawColumns(); };
 
@@ -136,7 +152,32 @@
     if (fast) { data = fast; paint(); }
 
     const fromDrive = await keep.load().catch(() => null);
-    if (fromDrive) { data = fromDrive; paint(); }
+    if (fromDrive) {
+      data = fromDrive;
+      paint();
+      renewBtn.hidden = true;
+      say('');
+    } else {
+      say('unread');
+      renewBtn.hidden = false;
+    }
+  };
+
+  renewBtn.onclick = async () => {
+    renewBtn.disabled = true;
+    say('saving');
+    try {
+      await window.MyTermCloud.askGoogle();
+      const fresh = await keep.load();
+      if (fresh) { data = fresh; paint(); }
+      await keep.flush();
+      renewBtn.hidden = true;
+      say('saved');
+    } catch {
+      say('failed');
+    } finally {
+      renewBtn.disabled = false;
+    }
   };
 
   const leaveBoard = () => {

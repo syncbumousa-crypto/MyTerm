@@ -24,8 +24,6 @@
 
   const cacheKey = () => 'myterm.board.' + fileId;
 
-  const empty = () => ({ term: { name: '', updatedAt: null }, courses: [] });
-
   const shape = doc => ({
     term: {
       name: typeof doc?.term?.name === 'string' ? doc.term.name : '',
@@ -52,7 +50,12 @@
   // #    store and throws instead of answering
   // ============================================================
   const cache = {
-    read: () => { try { return shape(JSON.parse(localStorage.getItem(cacheKey()) || 'null')); } catch { return null; } },
+    read: () => {
+      try {
+        const kept = localStorage.getItem(cacheKey());
+        return kept === null ? null : shape(JSON.parse(kept));   // null = لا نسخة، لا «نسخة فارغة»
+      } catch { return null; }
+    },
     write: board => { try { localStorage.setItem(cacheKey(), JSON.stringify(board)); } catch {} },
     drop: () => { try { localStorage.removeItem(cacheKey()); } catch {} }
   };
@@ -66,8 +69,10 @@
   // # 🔗 The count is for the next step: another device will watch it to
   // #    know something changed. Fields we did not write are carried
   // #    over untouched, so nothing already in the file is destroyed.
-  // #    If a write is still in the air when a new change arrives, the
-  // #    new one waits its turn instead of racing it
+  // #    A failed write is NOT tried again on a timer: when Drive says
+  // #    no because the permission ran out, a retry every second fails
+  // #    every second for ever. The work is kept, the screen is told,
+  // #    and the next change or a press of the renew button tries again
   // ============================================================
   async function push() {
     if (!fileId || sending || !dirty) return;
@@ -84,7 +89,6 @@
       tellStatus('failed');
     } finally {
       sending = false;
-      if (dirty) setTimeout(push, QUIET);
     }
   }
 
@@ -99,10 +103,13 @@
 
     cached: () => (fileId ? cache.read() : null),
 
+    // تُعيد null إذا تعذّرت القراءة — ولا تعيد «لوحةً فارغة»، فبينهما فرقٌ
+    // يراه المستخدم: الفراغُ حقيقةٌ عنه، والتعذّرُ عطبٌ عندنا
     load: async () => {
-      if (!fileId) return empty();
+      if (!fileId) return null;
       const doc = await cloud().readFile(fileId);
-      raw = doc && typeof doc === 'object' ? doc : {};
+      if (!doc || typeof doc !== 'object') return null;
+      raw = doc;
       const board = shape(raw);
       cache.write(board);
       return board;

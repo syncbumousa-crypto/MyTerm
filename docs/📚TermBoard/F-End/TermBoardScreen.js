@@ -558,8 +558,13 @@
     drawTermShape();
   };
 
+  // The way to add a course stands in the row it adds to, as a tile of
+  // its own at the near end — not as a wide button floating above the
+  // cards, where it was the loudest thing on the board and still said
+  // nothing about where the new course would land
   const drawColumns = () => {
     columns.textContent = '';
+    columns.append(addBtn);
     const here = living();
     here.forEach(course => columns.append(makeColumn(course)));
     empty.hidden = here.length > 0;

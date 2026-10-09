@@ -68,53 +68,63 @@ body.board-on {
 /* #    and the top alignment is deliberate: forcing equal heights */
 /* #    would pad short courses with empty room that says nothing */
 /* ============================================================ */
-/* auto-fit lays as many cards as the screen holds and drops the empty
-   places, and centring the row is then what keeps the margin on the
-   right equal to the one on the left. Five fixed columns did not: three
-   courses sat in the first three and left the whole right side blank,
-   so the board looked pushed against its own edge */
+/* Centring the row is what keeps the margin on the right equal to the
+   one on the left. Five fixed columns did not: three courses sat in the
+   first three and left the whole right side blank, so the board looked
+   pushed against its own edge. And the widths are set on the children,
+   not on tracks, because the row holds one thing that is not a card —
+   the small tile that adds one — and a track would have given it the
+   width of a card and stranded it in the middle of its own empty space */
 .columns {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, 264px);
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  align-items: flex-start;
   gap: 12px;
-  align-items: start;
   width: 100%;
 }
 
-/* Narrower than one card plus its gutters, the fixed width would run
-   off the screen, so there the card gives up its width instead */
-@media (max-width: 340px) { .columns { grid-template-columns: minmax(0, 1fr); } }
-
 /* ============================================================ */
-/* # ➕ 🪧  THE ONE BUTTON OVER THE CARDS */
+/* # ➕ 🟦  THE TILE THAT ADDS A COURSE */
 /* # 🔤 CSS */
-/* # 🎯 Adds a course, and sits directly over the row it adds to */
-/* # 🔗 It wore the big white frame the sign in screens use, which on a */
-/* #    near black board beside dense dark cards was the loudest thing */
-/* #    on the page — and it is not the most important thing on it. */
-/* #    Quiet until wanted, and lit on hover */
+/* # 🎯 A square with a plus in it, standing in the row at the near end */
+/* #    of the cards */
+/* # 🔗 It was a wide button floating over the row, wearing the white */
+/* #    frame the sign in screens use: on a near black board beside */
+/* #    dense dark cards it was the loudest thing on the page, and it is */
+/* #    not the most important. Here it is quiet, and it stands where */
+/* #    the course it adds will stand. It keeps the top of the row, */
+/* #    because the cards below it grow and it must not drift down */
 /* ============================================================ */
-#add-course {
-  align-self: center;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: .3px;
-  padding: 7px 18px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--panel2);
-  color: var(--dim);
+.col-new {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  font: inherit;
+  font-size: 19px;
+  line-height: 1;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--dim2);
+  cursor: pointer;
+  transition: color .12s ease, border-color .12s ease, background .12s ease;
 }
 
-#add-course:hover:not(:disabled) {
-  background: #2c2d34;
+.col-new:hover:not(:disabled) {
+  background: var(--panel2);
   border-color: var(--dim2);
   color: #ffffff;
 }
 
+.col-new:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
 .col {
+  flex: none;
+  width: 264px;
+  max-width: 100%;
+  box-sizing: border-box;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 10px;

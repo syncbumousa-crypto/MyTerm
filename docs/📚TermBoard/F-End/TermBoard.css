@@ -464,17 +464,20 @@ body.board-on {
   gap: 8px;
 }
 
+/* One date to a line: From on top, To under it. And the two words are
+   given one width between them, so the boxes start at the same place
+   and the pair reads as a range rather than two unrelated fields. */
 .days-row {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .days-label {
-  display: flex;
+  display: grid;
+  grid-template-columns: 42px auto;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.7);
 }

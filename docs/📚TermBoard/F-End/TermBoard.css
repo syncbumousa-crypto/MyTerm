@@ -501,72 +501,198 @@ body.board-on {
 /* #    not jump up and down as the words come and go */
 /* ============================================================ */
 /* ============================================================ */
-/* # 💯 🎓  THE MARKS, BEHIND THE GRADE */
+/* # 💯 📋  THE TABLE OF MARKS, BEHIND THE GRADE */
 /* # 🔤 CSS */
-/* # 🎯 The items a course is graded on, each with its weight and its */
-/* #    raw mark, opened from the grade in the head of the card */
-/* # 🔗 It used to carry a line saying the standing and a button saying */
-/* #    "Marks", at the foot of every card whether or not there was */
-/* #    anything to show. The grade itself now says both: it is the */
-/* #    reading, and pressing it is how the working is opened. The */
-/* #    number boxes drop their spinner arrows, which at this size */
-/* #    would eat half the width */
+/* # 🎯 Seven columns under the card: what the item is, its raw score, */
+/* #    what that earns of the course, its weight, its own letter, when */
+/* #    it is due, and what has to be read or done for it */
+/* # 🔗 The table is wider than the card on purpose and slides inside */
+/* #    it. Squeezing seven columns into 246 pixels leaves 40 for the */
+/* #    name — "Homework 3" becomes "Home…" — and the card cannot widen */
+/* #    because the row of cards cannot. So the content takes its own */
+/* #    width and a thin bar slides it. What is below the table stays */
+/* #    outside the sliding part, or the totals would slide away too */
 /* ============================================================ */
 .marks {
   display: none;
-  flex-direction: column;
-  gap: 5px;
-  padding: 7px 9px 9px;
+  padding: 8px 8px 10px;
   border-top: 1px solid var(--line);
   background: #1e1f24;
 }
 
-.col.marks-on .marks { display: flex; }
+.col.marks-on .marks { display: block; }
 
-.mark-row {
+.asTable {
   display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #4a4d57 transparent;
+}
+
+.asTable::-webkit-scrollbar { height: 7px; }
+.asTable::-webkit-scrollbar-track { background: transparent; }
+.asTable::-webkit-scrollbar-thumb { background: #4a4d57; border-radius: 4px; }
+.asTable::-webkit-scrollbar-thumb:hover { background: #5d6170; }
+
+/* The heading row shares the grid AND the side padding of an item row.
+   Give them different padding and every heading sits a few pixels off
+   the column it names, which is exactly how far wrong it looks */
+.asLegend, .asItem {
+  display: grid;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
+  grid-template-columns: minmax(64px, 1fr) 62px 34px 36px 30px 98px 96px 18px;
+  min-width: 462px;
+  padding-inline: 4px;
 }
 
-.mark-label {
-  flex: 1;
-  font-size: 9.5px;
+.asLegend {
+  font-size: 8px;
+  letter-spacing: .3px;
+  text-transform: uppercase;
   color: var(--dim2);
+  padding-block: 0 5px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 4px;
 }
 
-.mark-name {
-  flex: 1;
+.lgL { text-align: left; }
+.lgC { text-align: center; }
+.lgR { text-align: right; }
+
+.asItem { padding-block: 3px; border-radius: 5px; }
+.asItem:hover { background: #26272d; }
+
+/* One height for every field. Text, number and date each have a height
+   of their own, so without one being set they sit at different levels
+   and the row stops reading as a row */
+.asIn {
+  width: 100%;
+  height: 21px;
   min-width: 0;
-  font-family: var(--mono);
-  font-size: 10px;
-  padding: 2px 3px;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  background: transparent;
+  box-sizing: border-box;
+  background: var(--well);
   color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 4px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 19px;
 }
 
-.mark-num {
-  flex: none;
-  width: 32px;
-  font-family: var(--mono);
-  font-size: 10px;
-  text-align: center;
-  padding: 2px 1px;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink);
+.asIn:focus { outline: 2px solid var(--blue); outline-offset: 0; }
+.asIn::placeholder { color: var(--dim2); }
+
+.asName { font-size: 10.5px; padding: 0 5px; text-align: center; }
+
+.asNum {
+  text-align: right;
   font-variant-numeric: tabular-nums;
+  padding: 0 3px;
   -moz-appearance: textfield;
 }
 
-.mark-num::-webkit-outer-spin-button,
-.mark-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.asNum::-webkit-outer-spin-button,
+.asNum::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-.mark-name::placeholder, .mark-num::placeholder { color: var(--dim2); }
-.mark-name:focus, .mark-num:focus { outline: none; border-bottom-color: var(--blue); }
+/* The two halves of a score, with a fixed gap between them, so the
+   numbers line up column under column down the table */
+.asG {
+  display: grid;
+  grid-template-columns: 1fr 4px 1fr;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+}
+
+.asG.asOdd .asIn { border-color: var(--orange); }
+.asUnit { color: var(--dim2); font-size: 9px; text-align: center; line-height: 21px; }
+
+.asEarned {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 21px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Full marks assumed, not recorded: the number is in the sum, but it is
+   faint so it is never mistaken for a mark you were given */
+.asEarned.asAssumed { color: var(--dim2); font-weight: 400; }
+
+.asGrade {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 21px;
+  color: var(--g, var(--dim2));
+}
+
+.asDue { color-scheme: dark; font-size: 8.5px; padding: 0 1px; }
+.asDue::-webkit-calendar-picker-indicator { margin: 0; padding: 0; opacity: .55; }
+
+.asMat { font-size: 9px; padding: 0 4px; }
+
+/* A due date gone by with no score entered. The row says it, not a
+   note somewhere else, because this is a thing about this row */
+.asItem.asLate { background: #2e2220; }
+.asItem.asLate .asDue { border-color: #8a4a3f; color: #f0c8c2; }
+
+.asDel {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin: 0 auto;
+  display: block;
+  font: inherit;
+  font-size: 9px;
+  line-height: 14px;
+  background: transparent;
+  color: var(--dim2);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.asDel:hover { background: #5a3a38; color: #ffffff; }
+
+.asEmpty {
+  font-size: 9.5px;
+  color: var(--dim2);
+  padding: 6px 4px;
+}
+
+.asFoot {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink);
+  text-align: center;
+  padding: 4px 0 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.asHours {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0 6px;
+  font-size: 9.5px;
+  color: var(--dim);
+}
+
+.asHours .asIn { width: 42px; flex: none; margin-inline-start: auto; }
+
+.marks .col-add { display: block; width: 100%; }
 
 .term-gpa {
   margin: 0;

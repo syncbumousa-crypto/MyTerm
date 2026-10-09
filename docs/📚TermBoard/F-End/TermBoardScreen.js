@@ -264,9 +264,12 @@
     const named = list.filter(h => h.name.trim() !== '').length;
     const done = list.filter(h => h.done).length;
 
-    const items = (course.items || []).filter(i => !i.deleted && i.weight > 0);
-    const weight = items.reduce((s, i) => s + i.weight, 0) || 100;
-    const graded = items.filter(i => i.got !== null && i.outOf > 0);
+    // The disc is about what has been judged, so an item with no score is
+    // its grey third — not the full marks the standing assumes for it.
+    // The two readings answer different questions and must not be mixed
+    const weighted = marksOf(course).filter(i => (Number(i.weight) || 0) > 0);
+    const weight = weighted.reduce((s, i) => s + i.weight, 0) || 100;
+    const graded = weighted.filter(i => isGraded(i) && !isOdd(i) && Number(i.outOf) > 0);
     const ok = graded.reduce((s, i) => s + (i.got / i.outOf) * i.weight, 0);
     const bad = graded.reduce((s, i) => s + (1 - i.got / i.outOf) * i.weight, 0);
 
@@ -292,110 +295,224 @@
   // #    if you never sit the rest". The scale is the common one out of
   // #    four, and it is written once here and read nowhere else
   // ============================================================
-  const CUTS = [[95, 'A+', 4], [90, 'A', 3.75], [85, 'B+', 3.5], [80, 'B', 3], [75, 'C+', 2.5], [70, 'C', 2], [65, 'D+', 1.5], [60, 'D', 1], [0, 'F', 0]];
-  const gradeOf = pct => CUTS.find(c => pct >= c[0]) || CUTS[CUTS.length - 1];
+  // # 💯 🎓  THE MARKS, BEHIND THE GRADE
+  // # 🔤 JavaScript
+  // # 🎯 A table of everything the course is graded on, opened from the
+  // #    grade in the head of its card. One row per item, seven columns:
+  // #    what it is · the raw score · what that earns of the course ·
+  // #    its weight · its own letter · when it is due · what has to be
+  // #    read or done for it
+  // # 🔗 Two rules decide every number here, and both are deliberate.
+  // #    An item with no score yet counts as FULL marks, so the standing
+  // #    begins at the top and comes down as real scores arrive, instead
+  // #    of starting at zero and frightening you with exams you have not
+  // #    sat. And a score that cannot be true — more than its "out of",
+  // #    or more than its weight when no "out of" is given — is never
+  // #    guessed at: it is marked and counted as full until the missing
+  // #    number is supplied. Guessing it once turned an item worth 2
+  // #    with a score of 6 into 6 points of a course, and that course
+  // #    totalled 101.8 out of 90
+  // ============================================================
+  const COLUMNS = [
+    ['Item', 'lgC'], ['Score', 'lgC'], ['Earn', 'lgR'], ['%', 'lgC'],
+    ['Grade', 'lgC'], ['Due', 'lgC'], ['Material needed', 'lgC'], ['', 'lgL']
+  ];
 
-  const standingOf = course => {
-    const marked = (course.items || []).filter(i => !i.deleted && i.got !== null && i.outOf > 0 && i.weight > 0);
-    if (!marked.length) return null;
-    const weight = marked.reduce((s, i) => s + i.weight, 0);
-    const earned = marked.reduce((s, i) => s + (i.got / i.outOf) * i.weight, 0);
-    const pct = weight ? (earned / weight) * 100 : 0;
-    const [, letter, points] = gradeOf(pct);
-    return { pct: Math.round(pct * 10) / 10, letter, points, weight };
-  };
+  const today = () => new Date().toISOString().slice(0, 10);
 
   const marksPart = course => {
-    const inner = document.createElement('div');
-    inner.className = 'marks';
+    const panel = document.createElement('div');
+    panel.className = 'marks';
+
+    const table = document.createElement('div');
+    table.className = 'asTable';
+
+    const foot = document.createElement('div');
+    foot.className = 'asFoot';
 
     // The grade in the head is the only place the standing is said, so
-    // every change here goes back up to it
-    const showStanding = () => {
-      const column = inner.closest('.col');
+    // every change here goes back up to it, and to the term above that
+    const tellTheHead = () => {
+      const column = panel.closest('.col');
       if (column) paintHead(column, course);
+      const standing = standingOf(course);
+      foot.textContent = standing
+        ? `${Math.round(standing.earned * 10) / 10} of ${standing.weight} · ${standing.pct}% · ${standing.letter}`
+        : 'Add an item and its weight to see where you stand.';
+      foot.title = standing
+        ? `${standing.marked} of ${standing.of} items have a score. The rest are counted as full marks.`
+        : '';
       refreshTermGpa();
     };
 
     const drawItems = () => {
-      inner.textContent = '';
+      table.textContent = '';
 
-      const hours = document.createElement('div');
-      hours.className = 'mark-row';
-      const hoursLabel = document.createElement('span');
-      hoursLabel.className = 'mark-label';
-      hoursLabel.textContent = 'Hours';
-      const hoursBox = document.createElement('input');
-      hoursBox.className = 'mark-num';
-      hoursBox.type = 'number';
-      hoursBox.min = '0';
-      hoursBox.value = course.credits ?? 3;
-      hoursBox.oninput = () => { course.credits = Number(hoursBox.value) || 0; changed(course); refreshTermGpa(); };
-      hours.append(hoursLabel, hoursBox);
-      inner.append(hours);
+      const legend = document.createElement('div');
+      legend.className = 'asLegend';
+      COLUMNS.forEach(([word, align]) => {
+        const cell = document.createElement('span');
+        cell.className = align;
+        cell.textContent = word;
+        legend.append(cell);
+      });
+      table.append(legend);
 
-      (course.items || []).filter(i => !i.deleted).forEach(item => {
+      const list = marksOf(course);
+      if (!list.length) {
+        const none = document.createElement('div');
+        none.className = 'asEmpty';
+        none.textContent = 'No items yet — add the first below.';
+        table.append(none);
+      }
+
+      list.forEach(item => {
         const row = document.createElement('div');
-        row.className = 'mark-row';
+        row.className = 'asItem';
 
-        const name = document.createElement('input');
-        name.className = 'mark-name';
-        name.value = item.name;
-        name.placeholder = 'Item';
-        name.oninput = () => { item.name = name.value; item.updatedAt = now(); changed(course); };
+        // Every field writes by the item's own id. The list drawn here is
+        // filtered, so its order is not the order of what is stored, and
+        // writing by position would land the change on somebody else
+        const field = (cls, type, value, key, placeholder) => {
+          const box = document.createElement('input');
+          box.type = type;
+          box.className = 'asIn ' + cls;
+          box.value = value ?? '';
+          if (placeholder) box.placeholder = placeholder;
+          if (type === 'number') { box.min = '0'; box.step = 'any'; }
+          box.oninput = () => {
+            const mine = (course.items || []).find(x => x.id === item.id);
+            if (!mine) return;
+            // An empty score means "not marked yet", which is not the same
+            // as a zero; an empty weight or total is simply nothing
+            mine[key] = type !== 'number' ? box.value
+                      : key === 'got' ? (box.value === '' ? null : Number(box.value))
+                      : (Number(box.value) || 0);
+            mine.updatedAt = now();
+            changed(course);
+            paintRow();
+            tellTheHead();
+          };
+          return box;
+        };
 
-        const weight = document.createElement('input');
-        weight.className = 'mark-num';
-        weight.type = 'number';
-        weight.min = '0';
-        weight.title = 'Its weight out of 100';
-        weight.value = item.weight || '';
-        weight.placeholder = 'wt';
-        weight.oninput = () => { item.weight = Number(weight.value) || 0; item.updatedAt = now(); changed(course); showStanding(); };
+        const name = field('asName', 'text', item.name, 'name', 'Midterm…');
+        name.title = item.name || 'Item name';
+        name.addEventListener('input', () => { name.title = name.value || 'Item name'; });
+        row.append(name);
 
-        const got = document.createElement('input');
-        got.className = 'mark-num';
-        got.type = 'number';
-        got.min = '0';
-        got.title = 'Your mark';
-        got.value = item.got ?? '';
-        got.placeholder = 'got';
-        got.oninput = () => { item.got = got.value === '' ? null : Number(got.value); item.updatedAt = now(); changed(course); showStanding(); };
+        // The two halves of one reading, so they are one cell: a score is
+        // nothing without what it is out of
+        const score = document.createElement('span');
+        score.className = 'asG';
+        score.append(field('asNum', 'number', item.got, 'got', '—'));
+        const slash = document.createElement('span');
+        slash.className = 'asUnit';
+        slash.textContent = '/';
+        score.append(slash, field('asNum', 'number', item.outOf || '', 'outOf', String(item.weight || '')));
+        row.append(score);
 
-        const outOf = document.createElement('input');
-        outOf.className = 'mark-num';
-        outOf.type = 'number';
-        outOf.min = '0';
-        outOf.title = 'out of';
-        outOf.value = item.outOf || '';
-        outOf.placeholder = 'of';
-        outOf.oninput = () => { item.outOf = Number(outOf.value) || 0; item.updatedAt = now(); changed(course); showStanding(); };
+        const earn = document.createElement('span');
+        earn.className = 'asEarned';
+        row.append(earn);
+
+        row.append(field('asNum asW', 'number', item.weight || '', 'weight', '0'));
+
+        // The item's own letter, out of its own total — not out of the
+        // course. It needs both numbers: with no "out of" there is no
+        // percentage at all, and inventing one is what made a score of 6
+        // on an item worth 2 read as six per cent
+        const letter = document.createElement('span');
+        letter.className = 'asGrade';
+        row.append(letter);
+
+        row.append(field('asDue', 'date', item.due, 'due', ''));
+        row.append(field('asMat', 'text', item.material, 'material', '—'));
 
         const off = document.createElement('button');
-        off.className = 'ch-off';
+        off.className = 'asDel';
         off.type = 'button';
         off.textContent = '×';
-        off.onclick = () => { item.deleted = true; item.updatedAt = now(); changed(course); drawItems(); showStanding(); };
+        off.title = 'Remove this item';
+        off.onclick = () => {
+          const mine = (course.items || []).find(x => x.id === item.id);
+          if (!mine) return;
+          mine.deleted = true;
+          mine.updatedAt = now();
+          changed(course);
+          drawItems();
+          tellTheHead();
+        };
+        row.append(off);
 
-        row.append(name, weight, got, outOf, off);
-        inner.append(row);
+        // The row says what it is worth the moment it is typed in, not
+        // when the panel is next opened. A due date that has passed turns
+        // the row, and that too must show as it is typed
+        const paintRow = () => {
+          const mine = (course.items || []).find(x => x.id === item.id) || item;
+          const graded = isGraded(mine), odd = isOdd(mine);
+          earn.textContent = Math.round(earnedOf(mine) * 10) / 10 + '%';
+          earn.classList.toggle('asAssumed', !graded || odd);
+          earn.title = odd ? 'Not counted — the score does not fit the item; give its "out of"'
+                     : graded ? 'Earned out of the course'
+                              : 'Counted as full marks until you enter a score';
+          score.classList.toggle('asOdd', odd);
+          score.title = odd ? 'This score is larger than the item can be worth — give its "out of" so it can be counted' : '';
+
+          const pct = graded && !odd && Number(mine.outOf) > 0 ? (100 * Number(mine.got)) / Number(mine.outOf) : null;
+          if (pct === null) {
+            letter.textContent = '';
+            letter.style.removeProperty('--g');
+            letter.title = '';
+          } else {
+            const [, word, points] = gradeOf(pct);
+            letter.textContent = word;
+            letter.style.setProperty('--g', gradeColour(points));
+            letter.title = Math.round(pct * 10) / 10 + '% on this item';
+          }
+
+          row.classList.toggle('asLate', Boolean(mine.due && mine.due < today() && !graded));
+        };
+
+        paintRow();
+        table.append(row);
       });
+    };
 
-      const more = document.createElement('button');
-      more.className = 'col-add';
-      more.type = 'button';
-      more.textContent = '+ item';
-      more.onclick = () => {
-        course.items = course.items || [];
-        course.items.push({ id: 'i-' + Math.random().toString(36).slice(2, 8), name: '', weight: 0, got: null, outOf: 0, due: '', updatedAt: now(), deleted: false });
-        changed(course);
-        drawItems();
-      };
-      inner.append(more);
+    // How many hours the course is worth. It belongs to the course and not
+    // to any item, so it sits under the table beside the standing
+    const hours = document.createElement('div');
+    hours.className = 'asHours';
+    const hoursWord = document.createElement('span');
+    hoursWord.textContent = 'Credit hours';
+    const hoursBox = document.createElement('input');
+    hoursBox.className = 'asIn asNum';
+    hoursBox.type = 'number';
+    hoursBox.min = '0';
+    hoursBox.value = course.credits ?? 3;
+    hoursBox.oninput = () => { course.credits = Number(hoursBox.value) || 0; changed(course); refreshTermGpa(); };
+    hours.append(hoursWord, hoursBox);
+
+    const more = document.createElement('button');
+    more.className = 'col-add';
+    more.type = 'button';
+    more.textContent = '+ item';
+    more.onclick = () => {
+      course.items = course.items || [];
+      course.items.push({ id: 'i-' + Math.random().toString(36).slice(2, 8), name: '', weight: 0,
+                          got: null, outOf: 0, due: '', material: '', updatedAt: now(), deleted: false });
+      changed(course);
+      drawItems();
+      tellTheHead();
+      table.querySelector('.asItem:last-of-type .asName')?.focus();
     };
 
     drawItems();
-    return inner;
+    panel.append(table, foot, hours, more);
+    // The foot cannot be filled until the panel knows which card it is in,
+    // and it is not in one yet, so the first filling waits a turn
+    setTimeout(tellTheHead, 0);
+    return panel;
   };
 
   // ============================================================

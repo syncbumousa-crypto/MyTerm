@@ -100,7 +100,9 @@
       }))
     : [];
 
-  // Marks: a name, a weight out of 100, a raw score out of a total, and a date
+  // Marks: a name, a weight out of 100, a raw score out of a total, a date,
+  // and what has to be read or done before it. The same rule as above holds:
+  // a field not named here is dropped on the next read
   const shapeItems = list => Array.isArray(list)
     ? list.filter(i => i && typeof i.name === 'string').map(i => ({
         id: typeof i.id === 'string' ? i.id : 'i-' + Math.random().toString(36).slice(2, 8),
@@ -109,6 +111,7 @@
         got: i.got === null || i.got === undefined || i.got === '' ? null : Number(i.got),
         outOf: Number(i.outOf) || 0,
         due: typeof i.due === 'string' ? i.due : '',
+        material: typeof i.material === 'string' ? i.material : '',
         updatedAt: i.updatedAt ?? null,
         deleted: i.deleted === true
       }))

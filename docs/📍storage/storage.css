@@ -1,0 +1,42 @@
+/* ============================================================ */
+/* # 📍 🎨  THE STORAGE STEPS LOOK */
+/* # 🔤 CSS */
+/* # 🎯 The two bits of text the storage part needs: the line naming */
+/* #    where the file lives, and the framed note shown when the browser */
+/* #    blocks the Google window */
+/* # 🔗 Lives here and not in the shell file because nothing else uses */
+/* #    these two. The shell file holds what every part shares */
+/* ============================================================ */
+.where {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e8e8e8;
+  text-align: center;
+  word-break: break-all;
+}
+
+.hint {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #f2f2f2;
+}
+
+/* ============================================================ */
+/* # 🫥 🪟  HIDE THE GOOGLE WINDOW WHILE TESTING */
+/* # 🔤 CSS */
+/* # 🎯 Keeps the Google file window out of sight while the site opens it */
+/* #    only to find out whether the browser lets it work */
+/* # 🔗 storage.js puts probing on the body before the test and takes it */
+/* #    off after. The three names below are the parts Google draws */
+/* ============================================================ */
+body.probing .picker-dialog,
+body.probing .picker-dialog-bg,
+body.probing .picker-dialog-frame {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

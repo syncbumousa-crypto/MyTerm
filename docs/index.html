@@ -59,7 +59,10 @@
   <p class="who" id="who"></p>
 
   <div class="stack" id="drive-none">
-    <button class="btn btn-main" type="button" id="link-drive">اربط حساب قوقل</button>
+    <p class="where">أين نحفظ ملفك في درايفك؟</p>
+    <button class="btn btn-main" type="button" id="auto-place">خزّنه لي في مجلد MyTerm</button>
+    <button class="btn" type="button" id="pick-place">أختار المكان بنفسي</button>
+    <p class="hint" id="shield-hint" hidden></p>
   </div>
 
   <div class="stack" id="drive-linked" hidden>
@@ -75,15 +78,16 @@
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 Brings in the sign in service and the Google permission library, -->
-<!-- #    then this site's own two files -->
+<!-- # 🎯 Brings in three outside libraries, then this site's own two files: -->
+<!-- #    the sign in service, Google permission, and the Google file window -->
 <!-- # 🔗 Sits at the end of body so the panels above already exist when the -->
 <!-- #    scripts look for them. The libraries come first because the two -->
-<!-- #    site files use them. script.js runs the login, and drive.js -->
-<!-- #    listens for it and then takes over the Google part -->
+<!-- #    site files use them. The third one is only needed by the pick your -->
+<!-- #    own place path, and a strict browser may block the frame it opens -->
 <!-- ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
+<script src="https://apis.google.com/js/api.js"></script>
 <script src="script.js"></script>
 <script src="drive.js"></script>
 

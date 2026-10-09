@@ -518,11 +518,21 @@ body.board-on {
   cursor: pointer;
 }
 
+/* A day worked is green. A day gone by with nothing on it is a plain
+   filled square. A day still ahead is a lighter square with a ring
+   drawn inside it: it must be SEEN — an invisible square reads as no
+   square at all, and the squares ahead are half the news. The ring is
+   an inset shadow, not a border, because a border would add two pixels
+   to a square whose size is fixed and push the whole grid out of line.
+   Only the days outside the term stay unseen, and they are not days. */
 .day.on { background: var(--mOk); }
-.day.miss { background: rgba(255, 255, 255, 0.1); }
-.day.ahead { background: transparent; border: 1px solid rgba(255, 255, 255, 0.2); }
+.day.miss { background: rgba(255, 255, 255, 0.16); }
+.day.ahead {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
+}
 .day.today { outline: 1px solid #ffffff; outline-offset: 1px; }
-.day.pad { background: transparent; cursor: default; }
+.day.pad { background: transparent; box-shadow: none; cursor: default; }
 
 /* ============================================================ */
 /* # 📖 🚪  THE COURSE PAGE */

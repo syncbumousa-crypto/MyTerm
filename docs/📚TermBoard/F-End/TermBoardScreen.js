@@ -86,10 +86,36 @@
       touched();
     };
 
+    // الحذف بضغطتين لا بنافذة سؤال: الأولى تسأل، والثانية تنفّذ، وتعود
+    // إلى حالها إن تركتها. ومجلد المادة في درايفك لا يُمسّ — فيه ملفاتك
+    const drop = document.createElement('button');
+    drop.className = 'col-drop';
+    drop.type = 'button';
+    drop.textContent = '×';
+    drop.title = 'احذف المادة من اللوحة';
+    let asking = null;
+    drop.onclick = () => {
+      if (!asking) {
+        drop.textContent = 'احذف؟';
+        drop.classList.add('asking');
+        asking = setTimeout(() => { drop.textContent = '×'; drop.classList.remove('asking'); asking = null; }, 3000);
+        return;
+      }
+      clearTimeout(asking);
+      course.deleted = true;
+      course.updatedAt = now();
+      touched();
+      drawColumns();
+    };
+
     const body = document.createElement('div');
     body.className = 'col-body';
 
-    column.append(head, body);
+    const top = document.createElement('div');
+    top.className = 'col-top';
+    top.append(head, drop);
+
+    column.append(top, body);
     return column;
   };
 
@@ -200,7 +226,6 @@
   // #    opening the board reads afresh anyway
   // ============================================================
   const hearBell = async () => {
-    if (keep.busy()) return;
     const fresh = await keep.load().catch(() => null);
     if (!fresh) return;
     const typing = document.activeElement;

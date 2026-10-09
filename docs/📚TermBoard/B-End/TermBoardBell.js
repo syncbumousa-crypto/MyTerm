@@ -46,7 +46,9 @@
             payload => {
               const version = Number(payload.new?.board_version || 0);
               if (payload.new?.board_by === me) return;
-              if (version <= lastHeard) return;
+              // يُهمَل الرقم نفسُه لا ما دونه: لو سبق الرقمُ في قاعدة البيانات
+              // رقمَ الملفّ يومًا لَسكت الجرسُ أبدًا، وإعادةُ القراءة لا تضرّ
+              if (version === lastHeard) return;
               lastHeard = version;
               onRing(version);
             })

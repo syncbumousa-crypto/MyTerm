@@ -88,7 +88,46 @@ body.board-on {
   box-sizing: border-box;
 }
 
+/* ============================================================ */
+/* # 🗑️ ✌️  THE HEAD OF A COLUMN, AND ITS REMOVE BUTTON */
+/* # 🔤 CSS */
+/* # 🎯 Puts the name box and the small remove button on one line, and */
+/* #    makes the button plain until it is asked, then clear */
+/* # 🔗 The button stays faint so it is not pressed by accident, and */
+/* #    the asking state widens it with words, so the second press is */
+/* #    plainly a different thing from the first */
+/* ============================================================ */
+.col-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.col-drop {
+  flex: none;
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+}
+
+.col-drop:hover {
+  color: #ffffff;
+}
+
+.col-drop.asking {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffeaea;
+}
+
 .col-name {
+  flex: 1;
+  min-width: 0;
   font: inherit;
   font-size: 1rem;
   font-weight: 600;

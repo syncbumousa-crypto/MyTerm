@@ -81,6 +81,13 @@ body {
   word-break: break-all;
 }
 
+body.probing .picker-dialog,
+body.probing .picker-dialog-bg,
+body.probing .picker-dialog-frame {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 .hint {
   margin: 0;
   padding: 10px 12px;

@@ -87,7 +87,12 @@
       const body = { ...(raw || {}), ...shape(raw), version: Number(raw?.version || 0) + 1, updatedAt: new Date().toISOString() };
       await cloud().writeFile(fileId, body);
       raw = body;
+      // النسخة السريعة تُحدَّث هنا أيضًا لا عند التعديل وحده: الكتابةُ تُضيف
+      // ما لم يكن في يد الشاشة — معرّفات المجلدات — فلو لم تُحدَّث لبقيت
+      // النسخة تقول «لا مجلد» بعد أن صار للمادة مجلد
+      cache.write(shape(body));
       tellStatus('saved');
+      window.MyTermBell?.ring(body.version).catch(() => {});   // اقرع الجرس للأجهزة الأخرى
     } catch (e) {
       dirty = true;
       tellStatus('failed');
@@ -169,6 +174,8 @@
     flush: () => { clearTimeout(timer); return push(); },
 
     version: () => Number(raw?.version || 0),
+
+    busy: () => dirty || sending,
 
     onStatus: fn => { tellStatus = fn; },
 

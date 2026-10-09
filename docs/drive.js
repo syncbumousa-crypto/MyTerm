@@ -281,8 +281,10 @@ async function saveProfile(folderName, fileId) {
 // # 🎯 Walks the user through three steps and shows only one at a time:
 // #    link the Google account, pick where the file lives, then the file
 // # 🔗 Waits for the signed-in message that script.js sends after a good
-// #    login. A visitor who already has a file skips straight to the last
-// #    step, because the place is remembered in the profiles table
+// #    login. A visitor who already has a file opens on the last step,
+// #    because the place is kept in the profiles table, and the change
+// #    place button is the way back to the second step. Without it the
+// #    second step would be reachable only once, ever
 // ============================================================
 const steps = {
   link: document.getElementById('step-link'),
@@ -431,7 +433,21 @@ async function saveTest() {
   }
 }
 
+async function changePlace() {
+  try {
+    if (!googleToken) {
+      driveNote.textContent = 'لحظة…';
+      await askGoogle();
+    }
+    showStep('place');
+    await runProbe();
+  } catch (e) {
+    driveNote.textContent = 'تعذّر الربط: ' + e.message;
+  }
+}
+
 document.getElementById('link-google').onclick = linkGoogle;
+document.getElementById('change-place').onclick = changePlace;
 pickButton.onclick = pickPlace;
 document.getElementById('auto-place').onclick = autoPlace;
 document.getElementById('save-test').onclick = saveTest;

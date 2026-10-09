@@ -14,9 +14,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=47">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=47">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=47">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=48">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=48">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=48">
 </head>
 <body>
 
@@ -104,8 +104,8 @@
 <!-- # 🧱 📚  THE TERM BOARD -->
 <!-- # 🔤 HTML -->
 <!-- # 🎯 The main screen once the saving place is ready: the term dates -->
-<!-- #    at the very top, then its name, a button that adds a course, and -->
-<!-- #    one column for every course added -->
+<!-- #    at the very top, then its name, then the grid of its days, then -->
+<!-- #    the button that adds a course right above the columns it adds to -->
 <!-- # 🔗 The name spot holds three things that take turns: the button -->
 <!-- #    before there is a name, the box while typing, and the title -->
 <!-- #    after. The columns box starts empty and the screen file fills -->
@@ -133,12 +133,12 @@
   <p class="term-score" id="term-score"></p>
   <p class="term-gpa" id="term-gpa"></p>
 
-  <button class="btn" type="button" id="add-course">Add a course</button>
-
   <div class="days" id="days">
     <div class="days-grid" id="days-grid"></div>
     <p class="lede" id="days-line"></p>
   </div>
+  <button class="btn" type="button" id="add-course">Add a course</button>
+
   <div class="columns" id="columns"></div>
   <p class="lede" id="board-empty" hidden>Start with your first course — press "Add a course".</p>
 
@@ -174,7 +174,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v47</p>
+<p class="build">v48</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -197,16 +197,16 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=47"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=47"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=47"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=47"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=47"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=47"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=47"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=47"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=47"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=47"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=48"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=48"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=48"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=48"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=48"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=48"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=48"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=48"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=48"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=48"></script>
 
 </body>
 </html>

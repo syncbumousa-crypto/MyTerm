@@ -356,29 +356,45 @@ function showFile(folderName, fileId) {
   showStep('done');
 }
 
+function tellState(step, note) {
+  const tag = document.getElementById('build-tag');
+  if (!tag) return;
+  tag.textContent =
+    'v15 · token:' + (googleToken ? 'yes' : 'no') +
+    ' · probe:' + (lastProbe() || 'none') +
+    ' · step:' + step +
+    (note ? ' · ' + note : '');
+}
+
 async function onSignedIn() {
   driveNote.textContent = '';
   shieldHint.hidden = true;
 
   googleToken = takeToken();
 
+  let dbNote = 'db:ok';
   try {
     profile = await loadProfile();
   } catch (e) {
     profile = null;
+    dbNote = 'db:fail';
   }
 
   if (profile && profile.drive_file_id) {
     showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
+    tellState('done', dbNote);
     return;
   }
 
   if (!googleToken) {
     showStep('link');
+    tellState('link', dbNote);
     return;
   }
 
   showStep('place');
+  tellState('place', dbNote);
+
   const known = lastProbe();
   if (known === 'open') markOpen();
   else if (known === 'blocked') markBlocked();

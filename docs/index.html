@@ -14,11 +14,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=53">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=53">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=53">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=54">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=54">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=54">
 </head>
 <body>
+
+<!-- ============================================================ -->
+<!-- # 🙂 📌  THE CORNER: A FACE AND A TICK -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 Pinned to the top corner above every screen: the tick that -->
+<!-- #    says the work reached Drive, and the round face that opens -->
+<!-- #    the account and the saving place -->
+<!-- # 🔗 Hidden until somebody is logged in, because before that there -->
+<!-- #    is no account to show and nothing on its way to anywhere -->
+<!-- ============================================================ -->
+<div class="hud" id="hud" hidden>
+  <span class="hud-sync" id="hud-sync" title="Saved to your Drive">✓</span>
+  <button class="hud-face" id="hud-face" type="button"></button>
+</div>
 
 <!-- ============================================================ -->
 <!-- # 👆 🔘  PICK WHAT TO DO -->
@@ -144,11 +158,8 @@
   <div class="columns" id="columns"></div>
   <p class="lede" id="board-empty" hidden>Start with your first course — press "Add a course".</p>
 
-  <p class="save-state" id="save-state"></p>
-
   <button class="btn" type="button" id="renew-access" hidden>Renew access to your Drive</button>
 
-  <button class="btn btn-flat board-foot" type="button" id="board-more">Storage and account</button>
 </div>
 
 <!-- ============================================================ -->
@@ -176,7 +187,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v53</p>
+<p class="build">v54</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -199,16 +210,17 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=53"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=53"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=53"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=53"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=53"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=53"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=53"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=53"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=53"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=53"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=54"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=54"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=54"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=54"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=54"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=54"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=54"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=54"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=54"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=54"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=54"></script>
 
 </body>
 </html>

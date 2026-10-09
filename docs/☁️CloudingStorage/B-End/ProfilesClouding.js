@@ -25,12 +25,49 @@
     clear: () => { try { localStorage.removeItem(MEMO); } catch {} }
   };
 
-  const askGoogle = () => new Promise((ok, fail) =>
-    google.accounts.oauth2.initTokenClient({
+  // ============================================================
+  // # 🔄 🤫  ASKING AGAIN, QUIETLY
+  // # 🔤 JavaScript
+  // # 🎯 Google's permission lasts about an hour. This asks for a fresh
+  // #    one. Called with no prompt it opens Google's window; called
+  // #    with an empty prompt it asks for no window at all, which works
+  // #    when the user already said yes once before
+  // # 🔗 The quiet way is tried first by the Drive helper below, so a
+  // #    permission that ran out while the page sat open heals itself
+  // #    with nothing for the user to press. It is given a short rope:
+  // #    a browser that blocks Google cookies can leave the quiet ask
+  // #    hanging with no answer at all, and a hang is worse than a no,
+  // #    so after a few seconds it counts as a no and the button shows
+  // ============================================================
+  const SILENT_WAIT = 4000;
+
+  const askGoogle = prompt => new Promise((ok, fail) => {
+    let over = false;
+    const once = fn => value => { if (!over) { over = true; clearTimeout(timer); fn(value); } };
+    const good = once(ok), bad = once(fail);
+
+    const config = {
       client_id: CLIENT_ID, scope: SCOPE,
-      callback: a => a.error ? fail(new Error(a.error))
-        : (token = a.access_token, store.save(token, a.expires_in), ok())
-    }).requestAccessToken());
+      callback: a => a.error ? bad(new Error(a.error))
+        : (token = a.access_token, store.save(token, a.expires_in), good()),
+      error_callback: e => bad(new Error(e?.type || 'google window failed'))
+    };
+    if (prompt !== undefined) config.prompt = prompt;
+
+    const timer = prompt === '' ? setTimeout(() => bad(new Error('silent ask timed out')), SILENT_WAIT) : null;
+    google.accounts.oauth2.initTokenClient(config).requestAccessToken();
+  });
+
+  // One quiet ask at a time: five Drive calls failing together must not
+  // open five asks. They all wait on the same one and share its answer
+  let quietAsk = null;
+  const renewQuietly = () => {
+    if (!quietAsk) {
+      quietAsk = askGoogle('').then(() => true, () => false);
+      quietAsk.then(() => { quietAsk = null; });
+    }
+    return quietAsk;
+  };
 
   // ============================================================
   // # 📡 🗄️  TALKING TO DRIVE
@@ -46,8 +83,18 @@
   const DRIVE = 'https://www.googleapis.com/drive/v3/files';
   const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 
-  const drive = (url, opts = {}) =>
+  const send = (url, opts) =>
     fetch(url, { ...opts, headers: { Authorization: `Bearer ${token}`, ...opts.headers } });
+
+  // Every call goes through here, so every call heals the same way: a
+  // 401 means the permission ran out, and the only honest answer is to
+  // ask for a new one and send the very same call again. Once, not in a
+  // loop: if the quiet ask fails the first time it will fail the second
+  const drive = async (url, opts = {}) => {
+    const first = await send(url, opts);
+    if (first.status !== 401) return first;
+    return (await renewQuietly()) ? send(url, opts) : first;
+  };
 
   const json = (method, body) =>
     ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body, null, 2) });

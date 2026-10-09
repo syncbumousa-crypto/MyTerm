@@ -221,7 +221,9 @@
       if (list.length) {
         const finished = document.createElement('b');
         finished.textContent = done;
-        count.append(finished, document.createTextNode(` of ${list.length} chapters`));
+        count.append(finished, document.createTextNode(` of ${list.length} · `),
+                     hoursPair(list.reduce((s, h) => s + h.doneMinutes, 0),
+                               list.reduce((s, h) => s + h.minutes, 0)));
       } else {
         count.textContent = 'no chapters yet';
       }
@@ -480,25 +482,176 @@
   // ============================================================
   const alive = course => (course.chapters || []).filter(h => !h.deleted);
 
+  // ============================================================
+  // # 📂 🔎  WHAT IS BEHIND A CHAPTER'S ARROW
+  // # 🔤 JavaScript
+  // # 🎯 The things that do not fit on one line: how long the chapter is
+  // #    meant to take, how much of it is done, whether it is finished,
+  // #    and the way to remove it
+  // # 🔗 Hours are typed in hours and kept in minutes, so half an hour
+  // #    can be said as 0.5 and nothing is lost to rounding. Removing
+  // #    lives here and not on the line: a line this narrow cannot hold
+  // #    it, and a thing that cannot be undone is better one press away
+  // ============================================================
+  const chapterDetail = (course, ch, redraw) => {
+    const box = document.createElement('div');
+    box.className = 'ch-detail';
+
+    const numberLine = (label, minutes, write) => {
+      const line = document.createElement('div');
+      line.className = 'dline';
+      const key = document.createElement('span');
+      key.className = 'dk';
+      key.textContent = label;
+      const field = document.createElement('input');
+      field.className = 'dnum';
+      field.type = 'number';
+      field.min = '0';
+      field.step = '0.5';
+      field.value = minutes ? Math.round((minutes / 60) * 100) / 100 : '';
+      field.placeholder = '0';
+      field.title = label + ', in hours';
+      field.oninput = () => {
+        write(Math.max(0, Math.round((Number(field.value) || 0) * 60)));
+        ch.updatedAt = now();
+        changed(course);
+        paintRow();
+      };
+      const unit = document.createElement('span');
+      unit.className = 'dunit';
+      unit.textContent = 'h';
+      line.append(key, field, unit);
+      return line;
+    };
+
+    const bar = document.createElement('div');
+    bar.className = 'dbar';
+    const fill = document.createElement('i');
+    bar.append(fill);
+
+    const mark = document.createElement('button');
+    mark.className = 'dtog';
+    mark.type = 'button';
+
+    // Redrawing the whole card on every keystroke would take the cursor
+    // out of the box being typed in, so what changed is painted in place
+    // and the full redraw is kept for what adds or removes a row
+    const paintRow = () => {
+      const row = box.parentElement;
+      fill.style.width = coverOf(ch) + '%';
+      mark.textContent = ch.done ? '✓ finished' : 'mark finished';
+      mark.classList.toggle('on', ch.done);
+      if (!row) return;
+      row.classList.toggle('done', ch.done);
+      row.querySelector('.ch-hours')?.replaceWith(hoursPair(ch.doneMinutes, ch.minutes));
+      row.querySelector('.trio')?.replaceWith(chapterReading(ch));
+      refreshScores();
+    };
+
+    mark.onclick = () => {
+      ch.done = !ch.done;
+      ch.updatedAt = now();
+      changed(course);
+      paintRow();
+    };
+
+    const off = document.createElement('button');
+    off.className = 'ch-off';
+    off.type = 'button';
+    off.textContent = 'remove chapter';
+    off.onclick = () => {
+      ch.deleted = true;
+      ch.updatedAt = now();
+      changed(course);
+      redraw();
+    };
+
+    box.append(
+      numberLine('How long it takes', ch.minutes, v => { ch.minutes = v; }),
+      numberLine('Done of it', ch.doneMinutes, v => { ch.doneMinutes = v; }),
+      bar,
+      mark,
+      off
+    );
+    paintRow();
+    return box;
+  };
+
+  // ============================================================
+  // # ⏱️ 🔤  HOURS, WRITTEN THE WAY THEY ARE READ
+  // # 🔤 JavaScript
+  // # 🎯 Turns a count of minutes into the shortest true thing to say
+  // #    about it, and builds the pair "what is done of what there is"
+  // # 🔗 Green for what is finished and orange for what is left, in
+  // #    every place hours appear, so the two colours never have to be
+  // #    learned twice. Nothing is rounded up: forty minutes is 40m,
+  // #    not "about an hour", because the number is there to be trusted
+  // ============================================================
+  const fmtHours = minutes => {
+    const m = Math.max(0, Math.round(minutes || 0));
+    if (m === 0) return '0h';
+    if (m < 60) return m + 'm';
+    const h = Math.floor(m / 60), rest = m % 60;
+    return h + 'h' + (rest ? rest + 'm' : '');
+  };
+
+  const hoursPair = (doneMin, totalMin) => {
+    const box = document.createElement('span');
+    box.className = 'ch-hours';
+    const done = document.createElement('span');
+    done.className = 'hDone';
+    done.textContent = fmtHours(doneMin);
+    const sep = document.createElement('span');
+    sep.className = 'hSep';
+    sep.textContent = ' / ';
+    const left = document.createElement('span');
+    left.className = 'hLeft';
+    left.textContent = fmtHours(totalMin);
+    box.append(done, sep, left);
+    box.title = `${fmtHours(doneMin)} done of ${fmtHours(totalMin)}`;
+    return box;
+  };
+
+  // How full the bar is. While no hours are set anywhere the tick is all
+  // there is to go on, so it answers; once a length is given the time
+  // answers instead. Without the fallback the bar would sit empty for
+  // everybody who has not yet decided how long anything takes
+  const coverOf = ch => ch.minutes > 0
+    ? Math.min(100, Math.round((ch.doneMinutes / ch.minutes) * 100))
+    : (ch.done ? 100 : 0);
+
+  const chapterReading = ch => window.MyTermShapes.draw('sm', {
+    ready: ch.name.trim() !== '' ? 100 : 0,
+    readyTip: ch.name.trim() !== '' ? 'Named and ready' : 'Not named yet',
+    done: coverOf(ch),
+    doneTip: ch.minutes > 0
+      ? `${fmtHours(ch.doneMinutes)} of ${fmtHours(ch.minutes)}`
+      : (ch.done ? 'Finished' : 'Not finished yet'),
+    marks: { ok: 0, bad: 0, unknown: 0 },
+    marksTip: 'Nothing is judged chapter by chapter yet'
+  });
+
+  // Which rows are open. It lives for as long as the page does and no
+  // longer: a detail left open is a thing this reader is doing now, not
+  // a thing about the term, so it has no business in Drive
+  const openRows = new Set();
+
   const drawChapters = (course, body) => {
     body.textContent = '';
     alive(course).forEach((ch, index) => {
       const row = document.createElement('div');
-      row.className = 'ch' + (ch.done ? ' done' : '');
+      row.className = 'ch' + (ch.done ? ' done' : '') + (openRows.has(ch.id) ? ' open' : '');
 
-      // The square is a vessel that fills, with no tick drawn in it:
-      // the fill is the reading, and a mark on top of a full square is
-      // the same thing said twice
-      const mark = document.createElement('button');
-      mark.className = 'ch-mark' + (ch.done ? ' done' : '');
-      mark.type = 'button';
-      mark.title = ch.done ? 'Finished' : 'Not finished yet';
-      mark.onclick = () => {
-        ch.done = !ch.done;
-        ch.updatedAt = now();
-        changed(course);
-        drawChapters(course, body);
-        refreshScores();
+      // The arrow is the only way in and the only way out, so what is
+      // behind it is reachable and nothing on the line is spent on it
+      const twist = document.createElement('button');
+      twist.className = 'ch-twist';
+      twist.type = 'button';
+      twist.textContent = '▸';
+      twist.title = 'What is in this chapter';
+      twist.onclick = () => {
+        row.classList.contains('open') ? openRows.delete(ch.id) : openRows.add(ch.id);
+        row.classList.toggle('open');
       };
 
       // Its place in the course, in a column of its own, so the names
@@ -513,20 +666,10 @@
       name.placeholder = 'Chapter name';
       name.oninput = () => { ch.name = name.value; ch.updatedAt = now(); changed(course); };
 
-      const off = document.createElement('button');
-      off.className = 'ch-off';
-      off.type = 'button';
-      off.textContent = '×';
-      off.title = 'Remove chapter';
-      off.onclick = () => {
-        ch.deleted = true;
-        ch.updatedAt = now();
-        changed(course);
-        drawChapters(course, body);
-        refreshScores();
-      };
+      const redraw = () => { drawChapters(course, body); refreshScores(); };
 
-      row.append(mark, no, name, off);
+      row.append(twist, no, name, hoursPair(ch.doneMinutes, ch.minutes), chapterReading(ch),
+                 chapterDetail(course, ch, redraw));
       body.append(row);
     });
 
@@ -536,7 +679,7 @@
     add.textContent = '+ chapter';
     add.onclick = () => {
       course.chapters = course.chapters || [];
-      course.chapters.push({ id: newChapterId(), name: 'Chapter ' + arabic(alive(course).length + 1), done: false, updatedAt: now(), deleted: false });
+      course.chapters.push({ id: newChapterId(), name: 'Chapter ' + arabic(alive(course).length + 1), done: false, minutes: 0, doneMinutes: 0, updatedAt: now(), deleted: false });
       changed(course);
       drawChapters(course, body);
       refreshScores();
@@ -570,9 +713,9 @@
   // nothing about where the new course would land
   const drawColumns = () => {
     columns.textContent = '';
-    columns.append(addBtn);
     const here = living();
     here.forEach(course => columns.append(makeColumn(course)));
+    columns.append(addBtn);
     empty.hidden = here.length > 0;
     refreshScores();
   };

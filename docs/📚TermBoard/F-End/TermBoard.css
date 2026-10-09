@@ -128,9 +128,10 @@ body.board-on {
 /* #    own press, so the name is still edited where it is read */
 /* ============================================================ */
 .col-top {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 9px 10px;
   background: var(--panel2);
   cursor: pointer;
@@ -236,20 +237,41 @@ body.board-on {
 
 .col-top .trio { flex: 0 0 92px; min-width: 0; margin-inline-start: 2px; }
 
+/* Opening the course and removing it are rare next to reading the card,
+   so they are not given a share of a line that is already short: they
+   lie over its end and come out when the card is pointed at. They were
+   in the row, and between them they took enough of it that every course
+   name was cut to four letters and an ellipsis */
+.col-icons {
+  position: absolute;
+  inset-inline-end: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
+  padding-inline-start: 10px;
+  opacity: 0;
+  transition: opacity .12s ease;
+  background: linear-gradient(to right, transparent, var(--panel2) 10px);
+}
+
+.col:hover .col-icons,
+.col-icons:focus-within { opacity: 1; }
+
 .col-icon {
   flex: none;
-  padding: 2px 3px;
+  padding: 2px 4px;
   font: inherit;
   font-size: 11px;
   line-height: 1;
   border: 0;
   border-radius: 4px;
-  background: transparent;
-  color: var(--dim2);
+  background: #2e2f36;
+  color: var(--dim);
   cursor: pointer;
 }
 
-.col-icon:hover { color: #ffffff; background: #32333b; }
+.col-icon:hover { color: #ffffff; background: #42434c; }
 .col-icon.asking { background: #31323a; color: var(--orange); font-size: 9px; }
 
 /* ============================================================ */

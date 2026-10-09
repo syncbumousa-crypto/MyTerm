@@ -27,14 +27,9 @@ let pickerReady = false;
 // #    visitor knows why one of the two buttons below may not work, and
 // #    what to turn off if they want it
 // ============================================================
-const BRAVE_TEXT =
-  'متصفّحك Brave يمنع نافذة قوقل لاختيار المكان. ' +
-  'لتستعملها: انقر أيقونة الأسد في شريط العنوان، وأنزل Shields لهذا الموقع، ثم حدّث الصفحة. ' +
-  'أو اختر «خزّنه لي» وانقل المجلد في درايفك بعدها كيف شئت.';
-
 const BLOCKED_TEXT =
-  'إن طلبت منك نافذة قوقل تسجيل الدخول ولم تُظهر مجلّداتك، فمتصفّحك يمنع ملفّات الارتباط الخارجيّة. ' +
-  'اسمح بها لهذا الموقع، أو اختر «خزّنه لي».';
+  'لا يمكنك اختيار المكان بنفسك، متصفّحك يحجب خدمة كوكيز قوقل. ' +
+  'اسمح بها لهذا الموقع ثم حدّث الصفحة، أو خزّنه في مجلد My Term وانقله في درايفك بعدها كيف شئت.';
 
 async function isStrictBrowser() {
   try {
@@ -207,15 +202,21 @@ async function saveProfile(folderName, fileId) {
 }
 
 // ============================================================
-// # 🖥️ 🔄  THE DRIVE PART OF THE LOGGED IN PANEL
+// # 🪜 🖥️  THE THREE STEPS IN THE PANEL
 // # 🔤 JavaScript
-// # 🎯 Offers the two ways, runs whichever the user picks, then shows the
-// #    file they ended up with and saves a test line into it
+// # 🎯 Walks the user through three steps and shows only one at a time:
+// #    link the Google account, pick where the file lives, then the file
 // # 🔗 Waits for the signed-in message that script.js sends after a good
-// #    login, and clears itself on the signed-out message
+// #    login. A visitor who already has a file skips straight to the last
+// #    step, because the place is remembered in the profiles table
 // ============================================================
-const driveNone = document.getElementById('drive-none');
-const driveLinked = document.getElementById('drive-linked');
+const steps = {
+  link: document.getElementById('step-link'),
+  place: document.getElementById('step-place'),
+  done: document.getElementById('step-done')
+};
+
+const pickButton = document.getElementById('pick-place');
 const driveWhere = document.getElementById('drive-where');
 const driveOpen = document.getElementById('drive-open');
 const driveNote = document.getElementById('drive-note');
@@ -223,31 +224,48 @@ const shieldHint = document.getElementById('shield-hint');
 
 let profile = null;
 
-function showDrive(linked) {
-  driveNone.hidden = linked;
-  driveLinked.hidden = !linked;
+function showStep(name) {
+  Object.keys(steps).forEach(function (key) {
+    steps[key].hidden = key !== name;
+  });
 }
 
-function showHint(text) {
-  shieldHint.textContent = text;
+function showHint() {
+  shieldHint.textContent = BLOCKED_TEXT;
   shieldHint.hidden = false;
 }
 
-function showPlace(folderName, fileId) {
+function showFile(folderName, fileId) {
   driveWhere.textContent = 'ملفك في مجلد: ' + folderName;
   driveOpen.href = 'https://drive.google.com/file/d/' + fileId + '/view';
-  showDrive(true);
+  showStep('done');
 }
 
 async function onSignedIn() {
   driveNote.textContent = '';
+  shieldHint.hidden = true;
   profile = await loadProfile();
   if (profile && profile.drive_file_id) {
-    showPlace(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
-    return;
+    showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
+  } else {
+    showStep('link');
   }
-  showDrive(false);
-  if (await isStrictBrowser()) showHint(BRAVE_TEXT);
+}
+
+async function linkGoogle() {
+  try {
+    driveNote.textContent = 'لحظة…';
+    await askGoogle();
+    driveNote.textContent = '';
+
+    if (await isStrictBrowser()) {
+      pickButton.disabled = true;
+      showHint();
+    }
+    showStep('place');
+  } catch (e) {
+    driveNote.textContent = 'تعذّر الربط: ' + e.message;
+  }
 }
 
 async function finish(folder) {
@@ -259,36 +277,34 @@ async function finish(folder) {
   });
   await saveProfile(folder.name, fileId);
   profile = { drive_folder_name: folder.name, drive_file_id: fileId };
-  showPlace(folder.name, fileId);
-  driveNote.textContent = 'تم الربط. انقل المجلد في درايفك حيث شئت، والرابط يبقى.';
+  showFile(folder.name, fileId);
+  driveNote.textContent = 'تم. انقل المجلد في درايفك حيث شئت، والرابط يبقى.';
 }
 
 async function autoPlace() {
   try {
-    driveNote.textContent = 'لحظة…';
-    await askGoogle();
     driveNote.textContent = 'نجهّز المجلد…';
     await finish(await findOrMakeFolder());
   } catch (e) {
-    driveNote.textContent = 'تعذّر الربط: ' + e.message;
+    driveNote.textContent = 'تعذّر الحفظ: ' + e.message;
   }
 }
 
 async function pickPlace() {
   try {
-    driveNote.textContent = 'لحظة…';
-    await askGoogle();
     driveNote.textContent = 'تُفتح نافذة قوقل…';
     const folder = await pickFolder();
     if (!folder) {
-      driveNote.textContent = 'لم تختر مكانًا.';
-      showHint(BLOCKED_TEXT);
+      driveNote.textContent = '';
+      pickButton.disabled = true;
+      showHint();
       return;
     }
     await finish(folder);
   } catch (e) {
-    driveNote.textContent = 'تعذّر الاختيار: ' + e.message;
-    showHint(BLOCKED_TEXT);
+    driveNote.textContent = '';
+    pickButton.disabled = true;
+    showHint();
   }
 }
 
@@ -308,8 +324,9 @@ async function saveTest() {
   }
 }
 
+document.getElementById('link-google').onclick = linkGoogle;
+pickButton.onclick = pickPlace;
 document.getElementById('auto-place').onclick = autoPlace;
-document.getElementById('pick-place').onclick = pickPlace;
 document.getElementById('save-test').onclick = saveTest;
 
 document.addEventListener('signed-in', onSignedIn);
@@ -318,5 +335,6 @@ document.addEventListener('signed-out', function () {
   profile = null;
   driveNote.textContent = '';
   shieldHint.hidden = true;
-  showDrive(false);
+  pickButton.disabled = false;
+  showStep('link');
 });

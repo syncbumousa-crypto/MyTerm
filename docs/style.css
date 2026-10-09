@@ -131,7 +131,7 @@ body {
   cursor: pointer;
 }
 
-.btn:hover {
+.btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.14);
 }
 
@@ -146,7 +146,7 @@ body {
   font-weight: 600;
 }
 
-.btn-main:hover {
+.btn-main:hover:not(:disabled) {
   background: #f0f0f0;
 }
 

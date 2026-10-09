@@ -16,7 +16,7 @@
   const setBtn = $('term-set'), nameBox = $('term-input'), title = $('term-title');
   const columns = $('columns'), addBtn = $('add-course'), moreBtn = $('board-more');
   const state = $('save-state'), renewBtn = $('renew-access'), empty = $('board-empty');
-  const termScore = $('term-score'), termGpa = $('term-gpa');
+  const termScore = $('term-score'), termGpa = $('term-gpa'), statsBox = $('stats');
 
   const arabic = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
   const now = () => new Date().toISOString();
@@ -111,9 +111,17 @@
       drawColumns();
     };
 
+    // زرُّ الفتح: صفحةٌ للمادة وحدها، فيها فصولُها بعرضٍ يَسَعُ أسماءها
+    const open = document.createElement('button');
+    open.className = 'col-open';
+    open.type = 'button';
+    open.textContent = '⤢';
+    open.title = 'افتح صفحة المادة';
+    open.onclick = () => window.MyTermCoursePage?.open(course.id);
+
     const top = document.createElement('div');
     top.className = 'col-top';
-    top.append(head, drop);
+    top.append(open, head, drop);
 
     const body = document.createElement('div');
     body.className = 'col-body';
@@ -300,12 +308,66 @@
     return wrap;
   };
 
+  // ============================================================
+  // # 📊 🧮  THE STATISTICS
+  // # 🔤 JavaScript
+  // # 🎯 Six numbers about the term as a whole, each one counted from
+  // #    what is on the board — never typed in, never guessed
+  // # 🔗 A number with nothing behind it is left out rather than shown
+  // #    as a zero: no graded item means no standing, not a standing of
+  // #    nothing. The pace compares what is finished against how much
+  // #    of the term has gone, which is the only honest "are you behind"
+  // ============================================================
+  const stats = () => {
+    const courses = living();
+    const chapters = courses.flatMap(c => alive(c));
+    const done = chapters.filter(h => h.done).length;
+    const d = window.MyTermDaysReading;
+
+    const rows = [];
+    rows.push(['المواد', arabic(courses.length)]);
+    rows.push(['الفصول', chapters.length ? `${arabic(done)} من ${arabic(chapters.length)}` : '—']);
+    rows.push(['الاكتمال', chapters.length ? arabic(Math.round((done / chapters.length) * 100)) + '٪' : '—']);
+
+    if (d && d.all) {
+      rows.push(['من الترم مضى', arabic(Math.round((d.past / d.all) * 100)) + '٪']);
+      rows.push(['أيام أنجزتها', `${arabic(d.done)} من ${arabic(d.past)}`]);
+      if (chapters.length) {
+        const ahead = Math.round((done / chapters.length) * 100) - Math.round((d.past / d.all) * 100);
+        rows.push(['إيقاعك', ahead >= 0 ? `متقدّم ${arabic(ahead)}٪` : `متأخّر ${arabic(-ahead)}٪`]);
+      }
+    }
+
+    const graded = courses.map(c => ({ s: standingOf(c), h: Number(c.credits) || 0 })).filter(x => x.s && x.h > 0);
+    if (graded.length) {
+      const hours = graded.reduce((s, x) => s + x.h, 0);
+      const pts = graded.reduce((s, x) => s + x.s.points * x.h, 0);
+      rows.push(['المعدّل الآن', arabic((pts / hours).toFixed(2)) + ' من ٤']);
+    }
+    return rows;
+  };
+
+  const drawStats = () => {
+    statsBox.textContent = '';
+    stats().forEach(([label, value]) => {
+      const cell = document.createElement('div');
+      cell.className = 'stat';
+      const v = document.createElement('b');
+      v.textContent = value;
+      const l = document.createElement('span');
+      l.textContent = label;
+      cell.append(v, l);
+      statsBox.append(cell);
+    });
+  };
+
   const refreshTermGpa = () => {
     const graded = living().map(c => ({ s: standingOf(c), credits: Number(c.credits) || 0 })).filter(x => x.s && x.credits > 0);
     if (!graded.length) { termGpa.textContent = ''; return; }
     const hours = graded.reduce((s, x) => s + x.credits, 0);
     const points = graded.reduce((s, x) => s + x.s.points * x.credits, 0);
     termGpa.textContent = `معدّل الترم ${arabic((points / hours).toFixed(2))} من ٤ · ${arabic(hours)} ساعات`;
+    drawStats();
   };
 
   // ============================================================
@@ -443,6 +505,7 @@
     showName();
     drawColumns();
     window.MyTermDays?.show(data);
+    drawStats();
   };
 
   const openBoard = async event => {
@@ -520,6 +583,10 @@
   document.addEventListener('place-ready', openBoard);
   document.addEventListener('place-needed', () => { leaveBoard(); backBtn.hidden = true; keep.detach(); });
   document.addEventListener('signed-out', () => { leaveBoard(); backBtn.hidden = true; keep.detach(); });
+
+  // ما تحتاجه صفحة المادة من هذه الشاشة: قراءةُ الأشكال، وإعادةُ الرسم عند الرجوع
+  window.MyTermBoardReading = readingOf;
+  window.MyTermBoardRedraw = () => { data = keep.board() || data; paint(); };
 
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') keep.flush(); });
   window.addEventListener('pagehide', () => keep.flush());

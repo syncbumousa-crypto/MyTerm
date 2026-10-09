@@ -483,8 +483,9 @@
       const s = course && scoreOf(course);
       if (line) line.textContent = s ? `${s.done} of ${s.total} · ${s.pct}%` : '';
     });
-    const all = living().flatMap(c => alive(c));
-    const done = all.filter(h => h.done).length;
+      // The term reads itself again from the courses: its three shapes
+      // and its lines are counted, never stored, so they cannot lag
+      drawTermShape();
   };
 
   const drawColumns = () => {

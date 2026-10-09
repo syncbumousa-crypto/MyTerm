@@ -136,6 +136,7 @@
       course.chapters.push({ id: newChapterId(), name: 'Chapter ' + arabic(alive(course).length + 1), done: false, updatedAt: now(), deleted: false });
       changed(course);
       drawChapters(course, body);
+      refreshScores();
       const fresh = body.lastElementChild?.querySelector('.ch-name');
       fresh?.focus();
       fresh?.select();

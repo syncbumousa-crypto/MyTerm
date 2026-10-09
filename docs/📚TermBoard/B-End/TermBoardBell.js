@@ -7,20 +7,15 @@
 // #    device can know there is something new to read
 // # 🔗 The data itself stays in the user's Drive. The database carries
 // #    the news, not the news item: one number, who rang it, and when.
-// #    Each device makes itself a name once and keeps it, so a device
-// #    can tell its own ring from somebody else's and ignore its own
+// #    The name is made fresh for every open page and never kept: its
+// #    whole job is to let a page ignore the ring it rang itself. Keep
+// #    it in the browser instead and two tabs on one machine carry the
+// #    same name, so each ignores the other and neither ever updates
 // ============================================================
 (() => {
-  const WHO = 'myterm.device';
   const db = () => window.MyTermAuth.db;
 
-  const me = (() => {
-    try {
-      let name = localStorage.getItem(WHO);
-      if (!name) { name = 'd-' + Math.random().toString(36).slice(2, 10); localStorage.setItem(WHO, name); }
-      return name;
-    } catch { return 'd-' + Math.random().toString(36).slice(2, 10); }
-  })();
+  const me = 'p-' + Math.random().toString(36).slice(2, 10);
 
   let channel = null, lastHeard = 0;
 

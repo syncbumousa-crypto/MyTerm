@@ -31,8 +31,9 @@
 /* # 🔤 CSS */
 /* # 🎯 Keeps the Google file window out of sight while the site opens it */
 /* #    only to find out whether the browser lets it work */
-/* # 🔗 storage.js puts probing on the body before the test and takes it */
-/* #    off after. The three names below are the parts Google draws */
+/* # 🔗 ProfilesClouding.js puts probing on the body before the test and */
+/* #    takes it off after. The three names below are the parts Google */
+/* #    draws */
 /* ============================================================ */
 body.probing .picker-dialog,
 body.probing .picker-dialog-bg,

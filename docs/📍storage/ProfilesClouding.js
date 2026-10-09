@@ -175,9 +175,9 @@ const forgetPlace = async () => {
 // # 🔤 JavaScript
 // # 🎯 Shows one step at a time: link the account, pick the place, then
 // #    the finished file. And runs what each button does
-// # 🔗 Waits for the signed-in message script.js sends, and also reads the
-// #    flag it sets, because that message can go out before this file is
-// #    here to hear it. All steps start hidden behind a turning circle,
+// # 🔗 Waits for the signed-in message ProfilesSupabase.js sends, and also
+// #    reads the flag it sets, because that message can go out before this
+// #    file is here to hear it. All steps start hidden behind a circle,
 // #    since picking the right one needs answers from two services
 // ============================================================
 const $ = id => document.getElementById(id);

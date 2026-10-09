@@ -18,7 +18,7 @@ const db = supabase.createClient(SERVICE_URL, PUBLIC_KEY);
 // # 🎯 Picks up the three panels and the form parts from the page,
 // #    and switches which panel is on screen
 // # 🔗 The names match the id values in index.html. One panel shows at a
-// #    time, and the hidden rule in style.css is what makes it disappear
+// #    time, and the hidden rule in shell.css is what makes it disappear
 // ============================================================
 const panels = {
   choice: document.getElementById('choice'),
@@ -101,9 +101,9 @@ panels.form.onsubmit = async function (event) {
 // # 🔗 The service keeps the login token in the browser, so the visitor
 // #    stays logged in after a refresh. The check at the end decides
 // #    which panel the page opens with. It both sets a flag and sends a
-// #    message, because this file runs before drive.js: a message sent
-// #    too early is heard by nobody and is gone, while a flag can still
-// #    be read by drive.js when it loads a moment later
+// #    message, because this file runs before ProfilesClouding.js: a
+// #    message sent too early is heard by nobody and is gone, while a
+// #    flag can still be read by that file when it loads a moment later
 // ============================================================
 function openSession(email) {
   who.textContent = 'مرحبًا، ' + email;

@@ -18,16 +18,14 @@ let googleToken = null;
 let pickerReady = false;
 
 // ============================================================
-// # 🙋 📣  ASK THE VISITOR, THEN REMEMBER
+// # 📣 🧠  THE MESSAGE, AND WHAT THE LAST TEST FOUND
 // # 🔤 JavaScript
-// # 🎯 Keeps the message about blocking, and remembers in this browser
-// #    whether the Google window was blocked for this visitor before
-// # 🔗 A page cannot find this out on its own. Brave does not support
+// # 🎯 Keeps the line shown when Google is blocked, and remembers in this
+// #    browser what the hidden test found last time
+// # 🔗 None of the usual checks work. Brave does not support
 // #    hasStorageAccess, cookieEnabled still says true, and writing a
-// #    cookie still works, so every check lies. The only sure test needs a
-// #    second domain to embed, which this site does not have. So the site
-// #    asks the visitor once, after the window closes with nothing picked,
-// #    and keeps the answer so it never has to ask again
+// #    cookie still works, so every one of them lies. So the site runs a
+// #    real test instead, further down, and keeps the answer here
 // ============================================================
 const BLOCKED_TEXT =
   'لا يمكنك اختيار المكان بنفسك، متصفّحك يحجب كوكيز قوقل. ' +
@@ -117,19 +115,21 @@ function loadPicker() {
   });
 }
 
+function folderView() {
+  return new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+    .setIncludeFolders(true)
+    .setSelectFolderEnabled(true)
+    .setMimeTypes(FOLDER_TYPE);
+}
+
 async function pickFolder() {
   await loadPicker();
   return new Promise(function (done) {
-    const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
-      .setIncludeFolders(true)
-      .setSelectFolderEnabled(true)
-      .setMimeTypes(FOLDER_TYPE);
-
     new google.picker.PickerBuilder()
       .setOAuthToken(googleToken)
       .setDeveloperKey(GOOGLE_API_KEY)
       .setOrigin(window.location.protocol + '//' + window.location.host)
-      .addView(view)
+      .addView(folderView())
       .setCallback(function (result) {
         if (result.action === google.picker.Action.PICKED) {
           done({ id: result.docs[0].id, name: result.docs[0].name });
@@ -139,6 +139,56 @@ async function pickFolder() {
       })
       .build()
       .setVisible(true);
+  });
+}
+
+// ============================================================
+// # 🧪 🫥  TRY THE GOOGLE WINDOW WITHOUT SHOWING IT
+// # 🔤 JavaScript
+// # 🎯 Opens the Google file window hidden, waits a few seconds for it to
+// #    report that it drew itself, then closes it and says yes or no
+// # 🔗 This is the one honest test. The window only reports loaded after it
+// #    builds its own screen. When a browser blocks Google cookies it goes
+// #    to a sign in page instead and never reports anything, so silence is
+// #    the answer. The style file hides it while the body carries probing
+// ============================================================
+const PROBE_WAIT = 6000;
+
+async function probePicker() {
+  await loadPicker();
+  return new Promise(function (done) {
+    let picker = null;
+    let settled = false;
+
+    function stop(works) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try { if (picker) picker.setVisible(false); } catch (e) { /* already gone */ }
+      document.body.classList.remove('probing');
+      done(works);
+    }
+
+    const timer = setTimeout(function () { stop(false); }, PROBE_WAIT);
+
+    document.body.classList.add('probing');
+    picker = new google.picker.PickerBuilder()
+      .setOAuthToken(googleToken)
+      .setDeveloperKey(GOOGLE_API_KEY)
+      .setOrigin(window.location.protocol + '//' + window.location.host)
+      .addView(folderView())
+      .setCallback(function (result) {
+        const loaded = (google.picker.Action && google.picker.Action.LOADED) || 'loaded';
+        if (result.action === loaded) stop(true);
+        else if (result.action === google.picker.Action.CANCEL) stop(false);
+      })
+      .build();
+
+    try {
+      picker.setVisible(true);
+    } catch (e) {
+      stop(false);
+    }
   });
 }
 
@@ -230,7 +280,6 @@ const steps = {
 };
 
 const pickButton = document.getElementById('pick-place');
-const askResult = document.getElementById('ask-result');
 const driveWhere = document.getElementById('drive-where');
 const driveOpen = document.getElementById('drive-open');
 const driveNote = document.getElementById('drive-note');
@@ -247,7 +296,6 @@ function showStep(name) {
 function markBlocked() {
   rememberBlocked(true);
   pickButton.disabled = true;
-  askResult.hidden = true;
   shieldHint.textContent = BLOCKED_TEXT;
   shieldHint.hidden = false;
 }
@@ -255,7 +303,6 @@ function markBlocked() {
 function markOpen() {
   rememberBlocked(false);
   pickButton.disabled = false;
-  askResult.hidden = true;
   shieldHint.hidden = true;
 }
 
@@ -280,9 +327,13 @@ async function linkGoogle() {
   try {
     driveNote.textContent = 'لحظة…';
     await askGoogle();
-    driveNote.textContent = '';
-    if (wasBlockedBefore()) markBlocked();
+
+    driveNote.textContent = 'نفحص إمكانيات متصفّحك…';
     showStep('place');
+    const works = await probePicker();
+
+    driveNote.textContent = '';
+    if (works) markOpen(); else markBlocked();
   } catch (e) {
     driveNote.textContent = 'تعذّر الربط: ' + e.message;
   }
@@ -314,12 +365,8 @@ async function pickPlace() {
   try {
     driveNote.textContent = 'تُفتح نافذة قوقل…';
     const folder = await pickFolder();
-    if (!folder) {
-      driveNote.textContent = '';
-      askResult.hidden = false;
-      return;
-    }
-    await finish(folder);
+    driveNote.textContent = '';
+    if (folder) await finish(folder);
   } catch (e) {
     driveNote.textContent = '';
     markBlocked();
@@ -346,8 +393,6 @@ document.getElementById('link-google').onclick = linkGoogle;
 pickButton.onclick = pickPlace;
 document.getElementById('auto-place').onclick = autoPlace;
 document.getElementById('save-test').onclick = saveTest;
-document.getElementById('saw-signin').onclick = markBlocked;
-document.getElementById('saw-folders').onclick = markOpen;
 
 document.addEventListener('signed-in', onSignedIn);
 document.addEventListener('signed-out', function () {
@@ -355,7 +400,6 @@ document.addEventListener('signed-out', function () {
   profile = null;
   driveNote.textContent = '';
   shieldHint.hidden = true;
-  askResult.hidden = true;
   pickButton.disabled = false;
   showStep('link');
 });

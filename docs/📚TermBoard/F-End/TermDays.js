@@ -17,7 +17,7 @@
   const $ = id => document.getElementById(id);
 
   const grid = $('days-grid'), fromBox = $('term-from'), toBox = $('term-to'), line = $('days-line');
-  const ring = $('term-ring'), when = $('term-when');
+  const ring = $('term-ring'), when = $('term-when'), doneBtn = $('term-when-done');
   const DAY = 86400000;
   const NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -30,6 +30,7 @@
   let board = null, editingDates = false;
 
   const touch = () => keep.change(board);
+  const openDates = () => { editingDates = true; ring.hidden = true; when.hidden = false; };
 
   // ============================================================
   // # 🕰️ ⭕  THE RING OF THE TERM ITSELF
@@ -93,7 +94,18 @@
     svg.append(label('ring-left', SIZE / 2 - 6, left + 'd'));
     svg.append(label('ring-total', SIZE / 2 + 13, 'left of ' + total + 'd'));
 
-    ring.append(svg);
+    // The pencil is drawn with the ring, because the ring is wiped and
+    // drawn again on every change: a button left in the page would be
+    // swept away with it. One button, one job — the ring itself is not
+    // a button, so pressing it to read it never opens the dates
+    const pencil = document.createElement('button');
+    pencil.type = 'button';
+    pencil.className = 'ring-edit';
+    pencil.textContent = '✎';
+    pencil.title = 'Change the term dates';
+    pencil.onclick = openDates;
+
+    ring.append(svg, pencil);
     ring.title = `Term ${human(start)} → ${human(end)}`
       + (gone < 0 ? ' · not started yet'
         : gone > total ? ' · over'
@@ -214,8 +226,9 @@
   fromBox.onchange = () => setDate('start', fromBox.value);
   toBox.onchange = () => setDate('end', toBox.value);
 
-  // Press the ring and the two boxes come back, exactly as the term name does
-  ring.onclick = () => { editingDates = true; ring.hidden = true; when.hidden = false; };
+  // Done does not save anything: every change was saved the moment it was
+  // made. It only says "I am finished looking", and the ring comes back
+  doneBtn.onclick = () => { editingDates = false; build(); };
 
   window.MyTermDays = {
     show: live => {

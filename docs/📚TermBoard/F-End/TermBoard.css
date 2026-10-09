@@ -459,6 +459,13 @@ body.board-on {
 
 .days-when {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.days-row {
+  display: flex;
   gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
@@ -605,8 +612,34 @@ body.board-on {
 /* #    way a clock is read, not at three o'clock where SVG starts */
 /* ============================================================ */
 .term-ring {
+  position: relative;
+  display: inline-block;
   line-height: 0;
+}
+
+/* The pencil sits inside the ring, under the two lines of text and
+   above the lower arc. It is faint until the pointer finds it, so the
+   number stays the loud thing in the middle and the way to change the
+   dates is there for whoever looks for it. */
+.ring-edit {
+  position: absolute;
+  left: 50%;
+  bottom: 13px;
+  transform: translateX(-50%);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
+}
+
+.ring-edit:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .ring-track { stroke: rgba(255, 255, 255, 0.16); }

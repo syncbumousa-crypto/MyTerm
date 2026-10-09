@@ -263,22 +263,41 @@
   // #    calls it: one name instead of fifty
   // ============================================================
   const db = () => window.MyTermAuth.db;
-  const me = async () => (await db().auth.getUser()).data.user;
   const now = () => new Date().toISOString();
 
+  // Who is this? Read from the sign-in token already in this browser.
+  // The other way, getUser(), is a journey to the service — measured at
+  // 834ms on a good line — and when it does not arrive it hands back
+  // "nobody" without a word of complaint. A phone in its first seconds
+  // does exactly that, and then nobody can tell "not signed in" from
+  // "the question never got there"
+  const me = async () => (await db().auth.getSession()).data.session?.user ?? null;
+
+  // Three answers, never two: here is your row · you have no row yet ·
+  // I could not find out. The third must not be dressed as the second,
+  // or a person who already chose a place is sent to choose it again
   const loadProfile = async () => {
     const user = await me();
-    return user ? (await db().from('profiles').select('*').eq('id', user.id).maybeSingle()).data : null;
+    if (!user) throw new Error('not signed in');
+    const { data, error } = await db().from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if (error) throw new Error(error.message);
+    return data;
   };
 
   const savePlace = async (name, fileId) => {
     const user = await me();
-    if (user) await db().from('profiles').upsert({ id: user.id, drive_folder_name: name, drive_file_id: fileId, updated_at: now() });
+    if (!user) throw new Error('not signed in');
+    const { error } = await db().from('profiles')
+      .upsert({ id: user.id, drive_folder_name: name, drive_file_id: fileId, updated_at: now() });
+    if (error) throw new Error(error.message);
   };
 
   const forgetPlace = async () => {
     const user = await me();
-    if (user) await db().from('profiles').update({ drive_folder_name: null, drive_file_id: null, updated_at: now() }).eq('id', user.id);
+    if (!user) throw new Error('not signed in');
+    const { error } = await db().from('profiles')
+      .update({ drive_folder_name: null, drive_file_id: null, updated_at: now() }).eq('id', user.id);
+    if (error) throw new Error(error.message);
   };
 
   window.MyTermCloud = {

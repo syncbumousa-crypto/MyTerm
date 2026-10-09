@@ -94,10 +94,23 @@
 
   async function fileIsGone() {
     place = null;
-    await cloud.forgetPlace();
+    // If the old pointer cannot be cleared the user is not held up by it:
+    // whatever they pick next writes over it anyway
+    await cloud.forgetPlace().catch(() => {});
     await toPlace();
     note.textContent = 'Your file was not found in Drive. Pick a new place.';
   }
+
+  // Asks three times before giving up, because the first second after a
+  // sign-in on a phone is the worst second of the connection's life.
+  // Answers either "this is the row (or there is none)" or "I do not know"
+  const askWhereItIsKept = async () => {
+    for (let go = 0; go < 3; go++) {
+      try { return { known: true, row: await cloud.loadProfile() }; }
+      catch { await new Promise(done => setTimeout(done, 500 * (go + 1))); }
+    }
+    return { known: false, row: null };
+  };
 
   async function onSignedIn() {
     if (busy) return;
@@ -107,7 +120,17 @@
       hint.hidden = true;
       show(null);
       const linked = await cloud.remember();
-      place = await cloud.loadProfile().catch(() => null);
+      const answer = await askWhereItIsKept();
+
+      // Not knowing where the work is kept is not the same as there being
+      // none. Sending this person to set up a place would throw away a
+      // place they already have — and on a phone it reads as "link Google
+      // all over again". So the circle keeps turning and says why
+      if (!answer.known) {
+        note.textContent = 'Could not reach your account just now. Nothing is lost — open the page again in a moment.';
+        return;
+      }
+      place = answer.row;
 
       const id = place?.drive_file_id;
       if (id) {
@@ -122,6 +145,9 @@
     }
   }
 
+  // The connection coming back is the one moment worth trying again
+  window.addEventListener('online', () => { if (window.myTermSignedIn && !place) onSignedIn(); });
+
   const act = fn => async () => {
     try { await fn(); } catch (e) { note.textContent = 'Could not: ' + e.message; }
   };
@@ -133,16 +159,21 @@
     await finish(await cloud.findOrMakeFolder());
   });
 
+  // Two failures live here and they must not be confused: the window
+  // never opening is the browser blocking it, while a failure after a
+  // folder came back is something else entirely. Greying the button for
+  // the second would blame the wrong thing
   pickBtn.onclick = async () => {
+    let folder = null;
     try {
       note.textContent = 'Opening the Google window…';
-      const folder = await cloud.pickFolder();
+      folder = await cloud.pickFolder();
       note.textContent = '';
-      if (folder) await finish(folder);
     } catch {
       note.textContent = '';
-      allowPick(false);
+      return allowPick(false);
     }
+    if (folder) await act(() => finish(folder))();
   };
 
   // Taking it back must sit where giving it was. The stored key is

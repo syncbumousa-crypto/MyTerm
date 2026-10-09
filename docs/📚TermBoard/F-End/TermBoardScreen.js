@@ -106,6 +106,11 @@
   const makeColumn = course => {
     const column = document.createElement('section');
     column.className = 'col';
+    // The card carries the id of the course it draws. Reading them back
+    // by their place in the row was true only while the row held cards
+    // and nothing else: the day the tile that adds a course joined it,
+    // every card was being repainted with the next course's numbers
+    column.dataset.course = course.id;
 
     const folded = foldedIds().has(course.id);
     if (!folded) column.classList.add('open');
@@ -543,8 +548,9 @@
   };
 
   const refreshScores = () => {
-    [...columns.children].forEach((column, i) => {
-      const course = living()[i];
+    const here = living();
+    columns.querySelectorAll('.col').forEach(column => {
+      const course = here.find(c => c.id === column.dataset.course);
       if (!course) return;
       paintHead(column, course);
       // The three shapes in the head are redrawn from the course, never

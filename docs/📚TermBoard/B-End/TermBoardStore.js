@@ -34,7 +34,10 @@
           id: typeof c.id === 'string' ? c.id : 'c-' + Math.random().toString(36).slice(2, 8),
           name: c.name,
           updatedAt: c.updatedAt ?? null,
-          deleted: c.deleted === true
+          deleted: c.deleted === true,
+          folderId: typeof c.folderId === 'string' ? c.folderId : null,
+          folderName: typeof c.folderName === 'string' ? c.folderName : null,
+          fileId: typeof c.fileId === 'string' ? c.fileId : null
         }))
       : []
   });
@@ -80,6 +83,7 @@
     dirty = false;
     tellStatus('saving');
     try {
+      await settleFolders();
       const body = { ...(raw || {}), ...shape(raw), version: Number(raw?.version || 0) + 1, updatedAt: new Date().toISOString() };
       await cloud().writeFile(fileId, body);
       raw = body;
@@ -92,14 +96,52 @@
     }
   }
 
+  // ============================================================
+  // # 📁 🪞  THE FOLDERS FOLLOW THE NAMES
+  // # 🔤 JavaScript
+  // # 🎯 Gives every course a folder of its own beside the term paper,
+  // #    and keeps the folder's name the same as the course's name
+  // # 🔗 Runs just before the paper is written, not on every letter
+  // #    typed: by then the user has stopped, so one folder is made and
+  // #    one rename is sent instead of one per keystroke. A course whose
+  // #    folder could not be made keeps an empty folder slot and is
+  // #    tried again next time, so a refused call never loses a course.
+  // #    The term folder is asked for once and remembered
+  // ============================================================
+  let termFolder = null;
+
+  async function settleFolders() {
+    const courses = raw?.courses;
+    if (!Array.isArray(courses) || !courses.length) return;
+
+    const needs = courses.filter(c => !c.deleted && (!c.folderId || c.folderName !== c.name));
+    if (!needs.length) return;
+
+    if (!termFolder) termFolder = await cloud().parentOf(fileId);
+    if (!termFolder) return;
+
+    for (const course of needs) {
+      const title = course.name.trim() || 'مادة بلا اسم';
+      if (!course.folderId) {
+        course.folderId = await cloud().makeFolder(title, termFolder);
+        course.fileId = await cloud().createJson(course.folderId, 'course.json', {
+          app: 'MyTerm', id: course.id, name: course.name, createdAt: new Date().toISOString()
+        });
+      } else {
+        await cloud().rename(course.folderId, title);
+      }
+      course.folderName = title;
+    }
+  }
+
   const later = () => {
     clearTimeout(timer);
     timer = setTimeout(push, QUIET);
   };
 
   window.MyTermBoardStore = {
-    attach: id => { fileId = id; raw = null; },
-    detach: () => { clearTimeout(timer); fileId = null; raw = null; dirty = false; },
+    attach: id => { fileId = id; raw = null; termFolder = null; },
+    detach: () => { clearTimeout(timer); fileId = null; raw = null; dirty = false; termFolder = null; },
 
     cached: () => (fileId ? cache.read() : null),
 

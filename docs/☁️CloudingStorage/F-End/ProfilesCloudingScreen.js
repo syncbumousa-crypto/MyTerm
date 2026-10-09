@@ -77,7 +77,7 @@
 
   async function finish(folder) {
     note.textContent = 'ننشئ الملف…';
-    const id = await cloud.createFile(folder.id, { app: 'MyTerm', linked_at: cloud.now(), notes: [] });
+    const id = await cloud.createJson(folder.id, cloud.FILE, { app: 'MyTerm', linked_at: cloud.now(), term: { name: '', updatedAt: null }, courses: [] });
     await cloud.savePlace(folder.name, id);
     place = { drive_folder_name: folder.name, drive_file_id: id };
     showFile(folder.name, id);

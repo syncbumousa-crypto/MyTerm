@@ -25,12 +25,49 @@
     clear: () => { try { localStorage.removeItem(MEMO); } catch {} }
   };
 
-  const askGoogle = () => new Promise((ok, fail) =>
-    google.accounts.oauth2.initTokenClient({
+  // ============================================================
+  // # 🔄 🤫  ASKING AGAIN, QUIETLY
+  // # 🔤 JavaScript
+  // # 🎯 Google's permission lasts about an hour. This asks for a fresh
+  // #    one. Called with no prompt it opens Google's window; called
+  // #    with an empty prompt it asks for no window at all, which works
+  // #    when the user already said yes once before
+  // # 🔗 The quiet way is tried first by the Drive helper below, so a
+  // #    permission that ran out while the page sat open heals itself
+  // #    with nothing for the user to press. It is given a short rope:
+  // #    a browser that blocks Google cookies can leave the quiet ask
+  // #    hanging with no answer at all, and a hang is worse than a no,
+  // #    so after a few seconds it counts as a no and the button shows
+  // ============================================================
+  const SILENT_WAIT = 4000;
+
+  const askGoogle = prompt => new Promise((ok, fail) => {
+    let over = false;
+    const once = fn => value => { if (!over) { over = true; clearTimeout(timer); fn(value); } };
+    const good = once(ok), bad = once(fail);
+
+    const config = {
       client_id: CLIENT_ID, scope: SCOPE,
-      callback: a => a.error ? fail(new Error(a.error))
-        : (token = a.access_token, store.save(token, a.expires_in), ok())
-    }).requestAccessToken());
+      callback: a => a.error ? bad(new Error(a.error))
+        : (token = a.access_token, store.save(token, a.expires_in), good()),
+      error_callback: e => bad(new Error(e?.type || 'google window failed'))
+    };
+    if (prompt !== undefined) config.prompt = prompt;
+
+    const timer = prompt === '' ? setTimeout(() => bad(new Error('silent ask timed out')), SILENT_WAIT) : null;
+    google.accounts.oauth2.initTokenClient(config).requestAccessToken();
+  });
+
+  // One quiet ask at a time: five Drive calls failing together must not
+  // open five asks. They all wait on the same one and share its answer
+  let quietAsk = null;
+  const renewQuietly = () => {
+    if (!quietAsk) {
+      quietAsk = askGoogle('').then(() => true, () => false);
+      quietAsk.then(() => { quietAsk = null; });
+    }
+    return quietAsk;
+  };
 
   // ============================================================
   // # 📡 🗄️  TALKING TO DRIVE
@@ -46,8 +83,18 @@
   const DRIVE = 'https://www.googleapis.com/drive/v3/files';
   const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 
-  const drive = (url, opts = {}) =>
+  const send = (url, opts) =>
     fetch(url, { ...opts, headers: { Authorization: `Bearer ${token}`, ...opts.headers } });
+
+  // Every call goes through here, so every call heals the same way: a
+  // 401 means the permission ran out, and the only honest answer is to
+  // ask for a new one and send the very same call again. Once, not in a
+  // loop: if the quiet ask fails the first time it will fail the second
+  const drive = async (url, opts = {}) => {
+    const first = await send(url, opts);
+    if (first.status !== 401) return first;
+    return (await renewQuietly()) ? send(url, opts) : first;
+  };
 
   const json = (method, body) =>
     ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body, null, 2) });
@@ -64,16 +111,44 @@
     return { id: (await made.json()).id, name: FOLDER };
   }
 
-  async function createFile(folderId, content) {
+  async function createJson(parentId, name, content) {
     const edge = 'myterm' + Date.now();
     const part = o => `--${edge}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(o, null, 2)}\r\n`;
     const made = await drive(`${UPLOAD}?uploadType=multipart`, {
       method: 'POST',
       headers: { 'Content-Type': `multipart/related; boundary=${edge}` },
-      body: part({ name: FILE, mimeType: 'application/json', parents: [folderId] }) + part(content) + `--${edge}--`
+      body: part({ name, mimeType: 'application/json', parents: [parentId] }) + part(content) + `--${edge}--`
     });
     if (!made.ok) throw new Error(`Drive create failed: ${made.status}`);
     return (await made.json()).id;
+  }
+
+  // ============================================================
+  // # 📁 🌳  FOLDERS INSIDE THE TERM FOLDER
+  // # 🔤 JavaScript
+  // # 🎯 The three things a course folder needs: find the folder the
+  // #    term paper sits in, make a folder beside it, and rename one
+  // # 🔗 The term folder's own id was never written down, and it does
+  // #    not need to be: Drive knows the parent of any file it holds,
+  // #    so it is asked. The narrow permission reaches these folders
+  // #    because the app made them, or the user handed the term folder
+  // #    to it through the Google window
+  // ============================================================
+  async function parentOf(fileId) {
+    const r = await drive(`${DRIVE}/${fileId}?fields=parents`);
+    if (!r.ok) throw new Error(`Drive parent failed: ${r.status}`);
+    return (await r.json()).parents?.[0] || null;
+  }
+
+  async function makeFolder(name, parentId) {
+    const made = await drive(DRIVE, json('POST', { name, mimeType: FOLDER_TYPE, parents: [parentId] }));
+    if (!made.ok) throw new Error(`Drive folder failed: ${made.status}`);
+    return (await made.json()).id;
+  }
+
+  async function rename(id, name) {
+    const r = await drive(`${DRIVE}/${id}`, json('PATCH', { name }));
+    if (!r.ok) throw new Error(`Drive rename failed: ${r.status}`);
   }
 
   async function fileAlive(id) {
@@ -174,12 +249,13 @@
   };
 
   window.MyTermCloud = {
-    FOLDER, now,
+    FOLDER, FILE, now,
     hasToken: () => Boolean(token),
     remember: () => Boolean(token = store.read()),
     forgetToken: () => { token = null; store.clear(); },
     askGoogle,
-    findOrMakeFolder, createFile, fileAlive, readFile, writeFile,
+    findOrMakeFolder, createJson, fileAlive, readFile, writeFile,
+    parentOf, makeFolder, rename,
     pickFolder, probePicker,
     loadProfile, savePlace, forgetPlace
   };

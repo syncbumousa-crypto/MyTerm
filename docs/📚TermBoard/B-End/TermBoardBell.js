@@ -19,7 +19,10 @@
 
   let channel = null, lastHeard = 0;
 
-  const myId = async () => (await db().auth.getUser()).data.user?.id || null;
+  // From the token in this browser, not from a trip to the service. The
+  // other way is a request that can fail, and a failure there reads as
+  // "nobody is signed in" — which would hang up the doorbell in silence
+  const myId = async () => (await db().auth.getSession()).data.session?.user?.id || null;
 
   window.MyTermBell = {
     me,

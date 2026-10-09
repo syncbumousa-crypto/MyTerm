@@ -162,6 +162,17 @@
     check('Every B-End file loads before every F-End file', lastBack < firstFront || firstFront === -1,
           'last back-end at ' + lastBack + ', first screen at ' + firstFront);
 
+    // 9 - nobody asks the service who is signed in. getUser() is a request,
+    // and a request that fails answers "nobody" without complaining. It
+    // sent a phone back to the linking screen with its work already saved,
+    // and it can even throw the sign-in away. The token is already here
+    const asks = [];
+    js.forEach(([p, src]) => src.split('\n').forEach((l, n) => {
+      if (/auth\s*\.\s*getUser\s*\(/.test(l) && !/^\s*(\/\/|\*)/.test(l)) asks.push(p.split('/').pop() + ':' + (n + 1));
+    }));
+    check('Nobody asks the service who is signed in', asks.length === 0,
+          asks.length ? asks.join(' · ') + ' — read it from getSession()' : 'every file reads the token it already has');
+
     draw();
   };
 

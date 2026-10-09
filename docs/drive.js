@@ -18,26 +18,23 @@ let googleToken = null;
 let pickerReady = false;
 
 // ============================================================
-// # 🕵️ 🛡️  SPOT A BROWSER THAT BLOCKS
+// # 📣 💬  WHAT TO SAY WHEN GOOGLE IS BLOCKED
 // # 🔤 JavaScript
-// # 🎯 Checks whether the visitor is on Brave, which turns off the kind of
-// #    frame the Google file window needs, and writes a line telling them
-// #    what their choices are
-// # 🔗 Nothing here changes what the site does. It only warns, so the
-// #    visitor knows why one of the two buttons below may not work, and
-// #    what to turn off if they want it
+// # 🎯 Two lines the panel shows after the Google file window fails, one
+// #    for a trip that ended with nothing picked, one for a real error
+// # 🔗 There is no way to know ahead of time whether a browser will block
+// #    the Google frame. No browser tells a page that, on purpose. So the
+// #    site never judges before the user tries. It lets them try, then
+// #    says what happened. Checking the browser name was wrong: a name
+// #    says which browser, not whether this visitor has blocking turned on
 // ============================================================
-const BLOCKED_TEXT =
-  'لا يمكنك اختيار المكان بنفسك، متصفّحك يحجب خدمة كوكيز قوقل. ' +
-  'اسمح بها لهذا الموقع ثم حدّث الصفحة، أو خزّنه في مجلد My Term وانقله في درايفك بعدها كيف شئت.';
+const CANCEL_TEXT =
+  'لم تختر مكانًا. وإن كانت نافذة قوقل طلبت منك تسجيل الدخول بدل عرض مجلّداتك، ' +
+  'فمتصفّحك يحجب كوكيز قوقل — اسمح بها لهذا الموقع ثم أعد المحاولة، أو خزّنه في مجلد My Term.';
 
-async function isStrictBrowser() {
-  try {
-    return !!(navigator.brave && await navigator.brave.isBrave());
-  } catch (e) {
-    return false;
-  }
-}
+const BLOCKED_TEXT =
+  'تعذّر فتح نافذة قوقل، والأرجح أن متصفّحك يحجب كوكيز قوقل. ' +
+  'اسمح بها لهذا الموقع ثم حدّث الصفحة، أو خزّنه في مجلد My Term وانقله في درايفك بعدها كيف شئت.';
 
 // ============================================================
 // # 🙋 ✅  ASK GOOGLE FOR PERMISSION
@@ -230,8 +227,8 @@ function showStep(name) {
   });
 }
 
-function showHint() {
-  shieldHint.textContent = BLOCKED_TEXT;
+function showHint(text) {
+  shieldHint.textContent = text;
   shieldHint.hidden = false;
 }
 
@@ -257,11 +254,6 @@ async function linkGoogle() {
     driveNote.textContent = 'لحظة…';
     await askGoogle();
     driveNote.textContent = '';
-
-    if (await isStrictBrowser()) {
-      pickButton.disabled = true;
-      showHint();
-    }
     showStep('place');
   } catch (e) {
     driveNote.textContent = 'تعذّر الربط: ' + e.message;
@@ -296,15 +288,14 @@ async function pickPlace() {
     const folder = await pickFolder();
     if (!folder) {
       driveNote.textContent = '';
-      pickButton.disabled = true;
-      showHint();
+      showHint(CANCEL_TEXT);
       return;
     }
     await finish(folder);
   } catch (e) {
     driveNote.textContent = '';
     pickButton.disabled = true;
-    showHint();
+    showHint(BLOCKED_TEXT);
   }
 }
 

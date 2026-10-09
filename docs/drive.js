@@ -359,14 +359,20 @@ function showFile(folderName, fileId) {
 async function onSignedIn() {
   driveNote.textContent = '';
   shieldHint.hidden = true;
-  profile = await loadProfile();
+
+  googleToken = takeToken();
+
+  try {
+    profile = await loadProfile();
+  } catch (e) {
+    profile = null;
+  }
 
   if (profile && profile.drive_file_id) {
     showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
     return;
   }
 
-  googleToken = takeToken();
   if (!googleToken) {
     showStep('link');
     return;

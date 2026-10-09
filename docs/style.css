@@ -81,6 +81,16 @@ body {
   word-break: break-all;
 }
 
+.build {
+  position: fixed;
+  bottom: 8px;
+  inset-inline-start: 10px;
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
 .spinner {
   width: 28px;
   height: 28px;

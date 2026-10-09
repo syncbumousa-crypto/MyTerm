@@ -336,30 +336,38 @@ function showFile(folderName, fileId) {
   showStep('done');
 }
 
+let signingIn = false;
+
 async function onSignedIn() {
-  driveNote.textContent = '';
-  shieldHint.hidden = true;
-
-  googleToken = takeToken();
-
+  if (signingIn) return;
+  signingIn = true;
   try {
-    profile = await loadProfile();
-  } catch (e) {
-    profile = null;
-  }
+    driveNote.textContent = '';
+    shieldHint.hidden = true;
 
-  if (profile && profile.drive_file_id) {
-    showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
-    return;
-  }
+    googleToken = takeToken();
 
-  if (!googleToken) {
-    showStep('link');
-    return;
-  }
+    try {
+      profile = await loadProfile();
+    } catch (e) {
+      profile = null;
+    }
 
-  showStep('place');
-  await runProbe();
+    if (profile && profile.drive_file_id) {
+      showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
+      return;
+    }
+
+    if (!googleToken) {
+      showStep('link');
+      return;
+    }
+
+    showStep('place');
+    await runProbe();
+  } finally {
+    signingIn = false;
+  }
 }
 
 async function linkGoogle() {
@@ -429,6 +437,13 @@ document.getElementById('auto-place').onclick = autoPlace;
 document.getElementById('save-test').onclick = saveTest;
 
 document.addEventListener('signed-in', onSignedIn);
+
+// script.js runs before this file, so its signed-in message can go out
+// before the line above is here to hear it. The flag it also sets is still
+// readable now, and catching up on it is what makes a reload land on the
+// right step instead of back at the first one
+if (window.myTermSignedIn) onSignedIn();
+
 document.addEventListener('signed-out', function () {
   googleToken = null;
   dropToken();

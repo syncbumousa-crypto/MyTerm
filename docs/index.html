@@ -65,7 +65,7 @@
   <div class="stack" id="drive-linked" hidden>
     <p class="where" id="drive-where"></p>
     <button class="btn" type="button" id="save-test">احفظ في ملفي</button>
-    <button class="btn btn-flat" type="button" id="relink">غيّر المكان</button>
+    <a class="btn btn-flat" id="drive-open" href="#" target="_blank" rel="noopener">افتح الملف في درايف</a>
   </div>
 
   <p class="note" id="drive-note"></p>
@@ -75,8 +75,8 @@
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 Brings in three outside libraries, then this site's own two files: -->
-<!-- #    the sign in service, Google permission, and the Google file picker -->
+<!-- # 🎯 Brings in the sign in service and the Google permission library, -->
+<!-- #    then this site's own two files -->
 <!-- # 🔗 Sits at the end of body so the panels above already exist when the -->
 <!-- #    scripts look for them. The libraries come first because the two -->
 <!-- #    site files use them. script.js runs the login, and drive.js -->
@@ -84,7 +84,6 @@
 <!-- ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
-<script src="https://apis.google.com/js/api.js"></script>
 <script src="script.js"></script>
 <script src="drive.js"></script>
 

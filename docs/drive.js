@@ -1,28 +1,29 @@
 // ============================================================
-// # 🔑 ☁️  GOOGLE KEYS AND SETTINGS
+// # 🔑 ☁️  GOOGLE SETTINGS
 // # 🔤 JavaScript
-// # 🎯 Holds the two public Google values and the one permission this
-// #    site asks for, plus the name of the file it keeps in Drive
-// # 🔗 Both values are public by design. The drive.file permission is the
-// #    narrow one: this site can only touch files it made itself, or files
-// #    the user hands it through the picker. It never sees the rest of Drive
+// # 🎯 Holds the public Google id, the one permission this site asks for,
+// #    and the names it gives the folder and the file it makes
+// # 🔗 The drive.file permission is the narrow one: this site can only
+// #    touch what it made itself. It never sees the rest of the user's Drive,
+// #    which is also why it has to make its own folder
 // ============================================================
 const GOOGLE_CLIENT_ID = '730425860367-ptdsv9f8u1vf9vvap7r8hpivd4v4be9n.apps.googleusercontent.com';
-const GOOGLE_API_KEY = 'AIzaSyCQzcpzKR842f2CE9yoPQqKTQWWN4Ny3sg';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const FOLDER_NAME = 'MyTerm';
 const DATA_FILE_NAME = 'myterm.json';
+const FOLDER_TYPE = 'application/vnd.google-apps.folder';
 
 let googleToken = null;
-let pickerReady = false;
 
 // ============================================================
 // # 🙋 ✅  ASK GOOGLE FOR PERMISSION
 // # 🔤 JavaScript
 // # 🎯 Opens the Google window that asks the user to allow this site,
 // #    and keeps the token it hands back
-// # 🔗 The token lasts about an hour and lives only in this page, never
-// #    on a server and never in the database. Every Drive call below
-// #    sends it. When it runs out, the user is asked again
+// # 🔗 The token lasts about an hour and lives only in this page, never on
+// #    a server and never in the database. Every Drive call below sends it.
+// #    This is a real window, not a hidden frame, so strict browsers that
+// #    block third party cookies do not get in the way
 // ============================================================
 function askGoogle() {
   return new Promise(function (done, fail) {
@@ -39,55 +40,50 @@ function askGoogle() {
   });
 }
 
-// ============================================================
-// # 📂 👆  LET THE USER PICK A FOLDER
-// # 🔤 JavaScript
-// # 🎯 Opens Google's own folder window so the user chooses where their
-// #    file will live, and gives back the id of what they picked
-// # 🔗 This is how the narrow permission works: the site does not browse
-// #    Drive. The user points at one folder, and only that folder opens up
-// ============================================================
-function loadPicker() {
-  return new Promise(function (done) {
-    if (pickerReady) { done(); return; }
-    gapi.load('picker', function () { pickerReady = true; done(); });
-  });
+function driveHeaders(extra) {
+  const head = { Authorization: 'Bearer ' + googleToken };
+  if (extra) Object.keys(extra).forEach(function (k) { head[k] = extra[k]; });
+  return head;
 }
 
-async function pickFolder() {
-  await loadPicker();
-  return new Promise(function (done) {
-    const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
-      .setIncludeFolders(true)
-      .setSelectFolderEnabled(true)
-      .setMimeTypes('application/vnd.google-apps.folder');
+// ============================================================
+// # 📁 🆕  FIND OR MAKE THE FOLDER
+// # 🔤 JavaScript
+// # 🎯 Looks for a folder this site made before, and makes one if there
+// #    is none, so the user never has to pick a place by hand
+// # 🔗 The search only ever sees folders this site made, because of the
+// #    narrow permission. The user may move or rename the folder in Drive
+// #    later and nothing breaks, since the saved id never changes
+// ============================================================
+async function findFolder() {
+  const ask = "mimeType='" + FOLDER_TYPE + "' and name='" + FOLDER_NAME + "' and trashed=false";
+  const answer = await fetch(
+    'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(ask) + '&fields=files(id,name)',
+    { headers: driveHeaders() }
+  );
+  if (!answer.ok) throw new Error('Drive search failed: ' + answer.status);
+  const found = (await answer.json()).files;
+  return found.length ? found[0].id : null;
+}
 
-    const picker = new google.picker.PickerBuilder()
-      .setOAuthToken(googleToken)
-      .setDeveloperKey(GOOGLE_API_KEY)
-      .setOrigin(window.location.protocol + '//' + window.location.host)
-      .addView(view)
-      .setCallback(function (result) {
-        if (result.action === google.picker.Action.PICKED) {
-          done({ id: result.docs[0].id, name: result.docs[0].name });
-        } else if (result.action === google.picker.Action.CANCEL) {
-          done(null);
-        }
-      })
-      .build();
-
-    picker.setVisible(true);
+async function makeFolder() {
+  const answer = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: driveHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ name: FOLDER_NAME, mimeType: FOLDER_TYPE })
   });
+  if (!answer.ok) throw new Error('Drive folder failed: ' + answer.status);
+  return (await answer.json()).id;
 }
 
 // ============================================================
 // # 💾 📄  MAKE, READ AND SAVE THE DATA FILE
 // # 🔤 JavaScript
-// # 🎯 Creates one json file inside the chosen folder, reads it back,
-// #    and writes new content over it
+// # 🎯 Creates one json file inside the folder, reads it back, and writes
+// #    new content over it
 // # 🔗 The file belongs to the user, not to this site. They can open it,
-// #    edit it, or delete it from Drive at any time, so the reader below
-// #    must cope with a file that is missing or broken
+// #    edit it or delete it from Drive at any time, so the reader gives
+// #    back nothing instead of breaking when the file is gone or spoiled
 // ============================================================
 async function driveCreateFile(folderId, content) {
   const info = { name: DATA_FILE_NAME, mimeType: 'application/json', parents: [folderId] };
@@ -101,10 +97,7 @@ async function driveCreateFile(folderId, content) {
 
   const answer = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
     method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + googleToken,
-      'Content-Type': 'multipart/related; boundary=' + edge
-    },
+    headers: driveHeaders({ 'Content-Type': 'multipart/related; boundary=' + edge }),
     body: body
   });
   if (!answer.ok) throw new Error('Drive create failed: ' + answer.status);
@@ -113,7 +106,7 @@ async function driveCreateFile(folderId, content) {
 
 async function driveReadFile(fileId) {
   const answer = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
-    headers: { Authorization: 'Bearer ' + googleToken }
+    headers: driveHeaders()
   });
   if (!answer.ok) return null;
   try { return await answer.json(); } catch (e) { return null; }
@@ -122,10 +115,7 @@ async function driveReadFile(fileId) {
 async function driveWriteFile(fileId, content) {
   const answer = await fetch('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
     method: 'PATCH',
-    headers: {
-      Authorization: 'Bearer ' + googleToken,
-      'Content-Type': 'application/json'
-    },
+    headers: driveHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(content, null, 2)
   });
   if (!answer.ok) throw new Error('Drive save failed: ' + answer.status);
@@ -161,14 +151,15 @@ async function saveProfile(folderName, fileId) {
 // ============================================================
 // # 🖥️ 🔄  THE DRIVE PART OF THE LOGGED IN PANEL
 // # 🔤 JavaScript
-// # 🎯 Shows either the link button or the chosen place, runs the whole
-// #    linking trip, and saves a test line into the file
+// # 🎯 Shows either the link button or the file the user already has,
+// #    runs the whole linking trip, and saves a test line into the file
 // # 🔗 Waits for the signed-in message that script.js sends after a good
 // #    login, and clears itself on the signed-out message
 // ============================================================
 const driveNone = document.getElementById('drive-none');
 const driveLinked = document.getElementById('drive-linked');
 const driveWhere = document.getElementById('drive-where');
+const driveOpen = document.getElementById('drive-open');
 const driveNote = document.getElementById('drive-note');
 
 let profile = null;
@@ -178,12 +169,17 @@ function showDrive(linked) {
   driveLinked.hidden = !linked;
 }
 
+function showPlace(folderName, fileId) {
+  driveWhere.textContent = 'ملفك في مجلد: ' + folderName;
+  driveOpen.href = 'https://drive.google.com/file/d/' + fileId + '/view';
+  showDrive(true);
+}
+
 async function onSignedIn() {
   driveNote.textContent = '';
   profile = await loadProfile();
   if (profile && profile.drive_file_id) {
-    driveWhere.textContent = 'ملفك في: ' + (profile.drive_folder_name || 'مجلد مختار');
-    showDrive(true);
+    showPlace(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
   } else {
     showDrive(false);
   }
@@ -193,21 +189,21 @@ async function linkDrive() {
   try {
     driveNote.textContent = 'لحظة…';
     await askGoogle();
-    const folder = await pickFolder();
-    if (!folder) { driveNote.textContent = 'لم تختر مكانًا.'; return; }
+
+    driveNote.textContent = 'نجهّز المجلد…';
+    const folderId = (await findFolder()) || (await makeFolder());
 
     driveNote.textContent = 'ننشئ الملف…';
-    const fileId = await driveCreateFile(folder.id, {
+    const fileId = await driveCreateFile(folderId, {
       app: 'MyTerm',
       linked_at: new Date().toISOString(),
       notes: []
     });
 
-    await saveProfile(folder.name, fileId);
-    profile = { drive_folder_name: folder.name, drive_file_id: fileId };
-    driveWhere.textContent = 'ملفك في: ' + folder.name;
-    showDrive(true);
-    driveNote.textContent = 'تم الربط. الملف باسم ' + DATA_FILE_NAME;
+    await saveProfile(FOLDER_NAME, fileId);
+    profile = { drive_folder_name: FOLDER_NAME, drive_file_id: fileId };
+    showPlace(FOLDER_NAME, fileId);
+    driveNote.textContent = 'تم الربط. انقل المجلد في درايفك حيث شئت، والرابط يبقى.';
   } catch (e) {
     driveNote.textContent = 'تعذّر الربط: ' + e.message;
   }
@@ -230,7 +226,6 @@ async function saveTest() {
 }
 
 document.getElementById('link-drive').onclick = linkDrive;
-document.getElementById('relink').onclick = linkDrive;
 document.getElementById('save-test').onclick = saveTest;
 
 document.addEventListener('signed-in', onSignedIn);

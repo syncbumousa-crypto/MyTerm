@@ -18,23 +18,39 @@ let googleToken = null;
 let pickerReady = false;
 
 // ============================================================
-// # 📣 💬  WHAT TO SAY WHEN GOOGLE IS BLOCKED
+// # 🙋 📣  ASK THE VISITOR, THEN REMEMBER
 // # 🔤 JavaScript
-// # 🎯 Two lines the panel shows after the Google file window fails, one
-// #    for a trip that ended with nothing picked, one for a real error
-// # 🔗 There is no way to know ahead of time whether a browser will block
-// #    the Google frame. No browser tells a page that, on purpose. So the
-// #    site never judges before the user tries. It lets them try, then
-// #    says what happened. Checking the browser name was wrong: a name
-// #    says which browser, not whether this visitor has blocking turned on
+// # 🎯 Keeps the message about blocking, and remembers in this browser
+// #    whether the Google window was blocked for this visitor before
+// # 🔗 A page cannot find this out on its own. Brave does not support
+// #    hasStorageAccess, cookieEnabled still says true, and writing a
+// #    cookie still works, so every check lies. The only sure test needs a
+// #    second domain to embed, which this site does not have. So the site
+// #    asks the visitor once, after the window closes with nothing picked,
+// #    and keeps the answer so it never has to ask again
 // ============================================================
-const CANCEL_TEXT =
-  'لم تختر مكانًا. وإن كانت نافذة قوقل طلبت منك تسجيل الدخول بدل عرض مجلّداتك، ' +
-  'فمتصفّحك يحجب كوكيز قوقل — اسمح بها لهذا الموقع ثم أعد المحاولة، أو خزّنه في مجلد My Term.';
-
 const BLOCKED_TEXT =
-  'تعذّر فتح نافذة قوقل، والأرجح أن متصفّحك يحجب كوكيز قوقل. ' +
+  'لا يمكنك اختيار المكان بنفسك، متصفّحك يحجب كوكيز قوقل. ' +
   'اسمح بها لهذا الموقع ثم حدّث الصفحة، أو خزّنه في مجلد My Term وانقله في درايفك بعدها كيف شئت.';
+
+const BLOCKED_MEMO = 'myterm.pickerBlocked';
+
+function rememberBlocked(yes) {
+  try {
+    if (yes) localStorage.setItem(BLOCKED_MEMO, '1');
+    else localStorage.removeItem(BLOCKED_MEMO);
+  } catch (e) {
+    // some browsers refuse storage. The site still works, it just asks again
+  }
+}
+
+function wasBlockedBefore() {
+  try {
+    return localStorage.getItem(BLOCKED_MEMO) === '1';
+  } catch (e) {
+    return false;
+  }
+}
 
 // ============================================================
 // # 🙋 ✅  ASK GOOGLE FOR PERMISSION
@@ -214,6 +230,7 @@ const steps = {
 };
 
 const pickButton = document.getElementById('pick-place');
+const askResult = document.getElementById('ask-result');
 const driveWhere = document.getElementById('drive-where');
 const driveOpen = document.getElementById('drive-open');
 const driveNote = document.getElementById('drive-note');
@@ -227,9 +244,19 @@ function showStep(name) {
   });
 }
 
-function showHint(text) {
-  shieldHint.textContent = text;
+function markBlocked() {
+  rememberBlocked(true);
+  pickButton.disabled = true;
+  askResult.hidden = true;
+  shieldHint.textContent = BLOCKED_TEXT;
   shieldHint.hidden = false;
+}
+
+function markOpen() {
+  rememberBlocked(false);
+  pickButton.disabled = false;
+  askResult.hidden = true;
+  shieldHint.hidden = true;
 }
 
 function showFile(folderName, fileId) {
@@ -254,6 +281,7 @@ async function linkGoogle() {
     driveNote.textContent = 'لحظة…';
     await askGoogle();
     driveNote.textContent = '';
+    if (wasBlockedBefore()) markBlocked();
     showStep('place');
   } catch (e) {
     driveNote.textContent = 'تعذّر الربط: ' + e.message;
@@ -288,14 +316,13 @@ async function pickPlace() {
     const folder = await pickFolder();
     if (!folder) {
       driveNote.textContent = '';
-      showHint(CANCEL_TEXT);
+      askResult.hidden = false;
       return;
     }
     await finish(folder);
   } catch (e) {
     driveNote.textContent = '';
-    pickButton.disabled = true;
-    showHint(BLOCKED_TEXT);
+    markBlocked();
   }
 }
 
@@ -319,6 +346,8 @@ document.getElementById('link-google').onclick = linkGoogle;
 pickButton.onclick = pickPlace;
 document.getElementById('auto-place').onclick = autoPlace;
 document.getElementById('save-test').onclick = saveTest;
+document.getElementById('saw-signin').onclick = markBlocked;
+document.getElementById('saw-folders').onclick = markOpen;
 
 document.addEventListener('signed-in', onSignedIn);
 document.addEventListener('signed-out', function () {
@@ -326,6 +355,7 @@ document.addEventListener('signed-out', function () {
   profile = null;
   driveNote.textContent = '';
   shieldHint.hidden = true;
+  askResult.hidden = true;
   pickButton.disabled = false;
   showStep('link');
 });

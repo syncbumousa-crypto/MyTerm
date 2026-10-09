@@ -186,26 +186,45 @@
           counted.length ? counted.join(' · ') + ' — carry the id on the element instead'
                          : 'every drawn thing is found by its own id');
 
-    // 11 - every name a file calls is a name that file has. Parsing cannot
-    // tell: an edit that cut a block of helpers out of one of these files
-    // left it parsing perfectly, and the board drew nothing at all, with
-    // no error anywhere until something tried to call what was gone
-    const BUILT_IN = new Set(['if', 'for', 'while', 'switch', 'catch', 'return', 'typeof', 'function',
-      'Number', 'String', 'Boolean', 'Math', 'Object', 'Array', 'JSON', 'Date', 'Set', 'Map',
-      'Promise', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'parseInt',
-      'parseFloat', 'isNaN', 'RegExp', 'Error', 'console', 'async', 'await', 'hsl', 'rgb', 'rgba', 'url']);
+    // 11 - a name that is only ever called, and never written anywhere else
+    // in its file, has no definition in that file. Parsing cannot tell: an
+    // edit that cut a block of helpers out of one of these files left it
+    // parsing perfectly, the board drew nothing, and nothing was logged
+    // until something reached for what was gone.
+    //
+    // The test is deliberately this shape and not "is it defined", which
+    // means writing out every way JavaScript binds a name — parameters,
+    // destructuring, shorthand — and getting one wrong is a false alarm on
+    // honest code. Anything bound ANY of those ways is written once without
+    // a bracket after it. Something deleted is not written at all
+    const WORDS = new Set(['if', 'for', 'while', 'switch', 'catch', 'return', 'typeof', 'function',
+      'class', 'async', 'await', 'new', 'delete', 'void', 'in', 'of', 'do', 'else', 'try']);
+
+    // Comments and text are not code. Without taking them out, a colour
+    // written in a style string and a name mentioned in a sentence both
+    // look exactly like calls to something that is not there
+    const onlyCode = src => src
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ')
+      .replace(/`(?:\\.|[^`\\])*`/g, '``')
+      .replace(/'(?:\\.|[^'\\])*'/g, "''")
+      .replace(/"(?:\\.|[^"\\])*"/g, '""');
+
     const strangers = [];
-    js.forEach(([p, src]) => {
-      const defined = new Set([...src.matchAll(/(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g)].map(m => m[1]));
-      const params = new Set([...src.matchAll(/(?:\(|,)\s*([A-Za-z_$][\w$]*)\s*(?:,|\)|=>)/g)].map(m => m[1]));
+    js.forEach(([p, raw]) => {
+      const src = onlyCode(raw);
+      const declared = new Set([...src.matchAll(/(?:function|class)\s+([A-Za-z_$][\w$]*)/g)].map(m => m[1]));
       [...new Set([...src.matchAll(/(?:^|[^.\w$])([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]))]
         .forEach(name => {
-          if (defined.has(name) || params.has(name) || BUILT_IN.has(name) || name in window) return;
+          if (WORDS.has(name) || declared.has(name) || name in window) return;
+          const written = new RegExp('(?:^|[^\\w$.])' + name.replace('$', '\\$') + '(?![\\w$])(?!\\s*\\()');
+          if (written.test(src)) return;
           strangers.push(p.split('/').pop() + ' → ' + name);
         });
     });
-    check('Every name a file calls is a name it has', strangers.length === 0,
-          strangers.length ? strangers.join(' · ') : 'no file calls something that is not there');
+    check('Every name a file calls is written in it', strangers.length === 0,
+          strangers.length ? strangers.join(' · ')
+                           : 'every file writes down everything it calls');
 
     draw();
   };

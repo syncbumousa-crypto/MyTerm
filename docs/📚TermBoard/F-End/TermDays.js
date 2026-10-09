@@ -17,6 +17,7 @@
   const $ = id => document.getElementById(id);
 
   const grid = $('days-grid'), fromBox = $('term-from'), toBox = $('term-to'), line = $('days-line');
+  const ring = $('term-ring'), when = $('term-when');
   const DAY = 86400000;
   const NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -26,9 +27,79 @@
   const fromKey = s => { const p = (s || '').split('-'); return p.length === 3 ? new Date(+p[0], +p[1] - 1, +p[2]) : null; };
   const midnight = () => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
 
-  let board = null;
+  let board = null, editingDates = false;
 
   const touch = () => keep.change(board);
+
+  // ============================================================
+  // # 🕰️ ⭕  THE RING OF THE TERM ITSELF
+  // # 🔤 JavaScript
+  // # 🎯 Once both dates are set, the two date boxes give way to a ring
+  // #    that fills as the term goes by, with the days still left in the
+  // #    middle of it. Pressing the ring brings the boxes back
+  // # 🔗 Its colour is on purpose none of the colours used for work:
+  // #    this ring says nothing about you and nothing about us, it only
+  // #    says the days pass whether the page is opened or not. Give it
+  // #    the green of a finished thing and it reads as an achievement
+  // #    when it is a deadline. And the middle says DAYS, not a percent:
+  // #    you can plan around "69 days left", not around "33%"
+  // ============================================================
+  const human = d => `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+
+  const drawRing = (start, end) => {
+    ring.textContent = '';
+    const total = Math.round((end - start) / DAY);
+    if (!(total > 0)) return false;
+
+    const gone = Math.round((midnight() - start) / DAY);
+    const seen = Math.max(0, Math.min(total, gone));
+    const left = total - seen;
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const SIZE = 96, WIDTH = 9, r = (SIZE - WIDTH) / 2, round = 2 * Math.PI * r;
+
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${SIZE} ${SIZE}`);
+    svg.setAttribute('width', SIZE);
+    svg.setAttribute('height', SIZE);
+
+    const arc = (cls, part) => {
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('cx', SIZE / 2);
+      c.setAttribute('cy', SIZE / 2);
+      c.setAttribute('r', r);
+      c.setAttribute('fill', 'none');
+      c.setAttribute('stroke-width', WIDTH);
+      c.setAttribute('class', cls);
+      if (part != null) {
+        c.setAttribute('stroke-linecap', 'round');
+        c.setAttribute('stroke-dasharray', round);
+        c.setAttribute('stroke-dashoffset', round * (1 - Math.max(0, Math.min(1, part))));
+      }
+      return c;
+    };
+
+    svg.append(arc('ring-track', null));
+    if (seen > 0) svg.append(arc('ring-arc', seen / total));
+
+    const label = (cls, y, words) => {
+      const n = document.createElementNS(NS, 'text');
+      n.setAttribute('x', SIZE / 2);
+      n.setAttribute('y', y);
+      n.setAttribute('class', cls);
+      n.textContent = words;
+      return n;
+    };
+    svg.append(label('ring-left', SIZE / 2 - 6, left + 'd'));
+    svg.append(label('ring-total', SIZE / 2 + 13, 'left of ' + total + 'd'));
+
+    ring.append(svg);
+    ring.title = `Term ${human(start)} → ${human(end)}`
+      + (gone < 0 ? ' · not started yet'
+        : gone > total ? ' · over'
+        : ` · day ${seen} of ${total} · ${left} day${left === 1 ? '' : 's'} left`);
+    return true;
+  };
 
   // ============================================================
   // # 📐 🧱  BUILDING THE GRID
@@ -43,7 +114,12 @@
   const build = () => {
     const start = fromKey(board?.term?.start), end = fromKey(board?.term?.end);
     grid.textContent = '';
-    if (!start || !end || end < start) {
+
+    const dated = Boolean(start && end && end >= start) && drawRing(start, end);
+    ring.hidden = !dated || editingDates;
+    when.hidden = dated && !editingDates;
+
+    if (!dated) {
       line.textContent = 'Set the term start and end to see your days.';
       return;
     }
@@ -128,8 +204,18 @@
     line.textContent = `${done} of ${past} days worked · ${all} days in the term · ${left} left`;
   };
 
-  fromBox.onchange = () => { board.term = { ...board.term, start: fromBox.value, updatedAt: new Date().toISOString() }; touch(); build(); };
-  toBox.onchange = () => { board.term = { ...board.term, end: toBox.value, updatedAt: new Date().toISOString() }; touch(); build(); };
+  const setDate = (which, value) => {
+    board.term = { ...board.term, [which]: value, updatedAt: new Date().toISOString() };
+    editingDates = false;
+    touch();
+    build();
+  };
+
+  fromBox.onchange = () => setDate('start', fromBox.value);
+  toBox.onchange = () => setDate('end', toBox.value);
+
+  // Press the ring and the two boxes come back, exactly as the term name does
+  ring.onclick = () => { editingDates = true; ring.hidden = true; when.hidden = false; };
 
   window.MyTermDays = {
     show: live => {

@@ -591,3 +591,37 @@ body.board-on {
 }
 
 .col-open:hover { color: #ffffff; background: rgba(255, 255, 255, 0.12); }
+
+/* ============================================================ */
+/* # 🕰️ ⭕  THE RING OF THE TERM */
+/* # 🔤 CSS */
+/* # 🎯 A ring that fills as the term goes by, with the days left */
+/* #    written in the middle of it, standing where the two date boxes */
+/* #    were before the dates were set */
+/* # 🔗 Its colour belongs to no other thing on this page: green here */
+/* #    means finished and white means done, and the term passing is */
+/* #    neither. It is a deadline, so it is given a colour of its own. */
+/* #    The arc is turned a quarter back so it starts at the top, the */
+/* #    way a clock is read, not at three o'clock where SVG starts */
+/* ============================================================ */
+.term-ring {
+  line-height: 0;
+  cursor: pointer;
+}
+
+.ring-track { stroke: rgba(255, 255, 255, 0.16); }
+
+.ring-arc {
+  stroke: #9b8cd8;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.ring-left, .ring-total {
+  font-family: ui-monospace, Consolas, monospace;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.ring-left { fill: #ffffff; font-size: 24px; font-weight: 700; }
+.ring-total { fill: rgba(255, 255, 255, 0.5); font-size: 9.5px; }

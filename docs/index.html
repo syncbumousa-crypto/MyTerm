@@ -14,7 +14,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
 
@@ -88,16 +88,15 @@
 </div>
 
 <!-- ============================================================ -->
-<!-- # 🔖 👁️  VERSION AND STATE MARK -->
+<!-- # 🔖 👁️  VERSION MARK -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 Shows which build is running and what the site found when it -->
-<!-- #    started, in small faint text in the corner -->
-<!-- # 🔗 The v number must match the script lines below. drive.js writes -->
-<!-- #    the rest: whether a Google token survived the reload, and what -->
-<!-- #    the browser test found. One glance answers what is wrong, -->
-<!-- #    instead of leaving it a guess -->
+<!-- # 🎯 Shows which build of the site the visitor is actually running, -->
+<!-- #    in small faint text in the corner -->
+<!-- # 🔗 Must match the v number on the script lines below. When it does -->
+<!-- #    not, the browser is serving an old copy out of its memory, and -->
+<!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build" id="build-tag">v15</p>
+<p class="build">v16</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -114,8 +113,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="script.js?v=15"></script>
-<script src="drive.js?v=15"></script>
+<script src="script.js?v=16"></script>
+<script src="drive.js?v=16"></script>
 
 </body>
 </html>

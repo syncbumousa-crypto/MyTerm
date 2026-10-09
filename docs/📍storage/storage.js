@@ -1,533 +1,306 @@
 // ============================================================
-// # 🔑 ☁️  GOOGLE SETTINGS
+// # 🔑 ☁️  GOOGLE PERMISSION AND THE SAVED TOKEN
 // # 🔤 JavaScript
-// # 🎯 Holds the two public Google values, the one permission this site
-// #    asks for, and the names it gives the folder and the file
-// # 🔗 The drive.file permission is the narrow one: this site only touches
-// #    what it made itself, or what the user hands it through the Google
-// #    window. It never sees the rest of the user's Drive
+// # 🎯 Holds the public Google values, asks the user to allow this site,
+// #    and keeps the token so a reload does not undo the linking
+// # 🔗 drive.file is the narrow permission: only what this site made, or
+// #    what the user handed it through the Google window. The token is
+// #    kept in the lasting store because changing a browser shield
+// #    reloads the page and can wipe the session store with it
 // ============================================================
-const GOOGLE_CLIENT_ID = '730425860367-ptdsv9f8u1vf9vvap7r8hpivd4v4be9n.apps.googleusercontent.com';
-const GOOGLE_API_KEY = 'AIzaSyCQzcpzKR842f2CE9yoPQqKTQWWN4Ny3sg';
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-const FOLDER_NAME = 'MyTerm';
-const DATA_FILE_NAME = 'myterm.json';
+const CLIENT_ID = '730425860367-ptdsv9f8u1vf9vvap7r8hpivd4v4be9n.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyCQzcpzKR842f2CE9yoPQqKTQWWN4Ny3sg';
+const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const FOLDER = 'MyTerm', FILE = 'myterm.json';
 const FOLDER_TYPE = 'application/vnd.google-apps.folder';
-
-let googleToken = null;
-let pickerReady = false;
-
-// ============================================================
-// # 📣 🎟️  THE MESSAGE, AND KEEPING THE GOOGLE TOKEN
-// # 🔤 JavaScript
-// # 🎯 Keeps the line shown when Google is blocked, and keeps the Google
-// #    token so a page reload does not send the user back to the start
-// # 🔗 The token is kept with the hour that Google gave it, and is dropped
-// #    when it runs out or when the user logs out. It is kept in the
-// #    lasting store, not the session one, because changing a browser
-// #    shield reloads the page and can wipe the session store with it.
-// #    The test result is never kept: the whole point of that reload is
-// #    that the browser just changed, so the test runs again every time
-// ============================================================
-const BLOCKED_TEXT =
-  'لا يمكنك اختيار المكان بنفسك، متصفّحك يحجب كوكيز قوقل. ' +
+const MEMO = 'myterm.googleToken';
+const BLOCKED_TEXT = 'لا يمكنك اختيار المكان بنفسك، متصفّحك يحجب كوكيز قوقل. ' +
   'اسمح بها لهذا الموقع ثم حدّث الصفحة، أو خزّنه في مجلد My Term وانقله في درايفك بعدها كيف شئت.';
 
-const TOKEN_MEMO = 'myterm.googleToken';
+let token = null, profile = null, pickerReady = false, busy = false;
 
-function keepToken(token, seconds) {
-  try {
-    localStorage.setItem(TOKEN_MEMO, JSON.stringify({
-      token: token,
-      until: Date.now() + ((seconds || 3600) - 60) * 1000
-    }));
-  } catch (e) {
-    // no storage means the user links again after a reload, nothing breaks
-  }
-}
+const store = {
+  save: (t, secs) => { try { localStorage.setItem(MEMO, JSON.stringify({ t, until: Date.now() + ((secs || 3600) - 60) * 1000 })); } catch {} },
+  read: () => { try { const v = JSON.parse(localStorage.getItem(MEMO) || 'null'); return v && v.until > Date.now() ? v.t : null; } catch { return null; } },
+  clear: () => { try { localStorage.removeItem(MEMO); } catch {} }
+};
 
-function takeToken() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(TOKEN_MEMO) || 'null');
-    if (saved && saved.until > Date.now()) return saved.token;
-  } catch (e) {
-    return null;
-  }
-  return null;
-}
-
-function dropToken() {
-  try { localStorage.removeItem(TOKEN_MEMO); } catch (e) { /* nothing to drop */ }
-}
+const askGoogle = () => new Promise((ok, fail) =>
+  google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID, scope: SCOPE,
+    callback: a => a.error ? fail(new Error(a.error))
+      : (token = a.access_token, store.save(token, a.expires_in), ok())
+  }).requestAccessToken());
 
 // ============================================================
-// # 🙋 ✅  ASK GOOGLE FOR PERMISSION
+// # 📡 🗄️  TALKING TO DRIVE
 // # 🔤 JavaScript
-// # 🎯 Opens the Google window that asks the user to allow this site,
-// #    and keeps the token it hands back
-// # 🔗 The token lasts about an hour and lives only in this page, never on
-// #    a server and never in the database. Every Drive call below sends it.
-// #    This is a real window, not a frame, so it works in every browser
+// # 🎯 One helper that signs every call, then the five things this site
+// #    does: find or make its folder, make a file, ask if it still exists,
+// #    read it, and write over it
+// # 🔗 The file belongs to the user, who may move, trash or delete it. So
+// #    the saved id is never trusted: a missing file and a file in the bin
+// #    both count as gone, and the reader gives back nothing instead of
+// #    breaking when the content is spoiled
 // ============================================================
-function askGoogle() {
-  return new Promise(function (done, fail) {
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: DRIVE_SCOPE,
-      callback: function (answer) {
-        if (answer.error) { fail(new Error(answer.error)); return; }
-        googleToken = answer.access_token;
-        keepToken(googleToken, answer.expires_in);
-        done(googleToken);
-      }
-    });
-    client.requestAccessToken();
-  });
-}
+const DRIVE = 'https://www.googleapis.com/drive/v3/files';
+const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 
-function driveHeaders(extra) {
-  const head = { Authorization: 'Bearer ' + googleToken };
-  if (extra) Object.keys(extra).forEach(function (k) { head[k] = extra[k]; });
-  return head;
-}
+const drive = (url, opts = {}) =>
+  fetch(url, { ...opts, headers: { Authorization: `Bearer ${token}`, ...opts.headers } });
 
-// ============================================================
-// # 📁 📂  TWO WAYS TO GET A FOLDER
-// # 🔤 JavaScript
-// # 🎯 Either the site makes its own folder, or the user points at one
-// #    through Google's own window
-// # 🔗 The first way works in every browser because it is a plain network
-// #    call. The second opens a frame from google.com, which a strict
-// #    browser may block, and that is what the warning above is for
-// ============================================================
+const json = (method, body) =>
+  ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body, null, 2) });
+
 async function findOrMakeFolder() {
-  const ask = "mimeType='" + FOLDER_TYPE + "' and name='" + FOLDER_NAME + "' and trashed=false";
-  const look = await fetch(
-    'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(ask) + '&fields=files(id,name)',
-    { headers: driveHeaders() }
-  );
-  if (!look.ok) throw new Error('Drive search failed: ' + look.status);
-  const found = (await look.json()).files;
-  if (found.length) return { id: found[0].id, name: found[0].name };
+  const q = encodeURIComponent(`mimeType='${FOLDER_TYPE}' and name='${FOLDER}' and trashed=false`);
+  const found = await drive(`${DRIVE}?q=${q}&fields=files(id,name)`);
+  if (!found.ok) throw new Error(`Drive search failed: ${found.status}`);
+  const hit = (await found.json()).files?.[0];
+  if (hit) return hit;
 
-  const made = await fetch('https://www.googleapis.com/drive/v3/files', {
+  const made = await drive(DRIVE, json('POST', { name: FOLDER, mimeType: FOLDER_TYPE }));
+  if (!made.ok) throw new Error(`Drive folder failed: ${made.status}`);
+  return { id: (await made.json()).id, name: FOLDER };
+}
+
+async function createFile(folderId, content) {
+  const edge = 'myterm' + Date.now();
+  const part = o => `--${edge}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(o, null, 2)}\r\n`;
+  const made = await drive(`${UPLOAD}?uploadType=multipart`, {
     method: 'POST',
-    headers: driveHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ name: FOLDER_NAME, mimeType: FOLDER_TYPE })
+    headers: { 'Content-Type': `multipart/related; boundary=${edge}` },
+    body: part({ name: FILE, mimeType: 'application/json', parents: [folderId] }) + part(content) + `--${edge}--`
   });
-  if (!made.ok) throw new Error('Drive folder failed: ' + made.status);
-  return { id: (await made.json()).id, name: FOLDER_NAME };
+  if (!made.ok) throw new Error(`Drive create failed: ${made.status}`);
+  return (await made.json()).id;
 }
 
-function loadPicker() {
-  return new Promise(function (done) {
-    if (pickerReady) { done(); return; }
-    gapi.load('picker', function () { pickerReady = true; done(); });
-  });
+async function fileAlive(id) {
+  const r = await drive(`${DRIVE}/${id}?fields=id,trashed`);
+  if (r.status === 404) return false;
+  if (!r.ok) return true;
+  return (await r.json().catch(() => ({}))).trashed !== true;
 }
 
-function folderView() {
-  return new google.picker.DocsView(google.picker.ViewId.FOLDERS)
-    .setIncludeFolders(true)
-    .setSelectFolderEnabled(true)
-    .setMimeTypes(FOLDER_TYPE);
-}
+const readFile = async id => {
+  const r = await drive(`${DRIVE}/${id}?alt=media`);
+  return r.ok ? r.json().catch(() => null) : null;
+};
 
-async function pickFolder() {
-  await loadPicker();
-  return new Promise(function (done) {
-    new google.picker.PickerBuilder()
-      .setOAuthToken(googleToken)
-      .setDeveloperKey(GOOGLE_API_KEY)
-      .setOrigin(window.location.protocol + '//' + window.location.host)
-      .addView(folderView())
-      .setCallback(function (result) {
-        if (result.action === google.picker.Action.PICKED) {
-          done({ id: result.docs[0].id, name: result.docs[0].name });
-        } else if (result.action === google.picker.Action.CANCEL) {
-          done(null);
-        }
-      })
-      .build()
-      .setVisible(true);
-  });
+async function writeFile(id, content) {
+  const r = await drive(`${UPLOAD}/${id}?uploadType=media`, json('PATCH', content));
+  if (!r.ok) throw new Error(`Drive save failed: ${r.status}`);
 }
 
 // ============================================================
-// # 🧪 🫥  TRY THE GOOGLE WINDOW WITHOUT SHOWING IT
+// # 📂 🧪  THE GOOGLE FOLDER WINDOW, SHOWN OR HIDDEN
 // # 🔤 JavaScript
-// # 🎯 Opens the Google file window hidden, waits a few seconds for it to
-// #    report that it drew itself, then closes it and says yes or no
-// # 🔗 This is the one honest test. The window only reports loaded after it
-// #    builds its own screen. When a browser blocks Google cookies it goes
-// #    to a sign in page instead and never reports anything, so silence is
-// #    the answer. The style file hides it while the body carries probing
+// # 🎯 Opens Google's own folder window. Shown, it lets the user pick.
+// #    Hidden, it answers one question: does this browser let it work
+// # 🔗 The window only reports loaded after it draws its own screen. A
+// #    browser that blocks Google cookies sends it to a sign in page
+// #    instead, and it reports nothing, so silence is the answer. No
+// #    browser tells a page about blocking, so it is tried, not asked
 // ============================================================
 const PROBE_WAIT = 6000;
+const Action = () => google.picker.Action;
 
-async function probePicker() {
-  await loadPicker();
-  return new Promise(function (done) {
-    let picker = null;
-    let settled = false;
-
-    function stop(works) {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      try { if (picker) picker.setVisible(false); } catch (e) { /* already gone */ }
-      document.body.classList.remove('probing');
-      done(works);
-    }
-
-    const timer = setTimeout(function () { stop(false); }, PROBE_WAIT);
-
-    document.body.classList.add('probing');
-    picker = new google.picker.PickerBuilder()
-      .setOAuthToken(googleToken)
-      .setDeveloperKey(GOOGLE_API_KEY)
-      .setOrigin(window.location.protocol + '//' + window.location.host)
-      .addView(folderView())
-      .setCallback(function (result) {
-        const loaded = (google.picker.Action && google.picker.Action.LOADED) || 'loaded';
-        if (result.action === loaded) stop(true);
-        else if (result.action === google.picker.Action.CANCEL) stop(false);
-      })
-      .build();
-
-    try {
-      picker.setVisible(true);
-    } catch (e) {
-      stop(false);
-    }
-  });
+async function openPicker(onResult, hidden = false) {
+  if (!pickerReady) await new Promise(ok => gapi.load('picker', () => (pickerReady = true, ok())));
+  const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+    .setIncludeFolders(true).setSelectFolderEnabled(true).setMimeTypes(FOLDER_TYPE);
+  const win = new google.picker.PickerBuilder()
+    .setOAuthToken(token).setDeveloperKey(API_KEY)
+    .setOrigin(`${location.protocol}//${location.host}`)
+    .addView(view).setCallback(onResult).build();
+  document.body.classList.toggle('probing', hidden);
+  win.setVisible(true);
+  return win;
 }
 
+const pickFolder = () => new Promise(done =>
+  openPicker(r => {
+    if (r.action === Action().PICKED) done({ id: r.docs[0].id, name: r.docs[0].name });
+    else if (r.action === Action().CANCEL) done(null);
+  }).catch(() => done(null)));
+
+const probePicker = () => new Promise(done => {
+  let win = null, over = false;
+  const stop = works => {
+    if (over) return;
+    over = true;
+    clearTimeout(timer);
+    try { win?.setVisible(false); } catch {}
+    document.body.classList.remove('probing');
+    done(works);
+  };
+  const timer = setTimeout(() => stop(false), PROBE_WAIT);
+  openPicker(r => {
+    if (r.action === (Action().LOADED || 'loaded')) stop(true);
+    else if (r.action === Action().CANCEL) stop(false);
+  }, true).then(w => (win = w)).catch(() => stop(false));
+});
+
 // ============================================================
-// # 💾 📄  MAKE, CHECK, READ AND SAVE THE DATA FILE
+// # 🔖 🗄️  THE POINTER IN THE DATABASE
 // # 🔤 JavaScript
-// # 🎯 Creates one json file inside the chosen folder, asks Drive whether
-// #    it is still there, reads it back, and writes new content over it
-// # 🔗 The file belongs to the user, not to this site. They can move it,
-// #    edit it, trash it or delete the whole folder at any time. So the
-// #    saved id is never trusted on its own: Drive is asked first, and a
-// #    file that is gone or in the bin counts as gone
-// ============================================================
-async function driveCreateFile(folderId, content) {
-  const info = { name: DATA_FILE_NAME, mimeType: 'application/json', parents: [folderId] };
-  const edge = 'myterm' + Date.now();
-  const body =
-    '--' + edge + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
-    JSON.stringify(info) + '\r\n' +
-    '--' + edge + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
-    JSON.stringify(content, null, 2) + '\r\n' +
-    '--' + edge + '--';
-
-  const answer = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-    method: 'POST',
-    headers: driveHeaders({ 'Content-Type': 'multipart/related; boundary=' + edge }),
-    body: body
-  });
-  if (!answer.ok) throw new Error('Drive create failed: ' + answer.status);
-  return (await answer.json()).id;
-}
-
-async function driveFileAlive(fileId) {
-  const answer = await fetch(
-    'https://www.googleapis.com/drive/v3/files/' + fileId + '?fields=id,trashed',
-    { headers: driveHeaders() }
-  );
-  if (answer.status === 404) return false;
-  if (!answer.ok) return true;
-  try {
-    return (await answer.json()).trashed !== true;
-  } catch (e) {
-    return true;
-  }
-}
-
-async function driveReadFile(fileId) {
-  const answer = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
-    headers: driveHeaders()
-  });
-  if (!answer.ok) return null;
-  try { return await answer.json(); } catch (e) { return null; }
-}
-
-async function driveWriteFile(fileId, content) {
-  const answer = await fetch('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
-    method: 'PATCH',
-    headers: driveHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify(content, null, 2)
-  });
-  if (!answer.ok) throw new Error('Drive save failed: ' + answer.status);
-}
-
-// ============================================================
-// # 🗄️ 🔖  REMEMBER THE PLACE, NOT THE DATA
-// # 🔤 JavaScript
-// # 🎯 Keeps the folder name and the file id in the profiles table, and
-// #    reads them back on the next visit
+// # 🎯 Reads, writes and clears the one row that says where this user's
+// #    file lives
 // # 🔗 This is the whole link between the two services: the database holds
-// #    a pointer, and the data itself stays in the user's own Drive.
-// #    The table rules let each user touch their own row only
+// #    a pointer, and the data itself stays in the user's own Drive. The
+// #    table rules let each user touch their own row only
 // ============================================================
-async function loadProfile() {
-  const me = (await db.auth.getUser()).data.user;
-  if (!me) return null;
-  const answer = await db.from('profiles').select('*').eq('id', me.id).maybeSingle();
-  return answer.data;
-}
+const me = async () => (await db.auth.getUser()).data.user;
+const now = () => new Date().toISOString();
 
-async function saveProfile(folderName, fileId) {
-  const me = (await db.auth.getUser()).data.user;
-  if (!me) return;
-  await db.from('profiles').upsert({
-    id: me.id,
-    drive_folder_name: folderName,
-    drive_file_id: fileId,
-    updated_at: new Date().toISOString()
-  });
-}
+const loadProfile = async () => {
+  const user = await me();
+  return user ? (await db.from('profiles').select('*').eq('id', user.id).maybeSingle()).data : null;
+};
 
-async function forgetPlace() {
+const savePlace = async (name, fileId) => {
+  const user = await me();
+  if (user) await db.from('profiles').upsert({ id: user.id, drive_folder_name: name, drive_file_id: fileId, updated_at: now() });
+};
+
+const forgetPlace = async () => {
   profile = null;
-  const me = (await db.auth.getUser()).data.user;
-  if (!me) return;
-  await db.from('profiles').update({
-    drive_folder_name: null,
-    drive_file_id: null,
-    updated_at: new Date().toISOString()
-  }).eq('id', me.id);
-}
+  const user = await me();
+  if (user) await db.from('profiles').update({ drive_folder_name: null, drive_file_id: null, updated_at: now() }).eq('id', user.id);
+};
 
 // ============================================================
 // # 🪜 🖥️  THE THREE STEPS IN THE PANEL
 // # 🔤 JavaScript
-// # 🎯 Walks the user through three steps and shows only one at a time:
-// #    link the Google account, pick where the file lives, then the file
-// # 🔗 Waits for the signed-in message that script.js sends after a good
-// #    login. A visitor who already has a file opens on the last step,
-// #    because the place is kept in the profiles table, and the change
-// #    place button is the way back to the second step. Without it the
-// #    second step would be reachable only once, ever
+// # 🎯 Shows one step at a time: link the account, pick the place, then
+// #    the finished file. And runs what each button does
+// # 🔗 Waits for the signed-in message script.js sends, and also reads the
+// #    flag it sets, because that message can go out before this file is
+// #    here to hear it. All steps start hidden behind a turning circle,
+// #    since picking the right one needs answers from two services
 // ============================================================
-const steps = {
-  link: document.getElementById('step-link'),
-  place: document.getElementById('step-place'),
-  done: document.getElementById('step-done')
+const $ = id => document.getElementById(id);
+const steps = { link: $('step-link'), place: $('step-place'), done: $('step-done') };
+const spin = $('session-spin'), probeSpin = $('probe-spin'), placeBtns = $('place-buttons');
+const pickBtn = $('pick-place'), note = $('drive-note'), hint = $('shield-hint');
+
+const show = name => {
+  Object.entries(steps).forEach(([key, box]) => (box.hidden = key !== name));
+  spin.hidden = Boolean(name);
 };
 
-const pickButton = document.getElementById('pick-place');
-const placeButtons = document.getElementById('place-buttons');
-const probeSpin = document.getElementById('probe-spin');
-const sessionSpin = document.getElementById('session-spin');
-const driveWhere = document.getElementById('drive-where');
-const driveOpen = document.getElementById('drive-open');
-const driveNote = document.getElementById('drive-note');
-const shieldHint = document.getElementById('shield-hint');
+const allowPick = ok => {
+  pickBtn.disabled = !ok;
+  hint.textContent = ok ? '' : BLOCKED_TEXT;
+  hint.hidden = ok;
+};
 
-let profile = null;
-
-function showStep(name) {
-  sessionSpin.hidden = true;
-  Object.keys(steps).forEach(function (key) {
-    steps[key].hidden = key !== name;
-  });
-}
-
-function waitForStep() {
-  Object.keys(steps).forEach(function (key) {
-    steps[key].hidden = true;
-  });
-  sessionSpin.hidden = false;
-}
-
-function markBlocked() {
-  pickButton.disabled = true;
-  shieldHint.textContent = BLOCKED_TEXT;
-  shieldHint.hidden = false;
-}
-
-function markOpen() {
-  pickButton.disabled = false;
-  shieldHint.hidden = true;
-}
+const showFile = (name, id) => {
+  $('drive-where').textContent = `ملفك في مجلد: ${name}`;
+  $('drive-open').href = `https://drive.google.com/file/d/${id}/view`;
+  show('done');
+};
 
 async function runProbe() {
-  placeButtons.hidden = true;
+  placeBtns.hidden = true;
   probeSpin.hidden = false;
-  driveNote.textContent = 'نفحص إمكانيات متصفّحك…';
-
+  note.textContent = 'نفحص إمكانيات متصفّحك…';
   const works = await probePicker();
-
   probeSpin.hidden = true;
-  placeButtons.hidden = false;
-  driveNote.textContent = '';
-  if (works) markOpen(); else markBlocked();
+  placeBtns.hidden = false;
+  note.textContent = '';
+  allowPick(works);
 }
 
-function showFile(folderName, fileId) {
-  driveWhere.textContent = 'ملفك في مجلد: ' + folderName;
-  driveOpen.href = 'https://drive.google.com/file/d/' + fileId + '/view';
-  showStep('done');
-}
-
-let signingIn = false;
-
-async function onSignedIn() {
-  if (signingIn) return;
-  signingIn = true;
-  try {
-    driveNote.textContent = '';
-    shieldHint.hidden = true;
-    waitForStep();
-    let lost = false;
-
-    googleToken = takeToken();
-
-    try {
-      profile = await loadProfile();
-    } catch (e) {
-      profile = null;
-    }
-
-    if (profile && profile.drive_file_id) {
-      if (!googleToken) {
-        showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
-        return;
-      }
-      let alive = true;
-      try {
-        alive = await driveFileAlive(profile.drive_file_id);
-      } catch (e) {
-        alive = true;
-      }
-      if (alive) {
-        showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
-        return;
-      }
-      await forgetPlace();
-      lost = true;
-    }
-
-    if (!googleToken) {
-      showStep('link');
-      return;
-    }
-
-    showStep('place');
-    await runProbe();
-    if (lost) driveNote.textContent = 'لم نجد ملفك في درايف. اختر مكانًا جديدًا.';
-  } finally {
-    signingIn = false;
-  }
-}
-
-async function linkGoogle() {
-  try {
-    driveNote.textContent = 'لحظة…';
-    await askGoogle();
-    showStep('place');
-    await runProbe();
-  } catch (e) {
-    driveNote.textContent = 'تعذّر الربط: ' + e.message;
-  }
+async function toPlace() {
+  if (!token) { note.textContent = 'لحظة…'; await askGoogle(); }
+  show('place');
+  await runProbe();
 }
 
 async function finish(folder) {
-  driveNote.textContent = 'ننشئ الملف…';
-  const fileId = await driveCreateFile(folder.id, {
-    app: 'MyTerm',
-    linked_at: new Date().toISOString(),
-    notes: []
-  });
-  await saveProfile(folder.name, fileId);
-  profile = { drive_folder_name: folder.name, drive_file_id: fileId };
-  showFile(folder.name, fileId);
-  driveNote.textContent = 'تم. انقل المجلد في درايفك حيث شئت، والرابط يبقى.';
+  note.textContent = 'ننشئ الملف…';
+  const id = await createFile(folder.id, { app: 'MyTerm', linked_at: now(), notes: [] });
+  await savePlace(folder.name, id);
+  profile = { drive_folder_name: folder.name, drive_file_id: id };
+  showFile(folder.name, id);
+  note.textContent = 'تم. انقل المجلد في درايفك حيث شئت، والرابط يبقى.';
 }
 
-async function autoPlace() {
+async function fileIsGone() {
+  await forgetPlace();
+  await toPlace();
+  note.textContent = 'لم نجد ملفك في درايف. اختر مكانًا جديدًا.';
+}
+
+async function onSignedIn() {
+  if (busy) return;
+  busy = true;
   try {
-    driveNote.textContent = 'نجهّز المجلد…';
-    await finish(await findOrMakeFolder());
-  } catch (e) {
-    driveNote.textContent = 'تعذّر الحفظ: ' + e.message;
+    note.textContent = '';
+    hint.hidden = true;
+    show(null);
+    token = store.read();
+    profile = await loadProfile().catch(() => null);
+
+    const id = profile?.drive_file_id;
+    if (id) {
+      if (!token || await fileAlive(id).catch(() => true)) return showFile(profile.drive_folder_name || FOLDER, id);
+      return fileIsGone();
+    }
+    token ? await toPlace() : show('link');
+  } finally {
+    busy = false;
   }
 }
 
-async function pickPlace() {
+const act = fn => async () => {
+  try { await fn(); } catch (e) { note.textContent = 'تعذّر: ' + e.message; }
+};
+
+$('link-google').onclick = act(toPlace);
+$('change-place').onclick = act(toPlace);
+$('auto-place').onclick = act(async () => {
+  note.textContent = 'نجهّز المجلد…';
+  await finish(await findOrMakeFolder());
+});
+
+pickBtn.onclick = async () => {
   try {
-    driveNote.textContent = 'تُفتح نافذة قوقل…';
+    note.textContent = 'تُفتح نافذة قوقل…';
     const folder = await pickFolder();
-    driveNote.textContent = '';
+    note.textContent = '';
     if (folder) await finish(folder);
-  } catch (e) {
-    driveNote.textContent = '';
-    markBlocked();
+  } catch {
+    note.textContent = '';
+    allowPick(false);
   }
-}
+};
 
-async function saveTest() {
-  try {
-    driveNote.textContent = 'لحظة…';
-    if (!googleToken) await askGoogle();
-
-    if (!(await driveFileAlive(profile.drive_file_id))) {
-      await forgetPlace();
-      showStep('place');
-      await runProbe();
-      driveNote.textContent = 'لم نجد ملفك في درايف. اختر مكانًا جديدًا.';
-      return;
-    }
-
-    const current = (await driveReadFile(profile.drive_file_id)) || { app: 'MyTerm', notes: [] };
-    if (!Array.isArray(current.notes)) current.notes = [];
-    current.notes.push({ at: new Date().toISOString(), text: 'تجربة حفظ' });
-
-    await driveWriteFile(profile.drive_file_id, current);
-    driveNote.textContent = 'حُفظ. عدد السطور في ملفك: ' + current.notes.length;
-  } catch (e) {
-    driveNote.textContent = 'تعذّر الحفظ: ' + e.message;
-  }
-}
-
-async function changePlace() {
-  try {
-    if (!googleToken) {
-      driveNote.textContent = 'لحظة…';
-      await askGoogle();
-    }
-    showStep('place');
-    await runProbe();
-  } catch (e) {
-    driveNote.textContent = 'تعذّر الربط: ' + e.message;
-  }
-}
-
-document.getElementById('link-google').onclick = linkGoogle;
-document.getElementById('change-place').onclick = changePlace;
-pickButton.onclick = pickPlace;
-document.getElementById('auto-place').onclick = autoPlace;
-document.getElementById('save-test').onclick = saveTest;
+$('save-test').onclick = act(async () => {
+  note.textContent = 'لحظة…';
+  if (!token) await askGoogle();
+  const id = profile.drive_file_id;
+  if (!(await fileAlive(id))) return fileIsGone();
+  const data = (await readFile(id)) || { app: 'MyTerm', notes: [] };
+  if (!Array.isArray(data.notes)) data.notes = [];
+  data.notes.push({ at: now(), text: 'تجربة حفظ' });
+  await writeFile(id, data);
+  note.textContent = `حُفظ. عدد السطور في ملفك: ${data.notes.length}`;
+});
 
 document.addEventListener('signed-in', onSignedIn);
-
-// script.js runs before this file, so its signed-in message can go out
-// before the line above is here to hear it. The flag it also sets is still
-// readable now, and catching up on it is what makes a reload land on the
-// right step instead of back at the first one
 if (window.myTermSignedIn) onSignedIn();
 
-document.addEventListener('signed-out', function () {
-  googleToken = null;
-  dropToken();
+document.addEventListener('signed-out', () => {
+  token = null;
+  store.clear();
   profile = null;
-  driveNote.textContent = '';
-  shieldHint.hidden = true;
+  note.textContent = '';
+  hint.hidden = true;
   probeSpin.hidden = true;
-  placeButtons.hidden = false;
-  pickButton.disabled = false;
-  waitForStep();
+  placeBtns.hidden = false;
+  pickBtn.disabled = false;
+  show(null);
 });

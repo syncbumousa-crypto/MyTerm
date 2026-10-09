@@ -1,0 +1,665 @@
+/* ============================================================ */
+/* # 🌑 🖥️  THE DARK BOARD */
+/* # 🔤 CSS */
+/* # 🎯 Turns the page a darker gray while the board is open, and moves */
+/* #    the content to the top instead of the middle, so a long row of */
+/* #    columns is never cut off the screen */
+/* # 🔗 The screen file puts board-on on the body when it opens the */
+/* #    board and takes it off when it closes. The gray in shell.css */
+/* #    stays the one for the sign in screens */
+/* ============================================================ */
+body.board-on {
+  background: #3a3a3a;
+  align-items: flex-start;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding-block: 42px 28px;
+  padding-inline: 16px;
+  box-sizing: border-box;
+}
+
+/* ============================================================ */
+/* # 🏷️ ✏️  THE NAME AT THE TOP */
+/* # 🔤 CSS */
+/* # 🎯 Keeps one height for the name spot whether it holds a button, a */
+/* #    typing box, or the finished title, so nothing jumps when they */
+/* #    swap. And it shows a text cursor on the title, which hints that */
+/* #    clicking it opens the box again */
+/* # 🔗 The button and the box take their frame from shell.css. Only */
+/* #    what is special to the board is written here */
+/* ============================================================ */
+.term {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 46px;
+}
+
+.term-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  cursor: text;
+  word-break: break-word;
+}
+
+.term-input {
+  width: 260px;
+  max-width: 100%;
+  text-align: center;
+}
+
+/* ============================================================ */
+/* # 🧱 ⬅️  THE ROW OF COLUMNS */
+/* # 🔤 CSS */
+/* # 🎯 Lays the course columns in one centered row, and lets them wrap */
+/* #    onto a second line on a narrow screen instead of running off it */
+/* # 🔗 The page reads right to left, so the row fills from the right */
+/* #    and every new column lands to the left of the one before it. */
+/* #    That ordering is the page direction, not a rule written here */
+/* ============================================================ */
+.columns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 212px;
+  min-height: 240px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+}
+
+/* ============================================================ */
+/* # 🗑️ ✌️  THE HEAD OF A COLUMN, AND ITS REMOVE BUTTON */
+/* # 🔤 CSS */
+/* # 🎯 Puts the name box and the small remove button on one line, and */
+/* #    makes the button plain until it is asked, then clear */
+/* # 🔗 The button stays faint so it is not pressed by accident, and */
+/* #    the asking state widens it with words, so the second press is */
+/* #    plainly a different thing from the first */
+/* ============================================================ */
+.col-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.col-drop {
+  flex: none;
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+}
+
+.col-drop:hover {
+  color: #ffffff;
+}
+
+.col-drop.asking {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffeaea;
+}
+
+.col-name {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 6px 2px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: #ffffff;
+  text-align: center;
+}
+
+.col-name::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.col-name:focus {
+  outline: none;
+  border-bottom-color: #ffffff;
+}
+
+.col-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ============================================================ */
+/* # 📑 ✅  A CHAPTER ROW */
+/* # 🔤 CSS */
+/* # 🎯 One line per chapter: a small square that fills in when it is */
+/* #    finished, the name beside it, and a faint way to remove it */
+/* # 🔗 The square keeps its size whether marked or not, so a column */
+/* #    does not shift as chapters are ticked. The name takes the rest */
+/* #    of the room, and cuts off rather than widening the column */
+/* ============================================================ */
+.ch {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ch-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 5px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.ch-mark.done {
+  background: #ffffff;
+  color: #3a3a3a;
+  border-color: #ffffff;
+}
+
+.ch-name {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 3px 4px;
+  border: 0;
+  background: transparent;
+  color: #f0f0f0;
+}
+
+.ch-name::placeholder { color: rgba(255, 255, 255, 0.4); }
+.ch-name:focus { outline: none; background: rgba(255, 255, 255, 0.08); border-radius: 4px; }
+
+.ch-off {
+  flex: none;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+}
+
+.ch-off:hover { color: #ffffff; }
+
+.col-add {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 5px;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+
+.col-add:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.5); }
+
+.col-score {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  min-height: 1em;
+}
+
+/* ============================================================ */
+/* # 🗒️ 🤫  THE QUIET SAVING LINE */
+/* # 🔤 CSS */
+/* # 🎯 One small faint line under the columns that says whether the */
+/* #    work has reached the user's Drive yet */
+/* # 🔗 It keeps its height even when empty, so the buttons under it do */
+/* #    not jump up and down as the words come and go */
+/* ============================================================ */
+/* ============================================================ */
+/* # 💯 🎓  THE MARKS PART UNDER A COURSE */
+/* # 🔤 CSS */
+/* # 🎯 A folded part: one line showing where the course stands, a */
+/* #    small button that opens it, and inside it a row per item with */
+/* #    narrow number boxes that fit four across a column */
+/* # 🔗 It is folded by default because most of the time the standing */
+/* #    line is all anyone wants to see. The number boxes drop their */
+/* #    spinner arrows, which would eat half the width at this size */
+/* ============================================================ */
+.marks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  padding-top: 8px;
+}
+
+.col-standing {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  min-height: 1.1em;
+}
+
+.marks-toggle {
+  font: inherit;
+  font-size: 0.74rem;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+
+.marks-toggle:hover { color: #ffffff; }
+
+.marks-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mark-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.mark-label {
+  flex: 1;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.mark-name {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.76rem;
+  padding: 3px 4px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: #f0f0f0;
+}
+
+.mark-num {
+  flex: none;
+  width: 34px;
+  font: inherit;
+  font-size: 0.74rem;
+  text-align: center;
+  padding: 3px 1px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: #f0f0f0;
+  -moz-appearance: textfield;
+}
+
+.mark-num::-webkit-outer-spin-button,
+.mark-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.mark-name::placeholder, .mark-num::placeholder { color: rgba(255, 255, 255, 0.33); }
+.mark-name:focus, .mark-num:focus { outline: none; border-bottom-color: #ffffff; }
+
+.term-gpa {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  min-height: 1.2em;
+}
+
+/* ============================================================ */
+/* # 🔲 📊  THE THREE SHAPES */
+/* # 🔤 CSS */
+/* # 🎯 Square, bar and disc side by side at three sizes. The square */
+/* #    fills from the bottom, the bar from the start of the line, and */
+/* #    the disc is drawn as SVG by the script */
+/* # 🔗 The three colours of the disc are named once here and used by */
+/* #    the drawing, so a colour is never written twice in two places */
+/* ============================================================ */
+:root {
+  --mOk: #7bc49a;
+  --mBad: #d98a8a;
+  --mNone: rgba(255, 255, 255, 0.22);
+}
+
+.trio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* An empty shape must still look like a shape. With nothing finished
+   yet all three are empty, and a hairline outline on a grey page reads
+   as nothing at all — which is how the trio came to look like one lone
+   bar. So each of the three carries its own floor: a filled ground and
+   a ring around it, and what fills from there is the reading. */
+.trio .sq {
+  position: relative;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.62);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.trio .sq i {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.trio .tbar {
+  position: relative;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.trio .tbar i {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: #ffffff;
+}
+
+.trio .dot {
+  display: inline-flex;
+  border-radius: 50%;
+}
+
+.trio .dot.none {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55);
+}
+
+.trio.md .sq { width: 13px; height: 13px; }
+.trio.md .tbar { width: 56px; height: 7px; }
+.trio.md .dot.none { width: 14px; height: 14px; }
+
+.trio.sm .sq { width: 9px; height: 9px; }
+.trio.sm .tbar { width: 34px; height: 5px; }
+.trio.sm .dot.none { width: 10px; height: 10px; }
+
+.trio.lg .sq { width: 34px; height: 34px; border-radius: 6px; }
+.trio.lg .tbar { width: 150px; height: 12px; }
+.trio.lg .dot.none { width: 44px; height: 44px; }
+
+/* ============================================================ */
+/* # 🗓️ 🟩  THE GRID OF DAYS */
+/* # 🔤 CSS */
+/* # 🎯 A column per week and a row per weekday, with the day names */
+/* #    beside it, the month over the week it starts in, and the week */
+/* #    number under the month */
+/* # 🔗 Squares outside the term keep their place and are not drawn, so */
+/* #    the weeks stay straight. A day still ahead is hollow, a day */
+/* #    missed is faint but filled — the eye must tell them apart */
+/* ============================================================ */
+.days {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.days-when {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* One date to a line: From on top, To under it. And the two words are
+   given one width between them, so the boxes start at the same place
+   and the pair reads as a range rather than two unrelated fields. */
+.days-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.days-label {
+  display: grid;
+  grid-template-columns: 42px auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.days-date {
+  font-size: 0.8rem;
+  padding: 6px 8px;
+  color-scheme: dark;
+}
+
+.days-grid { max-width: 100%; overflow-x: auto; }
+
+.days-body { display: flex; gap: 6px; align-items: flex-end; }
+
+.day-names {
+  display: grid;
+  grid-template-rows: repeat(7, 13px);
+  gap: 3px;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.45);
+  align-items: center;
+  text-align: start;
+}
+
+.days-stack { display: flex; flex-direction: column; gap: 2px; }
+
+.day-months, .day-weeks {
+  display: grid;
+  gap: 3px;
+  font-size: 0.58rem;
+  color: rgba(255, 255, 255, 0.42);
+  text-align: center;
+}
+
+.day-cells {
+  display: grid;
+  grid-template-rows: repeat(7, 13px);
+  gap: 3px;
+}
+
+.day {
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.14);
+  cursor: pointer;
+}
+
+/* A day worked is green. A day gone by with nothing on it is a plain
+   filled square. A day still ahead is a lighter square with a ring
+   drawn inside it: it must be SEEN — an invisible square reads as no
+   square at all, and the squares ahead are half the news. The ring is
+   an inset shadow, not a border, because a border would add two pixels
+   to a square whose size is fixed and push the whole grid out of line.
+   Only the days outside the term stay unseen, and they are not days. */
+.day.on { background: var(--mOk); }
+.day.miss { background: rgba(255, 255, 255, 0.16); }
+.day.ahead {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
+}
+.day.today { outline: 1px solid #ffffff; outline-offset: 1px; }
+.day.pad { background: transparent; box-shadow: none; cursor: default; }
+
+/* ============================================================ */
+/* # 📖 🚪  THE COURSE PAGE */
+/* # 🔤 CSS */
+/* # 🎯 The same dark page, but one course wide: a name across the */
+/* #    middle, the shapes under it at their largest, and chapter rows */
+/* #    wide enough to read a real title */
+/* # 🔗 It borrows the board's own frame, so opening a course does not */
+/* #    feel like landing in a different site */
+/* ============================================================ */
+.course-shape { display: flex; justify-content: center; }
+
+.crows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.crow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.crow-name {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: #f4f4f4;
+}
+
+.crow-name::placeholder { color: rgba(255, 255, 255, 0.4); }
+.crow-name:focus { outline: none; background: rgba(255, 255, 255, 0.08); border-radius: 5px; }
+
+.col-open {
+  flex: none;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+
+.col-open:hover { color: #ffffff; background: rgba(255, 255, 255, 0.12); }
+
+/* ============================================================ */
+/* # 🕰️ ⭕  THE RING OF THE TERM */
+/* # 🔤 CSS */
+/* # 🎯 A ring that fills as the term goes by, with the days left */
+/* #    written in the middle of it, standing where the two date boxes */
+/* #    were before the dates were set */
+/* # 🔗 Its colour belongs to no other thing on this page: green here */
+/* #    means finished and white means done, and the term passing is */
+/* #    neither. It is a deadline, so it is given a colour of its own. */
+/* #    The arc is turned a quarter back so it starts at the top, the */
+/* #    way a clock is read, not at three o'clock where SVG starts */
+/* ============================================================ */
+.term-ring {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+/* The pencil sits inside the ring, under the two lines of text and
+   above the lower arc. It is faint until the pointer finds it, so the
+   number stays the loud thing in the middle and the way to change the
+   dates is there for whoever looks for it. */
+.ring-edit {
+  position: absolute;
+  left: 50%;
+  bottom: 13px;
+  transform: translateX(-50%);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+
+.ring-edit:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ring-track { stroke: rgba(255, 255, 255, 0.16); }
+
+.ring-arc {
+  stroke: #9b8cd8;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.ring-left, .ring-total {
+  font-family: ui-monospace, Consolas, monospace;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.ring-left { fill: #ffffff; font-size: 24px; font-weight: 700; }
+.ring-total { fill: rgba(255, 255, 255, 0.5); font-size: 9.5px; }
+
+/* ============================================================ */
+/* # 🔲 🧾  THE TERM'S OWN THREE SHAPES, AND ITS LINES */
+/* # 🔤 CSS */
+/* # 🎯 The trio read large between the term name and the grid of days, */
+/* #    with a few quiet lines of words under it saying the same thing */
+/* # 🔗 Words under shapes, not boxes around numbers: a box draws the */
+/* #    eye to the frame, and these are notes to be read once and left */
+/* ============================================================ */
+.term-shape {
+  display: flex;
+  justify-content: center;
+}
+

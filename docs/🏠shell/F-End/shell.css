@@ -21,12 +21,13 @@ body {
 }
 
 /* ============================================================ */
-/* # 🗂️ 👁️  PANELS AND THEIR TEXT */
+/* # 🗂️ 👁️  PANELS AND SHARED TEXT */
 /* # 🔤 CSS */
-/* # 🎯 The look of the three panels and their text: a column in the */
-/* #    middle of the page, with a title, a greeting, and a message line */
+/* # 🎯 The look of the panels and the text every part of the site uses: */
+/* #    a column in the middle, a title, a greeting, a message line, */
+/* #    a turning circle, and the small build mark in the corner */
 /* # 🔗 Only one panel shows at a time. The hidden rule is what makes the */
-/* #    switch work: script.js hides a panel, and this rule beats the */
+/* #    switch work: a script hides a panel, and this rule beats the */
 /* #    display of box, which would otherwise keep it on screen */
 /* ============================================================ */
 [hidden] {
@@ -41,6 +42,12 @@ body {
   max-width: 320px;
   padding: 16px;
   box-sizing: border-box;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .title {
@@ -59,26 +66,29 @@ body {
   word-break: break-all;
 }
 
+/* ============================================================ */
+/* # 💬 🪶  THE ONE LINE THAT EXPLAINS */
+/* # 🔤 CSS */
+/* # 🎯 A small faint line under a title or a button, saying why the */
+/* #    thing above it is there. For somebody opening the site for the */
+/* #    first time, who was never told what any of it is for */
+/* # 🔗 Faint on purpose: it must be readable to whoever looks for it, */
+/* #    and silent to whoever already knows */
+/* ============================================================ */
+.lede {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+
 .note {
   margin: 0;
   min-height: 1.2em;
   font-size: 0.9rem;
   color: #ffeaea;
   text-align: center;
-}
-
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.where {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #e8e8e8;
-  text-align: center;
-  word-break: break-all;
 }
 
 .build {
@@ -109,32 +119,15 @@ body {
   .spinner { animation-duration: 2.4s; }
 }
 
-body.probing .picker-dialog,
-body.probing .picker-dialog-bg,
-body.probing .picker-dialog-frame {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-.hint {
-  margin: 0;
-  padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  font-size: 0.85rem;
-  line-height: 1.6;
-  color: #f2f2f2;
-}
-
 /* ============================================================ */
 /* # ⌨️ 🔘  BOXES AND BUTTONS */
 /* # 🔤 CSS */
 /* # 🎯 The look of the text boxes and the buttons: rounded white frames, */
 /* #    the main button filled white so it reads as the first choice, */
 /* #    and the flat one plain for a side action like going back */
-/* # 🔗 Used by the field and btn classes in the panels in index.html. */
-/* #    They fill the panel width, so they stack neatly on a phone */
+/* # 🔗 Shared by every part of the site, so they live here and not in a */
+/* #    feature folder. They fill the panel width, so they stack neatly */
+/* #    on a phone */
 /* ============================================================ */
 .field {
   font: inherit;
@@ -190,3 +183,66 @@ body.probing .picker-dialog-frame {
   font-size: 0.9rem;
   padding: 8px;
 }
+
+/* ============================================================ */
+/* # 🙂 📌  THE CORNER THAT FLOATS */
+/* # 🔤 CSS */
+/* # 🎯 A round face and a small tick pinned to the top corner, lifted */
+/* #    off the page by a soft shadow so they read as hovering over it */
+/* #    rather than printed on it */
+/* # 🔗 Fixed, not merely placed at the top: the board can grow taller */
+/* #    than the screen, and these two must stay where they are while */
+/* #    it scrolls under them. The tick becomes a turning circle by */
+/* #    emptying its text and spinning its border — the same circle the */
+/* #    rest of the site uses while it waits */
+/* ============================================================ */
+.hud {
+  position: fixed;
+  top: 14px;
+  inset-inline-end: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud-face {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+.hud-face:hover { border-color: #ffffff; }
+
+.hud-sync {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 0.78rem;
+  line-height: 1;
+  color: #cfe8d8;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.hud-sync.busy {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  background: transparent;
+  box-shadow: none;
+  animation: spin 0.8s linear infinite;
+}
+
+.hud-sync.wrong { color: #ffd0d0; }

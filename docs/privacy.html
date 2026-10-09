@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyTerm — Privacy</title>
+<style>
+  body { margin: 0; padding: 40px 18px; background: #3a3a3a; color: #ededed;
+         font-family: system-ui, "Segoe UI", sans-serif; line-height: 1.8; }
+  .page { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin: 0 0 6px; }
+  h2 { font-size: 1rem; margin: 30px 0 8px; }
+  p, li { font-size: .92rem; color: rgba(255,255,255,.85); }
+  .when { margin: 0 0 24px; font-size: .8rem; color: rgba(255,255,255,.5); }
+  a { color: #bcd7ff; }
+  .plain { border: 1px solid rgba(255,255,255,.22); border-radius: 10px; padding: 14px 18px; background: rgba(255,255,255,.05); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Privacy — MyTerm</h1>
+<p class="when">Last updated 10 October 2026</p>
+
+<p class="plain">MyTerm is a study board for one university term. <strong>Your term — its courses, its chapters and its marks — is stored in your own Google Drive, in a folder you pick. It is never copied to us.</strong></p>
+
+<h2>What we keep</h2>
+<ul>
+  <li><strong>Your sign-in.</strong> Your email address and a scrambled form of your password, held by Supabase so you can log in.</li>
+  <li><strong>A pointer.</strong> The name of your Drive folder and the id of your term file — so that opening MyTerm on another device finds your work instead of asking you where it is.</li>
+  <li><strong>A key to keep the link alive.</strong> When you link your Google account, Google gives us a key that lets us ask for a short-lived permit on your behalf. The key is kept on our server, never in your browser, and never shown to anyone.</li>
+  <li><strong>A counter.</strong> A number that goes up each time you save, so your other device knows there is something new to read. It carries no content.</li>
+</ul>
+
+<h2>What we do not keep</h2>
+<ul>
+  <li>The contents of your term. Those are files in your Drive.</li>
+  <li>Anything from the rest of your Drive. We ask Google only for <code>drive.file</code>: an app with that permission can see the files it created itself and the folder you handed it, and nothing else.</li>
+  <li>Trackers, advertising identifiers, or analytics about how you use the page.</li>
+</ul>
+
+<h2>Who else sees it</h2>
+<p>Two services hold what is listed above: <a href="https://supabase.com/privacy">Supabase</a> (sign-in, pointer, key) and <a href="https://policies.google.com/privacy">Google</a> (your Drive). Nothing is sold, and nothing is shared with anyone else.</p>
+
+<h2>Taking it back</h2>
+<ul>
+  <li><strong>Unlink Google</strong> from inside MyTerm: the stored key is deleted at once, and we can no longer reach your Drive.</li>
+  <li>Or revoke it at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</li>
+  <li>Your files stay yours either way — unlinking never deletes anything in your Drive.</li>
+  <li>To delete your account and the pointer with it, write to the address below.</li>
+</ul>
+
+<h2>Contact</h2>
+<p>syncbumousa@gmail.com</p>
+
+<p><a href="./">← Back to MyTerm</a></p>
+
+</div>
+</body>
+</html>

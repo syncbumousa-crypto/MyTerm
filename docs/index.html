@@ -1,34 +1,52 @@
 <!-- ============================================================ -->
 <!-- # ⚙️ 📄  PAGE SETUP -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 Sets up the page: its type, Arabic language, right to left text, -->
-<!-- #    letter encoding so Arabic shows the right way, phone screen size, -->
+<!-- # 🎯 Sets up the page: its type, English language, left to right text, -->
+<!-- #    letter encoding, phone screen size, -->
 <!-- #    the tab name, and it calls the style file -->
 <!-- # 🔗 None of this shows on the page. It all runs before the content is -->
 <!-- #    drawn. The v number on the style file is bumped on every publish, -->
 <!-- #    so a visitor never gets an old copy out of the browser memory -->
 <!-- ============================================================ -->
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="css/style.css?v=21">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=57">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=57">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=57">
 </head>
 <body>
+
+<!-- ============================================================ -->
+<!-- # 🙂 📌  THE CORNER: A FACE AND A TICK -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 Pinned to the top corner above every screen: the tick that -->
+<!-- #    says the work reached Drive, and the round face that opens -->
+<!-- #    the account and the saving place -->
+<!-- # 🔗 Hidden until somebody is logged in, because before that there -->
+<!-- #    is no account to show and nothing on its way to anywhere -->
+<!-- ============================================================ -->
+<div class="hud" id="hud" hidden>
+  <span class="hud-sync" id="hud-sync" title="Saved to your Drive">✓</span>
+  <button class="hud-face" id="hud-face" type="button"></button>
+</div>
 
 <!-- ============================================================ -->
 <!-- # 👆 🔘  PICK WHAT TO DO -->
 <!-- # 🔤 HTML -->
 <!-- # 🎯 The first panel: two buttons to pick what to do, -->
 <!-- #    make a new account or log in -->
-<!-- # 🔗 script.js hides this panel and shows the form panel below -->
-<!-- #    when one of the buttons is clicked -->
+<!-- # 🔗 The accounts screen file hides this panel and shows the form -->
+<!-- #    panel below when one of the buttons is clicked -->
 <!-- ============================================================ -->
 <div class="box" id="choice">
-  <button class="btn btn-main" type="button" id="go-signup">إنشاء حساب</button>
-  <button class="btn" type="button" id="go-login">تسجيل الدخول</button>
+  <h1 class="title">MyTerm</h1>
+  <p class="lede">Your term board — and your courses are saved in your own Drive, not with us.</p>
+  <button class="btn btn-main" type="button" id="go-signup">Create account</button>
+  <button class="btn" type="button" id="go-login">Log in</button>
 </div>
 
 <!-- ============================================================ -->
@@ -36,16 +54,16 @@
 <!-- # 🔤 HTML -->
 <!-- # 🎯 The form panel: an email box, a password box, a send button, -->
 <!-- #    a back button, and a line for messages -->
-<!-- # 🔗 Hidden until a button above is clicked. script.js changes the -->
-<!-- #    title and the send button text, because the same form is used -->
-<!-- #    for both signing up and logging in -->
+<!-- # 🔗 Hidden until a button above is clicked. The accounts screen file -->
+<!-- #    changes the title and the send button text, because the same -->
+<!-- #    form is used for both signing up and logging in -->
 <!-- ============================================================ -->
 <form class="box" id="form" hidden>
   <h1 class="title" id="form-title"></h1>
-  <input class="field" id="email" type="email" placeholder="البريد" required autocomplete="email">
-  <input class="field" id="password" type="password" placeholder="كلمة السر" required minlength="6" autocomplete="current-password">
+  <input class="field" id="email" type="email" placeholder="Email" required autocomplete="email">
+  <input class="field" id="password" type="password" placeholder="Password" required minlength="6" autocomplete="current-password">
   <button class="btn btn-main" type="submit" id="submit"></button>
-  <button class="btn btn-flat" type="button" id="back">رجوع</button>
+  <button class="btn btn-flat" type="button" id="back">Back</button>
   <p class="note" id="note"></p>
 </form>
 
@@ -53,12 +71,13 @@
 <!-- # 👤 ✅  LOGGED IN PANEL -->
 <!-- # 🔤 HTML -->
 <!-- # 🎯 Shows which account is open, the Google Drive part, and a way out -->
-<!-- # 🔗 script.js shows this one after a good login. The three groups -->
-<!-- #    inside are three steps, and drive.js shows one at a time: -->
-<!-- #    link the account, then pick the place, then the finished file. -->
-<!-- #    All three start hidden behind a turning circle, because working -->
-<!-- #    out which one is right needs answers from two services. Showing -->
-<!-- #    any of them first would flash a wrong step for a moment -->
+<!-- # 🔗 The accounts screen file shows this one after a good login. The -->
+<!-- #    three groups inside are three steps, and the storage screen -->
+<!-- #    file shows one at a time: link the account, pick the place, -->
+<!-- #    then the finished file. All three start hidden behind a turning -->
+<!-- #    circle, because working out which one is right needs answers -->
+<!-- #    from two services. Showing any of them first would flash a -->
+<!-- #    wrong step for a moment -->
 <!-- ============================================================ -->
 <div class="box" id="session" hidden>
   <p class="who" id="who"></p>
@@ -66,17 +85,19 @@
   <div class="spinner" id="session-spin"></div>
 
   <div class="stack" id="step-link" hidden>
-    <button class="btn btn-main" type="button" id="link-google">اربط حساب قوقل</button>
+    <button class="btn btn-main" type="button" id="link-google">Link your Google account</button>
+    <p class="lede">So we can keep your courses in a folder of your Drive. We see nothing of your files but what we make ourselves.</p>
   </div>
 
   <div class="stack" id="step-place" hidden>
-    <p class="where">مكان الحفظ المستمر</p>
+    <p class="where">Where your work is kept</p>
+    <p class="lede">Pick a folder of your own, or we make you a MyTerm folder at the root of your Drive.</p>
 
     <div class="spinner" id="probe-spin" hidden></div>
 
     <div class="stack" id="place-buttons">
-      <button class="btn btn-main" type="button" id="pick-place">اختر المكان بنفسك</button>
-      <button class="btn" type="button" id="auto-place">خزّنه في مجلد My Term في جذر ملفاتي</button>
+      <button class="btn btn-main" type="button" id="pick-place">Pick the place yourself</button>
+      <button class="btn" type="button" id="auto-place">Keep it in a MyTerm folder at my Drive root</button>
     </div>
 
     <p class="hint" id="shield-hint" hidden></p>
@@ -84,15 +105,79 @@
 
   <div class="stack" id="step-done" hidden>
     <p class="where" id="drive-where"></p>
-    <button class="btn" type="button" id="save-test">احفظ في ملفي</button>
-    <a class="btn btn-flat" id="drive-open" href="#" target="_blank" rel="noopener">افتح الملف في درايف</a>
-    <button class="btn btn-flat" type="button" id="change-place">غيّر مكان الحفظ</button>
+    <a class="btn btn-flat" id="drive-open" href="#" target="_blank" rel="noopener">Open the file in Drive</a>
+    <button class="btn btn-flat" type="button" id="change-place">Change where it is kept</button>
   </div>
 
   <p class="note" id="drive-note"></p>
-  <button class="btn btn-flat" type="button" id="logout">خروج</button>
+  <button class="btn btn-flat" type="button" id="unlink-google">Unlink Google</button>
+  <button class="btn btn-flat" type="button" id="to-board" hidden>Back to the term</button>
+  <button class="btn btn-flat" type="button" id="logout">Log out</button>
 </div>
 
+<!-- ============================================================ -->
+<!-- # 🧱 📚  THE TERM BOARD -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 The main screen once the saving place is ready: the term dates -->
+<!-- #    at the very top, then its name, then the grid of its days, then -->
+<!-- #    the button that adds a course right above the columns it adds to -->
+<!-- # 🔗 The name spot holds three things that take turns: the button -->
+<!-- #    before there is a name, the box while typing, and the title -->
+<!-- #    after. The columns box starts empty and the screen file fills -->
+<!-- #    it. The page reads right to left, so each new column lands to -->
+<!-- #    the left of the one before it with no rule for that -->
+<!-- ============================================================ -->
+<div class="board" id="board" hidden>
+
+  <div class="term-ring" id="term-ring" hidden title="Term dates"></div>
+
+  <div class="days-when" id="term-when">
+    <div class="days-row">
+      <label class="days-label">From <input class="field days-date" id="term-from" type="date"></label>
+      <label class="days-label">To <input class="field days-date" id="term-to" type="date"></label>
+    </div>
+    <button class="btn btn-flat" type="button" id="term-when-done">Done</button>
+  </div>
+
+  <div class="term">
+    <button class="btn btn-main" type="button" id="term-set">Name your term</button>
+    <input class="field term-input" id="term-input" placeholder="Term name" hidden>
+    <h1 class="term-title" id="term-title" hidden></h1>
+  </div>
+
+  <p class="term-gpa" id="term-gpa"></p>
+
+  <div class="term-shape" id="term-shape"></div>
+
+  <div class="days" id="days">
+    <div class="days-grid" id="days-grid"></div>
+    <p class="lede" id="days-line"></p>
+  </div>
+  <button class="btn" type="button" id="add-course">Add a course</button>
+
+  <div class="columns" id="columns"></div>
+  <p class="lede" id="board-empty" hidden>Start with your first course — press "Add a course".</p>
+
+  <button class="btn" type="button" id="renew-access" hidden>Renew access to your Drive</button>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- # 📖 🚪  ONE COURSE ON A PAGE OF ITS OWN -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 The course opened from the board: its name, its three shapes -->
+<!-- #    read large, and its chapters in full rows -->
+<!-- # 🔗 Hidden until a course is opened. The board is hidden while it -->
+<!-- #    shows, so they are never both on screen at once -->
+<!-- ============================================================ -->
+<div class="board" id="course" hidden>
+  <button class="btn btn-flat" type="button" id="course-back">← Back to the term</button>
+  <input class="field term-input" id="course-name" placeholder="Course name">
+  <div class="course-shape" id="course-shape"></div>
+  <p class="lede" id="course-line"></p>
+  <div class="crows" id="course-chapters"></div>
+  <button class="btn" type="button" id="course-add">Add a chapter</button>
+</div>
 <!-- ============================================================ -->
 <!-- # 🔖 👁️  VERSION MARK -->
 <!-- # 🔤 HTML -->
@@ -102,25 +187,40 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v21</p>
+<p class="build">v57</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 Brings in three outside libraries, then this site's own two files: -->
-<!-- #    the sign in service, Google permission, and the Google file window -->
+<!-- # 🎯 Brings in three outside libraries: the sign in service, Google -->
+<!-- #    permission, and the Google file window. Then this site's own -->
+<!-- #    files, in the order they need each other -->
 <!-- # 🔗 Sits at the end of body so the panels above already exist when the -->
-<!-- #    scripts look for them. The libraries come first because the two -->
-<!-- #    site files use them. The third one is only needed by the pick your -->
-<!-- #    own place path, and a strict browser may block the frame it opens. -->
-<!-- #    The v number on the two site files is bumped on every publish, so -->
-<!-- #    a reload always brings the new code and never an old copy -->
+<!-- #    scripts look for them. The libraries come first because the site -->
+<!-- #    files use them. Then every B-End file, which shows nothing and -->
+<!-- #    only talks to a service or a store. Then the screen files, which -->
+<!-- #    draw and call the names the B-End files left ready. Two reasons -->
+<!-- #    for this exact order: a screen file loaded first would look for a -->
+<!-- #    name that is not there yet, and the board screen must be loaded -->
+<!-- #    before the storage screen, because the storage screen is the one -->
+<!-- #    that calls out the place is ready, and a call with nobody -->
+<!-- #    listening yet is lost. The v number is bumped on every publish, -->
+<!-- #    so a reload always brings the new code, never an old copy -->
 <!-- ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="js/script.js?v=21"></script>
-<script src="js/drive.js?v=21"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=57"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=57"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=57"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=57"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=57"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=57"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=57"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=57"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=57"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=57"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=57"></script>
 
 </body>
 </html>

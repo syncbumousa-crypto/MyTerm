@@ -14,8 +14,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=27">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=27">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=28">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=28">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=28">
 </head>
 <body>
 
@@ -92,7 +93,35 @@
   </div>
 
   <p class="note" id="drive-note"></p>
+  <button class="btn btn-flat" type="button" id="to-board" hidden>رجوع إلى الترم</button>
   <button class="btn btn-flat" type="button" id="logout">خروج</button>
+</div>
+
+<!-- ============================================================ -->
+<!-- # 🧱 📚  THE TERM BOARD -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 The main screen once the saving place is ready: a name for the -->
+<!-- #    term at the top, a button that adds a course, and one column -->
+<!-- #    for every course added -->
+<!-- # 🔗 The name spot holds three things that take turns: the button -->
+<!-- #    before there is a name, the box while typing, and the title -->
+<!-- #    after. The columns box starts empty and the screen file fills -->
+<!-- #    it. The page reads right to left, so each new column lands to -->
+<!-- #    the left of the one before it with no rule for that -->
+<!-- ============================================================ -->
+<div class="board" id="board" hidden>
+
+  <div class="term">
+    <button class="btn btn-main" type="button" id="term-set">ادخل اسم الترم</button>
+    <input class="field term-input" id="term-input" placeholder="اسم الترم" hidden>
+    <h1 class="term-title" id="term-title" hidden></h1>
+  </div>
+
+  <button class="btn" type="button" id="add-course">أضف مادة</button>
+
+  <div class="columns" id="columns"></div>
+
+  <button class="btn btn-flat board-foot" type="button" id="board-more">مكان الحفظ والحساب</button>
 </div>
 
 <!-- ============================================================ -->
@@ -104,30 +133,35 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v27</p>
+<p class="build">v28</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
 <!-- # 🔤 HTML -->
 <!-- # 🎯 Brings in three outside libraries: the sign in service, Google -->
-<!-- #    permission, and the Google file window. Then this site's own four -->
+<!-- #    permission, and the Google file window. Then this site's own -->
 <!-- #    files, in the order they need each other -->
 <!-- # 🔗 Sits at the end of body so the panels above already exist when the -->
 <!-- #    scripts look for them. The libraries come first because the site -->
-<!-- #    files use them. Then the two B-End files, which show nothing and -->
-<!-- #    only talk to the two services. Then the two F-End files, which -->
-<!-- #    draw the screen and call the names the B-End files left ready. -->
-<!-- #    The order matters: a screen file loaded first would look for a -->
-<!-- #    name that does not exist yet. The v number is bumped on every -->
-<!-- #    publish, so a reload always brings the new code, never an old copy -->
+<!-- #    files use them. Then every B-End file, which shows nothing and -->
+<!-- #    only talks to a service or a store. Then the screen files, which -->
+<!-- #    draw and call the names the B-End files left ready. Two reasons -->
+<!-- #    for this exact order: a screen file loaded first would look for a -->
+<!-- #    name that is not there yet, and the board screen must be loaded -->
+<!-- #    before the storage screen, because the storage screen is the one -->
+<!-- #    that calls out the place is ready, and a call with nobody -->
+<!-- #    listening yet is lost. The v number is bumped on every publish, -->
+<!-- #    so a reload always brings the new code, never an old copy -->
 <!-- ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=27"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=27"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=27"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=27"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=28"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=28"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=28"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=28"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=28"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=28"></script>
 
 </body>
 </html>

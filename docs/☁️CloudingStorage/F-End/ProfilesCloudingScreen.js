@@ -98,7 +98,7 @@
       note.textContent = '';
       hint.hidden = true;
       show(null);
-      const linked = cloud.remember();
+      const linked = await cloud.remember();
       place = await cloud.loadProfile().catch(() => null);
 
       const id = place?.drive_file_id;
@@ -136,6 +136,20 @@
       allowPick(false);
     }
   };
+
+  // Taking it back must sit where giving it was. The stored key is
+  // dropped on the server, the permit here is forgotten, and the user
+  // is put back at the first step as if they had never linked
+  $('unlink-google').onclick = act(async () => {
+    note.textContent = 'Unlinking…';
+    await cloud.unlink();
+    cloud.forgetToken();
+    await cloud.forgetPlace();
+    place = null;
+    tell('place-needed');
+    show('link');
+    note.textContent = 'Unlinked. Your files in Drive were not touched.';
+  });
 
   document.addEventListener('signed-in', onSignedIn);
   if (window.myTermSignedIn) onSignedIn();

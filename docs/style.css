@@ -1,4 +1,5 @@
 /* ============================================================ */
+/* # 🎨 🖥️  GRAY PAGE, CENTERED */
 /* # 🔤 CSS */
 /* # 🎯 The base of the page: a gray background that fills the screen */
 /* #    with no white gaps, and it puts whatever is inside in the middle */
@@ -20,6 +21,7 @@ body {
 }
 
 /* ============================================================ */
+/* # 🗂️ 👁️  PANELS AND THEIR TEXT */
 /* # 🔤 CSS */
 /* # 🎯 The look of the three panels and their text: a column in the */
 /* #    middle of the page, with a title, a greeting, and a message line */
@@ -65,7 +67,22 @@ body {
   text-align: center;
 }
 
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.where {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e8e8e8;
+  text-align: center;
+  word-break: break-all;
+}
+
 /* ============================================================ */
+/* # ⌨️ 🔘  BOXES AND BUTTONS */
 /* # 🔤 CSS */
 /* # 🎯 The look of the text boxes and the buttons: rounded white frames, */
 /* #    the main button filled white so it reads as the first choice, */

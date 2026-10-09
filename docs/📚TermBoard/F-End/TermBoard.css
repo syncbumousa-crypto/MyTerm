@@ -249,44 +249,95 @@ body.board-on {
 
 .col-count b { color: var(--green); font-weight: 400; }
 
-.col-top .trio { flex: 0 0 92px; min-width: 0; margin-inline-start: 2px; }
+.col-top .trio { flex: 0 0 84px; min-width: 0; margin-inline-start: 2px; }
 
-/* Opening the course and removing it are rare next to reading the card,
-   so they are not given a share of a line that is already short: they
-   lie over its end and come out when the card is pointed at. They were
-   in the row, and between them they took enough of it that every course
-   name was cut to four letters and an ellipsis */
-.col-icons {
-  position: absolute;
-  inset-inline-end: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 2px;
-  padding-inline-start: 10px;
-  opacity: 0;
-  transition: opacity .12s ease;
-  background: linear-gradient(to right, transparent, var(--panel2) 10px);
-}
-
-.col:hover .col-icons,
-.col-icons:focus-within { opacity: 1; }
-
-.col-icon {
+/* ============================================================ */
+/* # ⚙️ 🗂️  THE GEAR AND WHAT IT OPENS */
+/* # 🔤 CSS */
+/* # 🎯 A small gear at the end of the strip, and the panel it opens */
+/* #    beside itself: the hours the course is worth, and removing it */
+/* # 🔗 These were a button each on the strip and a line inside the */
+/* #    marks table — three places for two things asked once a term, and */
+/* #    the two on the strip were taking enough of a short line that */
+/* #    every course name was cut. The panel is laid over the card and */
+/* #    not inside its flow, so opening it moves nothing */
+/* ============================================================ */
+.col-gear {
   flex: none;
-  padding: 2px 4px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
   font: inherit;
   font-size: 11px;
   line-height: 1;
   border: 0;
   border-radius: 4px;
-  background: #2e2f36;
+  background: transparent;
+  color: var(--dim2);
+  cursor: pointer;
+}
+
+.col-gear:hover, .col-gear.on { color: #ffffff; background: #32333b; }
+
+.col-menu {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% - 4px);
+  inset-inline-end: 8px;
+  width: 168px;
+  padding: 7px 8px 8px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+  cursor: default;
+}
+
+.col-menu-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9.5px;
+  color: var(--dim);
+  margin-bottom: 7px;
+}
+
+.col-menu-num {
+  width: 44px;
+  height: 20px;
+  margin-inline-start: auto;
+  box-sizing: border-box;
+  font-family: var(--mono);
+  font-size: 10px;
+  text-align: center;
+  padding: 0 3px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--well);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+
+.col-menu-num::-webkit-outer-spin-button,
+.col-menu-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.col-menu-num:focus { outline: 2px solid var(--blue); outline-offset: 0; }
+
+.col-menu-drop {
+  display: block;
+  width: 100%;
+  font: inherit;
+  font-size: 9.5px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: transparent;
   color: var(--dim);
   cursor: pointer;
 }
 
-.col-icon:hover { color: #ffffff; background: #42434c; }
-.col-icon.asking { background: #31323a; color: var(--orange); font-size: 9px; }
+.col-menu-drop:hover { color: #ffffff; border-color: var(--dim2); background: #31323a; }
+.col-menu-drop.asking { color: var(--orange); border-color: var(--orange); background: #2e2220; }
 
 /* ============================================================ */
 /* # 📑 📏  THE CHAPTER ROWS */
@@ -680,17 +731,6 @@ body.board-on {
   padding: 4px 0 2px;
   font-variant-numeric: tabular-nums;
 }
-
-.asHours {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 0 6px;
-  font-size: 9.5px;
-  color: var(--dim);
-}
-
-.asHours .asIn { width: 42px; flex: none; margin-inline-start: auto; }
 
 .marks .col-add { display: block; width: 100%; }
 

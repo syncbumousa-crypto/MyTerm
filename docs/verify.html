@@ -186,6 +186,27 @@
           counted.length ? counted.join(' · ') + ' — carry the id on the element instead'
                          : 'every drawn thing is found by its own id');
 
+    // 11 - every name a file calls is a name that file has. Parsing cannot
+    // tell: an edit that cut a block of helpers out of one of these files
+    // left it parsing perfectly, and the board drew nothing at all, with
+    // no error anywhere until something tried to call what was gone
+    const BUILT_IN = new Set(['if', 'for', 'while', 'switch', 'catch', 'return', 'typeof', 'function',
+      'Number', 'String', 'Boolean', 'Math', 'Object', 'Array', 'JSON', 'Date', 'Set', 'Map',
+      'Promise', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'parseInt',
+      'parseFloat', 'isNaN', 'RegExp', 'Error', 'console', 'async', 'await', 'hsl', 'rgb', 'rgba', 'url']);
+    const strangers = [];
+    js.forEach(([p, src]) => {
+      const defined = new Set([...src.matchAll(/(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g)].map(m => m[1]));
+      const params = new Set([...src.matchAll(/(?:\(|,)\s*([A-Za-z_$][\w$]*)\s*(?:,|\)|=>)/g)].map(m => m[1]));
+      [...new Set([...src.matchAll(/(?:^|[^.\w$])([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]))]
+        .forEach(name => {
+          if (defined.has(name) || params.has(name) || BUILT_IN.has(name) || name in window) return;
+          strangers.push(p.split('/').pop() + ' → ' + name);
+        });
+    });
+    check('Every name a file calls is a name it has', strangers.length === 0,
+          strangers.length ? strangers.join(' · ') : 'no file calls something that is not there');
+
     draw();
   };
 

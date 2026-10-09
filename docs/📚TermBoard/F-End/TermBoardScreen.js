@@ -179,9 +179,13 @@
     open.title = 'Open the course page';
     open.onclick = () => window.MyTermCoursePage?.open(course.id);
 
+    const icons = document.createElement('div');
+    icons.className = 'col-icons';
+    icons.append(open, drop);
+
     const top = document.createElement('div');
     top.className = 'col-top';
-    top.append(twist, grade, title, readingOf(course, 'md'), open, drop);
+    top.append(twist, grade, title, readingOf(course, 'md'), icons);
     top.onclick = event => { if (!event.target.closest('input, button')) fold(); };
 
     const body = document.createElement('div');

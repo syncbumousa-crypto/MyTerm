@@ -14,9 +14,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=35">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=35">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=35">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=36">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=36">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=36">
 </head>
 <body>
 
@@ -29,6 +29,8 @@
 <!-- #    panel below when one of the buttons is clicked -->
 <!-- ============================================================ -->
 <div class="box" id="choice">
+  <h1 class="title">MyTerm</h1>
+  <p class="lede">لوحةُ ترمك — ومَوادُّك تُحفظ في درايفك أنت، لا عندنا.</p>
   <button class="btn btn-main" type="button" id="go-signup">إنشاء حساب</button>
   <button class="btn" type="button" id="go-login">تسجيل الدخول</button>
 </div>
@@ -70,10 +72,12 @@
 
   <div class="stack" id="step-link" hidden>
     <button class="btn btn-main" type="button" id="link-google">اربط حساب قوقل</button>
+    <p class="lede">لنحفظ موادّك في مجلدٍ من درايفك. ولا نرى من ملفاتك إلا ما ننشئه نحن.</p>
   </div>
 
   <div class="stack" id="step-place" hidden>
     <p class="where">مكان الحفظ المستمر</p>
+    <p class="lede">اختر مجلدًا عندك، أو ننشئ لك مجلدًا باسم MyTerm في جذر درايفك.</p>
 
     <div class="spinner" id="probe-spin" hidden></div>
 
@@ -119,6 +123,7 @@
   <button class="btn" type="button" id="add-course">أضف مادة</button>
 
   <div class="columns" id="columns"></div>
+  <p class="lede" id="board-empty" hidden>ابدأ بأوّل مادة — اضغط «أضف مادة».</p>
 
   <p class="save-state" id="save-state"></p>
 
@@ -136,7 +141,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v35</p>
+<p class="build">v36</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -159,13 +164,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=35"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=35"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=35"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=35"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=35"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=35"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=35"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=36"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=36"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=36"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=36"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=36"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=36"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=36"></script>
 
 </body>
 </html>

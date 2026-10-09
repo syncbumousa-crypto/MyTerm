@@ -15,7 +15,7 @@
   const board = $('board'), session = $('session'), backBtn = $('to-board');
   const setBtn = $('term-set'), nameBox = $('term-input'), title = $('term-title');
   const columns = $('columns'), addBtn = $('add-course'), moreBtn = $('board-more');
-  const state = $('save-state'), renewBtn = $('renew-access');
+  const state = $('save-state'), renewBtn = $('renew-access'), empty = $('board-empty');
 
   const arabic = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
   const now = () => new Date().toISOString();
@@ -121,7 +121,9 @@
 
   const drawColumns = () => {
     columns.textContent = '';
-    living().forEach(course => columns.append(makeColumn(course)));
+    const here = living();
+    here.forEach(course => columns.append(makeColumn(course)));
+    empty.hidden = here.length > 0;
   };
 
   addBtn.onclick = () => {

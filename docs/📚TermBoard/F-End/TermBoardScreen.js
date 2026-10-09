@@ -23,7 +23,7 @@
   const newId = () => 'c-' + Math.random().toString(36).slice(2, 8);
   const newChapterId = () => 'h-' + Math.random().toString(36).slice(2, 8);
 
-  let data = { term: { name: '', updatedAt: null }, courses: [] };
+  let data = { term: { name: '', start: '', end: '', updatedAt: null }, days: {}, courses: [] };
 
   const touched = () => keep.change(data);
   const changed = course => { keep.touchCourse(course.id); touched(); };
@@ -50,7 +50,7 @@
   title.onclick = editName;
 
   nameBox.oninput = () => {
-    data.term = { name: nameBox.value, updatedAt: now() };
+    data.term = { ...data.term, name: nameBox.value, updatedAt: now() };
     touched();
   };
 
@@ -133,8 +133,39 @@
       fresh?.select();
     };
 
-    column.append(top, body, add, scoreLine(course), marksPart(course));
+    column.append(top, readingOf(course, 'md'), body, add, scoreLine(course), marksPart(course));
     return column;
+  };
+
+  // ============================================================
+  // # 🔲 📖  WHAT THE THREE SHAPES SAY ABOUT A COURSE
+  // # 🔤 JavaScript
+  // # 🎯 Turns a course into the three readings: is it set up, how much
+  // #    is finished, and how its marks stand
+  // # 🔗 Set up means it has chapters at all, and each chapter has a
+  // #    name. Finished is the ticks. The marks are read out of a
+  // #    hundred weight: what was earned, what was lost, and what has
+  // #    not been graded — the third is silence, not a failure
+  // ============================================================
+  const readingOf = (course, size) => {
+    const list = alive(course);
+    const named = list.filter(h => h.name.trim() !== '').length;
+    const done = list.filter(h => h.done).length;
+
+    const items = (course.items || []).filter(i => !i.deleted && i.weight > 0);
+    const weight = items.reduce((s, i) => s + i.weight, 0) || 100;
+    const graded = items.filter(i => i.got !== null && i.outOf > 0);
+    const ok = graded.reduce((s, i) => s + (i.got / i.outOf) * i.weight, 0);
+    const bad = graded.reduce((s, i) => s + (1 - i.got / i.outOf) * i.weight, 0);
+
+    return window.MyTermShapes.draw(size, {
+      ready: list.length ? Math.round((named / list.length) * 100) : 0,
+      readyTip: list.length ? `${arabic(named)} من ${arabic(list.length)} فصلًا مسمّى` : 'لا فصول بعد',
+      done: list.length ? Math.round((done / list.length) * 100) : 0,
+      doneTip: list.length ? `أنجزت ${arabic(done)} من ${arabic(list.length)}` : 'لا فصول بعد',
+      marks: { ok, bad, unknown: Math.max(0, weight - ok - bad) },
+      marksTip: graded.length ? `${arabic(Math.round(ok))} مكسوبة · ${arabic(Math.round(bad))} ضائعة · ${arabic(Math.round(Math.max(0, weight - ok - bad)))} لم تُرصد` : 'لم تُرصد درجات بعد'
+    });
   };
 
   // ============================================================
@@ -408,7 +439,11 @@
     if (name === 'saved') renewBtn.hidden = true;
   });
 
-  const paint = () => { showName(); drawColumns(); };
+  const paint = () => {
+    showName();
+    drawColumns();
+    window.MyTermDays?.show(data);
+  };
 
   const openBoard = async event => {
     const fileId = event?.detail?.fileId;

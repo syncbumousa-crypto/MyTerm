@@ -25,11 +25,27 @@
 
   const cacheKey = () => 'myterm.board.' + fileId;
 
+  // أيّامُ الترم: مفتاحٌ لكل يوم، وفي كلٍّ حالتُه وختمُ وقتها، فيُدمج يومًا بيوم
+  const shapeDays = days => {
+    const out = {};
+    if (days && typeof days === 'object') {
+      Object.keys(days).forEach(key => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return;
+        const d = days[key];
+        out[key] = { done: d?.done === true, updatedAt: d?.updatedAt ?? null };
+      });
+    }
+    return out;
+  };
+
   const shape = doc => ({
     term: {
       name: typeof doc?.term?.name === 'string' ? doc.term.name : '',
+      start: typeof doc?.term?.start === 'string' ? doc.term.start : '',
+      end: typeof doc?.term?.end === 'string' ? doc.term.end : '',
       updatedAt: doc?.term?.updatedAt ?? null
     },
+    days: shapeDays(doc?.days),
     courses: Array.isArray(doc?.courses)
       ? doc.courses.filter(c => c && typeof c.name === 'string').map(c => ({
           id: typeof c.id === 'string' ? c.id : 'c-' + Math.random().toString(36).slice(2, 8),
@@ -131,7 +147,13 @@
       left.delete(t.id);
       return m ? mergeCourse(m, t) : t;
     });
-    return { term: pick(mine.term, theirs.term), courses: courses.concat([...left.values()]) };
+    // الأيّام تُدمج يومًا بيوم: يومٌ أشّرته على جوالك ويومٌ على حاسبك يبقيان معًا
+    const days = { ...theirs.days };
+    Object.keys(mine.days || {}).forEach(key => {
+      days[key] = days[key] ? pick(mine.days[key], days[key]) : mine.days[key];
+    });
+
+    return { term: pick(mine.term, theirs.term), days, courses: courses.concat([...left.values()]) };
   };
 
   // ============================================================
@@ -297,6 +319,10 @@
     flush: () => { clearTimeout(timer); return push(); },
 
     version: () => Number(raw?.version || 0),
+
+    // اللوحة الحيّة التي يملكها المخزن، تقرأها الشاشتان كلتاهما فلا نسختان
+    board: () => (raw ? shape(raw) : null),
+    live: () => raw,
 
     busy: () => dirty || sending,
 

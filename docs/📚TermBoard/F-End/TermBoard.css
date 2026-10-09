@@ -58,187 +58,267 @@ body.board-on {
 }
 
 /* ============================================================ */
-/* # 🧱 ⬅️  THE ROW OF COLUMNS */
+/* # 🧱 🗃️  THE GRID OF COURSE CARDS */
 /* # 🔤 CSS */
-/* # 🎯 Lays the course columns in one centered row, and lets them wrap */
-/* #    onto a second line on a narrow screen instead of running off it */
-/* # 🔗 The page reads right to left, so the row fills from the right */
-/* #    and every new column lands to the left of the one before it. */
-/* #    That ordering is the page direction, not a rule written here */
+/* # 🎯 Equal columns that reflow as the screen narrows, aligned to */
+/* #    their tops because courses have different numbers of chapters */
+/* # 🔗 They were a centred flex row of fixed width cards, so four */
+/* #    courses left a ragged gap and eight wrapped into a staircase. */
+/* #    A grid gives every course the same width whatever their number, */
+/* #    and the top alignment is deliberate: forcing equal heights */
+/* #    would pad short courses with empty room that says nothing */
 /* ============================================================ */
 .columns {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
   width: 100%;
 }
 
+@media (max-width: 1100px) { .columns { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 720px)  { .columns { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 460px)  { .columns { grid-template-columns: 1fr; } }
+
 .col {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 212px;
-  min-height: 240px;
-  padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  box-sizing: border-box;
+  overflow: hidden;
+  min-width: 0;
 }
 
 /* ============================================================ */
-/* # 🗑️ ✌️  THE HEAD OF A COLUMN, AND ITS REMOVE BUTTON */
+/* # 🏷️ 🔽  THE HEAD OF A CARD */
 /* # 🔤 CSS */
-/* # 🎯 Puts the name box and the small remove button on one line, and */
-/* #    makes the button plain until it is asked, then clear */
-/* # 🔗 The button stays faint so it is not pressed by accident, and */
-/* #    the asking state widens it with words, so the second press is */
-/* #    plainly a different thing from the first */
+/* # 🎯 One strip holding everything that is true of the whole course: */
+/* #    the fold arrow, the grade, the name with its count, the three */
+/* #    shapes, and the two small ways out — open it, or remove it */
+/* # 🔗 The whole strip folds the card, not the arrow alone: an arrow is */
+/* #    a twenty pixel target, and whoever misses it believes the card */
+/* #    is broken. Anything that can be typed in or pressed keeps its */
+/* #    own press, so the name is still edited where it is read */
 /* ============================================================ */
 .col-top {
   display: flex;
   align-items: center;
-  gap: 4px;
-}
-
-.col-drop {
-  flex: none;
-  font: inherit;
-  font-size: 0.85rem;
-  line-height: 1;
-  padding: 4px 6px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.35);
+  gap: 8px;
+  padding: 9px 10px;
+  background: var(--panel2);
   cursor: pointer;
+  user-select: none;
 }
 
-.col-drop:hover {
-  color: #ffffff;
-}
+.col-top:hover { background: #2c2d34; }
+.col.open .col-top { border-bottom: 1px solid var(--line); }
 
-.col-drop.asking {
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffeaea;
-}
-
-.col-name {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 6px 2px;
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
-  background: transparent;
-  color: #ffffff;
-  text-align: center;
-}
-
-.col-name::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.col-name:focus {
-  outline: none;
-  border-bottom-color: #ffffff;
-}
-
-.col-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* ============================================================ */
-/* # 📑 ✅  A CHAPTER ROW */
-/* # 🔤 CSS */
-/* # 🎯 One line per chapter: a small square that fills in when it is */
-/* #    finished, the name beside it, and a faint way to remove it */
-/* # 🔗 The square keeps its size whether marked or not, so a column */
-/* #    does not shift as chapters are ticked. The name takes the rest */
-/* #    of the room, and cuts off rather than widening the column */
-/* ============================================================ */
-.ch {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.ch-mark {
+.col-twist {
   flex: none;
   width: 20px;
   height: 20px;
   padding: 0;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 11px;
   line-height: 1;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--line);
   border-radius: 5px;
-  background: transparent;
-  color: #ffffff;
+  background: #2e2f36;
+  color: var(--dim);
+  cursor: pointer;
+  transition: transform .16s ease, color .16s ease, background .16s ease;
+}
+
+.col-twist:hover { background: var(--blue-dk); color: #ffffff; }
+.col.open .col-twist { transform: rotate(90deg); color: var(--ink); }
+
+/* The letter large and the number small under it, both read at a
+   glance. The colour is not decoration: it walks from green at the top
+   of the scale to red at the bottom, and the file that works out the
+   standing is the one that hands it over, so the number and its colour
+   can never drift apart */
+.col-grade {
+  flex: none;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #24252b;
+  color: var(--dim2);
   cursor: pointer;
 }
 
-.ch-mark.done {
-  background: #ffffff;
-  color: #3a3a3a;
-  border-color: #ffffff;
+.col-grade.has {
+  border-color: var(--g);
+  color: var(--g);
+}
+
+.col-grade.has:hover { background: var(--g); color: #14151a; }
+.col.marks-on .col-grade.has { background: var(--g); border-color: var(--g); color: #14151a; }
+.col.marks-on .col-grade { background: #31323a; color: var(--ink); }
+
+.col-grade b { font-size: 11px; line-height: 11px; font-weight: 700; letter-spacing: -.2px; }
+.col-grade s { font-size: 7px; line-height: 8px; opacity: .85; text-decoration: none; }
+
+.col-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.col-name {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  line-height: 1.25;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  min-width: 0;
+  width: 100%;
+  text-overflow: ellipsis;
+}
+
+.col-name::placeholder { color: var(--dim2); }
+.col-name:focus { outline: none; color: #ffffff; box-shadow: 0 1px 0 0 var(--blue); }
+
+.col-count {
+  font-size: 9.5px;
+  color: var(--dim2);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.col-count b { color: var(--green); font-weight: 400; }
+
+/* The three shapes take whatever the line has left, so the bar is as
+   long as the card allows and every card's bar starts in the same
+   place — which is the only way two of them can be compared by eye */
+.col-top .trio { flex: 1 1 auto; min-width: 0; margin-inline-start: 2px; }
+
+.col-icon {
+  flex: none;
+  padding: 2px 3px;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim2);
+  cursor: pointer;
+}
+
+.col-icon:hover { color: #ffffff; background: #32333b; }
+.col-icon.asking { background: #31323a; color: var(--orange); font-size: 9px; }
+
+/* ============================================================ */
+/* # 📑 ✅  THE CHAPTER ROWS */
+/* # 🔤 CSS */
+/* # 🎯 One tight line per chapter: a square that fills when it is */
+/* #    finished, its number, its name, and a faint way to remove it */
+/* # 🔗 The list is what folds away, not some detail inside it, so a */
+/* #    folded card is one strip and a screen holds twenty of them. The */
+/* #    number column is fixed width so the names start in one place */
+/* #    down the card, and a name that is too long is cut rather than */
+/* #    allowed to widen the column and break the grid */
+/* ============================================================ */
+.col-body {
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 8px 9px;
+}
+
+.col.open .col-body { display: flex; }
+
+.ch {
+  display: grid;
+  grid-template-columns: 14px 20px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 4px;
+  border-radius: 6px;
+}
+
+.ch:hover { background: #25262c; }
+
+/* A vessel filling from the bottom, not a bar crossing from the side.
+   Empty it is still plainly a square with a floor, because an outline
+   alone on a dark ground reads as nothing at all */
+.ch-mark {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--well);
+  cursor: pointer;
+}
+
+.ch-mark:hover { border-color: var(--ready); }
+.ch-mark.done { background: var(--ready); border-color: var(--ready); }
+
+.ch-no {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--dim2);
+  text-align: left;
+  white-space: nowrap;
 }
 
 .ch-name {
-  flex: 1;
   min-width: 0;
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 3px 4px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  padding: 0;
   border: 0;
   background: transparent;
-  color: #f0f0f0;
+  color: var(--ink);
+  text-overflow: ellipsis;
 }
 
-.ch-name::placeholder { color: rgba(255, 255, 255, 0.4); }
-.ch-name:focus { outline: none; background: rgba(255, 255, 255, 0.08); border-radius: 4px; }
+.ch-name::placeholder { color: var(--dim2); }
+.ch-name:focus { outline: none; color: #ffffff; box-shadow: 0 1px 0 0 var(--blue); }
+.ch.done .ch-name { color: var(--dim); }
 
 .ch-off {
-  flex: none;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 11px;
   line-height: 1;
-  padding: 2px 4px;
+  padding: 0;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.28);
+  color: transparent;
   cursor: pointer;
 }
 
+.ch:hover .ch-off { color: var(--dim2); }
 .ch-off:hover { color: #ffffff; }
 
 .col-add {
-  font: inherit;
-  font-size: 0.78rem;
-  padding: 5px;
-  border: 1px dashed rgba(255, 255, 255, 0.25);
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  padding: 4px;
+  border: 1px dashed var(--line);
   border-radius: 6px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--dim2);
   cursor: pointer;
 }
 
-.col-add:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.5); }
-
-.col-score {
-  margin: 0;
-  font-size: 0.74rem;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
-  min-height: 1em;
-}
+.col-add:hover { color: var(--ink); border-color: var(--dim2); background: #25262c; }
 
 /* ============================================================ */
 /* # 🗒️ 🤫  THE QUIET SAVING LINE */
@@ -249,49 +329,27 @@ body.board-on {
 /* #    not jump up and down as the words come and go */
 /* ============================================================ */
 /* ============================================================ */
-/* # 💯 🎓  THE MARKS PART UNDER A COURSE */
+/* # 💯 🎓  THE MARKS, BEHIND THE GRADE */
 /* # 🔤 CSS */
-/* # 🎯 A folded part: one line showing where the course stands, a */
-/* #    small button that opens it, and inside it a row per item with */
-/* #    narrow number boxes that fit four across a column */
-/* # 🔗 It is folded by default because most of the time the standing */
-/* #    line is all anyone wants to see. The number boxes drop their */
-/* #    spinner arrows, which would eat half the width at this size */
+/* # 🎯 The items a course is graded on, each with its weight and its */
+/* #    raw mark, opened from the grade in the head of the card */
+/* # 🔗 It used to carry a line saying the standing and a button saying */
+/* #    "Marks", at the foot of every card whether or not there was */
+/* #    anything to show. The grade itself now says both: it is the */
+/* #    reading, and pressing it is how the working is opened. The */
+/* #    number boxes drop their spinner arrows, which at this size */
+/* #    would eat half the width */
 /* ============================================================ */
 .marks {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-  padding-top: 8px;
-}
-
-.col-standing {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #ffffff;
-  text-align: center;
-  min-height: 1.1em;
-}
-
-.marks-toggle {
-  font: inherit;
-  font-size: 0.74rem;
-  padding: 2px;
-  border: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-}
-
-.marks-toggle:hover { color: #ffffff; }
-
-.marks-body {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 5px;
+  padding: 7px 9px 9px;
+  border-top: 1px solid var(--line);
+  background: #1e1f24;
 }
+
+.col.marks-on .marks { display: flex; }
 
 .mark-row {
   display: flex;
@@ -301,51 +359,51 @@ body.board-on {
 
 .mark-label {
   flex: 1;
-  font-size: 0.76rem;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 9.5px;
+  color: var(--dim2);
 }
 
 .mark-name {
   flex: 1;
   min-width: 0;
-  font: inherit;
-  font-size: 0.76rem;
-  padding: 3px 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 3px;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 1px solid var(--line);
   background: transparent;
-  color: #f0f0f0;
+  color: var(--ink);
 }
 
 .mark-num {
   flex: none;
-  width: 34px;
-  font: inherit;
-  font-size: 0.74rem;
+  width: 32px;
+  font-family: var(--mono);
+  font-size: 10px;
   text-align: center;
-  padding: 3px 1px;
+  padding: 2px 1px;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 1px solid var(--line);
   background: transparent;
-  color: #f0f0f0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
   -moz-appearance: textfield;
 }
 
 .mark-num::-webkit-outer-spin-button,
 .mark-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-.mark-name::placeholder, .mark-num::placeholder { color: rgba(255, 255, 255, 0.33); }
-.mark-name:focus, .mark-num:focus { outline: none; border-bottom-color: #ffffff; }
+.mark-name::placeholder, .mark-num::placeholder { color: var(--dim2); }
+.mark-name:focus, .mark-num:focus { outline: none; border-bottom-color: var(--blue); }
 
 .term-gpa {
   margin: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #ffffff;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim);
   text-align: center;
   min-height: 1.2em;
 }
-
 /* ============================================================ */
 /* # 🔲 📊  THE THREE SHAPES */
 /* # 🔤 CSS */
@@ -356,9 +414,9 @@ body.board-on {
 /* #    the drawing, so a colour is never written twice in two places */
 /* ============================================================ */
 :root {
-  --mOk: #7bc49a;
-  --mBad: #d98a8a;
-  --mNone: rgba(255, 255, 255, 0.22);
+  --mOk: hsl(130, 58%, 44%);
+  --mBad: hsl(0, 58%, 44%);
+  --mNone: #3a3b42;
 }
 
 .trio {
@@ -369,40 +427,45 @@ body.board-on {
 }
 
 /* An empty shape must still look like a shape. With nothing finished
-   yet all three are empty, and a hairline outline on a grey page reads
+   yet all three are empty, and a hairline outline on a dark page reads
    as nothing at all — which is how the trio came to look like one lone
-   bar. So each of the three carries its own floor: a filled ground and
-   a ring around it, and what fills from there is the reading. */
+   bar. So each of the three carries its own floor: a sunken well and a
+   line around it, and what fills from there is the reading. */
 .trio .sq {
   position: relative;
   display: inline-block;
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.62);
+  background: var(--well);
+  border: 1px solid var(--line);
   border-radius: 3px;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
+/* It fills from the bottom up: a vessel being filled, not a bar
+   crossing the page. The grey is its own colour on purpose — "it has
+   been made" is not "it has been done" and not "it was right" */
 .trio .sq i {
   position: absolute;
   inset-inline: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--ready);
 }
 
 .trio .tbar {
   position: relative;
   display: inline-block;
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  background: var(--well);
+  border: 1px solid #2c2d33;
   border-radius: 999px;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .trio .tbar i {
   position: absolute;
   inset-block: 0;
   inset-inline-start: 0;
-  background: #ffffff;
+  background: linear-gradient(90deg, var(--blue-dk), var(--blue));
 }
 
 .trio .dot {
@@ -410,23 +473,30 @@ body.board-on {
   border-radius: 50%;
 }
 
+/* Nothing judged yet is an outline with no body — and dashed, so it is
+   never mistaken for a full grey disc, which means something else:
+   sat, and not yet marked */
 .trio .dot.none {
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55);
+  background: transparent;
+  border: 1px dashed var(--dim2);
+  box-sizing: border-box;
 }
 
-.trio.md .sq { width: 13px; height: 13px; }
-.trio.md .tbar { width: 56px; height: 7px; }
-.trio.md .dot.none { width: 14px; height: 14px; }
+.trio.md { gap: 6px; }
+.trio.md .sq { width: 14px; height: 14px; }
+.trio.md .tbar { flex: 1 1 auto; min-width: 0; height: 9px; }
+.trio.md .dot, .trio.md .dot.none { width: 14px; height: 14px; }
 
-.trio.sm .sq { width: 9px; height: 9px; }
-.trio.sm .tbar { width: 34px; height: 5px; }
-.trio.sm .dot.none { width: 10px; height: 10px; }
+.trio.sm { gap: 5px; }
+.trio.sm .sq { width: 9px; height: 9px; border-radius: 2px; }
+.trio.sm .tbar { flex: 1 1 auto; min-width: 0; height: 5px; }
+.trio.sm .dot, .trio.sm .dot.none { width: 9px; height: 9px; }
 
-.trio.lg .sq { width: 34px; height: 34px; border-radius: 6px; }
-.trio.lg .tbar { width: 150px; height: 12px; }
-.trio.lg .dot.none { width: 44px; height: 44px; }
-
+.trio.lg { gap: 20px; }
+.trio.lg .sq { width: 46px; height: 46px; border-width: 2px; border-radius: 7px; }
+.trio.lg .tbar { width: 150px; height: 30px; }
+.trio.lg .dot, .trio.lg .dot.none { width: 46px; height: 46px; }
+.trio.lg .dot.none { border-width: 2px; }
 /* ============================================================ */
 /* # 🗓️ 🟩  THE GRID OF DAYS */
 /* # 🔤 CSS */
@@ -574,21 +644,6 @@ body.board-on {
 
 .crow-name::placeholder { color: rgba(255, 255, 255, 0.4); }
 .crow-name:focus { outline: none; background: rgba(255, 255, 255, 0.08); border-radius: 5px; }
-
-.col-open {
-  flex: none;
-  font: inherit;
-  font-size: 0.8rem;
-  line-height: 1;
-  padding: 4px 6px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-}
-
-.col-open:hover { color: #ffffff; background: rgba(255, 255, 255, 0.12); }
 
 /* ============================================================ */
 /* # 🕰️ ⭕  THE RING OF THE TERM */

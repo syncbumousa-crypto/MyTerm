@@ -9,11 +9,36 @@
 /* #    this is a light page and darkens the colors a second time by */
 /* #    itself, so what is drawn is never what was written here */
 /* ============================================================ */
+/* Every shade the site uses, named once. Two grounds and a line make a
+   card: the card sits on the page, its head sits on the card, and the
+   line draws the edge. Three inks, not one: what is read, what is said
+   beside it, and what is only there to be found when looked for.
+   And the three working colours are kept apart on purpose — grey for
+   "it exists", blue for "it is being done", green for "it is right" */
+:root {
+  --bg: #1b1c1f;
+  --panel: #212227;
+  --panel2: #26272d;
+  --line: #3a3b42;
+  --ink: #dddddd;
+  --dim: #8d9098;
+  --dim2: #6b6d75;
+  --well: #15161a;
+  --blue: #5a8fd8;
+  --blue-dk: #3a6bb0;
+  --green: #2e9e6b;
+  --ready: #8f98a8;
+  --orange: #d5883c;
+  --term: #9b8cd8;
+  --mono: ui-monospace, Consolas, "SF Mono", monospace;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: #1b1c1f;
+  background: var(--bg);
+  color: var(--ink);
   color-scheme: dark;
 }
 

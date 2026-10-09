@@ -66,18 +66,71 @@
   };
 
   // ============================================================
-  // # 🧱 ➕  A COLUMN FOR EVERY COURSE
+  // # 🗂️ 🔽  WHICH CARDS ARE FOLDED
   // # 🔤 JavaScript
-  // # 🎯 Adds a course and draws a column for it. The column head is a
-  // #    box, so the name is changed by typing in it with no extra step
-  // # 🔗 The page reads right to left, so each new column lands to the
-  // #    left of the one before it on its own. Every course carries an
-  // #    id of its own, so later a rename on one device can be told
-  // #    apart from a different course added on another
+  // # 🎯 Remembers, in this browser only, which courses the reader has
+  // #    folded shut
+  // # 🔗 What is kept is the folded ones, not the open ones, so a course
+  // #    added on another device arrives open and is seen. This is a
+  // #    convenience of one screen, not part of the term: it never goes
+  // #    to Drive, so folding on the laptop does not fold the phone
+  // ============================================================
+  const FOLDED = 'myterm.folded';
+
+  const foldedIds = () => {
+    try { return new Set(JSON.parse(localStorage.getItem(FOLDED) || '[]')); } catch { return new Set(); }
+  };
+
+  const rememberFold = (id, folded) => {
+    try {
+      const all = foldedIds();
+      folded ? all.add(id) : all.delete(id);
+      localStorage.setItem(FOLDED, JSON.stringify([...all]));
+    } catch { /* a browser that forbids it simply forgets, and that is survivable */ }
+  };
+
+  // ============================================================
+  // # 🧱 ➕  A CARD FOR EVERY COURSE
+  // # 🔤 JavaScript
+  // # 🎯 Draws one card: a head strip carrying everything true of the
+  // #    whole course, and under it the chapter rows, which fold away
+  // # 🔗 The head strip is read left to right as one sentence — fold ·
+  // #    grade · name and count · the three shapes · open · remove —
+  // #    and the shapes sit at the same place in every card, which is
+  // #    the only way two courses can be compared without reading.
+  // #    Pressing anywhere on the strip folds it, because an arrow is a
+  // #    twenty pixel target and whoever misses it believes the card is
+  // #    broken; anything that can be typed in or pressed keeps its own
+  // #    press, so the name is still edited where it is read
   // ============================================================
   const makeColumn = course => {
     const column = document.createElement('section');
     column.className = 'col';
+
+    const folded = foldedIds().has(course.id);
+    if (!folded) column.classList.add('open');
+
+    const twist = document.createElement('button');
+    twist.className = 'col-twist';
+    twist.type = 'button';
+    twist.textContent = '▸';
+    twist.title = 'Fold this course';
+
+    const fold = () => {
+      const nowOpen = column.classList.toggle('open');
+      rememberFold(course.id, !nowOpen);
+    };
+
+    twist.onclick = fold;
+
+    // The grade is the reading and the way in: pressing it opens the
+    // working behind it. There used to be a line saying the standing
+    // and a button saying "Marks" at the foot of every card, whether
+    // or not there was anything to show
+    const grade = document.createElement('button');
+    grade.className = 'col-grade';
+    grade.type = 'button';
+    grade.onclick = () => column.classList.toggle('marks-on');
 
     const head = document.createElement('input');
     head.className = 'col-name';
@@ -89,17 +142,25 @@
       touched();
     };
 
+    const count = document.createElement('span');
+    count.className = 'col-count';
+
+    const title = document.createElement('div');
+    title.className = 'col-title';
+    title.append(head, count);
+
     // Removing takes two presses, not a dialog box: the first asks and
     // the second does it, and it goes back if left alone. The course
+    // folder in Drive is never touched: your own files live in it
     const drop = document.createElement('button');
-    drop.className = 'col-drop';
+    drop.className = 'col-icon';
     drop.type = 'button';
     drop.textContent = '×';
     drop.title = 'Remove this course from the board';
     let asking = null;
     drop.onclick = () => {
       if (!asking) {
-        drop.textContent = 'Remove?';
+        drop.textContent = 'sure?';
         drop.classList.add('asking');
         asking = setTimeout(() => { drop.textContent = '×'; drop.classList.remove('asking'); asking = null; }, 3000);
         return;
@@ -111,9 +172,8 @@
       drawColumns();
     };
 
-    // folder in Drive is never touched: your own files live in it
     const open = document.createElement('button');
-    open.className = 'col-open';
+    open.className = 'col-icon';
     open.type = 'button';
     open.textContent = '⤢';
     open.title = 'Open the course page';
@@ -121,29 +181,61 @@
 
     const top = document.createElement('div');
     top.className = 'col-top';
-    top.append(open, head, drop);
+    top.append(twist, grade, title, readingOf(course, 'md'), open, drop);
+    top.onclick = event => { if (!event.target.closest('input, button')) fold(); };
 
     const body = document.createElement('div');
     body.className = 'col-body';
     drawChapters(course, body);
 
-    const add = document.createElement('button');
-    add.className = 'col-add';
-    add.type = 'button';
-    add.textContent = '+ chapter';
-    add.onclick = () => {
-      course.chapters = course.chapters || [];
-      course.chapters.push({ id: newChapterId(), name: 'Chapter ' + arabic(alive(course).length + 1), done: false, updatedAt: now(), deleted: false });
-      changed(course);
-      drawChapters(course, body);
-      refreshScores();
-      const fresh = body.lastElementChild?.querySelector('.ch-name');
-      fresh?.focus();
-      fresh?.select();
-    };
-
-    column.append(top, readingOf(course, 'md'), body, add, scoreLine(course), marksPart(course));
+    column.append(top, body, marksPart(course));
+    paintHead(column, course);
     return column;
+  };
+
+  // ============================================================
+  // # 🎓 🎨  WHAT THE HEAD OF A CARD SAYS
+  // # 🔤 JavaScript
+  // # 🎯 Writes the count line and the grade, and walks the grade's
+  // #    colour from green at the top of the scale to red at the bottom
+  // # 🔗 One function for all of it, called after every change, so the
+  // #    number, the letter and the colour are worked out in one place
+  // #    and cannot drift apart. A course with nothing marked shows a
+  // #    plain dash: no mark is not a bad mark
+  // ============================================================
+  const paintHead = (column, course) => {
+    const list = alive(course);
+    const done = list.filter(h => h.done).length;
+    const count = column.querySelector('.col-count');
+    if (count) {
+      count.textContent = '';
+      if (list.length) {
+        const finished = document.createElement('b');
+        finished.textContent = done;
+        count.append(finished, document.createTextNode(` of ${list.length} chapters`));
+      } else {
+        count.textContent = 'no chapters yet';
+      }
+    }
+
+    const grade = column.querySelector('.col-grade');
+    if (!grade) return;
+    const standing = standingOf(course);
+    grade.textContent = '';
+    grade.classList.toggle('has', Boolean(standing));
+    if (!standing) {
+      grade.textContent = '–';
+      grade.style.removeProperty('--g');
+      grade.title = 'No marks recorded yet — press to add them';
+      return;
+    }
+    const letter = document.createElement('b');
+    letter.textContent = standing.letter;
+    const pct = document.createElement('s');
+    pct.textContent = Math.round(standing.pct) + '%';
+    grade.append(letter, pct);
+    grade.style.setProperty('--g', `hsl(${Math.round((standing.points / 4) * 130)}, 58%, 44%)`);
+    grade.title = `${standing.pct}% · ${standing.letter} · ${standing.points} of 4 — on ${standing.weight} of 100 marked so far`;
   };
 
   // ============================================================
@@ -203,28 +295,16 @@
   };
 
   const marksPart = course => {
-    const wrap = document.createElement('div');
-    wrap.className = 'marks';
-
-    const toggle = document.createElement('button');
-    toggle.className = 'marks-toggle';
-    toggle.type = 'button';
-
     const inner = document.createElement('div');
-    inner.className = 'marks-body';
-    inner.hidden = true;
+    inner.className = 'marks';
 
-    const standing = document.createElement('p');
-    standing.className = 'col-standing';
-
+    // The grade in the head is the only place the standing is said, so
+    // every change here goes back up to it
     const showStanding = () => {
-      const s = standingOf(course);
-      standing.textContent = s ? `${s.pct}% · ${s.letter} · ${s.points} / 4` : '';
-      toggle.textContent = (inner.hidden ? '▸ ' : '▾ ') + 'Marks';
+      const column = inner.closest('.col');
+      if (column) paintHead(column, course);
       refreshTermGpa();
     };
-
-    toggle.onclick = () => { inner.hidden = !inner.hidden; showStanding(); };
 
     const drawItems = () => {
       inner.textContent = '';
@@ -304,9 +384,7 @@
     };
 
     drawItems();
-    showStanding();
-    wrap.append(standing, toggle, inner);
-    return wrap;
+    return inner;
   };
 
   // ============================================================
@@ -393,31 +471,18 @@
   // ============================================================
   const alive = course => (course.chapters || []).filter(h => !h.deleted);
 
-  const scoreOf = course => {
-    const list = alive(course);
-    if (!list.length) return null;
-    const done = list.filter(h => h.done).length;
-    return { done, total: list.length, pct: Math.round((done / list.length) * 100) };
-  };
-
-  const scoreLine = course => {
-    const line = document.createElement('p');
-    line.className = 'col-score';
-    const s = scoreOf(course);
-    line.textContent = s ? `${s.done} of ${s.total} · ${s.pct}%` : '';
-    return line;
-  };
-
   const drawChapters = (course, body) => {
     body.textContent = '';
-    alive(course).forEach(ch => {
+    alive(course).forEach((ch, index) => {
       const row = document.createElement('div');
-      row.className = 'ch';
+      row.className = 'ch' + (ch.done ? ' done' : '');
 
+      // The square is a vessel that fills, with no tick drawn in it:
+      // the fill is the reading, and a mark on top of a full square is
+      // the same thing said twice
       const mark = document.createElement('button');
       mark.className = 'ch-mark' + (ch.done ? ' done' : '');
       mark.type = 'button';
-      mark.textContent = ch.done ? '✓' : '';
       mark.title = ch.done ? 'Finished' : 'Not finished yet';
       mark.onclick = () => {
         ch.done = !ch.done;
@@ -426,6 +491,12 @@
         drawChapters(course, body);
         refreshScores();
       };
+
+      // Its place in the course, in a column of its own, so the names
+      // all begin at one line down the card however long the numbers get
+      const no = document.createElement('span');
+      no.className = 'ch-no';
+      no.textContent = 'C' + (index + 1);
 
       const name = document.createElement('input');
       name.className = 'ch-name';
@@ -446,21 +517,41 @@
         refreshScores();
       };
 
-      row.append(mark, name, off);
+      row.append(mark, no, name, off);
       body.append(row);
     });
+
+    const add = document.createElement('button');
+    add.className = 'col-add';
+    add.type = 'button';
+    add.textContent = '+ chapter';
+    add.onclick = () => {
+      course.chapters = course.chapters || [];
+      course.chapters.push({ id: newChapterId(), name: 'Chapter ' + arabic(alive(course).length + 1), done: false, updatedAt: now(), deleted: false });
+      changed(course);
+      drawChapters(course, body);
+      refreshScores();
+      const fresh = body.querySelector('.ch:last-of-type .ch-name');
+      fresh?.focus();
+      fresh?.select();
+    };
+    body.append(add);
   };
 
   const refreshScores = () => {
-    [...columns.children].forEach((col, i) => {
+    [...columns.children].forEach((column, i) => {
       const course = living()[i];
-      const line = col.querySelector('.col-score');
-      const s = course && scoreOf(course);
-      if (line) line.textContent = s ? `${s.done} of ${s.total} · ${s.pct}%` : '';
+      if (!course) return;
+      paintHead(column, course);
+      // The three shapes in the head are redrawn from the course, never
+      // patched in place: a shape that is edited rather than remade is
+      // a shape that can be left saying what used to be true
+      const trio = column.querySelector('.col-top .trio');
+      if (trio) trio.replaceWith(readingOf(course, 'md'));
     });
-      // The term reads itself again from the courses: its three shapes
-      // and its lines are counted, never stored, so they cannot lag
-      drawTermShape();
+    // The term reads itself again from the courses: its three shapes
+    // and its lines are counted, never stored, so they cannot lag
+    drawTermShape();
   };
 
   const drawColumns = () => {

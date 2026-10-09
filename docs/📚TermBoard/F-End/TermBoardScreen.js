@@ -16,7 +16,7 @@
   const setBtn = $('term-set'), nameBox = $('term-input'), title = $('term-title');
   const columns = $('columns'), addBtn = $('add-course'), moreBtn = $('board-more');
   const state = $('save-state'), renewBtn = $('renew-access'), empty = $('board-empty');
-  const termScore = $('term-score');
+  const termScore = $('term-score'), termGpa = $('term-gpa');
 
   const arabic = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
   const now = () => new Date().toISOString();
@@ -133,8 +133,148 @@
       fresh?.select();
     };
 
-    column.append(top, body, add, scoreLine(course));
+    column.append(top, body, add, scoreLine(course), marksPart(course));
     return column;
+  };
+
+  // ============================================================
+  // # 💯 🎓  THE MARKS, THE STANDING, AND THE POINTS
+  // # 🔤 JavaScript
+  // # 🎯 A folded part under every course: the items it is graded on,
+  // #    each with a weight out of a hundred and a raw mark, then the
+  // #    standing they add up to, its letter, and its points out of four
+  // # 🔗 An item with no mark yet is left out of the standing instead of
+  // #    counted as zero, and the weights that remain are scaled up — so
+  // #    the number means "where you stand now", not "what you end with
+  // #    if you never sit the rest". The scale is the common one out of
+  // #    four, and it is written once here and read nowhere else
+  // ============================================================
+  const CUTS = [[95, 'A+', 4], [90, 'A', 3.75], [85, 'B+', 3.5], [80, 'B', 3], [75, 'C+', 2.5], [70, 'C', 2], [65, 'D+', 1.5], [60, 'D', 1], [0, 'F', 0]];
+  const gradeOf = pct => CUTS.find(c => pct >= c[0]) || CUTS[CUTS.length - 1];
+
+  const standingOf = course => {
+    const marked = (course.items || []).filter(i => !i.deleted && i.got !== null && i.outOf > 0 && i.weight > 0);
+    if (!marked.length) return null;
+    const weight = marked.reduce((s, i) => s + i.weight, 0);
+    const earned = marked.reduce((s, i) => s + (i.got / i.outOf) * i.weight, 0);
+    const pct = weight ? (earned / weight) * 100 : 0;
+    const [, letter, points] = gradeOf(pct);
+    return { pct: Math.round(pct * 10) / 10, letter, points, weight };
+  };
+
+  const marksPart = course => {
+    const wrap = document.createElement('div');
+    wrap.className = 'marks';
+
+    const toggle = document.createElement('button');
+    toggle.className = 'marks-toggle';
+    toggle.type = 'button';
+
+    const inner = document.createElement('div');
+    inner.className = 'marks-body';
+    inner.hidden = true;
+
+    const standing = document.createElement('p');
+    standing.className = 'col-standing';
+
+    const showStanding = () => {
+      const s = standingOf(course);
+      standing.textContent = s ? `${arabic(s.pct)}٪ · ${s.letter} · ${arabic(s.points)} من ٤` : '';
+      toggle.textContent = (inner.hidden ? '▸ ' : '▾ ') + 'التقييم';
+      refreshTermGpa();
+    };
+
+    toggle.onclick = () => { inner.hidden = !inner.hidden; showStanding(); };
+
+    const drawItems = () => {
+      inner.textContent = '';
+
+      const hours = document.createElement('div');
+      hours.className = 'mark-row';
+      const hoursLabel = document.createElement('span');
+      hoursLabel.className = 'mark-label';
+      hoursLabel.textContent = 'الساعات';
+      const hoursBox = document.createElement('input');
+      hoursBox.className = 'mark-num';
+      hoursBox.type = 'number';
+      hoursBox.min = '0';
+      hoursBox.value = course.credits ?? 3;
+      hoursBox.oninput = () => { course.credits = Number(hoursBox.value) || 0; changed(course); refreshTermGpa(); };
+      hours.append(hoursLabel, hoursBox);
+      inner.append(hours);
+
+      (course.items || []).filter(i => !i.deleted).forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'mark-row';
+
+        const name = document.createElement('input');
+        name.className = 'mark-name';
+        name.value = item.name;
+        name.placeholder = 'البند';
+        name.oninput = () => { item.name = name.value; item.updatedAt = now(); changed(course); };
+
+        const weight = document.createElement('input');
+        weight.className = 'mark-num';
+        weight.type = 'number';
+        weight.min = '0';
+        weight.title = 'وزنه من ١٠٠';
+        weight.value = item.weight || '';
+        weight.placeholder = 'وزن';
+        weight.oninput = () => { item.weight = Number(weight.value) || 0; item.updatedAt = now(); changed(course); showStanding(); };
+
+        const got = document.createElement('input');
+        got.className = 'mark-num';
+        got.type = 'number';
+        got.min = '0';
+        got.title = 'درجتك';
+        got.value = item.got ?? '';
+        got.placeholder = 'لك';
+        got.oninput = () => { item.got = got.value === '' ? null : Number(got.value); item.updatedAt = now(); changed(course); showStanding(); };
+
+        const outOf = document.createElement('input');
+        outOf.className = 'mark-num';
+        outOf.type = 'number';
+        outOf.min = '0';
+        outOf.title = 'من أصل';
+        outOf.value = item.outOf || '';
+        outOf.placeholder = 'من';
+        outOf.oninput = () => { item.outOf = Number(outOf.value) || 0; item.updatedAt = now(); changed(course); showStanding(); };
+
+        const off = document.createElement('button');
+        off.className = 'ch-off';
+        off.type = 'button';
+        off.textContent = '×';
+        off.onclick = () => { item.deleted = true; item.updatedAt = now(); changed(course); drawItems(); showStanding(); };
+
+        row.append(name, weight, got, outOf, off);
+        inner.append(row);
+      });
+
+      const more = document.createElement('button');
+      more.className = 'col-add';
+      more.type = 'button';
+      more.textContent = '+ بند';
+      more.onclick = () => {
+        course.items = course.items || [];
+        course.items.push({ id: 'i-' + Math.random().toString(36).slice(2, 8), name: '', weight: 0, got: null, outOf: 0, due: '', updatedAt: now(), deleted: false });
+        changed(course);
+        drawItems();
+      };
+      inner.append(more);
+    };
+
+    drawItems();
+    showStanding();
+    wrap.append(standing, toggle, inner);
+    return wrap;
+  };
+
+  const refreshTermGpa = () => {
+    const graded = living().map(c => ({ s: standingOf(c), credits: Number(c.credits) || 0 })).filter(x => x.s && x.credits > 0);
+    if (!graded.length) { termGpa.textContent = ''; return; }
+    const hours = graded.reduce((s, x) => s + x.credits, 0);
+    const points = graded.reduce((s, x) => s + x.s.points * x.credits, 0);
+    termGpa.textContent = `معدّل الترم ${arabic((points / hours).toFixed(2))} من ٤ · ${arabic(hours)} ساعات`;
   };
 
   // ============================================================

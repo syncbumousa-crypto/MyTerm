@@ -81,6 +81,24 @@ body {
   word-break: break-all;
 }
 
+.spinner {
+  width: 28px;
+  height: 28px;
+  margin: 6px auto;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.4s; }
+}
+
 body.probing .picker-dialog,
 body.probing .picker-dialog-bg,
 body.probing .picker-dialog-frame {

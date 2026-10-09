@@ -280,6 +280,8 @@ const steps = {
 };
 
 const pickButton = document.getElementById('pick-place');
+const placeButtons = document.getElementById('place-buttons');
+const probeSpin = document.getElementById('probe-spin');
 const driveWhere = document.getElementById('drive-where');
 const driveOpen = document.getElementById('drive-open');
 const driveNote = document.getElementById('drive-note');
@@ -330,8 +332,13 @@ async function linkGoogle() {
 
     driveNote.textContent = 'نفحص إمكانيات متصفّحك…';
     showStep('place');
+    placeButtons.hidden = true;
+    probeSpin.hidden = false;
+
     const works = await probePicker();
 
+    probeSpin.hidden = true;
+    placeButtons.hidden = false;
     driveNote.textContent = '';
     if (works) markOpen(); else markBlocked();
   } catch (e) {
@@ -400,6 +407,8 @@ document.addEventListener('signed-out', function () {
   profile = null;
   driveNote.textContent = '';
   shieldHint.hidden = true;
+  probeSpin.hidden = true;
+  placeButtons.hidden = false;
   pickButton.disabled = false;
   showStep('link');
 });

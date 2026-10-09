@@ -14,7 +14,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
@@ -66,9 +66,13 @@
 
   <div class="stack" id="step-place" hidden>
     <p class="where">مكان الحفظ المستمر</p>
-    <button class="btn btn-main" type="button" id="pick-place">اختر المكان بنفسك</button>
-    <button class="btn" type="button" id="auto-place">خزّنه في مجلد My Term في جذر ملفاتي</button>
 
+    <div class="spinner" id="probe-spin" hidden></div>
+
+    <div class="stack" id="place-buttons">
+      <button class="btn btn-main" type="button" id="pick-place">اختر المكان بنفسك</button>
+      <button class="btn" type="button" id="auto-place">خزّنه في مجلد My Term في جذر ملفاتي</button>
+    </div>
 
     <p class="hint" id="shield-hint" hidden></p>
   </div>
@@ -98,8 +102,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="script.js?v=11"></script>
-<script src="drive.js?v=11"></script>
+<script src="script.js?v=12"></script>
+<script src="drive.js?v=12"></script>
 
 </body>
 </html>

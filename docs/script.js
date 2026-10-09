@@ -100,18 +100,21 @@ panels.form.onsubmit = async function (event) {
 // #    whether they are still logged in from an earlier visit
 // # 🔗 The service keeps the login token in the browser, so the visitor
 // #    stays logged in after a refresh. The check at the end decides
-// #    which panel the page opens with. It also sends a signed-in message
-// #    that drive.js waits for, so the two files stay apart and neither
-// #    has to load before the other
+// #    which panel the page opens with. It both sets a flag and sends a
+// #    message, because this file runs before drive.js: a message sent
+// #    too early is heard by nobody and is gone, while a flag can still
+// #    be read by drive.js when it loads a moment later
 // ============================================================
 function openSession(email) {
   who.textContent = 'مرحبًا، ' + email;
   show('session');
+  window.myTermSignedIn = true;
   document.dispatchEvent(new CustomEvent('signed-in'));
 }
 
 document.getElementById('logout').onclick = async function () {
   await db.auth.signOut();
+  window.myTermSignedIn = false;
   document.dispatchEvent(new CustomEvent('signed-out'));
   show('choice');
 };

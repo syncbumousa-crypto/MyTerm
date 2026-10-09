@@ -118,6 +118,10 @@ body.board-on {
 
 .col-new:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
+/* The card does not clip what is inside it. It used to, so that the head
+   strip would stop at the rounded corner — and it swallowed the panel the
+   gear opens, which was there, and open, and drawn outside the card where
+   nothing can be seen. The strip rounds its own two corners instead */
 .col {
   flex: none;
   width: 264px;
@@ -126,7 +130,6 @@ body.board-on {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 10px;
-  overflow: hidden;
   min-width: 0;
 }
 
@@ -135,7 +138,7 @@ body.board-on {
 /* # 🔤 CSS */
 /* # 🎯 One strip holding everything that is true of the whole course: */
 /* #    the fold arrow, the grade, the name with its count, the three */
-/* #    shapes, and the two small ways out — open it, or remove it */
+/* #    shapes, and the gear for what is asked once a term */
 /* # 🔗 The whole strip folds the card, not the arrow alone: an arrow is */
 /* #    a twenty pixel target, and whoever misses it believes the card */
 /* #    is broken. Anything that can be typed in or pressed keeps its */
@@ -148,9 +151,12 @@ body.board-on {
   gap: 6px;
   padding: 9px 10px;
   background: var(--panel2);
+  border-radius: 9px 9px 0 0;
   cursor: pointer;
   user-select: none;
 }
+
+.col:not(.open) .col-top { border-radius: 9px; }
 
 .col-top:hover { background: #2c2d34; }
 .col.open .col-top { border-bottom: 1px solid var(--line); }
@@ -568,6 +574,7 @@ body.board-on {
   display: none;
   padding: 8px 8px 10px;
   border-top: 1px solid var(--line);
+  border-radius: 0 0 9px 9px;
   background: #1e1f24;
 }
 

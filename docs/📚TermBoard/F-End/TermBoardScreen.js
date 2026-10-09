@@ -106,7 +106,7 @@
   // # 🎯 Draws one card: a head strip carrying everything true of the
   // #    whole course, and under it the chapter rows, which fold away
   // # 🔗 The head strip is read left to right as one sentence — fold ·
-  // #    grade · name and count · the three shapes · open · remove —
+  // #    grade · name and count · the three shapes · the gear —
   // #    and the shapes sit at the same place in every card, which is
   // #    the only way two courses can be compared without reading.
   // #    Pressing anywhere on the strip folds it, because an arrow is a

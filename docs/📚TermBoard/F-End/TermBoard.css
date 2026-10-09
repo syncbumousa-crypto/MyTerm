@@ -79,7 +79,7 @@ body.board-on {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  width: 180px;
+  width: 212px;
   min-height: 240px;
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.28);
@@ -256,6 +256,104 @@ body.board-on {
 /* # 🔗 It keeps its height even when empty, so the buttons under it do */
 /* #    not jump up and down as the words come and go */
 /* ============================================================ */
+/* ============================================================ */
+/* # 💯 🎓  THE MARKS PART UNDER A COURSE */
+/* # 🔤 CSS */
+/* # 🎯 A folded part: one line showing where the course stands, a */
+/* #    small button that opens it, and inside it a row per item with */
+/* #    narrow number boxes that fit four across a column */
+/* # 🔗 It is folded by default because most of the time the standing */
+/* #    line is all anyone wants to see. The number boxes drop their */
+/* #    spinner arrows, which would eat half the width at this size */
+/* ============================================================ */
+.marks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  padding-top: 8px;
+}
+
+.col-standing {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  min-height: 1.1em;
+}
+
+.marks-toggle {
+  font: inherit;
+  font-size: 0.74rem;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+
+.marks-toggle:hover { color: #ffffff; }
+
+.marks-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mark-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.mark-label {
+  flex: 1;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.mark-name {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.76rem;
+  padding: 3px 4px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: #f0f0f0;
+}
+
+.mark-num {
+  flex: none;
+  width: 34px;
+  font: inherit;
+  font-size: 0.74rem;
+  text-align: center;
+  padding: 3px 1px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: #f0f0f0;
+  -moz-appearance: textfield;
+}
+
+.mark-num::-webkit-outer-spin-button,
+.mark-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.mark-name::placeholder, .mark-num::placeholder { color: rgba(255, 255, 255, 0.33); }
+.mark-name:focus, .mark-num:focus { outline: none; border-bottom-color: #ffffff; }
+
+.term-gpa {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  min-height: 1.2em;
+}
+
 .save-state {
   margin: 0;
   min-height: 1.2em;

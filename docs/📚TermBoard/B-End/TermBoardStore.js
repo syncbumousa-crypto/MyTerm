@@ -39,7 +39,9 @@
           folderId: typeof c.folderId === 'string' ? c.folderId : null,
           folderName: typeof c.folderName === 'string' ? c.folderName : null,
           fileId: typeof c.fileId === 'string' ? c.fileId : null,
-          chapters: shapeChapters(c.chapters)
+          credits: Number(c.credits) || 3,
+          chapters: shapeChapters(c.chapters),
+          items: shapeItems(c.items)
         }))
       : []
   });
@@ -77,11 +79,27 @@
       }))
     : [];
 
+  // بنود التقييم: اسمٌ ووزنٌ من ١٠٠، ودرجةٌ خام من أصلٍ، وتاريخ
+  const shapeItems = list => Array.isArray(list)
+    ? list.filter(i => i && typeof i.name === 'string').map(i => ({
+        id: typeof i.id === 'string' ? i.id : 'i-' + Math.random().toString(36).slice(2, 8),
+        name: i.name,
+        weight: Number(i.weight) || 0,
+        got: i.got === null || i.got === undefined || i.got === '' ? null : Number(i.got),
+        outOf: Number(i.outOf) || 0,
+        due: typeof i.due === 'string' ? i.due : '',
+        updatedAt: i.updatedAt ?? null,
+        deleted: i.deleted === true
+      }))
+    : [];
+
   const courseBody = course => ({
     app: 'MyTerm',
     id: course.id,
     name: course.name,
+    credits: Number(course.credits) || 3,
     chapters: shapeChapters(course.chapters),
+    items: shapeItems(course.items),
     updatedAt: new Date().toISOString()
   });
 
@@ -94,13 +112,16 @@
 
   const mergeCourse = (mine, theirs) => {
     const base = pick(mine, theirs);
-    const left = new Map((mine.chapters || []).map(h => [h.id, h]));
-    const chapters = (theirs.chapters || []).map(t => {
-      const m = left.get(t.id);
-      left.delete(t.id);
-      return m ? pick(m, t) : t;
-    });
-    return { ...base, chapters: chapters.concat([...left.values()]) };
+    const byId = (list, taken) => {
+      const left = new Map((list || []).map(x => [x.id, x]));
+      const out = (taken || []).map(t => { const m = left.get(t.id); left.delete(t.id); return m ? pick(m, t) : t; });
+      return out.concat([...left.values()]);
+    };
+    return {
+      ...base,
+      chapters: byId(mine.chapters, theirs.chapters),
+      items: byId(mine.items, theirs.items)
+    };
   };
 
   const merge = (mine, theirs) => {
@@ -159,7 +180,7 @@
 
       // الفصول تُحذف من ورقة الترم قبل كتابتها: مكانها ملفّ مادّتها، وورقةُ
       // الترم فهرسٌ يُقرأ في كل فتحة فيجب أن يبقى خفيفًا
-      const index = { ...body, courses: body.courses.map(({ chapters, ...rest }) => rest) };
+      const index = { ...body, courses: body.courses.map(({ chapters, items, ...rest }) => rest) };
       await cloud().writeFile(fileId, index);
 
       // ثم ملفّات المواد التي تغيّرت فصولها وحدَها
@@ -250,8 +271,11 @@
         if (course.deleted) return;
         const kept = mineById.get(course.id)?.chapters || [];
         if (!course.fileId) { course.chapters = kept; return; }
+        const keptItems = mineById.get(course.id)?.items || [];
         const own = await cloud().readFile(course.fileId).catch(() => null);
         course.chapters = own ? shapeChapters(own.chapters) : kept;
+        course.items = own ? shapeItems(own.items) : keptItems;
+        if (own && own.credits) course.credits = Number(own.credits) || 3;
       }));
 
       const board = (local && dirty) ? merge(local, incoming) : incoming;

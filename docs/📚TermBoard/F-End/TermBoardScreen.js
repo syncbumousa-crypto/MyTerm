@@ -16,7 +16,7 @@
   const setBtn = $('term-set'), nameBox = $('term-input'), title = $('term-title');
   const columns = $('columns'), addBtn = $('add-course'), moreBtn = $('board-more');
   const state = $('save-state'), renewBtn = $('renew-access'), empty = $('board-empty');
-  const termScore = $('term-score'), termGpa = $('term-gpa');
+  const termGpa = $('term-gpa'), termShape = $('term-shape'), termNotes = $('term-notes');
 
   const arabic = n => String(n);
   const now = () => new Date().toISOString();
@@ -308,12 +308,82 @@
     return wrap;
   };
 
+  // ============================================================
+  // # 🔲 🧾  THE WHOLE TERM IN THREE SHAPES, AND A FEW LINES
+  // # 🔤 JavaScript
+  // # 🎯 The same three shapes as a course, read once over everything:
+  //  #   how much is set up, how much is finished, and how the marks
+  // #    stand. Under them a few plain lines saying the same in words
+  // # 🔗 Every number is counted from the courses, never stored and
+  // #    never typed. Lines with nothing behind them are left out
+  // #    instead of printed as zeros: no chapters means no sentence
+  // #    about chapters, not a sentence saying none
+  // ============================================================
+  const termReading = () => {
+    const courses = living();
+    const chapters = courses.flatMap(c => alive(c));
+    const named = chapters.filter(h => h.name.trim() !== '').length;
+    const done = chapters.filter(h => h.done).length;
+
+    let ok = 0, bad = 0, weight = 0;
+    courses.forEach(c => {
+      (c.items || []).filter(i => !i.deleted && i.weight > 0).forEach(i => {
+        weight += i.weight;
+        if (i.got !== null && i.outOf > 0) {
+          ok += (i.got / i.outOf) * i.weight;
+          bad += (1 - i.got / i.outOf) * i.weight;
+        }
+      });
+    });
+
+    return {
+      courses: courses.length, chapters: chapters.length, named, done,
+      ok, bad, unknown: Math.max(0, weight - ok - bad), weight
+    };
+  };
+
+  const drawTermShape = () => {
+    const r = termReading();
+    termShape.textContent = '';
+    termShape.append(window.MyTermShapes.draw('lg', {
+      ready: r.chapters ? Math.round((r.named / r.chapters) * 100) : 0,
+      readyTip: `Set up — ${r.named} of ${r.chapters} chapters named`,
+      done: r.chapters ? Math.round((r.done / r.chapters) * 100) : 0,
+      doneTip: `Finished — ${r.done} of ${r.chapters} chapters`,
+      marks: { ok: r.ok, bad: r.bad, unknown: r.unknown },
+      marksTip: r.weight
+        ? `Marks — ${Math.round(r.ok)} earned, ${Math.round(r.bad)} lost, ${Math.round(r.unknown)} not graded yet`
+        : 'Marks — nothing recorded yet'
+    }));
+
+    const d = window.MyTermDaysReading;
+    const notes = [];
+    if (r.courses) notes.push(`${r.courses} course${r.courses === 1 ? '' : 's'}`
+      + (r.chapters ? ` · ${r.chapters} chapter${r.chapters === 1 ? '' : 's'} · ${r.done} finished` : ''));
+    if (d && d.all) notes.push(`${d.done} of ${d.past} days worked · ${d.left} day${d.left === 1 ? '' : 's'} left`);
+    if (d && d.all && r.chapters) {
+      const got = Math.round((r.done / r.chapters) * 100);
+      const gone = Math.round((d.past / d.all) * 100);
+      const gap = got - gone;
+      notes.push(`${got}% finished against ${gone}% of the term gone — ${gap >= 0 ? gap + '% ahead' : -gap + '% behind'}`);
+    }
+
+    termNotes.textContent = '';
+    notes.forEach(words => {
+      const line = document.createElement('p');
+      line.className = 'term-note';
+      line.textContent = words;
+      termNotes.append(line);
+    });
+  };
+
   const refreshTermGpa = () => {
     const graded = living().map(c => ({ s: standingOf(c), credits: Number(c.credits) || 0 })).filter(x => x.s && x.credits > 0);
     if (!graded.length) { termGpa.textContent = ''; return; }
     const hours = graded.reduce((s, x) => s + x.credits, 0);
     const points = graded.reduce((s, x) => s + x.s.points * x.credits, 0);
     termGpa.textContent = `Term GPA ${(points / hours).toFixed(2)} / 4 · ${hours} hours`;
+    drawTermShape();
   };
 
   // ============================================================
@@ -396,7 +466,6 @@
     });
     const all = living().flatMap(c => alive(c));
     const done = all.filter(h => h.done).length;
-    termScore.textContent = all.length ? `${done} of ${all.length} · ${Math.round((done / all.length) * 100)}% of your term` : '';
   };
 
   const drawColumns = () => {
@@ -451,6 +520,7 @@
     showName();
     drawColumns();
     window.MyTermDays?.show(data);
+    drawTermShape();
   };
 
   const openBoard = async event => {

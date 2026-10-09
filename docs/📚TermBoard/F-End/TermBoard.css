@@ -240,14 +240,6 @@ body.board-on {
   min-height: 1em;
 }
 
-.term-score {
-  margin: 0;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.65);
-  text-align: center;
-  min-height: 1.2em;
-}
-
 /* ============================================================ */
 /* # 🗒️ 🤫  THE QUIET SAVING LINE */
 /* # 🔤 CSS */
@@ -661,3 +653,31 @@ body.board-on {
 
 .ring-left { fill: #ffffff; font-size: 24px; font-weight: 700; }
 .ring-total { fill: rgba(255, 255, 255, 0.5); font-size: 9.5px; }
+
+/* ============================================================ */
+/* # 🔲 🧾  THE TERM'S OWN THREE SHAPES, AND ITS LINES */
+/* # 🔤 CSS */
+/* # 🎯 The trio read large between the term name and the grid of days, */
+/* #    with a few quiet lines of words under it saying the same thing */
+/* # 🔗 Words under shapes, not boxes around numbers: a box draws the */
+/* #    eye to the frame, and these are notes to be read once and left */
+/* ============================================================ */
+.term-shape {
+  display: flex;
+  justify-content: center;
+}
+
+.term-notes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.term-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.58);
+  text-align: center;
+}

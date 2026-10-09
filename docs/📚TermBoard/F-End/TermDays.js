@@ -214,6 +214,7 @@
     const all = Math.round((end - start) / DAY) + 1;
     const left = Math.max(0, Math.round((end - today) / DAY));
     line.textContent = `${done} of ${past} days worked · ${all} days in the term · ${left} left`;
+    window.MyTermDaysReading = { done, past, all, left };
   };
 
   const setDate = (which, value) => {

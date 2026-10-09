@@ -173,6 +173,19 @@
     check('Nobody asks the service who is signed in', asks.length === 0,
           asks.length ? asks.join(' · ') + ' — read it from getSession()' : 'every file reads the token it already has');
 
+    // 10 - drawn things are matched to their data by name, not by place.
+    // Pairing the children of a box with a list by counting worked right
+    // up to the day the box gained one more child: a tile for adding a
+    // course joined the row, and every card from then on was painted
+    // with the next course's numbers. Nothing threw, nothing was logged
+    const counted = [];
+    js.forEach(([p, src]) => src.split('\n').forEach((l, n) => {
+      if (/\.children\b/.test(l) && /\[\s*(i|index|n)\s*\]/.test(l)) counted.push(p.split('/').pop() + ':' + (n + 1));
+    }));
+    check('Nothing is matched to its data by counting', counted.length === 0,
+          counted.length ? counted.join(' · ') + ' — carry the id on the element instead'
+                         : 'every drawn thing is found by its own id');
+
     draw();
   };
 

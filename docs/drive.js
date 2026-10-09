@@ -18,44 +18,26 @@ let googleToken = null;
 let pickerReady = false;
 
 // ============================================================
-// # 📣 🧠  THE MESSAGE, AND WHAT IS REMEMBERED
+// # 📣 🎟️  THE MESSAGE, AND KEEPING THE GOOGLE TOKEN
 // # 🔤 JavaScript
-// # 🎯 Keeps the line shown when Google is blocked, what the hidden test
-// #    found last time, and the Google token so a reload does not undo it
-// # 🔗 None of the usual checks work. Brave does not support
-// #    hasStorageAccess, cookieEnabled still says true, and writing a
-// #    cookie still works, so every one of them lies. So the site runs a
-// #    real test instead, further down, and keeps the answer here.
-// #    The token sits in session storage, which the browser wipes when the
-// #    tab closes, so a reload keeps the user where they were while the
-// #    token still lives no longer than the hour Google gives it
+// # 🎯 Keeps the line shown when Google is blocked, and keeps the Google
+// #    token so a page reload does not send the user back to the start
+// # 🔗 The token is kept with the hour that Google gave it, and is dropped
+// #    when it runs out or when the user logs out. It is kept in the
+// #    lasting store, not the session one, because changing a browser
+// #    shield reloads the page and can wipe the session store with it.
+// #    The test result is never kept: the whole point of that reload is
+// #    that the browser just changed, so the test runs again every time
 // ============================================================
 const BLOCKED_TEXT =
   'لا يمكنك اختيار المكان بنفسك، متصفّحك يحجب كوكيز قوقل. ' +
   'اسمح بها لهذا الموقع ثم حدّث الصفحة، أو خزّنه في مجلد My Term وانقله في درايفك بعدها كيف شئت.';
 
-const PROBE_MEMO = 'myterm.pickerProbe';
 const TOKEN_MEMO = 'myterm.googleToken';
-
-function rememberProbe(works) {
-  try {
-    localStorage.setItem(PROBE_MEMO, works ? 'open' : 'blocked');
-  } catch (e) {
-    // some browsers refuse storage. The site still works, it just tests again
-  }
-}
-
-function lastProbe() {
-  try {
-    return localStorage.getItem(PROBE_MEMO);
-  } catch (e) {
-    return null;
-  }
-}
 
 function keepToken(token, seconds) {
   try {
-    sessionStorage.setItem(TOKEN_MEMO, JSON.stringify({
+    localStorage.setItem(TOKEN_MEMO, JSON.stringify({
       token: token,
       until: Date.now() + ((seconds || 3600) - 60) * 1000
     }));
@@ -66,7 +48,7 @@ function keepToken(token, seconds) {
 
 function takeToken() {
   try {
-    const saved = JSON.parse(sessionStorage.getItem(TOKEN_MEMO) || 'null');
+    const saved = JSON.parse(localStorage.getItem(TOKEN_MEMO) || 'null');
     if (saved && saved.until > Date.now()) return saved.token;
   } catch (e) {
     return null;
@@ -75,7 +57,7 @@ function takeToken() {
 }
 
 function dropToken() {
-  try { sessionStorage.removeItem(TOKEN_MEMO); } catch (e) { /* nothing to drop */ }
+  try { localStorage.removeItem(TOKEN_MEMO); } catch (e) { /* nothing to drop */ }
 }
 
 // ============================================================
@@ -325,14 +307,12 @@ function showStep(name) {
 }
 
 function markBlocked() {
-  rememberProbe(false);
   pickButton.disabled = true;
   shieldHint.textContent = BLOCKED_TEXT;
   shieldHint.hidden = false;
 }
 
 function markOpen() {
-  rememberProbe(true);
   pickButton.disabled = false;
   shieldHint.hidden = true;
 }
@@ -356,49 +336,30 @@ function showFile(folderName, fileId) {
   showStep('done');
 }
 
-function tellState(step, note) {
-  const tag = document.getElementById('build-tag');
-  if (!tag) return;
-  tag.textContent =
-    'v15 · token:' + (googleToken ? 'yes' : 'no') +
-    ' · probe:' + (lastProbe() || 'none') +
-    ' · step:' + step +
-    (note ? ' · ' + note : '');
-}
-
 async function onSignedIn() {
   driveNote.textContent = '';
   shieldHint.hidden = true;
 
   googleToken = takeToken();
 
-  let dbNote = 'db:ok';
   try {
     profile = await loadProfile();
   } catch (e) {
     profile = null;
-    dbNote = 'db:fail';
   }
 
   if (profile && profile.drive_file_id) {
     showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
-    tellState('done', dbNote);
     return;
   }
 
   if (!googleToken) {
     showStep('link');
-    tellState('link', dbNote);
     return;
   }
 
   showStep('place');
-  tellState('place', dbNote);
-
-  const known = lastProbe();
-  if (known === 'open') markOpen();
-  else if (known === 'blocked') markBlocked();
-  else await runProbe();
+  await runProbe();
 }
 
 async function linkGoogle() {

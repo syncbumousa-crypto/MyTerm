@@ -127,7 +127,8 @@
     saving: 'يُحفظ في درايفك…',
     saved: 'محفوظ في درايفك',
     failed: 'لم يُحفظ — الوصول إلى درايفك انتهى. عملك محفوظ هنا ولم يضع.',
-    unread: 'تعذّر قراءة ملفك من درايف — ما تراه قد لا يكون كامله.'
+    unread: 'تعذّر قراءة ملفك من درايف — ما تراه قد لا يكون كامله.',
+    arrived: 'وصل تعديل من جهازك الآخر'
   };
 
   const say = name => { state.textContent = WORDS[name] || ''; };
@@ -187,6 +188,30 @@
 
   moreBtn.onclick = () => { leaveBoard(); session.hidden = false; };
   backBtn.onclick = () => openBoard();
+
+  // ============================================================
+  // # 🔔 👂  LISTENING FOR THE OTHER DEVICE
+  // # 🔤 JavaScript
+  // # 🎯 When the phone saves, this screen reads the paper again and
+  // #    draws it, with nothing for the user to press
+  // # 🔗 It steps aside while this device has work of its own not yet
+  // #    sent: reading then would throw away what the user just typed.
+  // #    The skipped news is not lost — the next save rings again, and
+  // #    opening the board reads afresh anyway
+  // ============================================================
+  const hearBell = async () => {
+    if (keep.busy()) return;
+    const fresh = await keep.load().catch(() => null);
+    if (!fresh) return;
+    const typing = document.activeElement;
+    data = fresh;
+    paint();
+    say('arrived');
+    setTimeout(() => { if (state.textContent === WORDS.arrived) say(''); }, 2500);
+    if (typing && typing.id === 'term-input') editName();
+  };
+
+  window.MyTermBell?.listen(hearBell);
 
   document.addEventListener('place-ready', openBoard);
   document.addEventListener('place-needed', () => { leaveBoard(); backBtn.hidden = true; keep.detach(); });

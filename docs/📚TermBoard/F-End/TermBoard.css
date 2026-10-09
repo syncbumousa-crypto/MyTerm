@@ -1,0 +1,118 @@
+/* ============================================================ */
+/* # 🌑 🖥️  THE DARK BOARD */
+/* # 🔤 CSS */
+/* # 🎯 Turns the page a darker gray while the board is open, and moves */
+/* #    the content to the top instead of the middle, so a long row of */
+/* #    columns is never cut off the screen */
+/* # 🔗 The screen file puts board-on on the body when it opens the */
+/* #    board and takes it off when it closes. The gray in shell.css */
+/* #    stays the one for the sign in screens */
+/* ============================================================ */
+body.board-on {
+  background: #3a3a3a;
+  align-items: flex-start;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding-block: 42px 28px;
+  padding-inline: 16px;
+  box-sizing: border-box;
+}
+
+/* ============================================================ */
+/* # 🏷️ ✏️  THE NAME AT THE TOP */
+/* # 🔤 CSS */
+/* # 🎯 Keeps one height for the name spot whether it holds a button, a */
+/* #    typing box, or the finished title, so nothing jumps when they */
+/* #    swap. And it shows a text cursor on the title, which hints that */
+/* #    clicking it opens the box again */
+/* # 🔗 The button and the box take their frame from shell.css. Only */
+/* #    what is special to the board is written here */
+/* ============================================================ */
+.term {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 46px;
+}
+
+.term-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  cursor: text;
+  word-break: break-word;
+}
+
+.term-input {
+  width: 260px;
+  max-width: 100%;
+  text-align: center;
+}
+
+/* ============================================================ */
+/* # 🧱 ⬅️  THE ROW OF COLUMNS */
+/* # 🔤 CSS */
+/* # 🎯 Lays the course columns in one centered row, and lets them wrap */
+/* #    onto a second line on a narrow screen instead of running off it */
+/* # 🔗 The page reads right to left, so the row fills from the right */
+/* #    and every new column lands to the left of the one before it. */
+/* #    That ordering is the page direction, not a rule written here */
+/* ============================================================ */
+.columns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 180px;
+  min-height: 240px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+}
+
+.col-name {
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 6px 2px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: #ffffff;
+  text-align: center;
+}
+
+.col-name::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.col-name:focus {
+  outline: none;
+  border-bottom-color: #ffffff;
+}
+
+.col-body {
+  flex: 1;
+}
+
+.board-foot {
+  color: rgba(255, 255, 255, 0.6);
+}

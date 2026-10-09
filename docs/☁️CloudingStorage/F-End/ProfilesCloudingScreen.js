@@ -34,10 +34,15 @@
     hint.hidden = ok;
   };
 
+  // Tells the board file one of two things: the saving place is ready,
+  // or it still needs setting up. The board listens and steps aside
+  const tell = name => document.dispatchEvent(new CustomEvent(name));
+
   const showFile = (name, id) => {
     $('drive-where').textContent = `ملفك في مجلد: ${name}`;
     $('drive-open').href = `https://drive.google.com/file/d/${id}/view`;
     show('done');
+    tell('place-ready');
   };
 
   // ============================================================
@@ -62,6 +67,7 @@
   }
 
   async function toPlace() {
+    tell('place-needed');
     if (!cloud.hasToken()) { note.textContent = 'لحظة…'; await cloud.askGoogle(); }
     show('place');
     await runProbe();
@@ -98,7 +104,9 @@
         if (!linked || await cloud.fileAlive(id).catch(() => true)) return showFile(place.drive_folder_name || cloud.FOLDER, id);
         return fileIsGone();
       }
-      linked ? await toPlace() : show('link');
+      if (linked) return await toPlace();
+      tell('place-needed');
+      show('link');
     } finally {
       busy = false;
     }

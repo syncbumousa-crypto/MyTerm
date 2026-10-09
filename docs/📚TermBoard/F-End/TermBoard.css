@@ -380,10 +380,16 @@ body.board-on {
   gap: 6px;
 }
 
+/* An empty shape must still look like a shape. With nothing finished
+   yet all three are empty, and a hairline outline on a grey page reads
+   as nothing at all — which is how the trio came to look like one lone
+   bar. So each of the three carries its own floor: a filled ground and
+   a ring around it, and what fills from there is the reading. */
 .trio .sq {
   position: relative;
   display: inline-block;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.62);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -398,7 +404,8 @@ body.board-on {
 .trio .tbar {
   position: relative;
   display: inline-block;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -416,7 +423,8 @@ body.board-on {
 }
 
 .trio .dot.none {
-  border: 1px dotted rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55);
 }
 
 .trio.md .sq { width: 13px; height: 13px; }

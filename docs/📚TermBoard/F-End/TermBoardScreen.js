@@ -89,6 +89,17 @@
     } catch { /* a browser that forbids it simply forgets, and that is survivable */ }
   };
 
+  // A panel that opens beside a button must close when attention moves on,
+  // or the board ends up wearing one on every card
+  const shutMenus = () => {
+    document.querySelectorAll('.col-menu').forEach(m => { m.hidden = true; });
+    document.querySelectorAll('.col-gear.on').forEach(g => g.classList.remove('on'));
+  };
+
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.col-menu, .col-gear')) shutMenus();
+  });
+
   // ============================================================
   // # 🧱 ➕  A CARD FOR EVERY COURSE
   // # 🔤 JavaScript
@@ -154,20 +165,48 @@
     title.className = 'col-title';
     title.append(head, count);
 
-    // Removing takes two presses, not a dialog box: the first asks and
-    // the second does it, and it goes back if left alone. The course
-    // folder in Drive is never touched: your own files live in it
+    // ============================================================
+    // # ⚙️ 🗃️  THE ONE BUTTON FOR THE RARE THINGS
+    // # 🔤 JavaScript
+    // # 🎯 A small gear at the end of the strip. It opens a panel beside
+    // #    itself holding what is asked of a course once a term: how many
+    // #    hours it is worth, and taking it off the board
+    // # 🔗 These two were a button each on the strip and a line inside
+    // #    the marks table, three places for things done once. One place,
+    // #    and it stays shut. Removing still takes two presses, because
+    // #    a menu that opens by accident must not delete by accident
+    // ============================================================
+    const menu = document.createElement('div');
+    menu.className = 'col-menu';
+    menu.hidden = true;
+
+    const hoursLine = document.createElement('label');
+    hoursLine.className = 'col-menu-line';
+    const hoursWord = document.createElement('span');
+    hoursWord.textContent = 'Credit hours';
+    const hoursBox = document.createElement('input');
+    hoursBox.className = 'col-menu-num';
+    hoursBox.type = 'number';
+    hoursBox.min = '0';
+    hoursBox.value = course.credits ?? 3;
+    hoursBox.oninput = () => { course.credits = Number(hoursBox.value) || 0; changed(course); refreshTermGpa(); };
+    hoursLine.append(hoursWord, hoursBox);
+
+    // The course folder in Drive is never touched: your own files live in it
     const drop = document.createElement('button');
-    drop.className = 'col-icon';
+    drop.className = 'col-menu-drop';
     drop.type = 'button';
-    drop.textContent = '×';
-    drop.title = 'Remove this course from the board';
+    drop.textContent = 'Remove this course';
     let asking = null;
     drop.onclick = () => {
       if (!asking) {
-        drop.textContent = 'sure?';
+        drop.textContent = 'Press again to remove';
         drop.classList.add('asking');
-        asking = setTimeout(() => { drop.textContent = '×'; drop.classList.remove('asking'); asking = null; }, 3000);
+        asking = setTimeout(() => {
+          drop.textContent = 'Remove this course';
+          drop.classList.remove('asking');
+          asking = null;
+        }, 3000);
         return;
       }
       clearTimeout(asking);
@@ -177,21 +216,24 @@
       drawColumns();
     };
 
-    const open = document.createElement('button');
-    open.className = 'col-icon';
-    open.type = 'button';
-    open.textContent = '⤢';
-    open.title = 'Open the course page';
-    open.onclick = () => window.MyTermCoursePage?.open(course.id);
+    menu.append(hoursLine, drop);
 
-    const icons = document.createElement('div');
-    icons.className = 'col-icons';
-    icons.append(open, drop);
+    const gear = document.createElement('button');
+    gear.className = 'col-gear';
+    gear.type = 'button';
+    gear.textContent = '⚙';
+    gear.title = 'Hours and removing';
+    gear.onclick = () => {
+      const opening = menu.hidden;
+      shutMenus();                 // one open at a time, or the board fills with panels
+      menu.hidden = !opening;
+      gear.classList.toggle('on', opening);
+    };
 
     const top = document.createElement('div');
     top.className = 'col-top';
-    top.append(twist, grade, title, readingOf(course, 'md'), icons);
-    top.onclick = event => { if (!event.target.closest('input, button')) fold(); };
+    top.append(twist, grade, title, readingOf(course, 'md'), gear, menu);
+    top.onclick = event => { if (!event.target.closest('input, button, .col-menu')) fold(); };
 
     const body = document.createElement('div');
     body.className = 'col-body';
@@ -378,10 +420,12 @@
     const tellTheHead = () => {
       const column = panel.closest('.col');
       if (column) paintHead(column, course);
+      // With nothing to add up there is nothing to say. An empty table
+      // already says it is empty, and saying it twice is one time too many
       const standing = standingOf(course);
       foot.textContent = standing
         ? `${Math.round(standing.earned * 10) / 10} of ${standing.weight} · ${standing.pct}% · ${standing.letter}`
-        : 'Add an item and its weight to see where you stand.';
+        : '';
       foot.title = standing
         ? `${standing.marked} of ${standing.of} items have a score. The rest are counted as full marks.`
         : '';
@@ -522,20 +566,6 @@
       });
     };
 
-    // How many hours the course is worth. It belongs to the course and not
-    // to any item, so it sits under the table beside the standing
-    const hours = document.createElement('div');
-    hours.className = 'asHours';
-    const hoursWord = document.createElement('span');
-    hoursWord.textContent = 'Credit hours';
-    const hoursBox = document.createElement('input');
-    hoursBox.className = 'asIn asNum';
-    hoursBox.type = 'number';
-    hoursBox.min = '0';
-    hoursBox.value = course.credits ?? 3;
-    hoursBox.oninput = () => { course.credits = Number(hoursBox.value) || 0; changed(course); refreshTermGpa(); };
-    hours.append(hoursWord, hoursBox);
-
     const more = document.createElement('button');
     more.className = 'col-add';
     more.type = 'button';
@@ -551,7 +581,7 @@
     };
 
     drawItems();
-    panel.append(table, foot, hours, more);
+    panel.append(table, foot, more);
     // The foot cannot be filled until the panel knows which card it is in,
     // and it is not in one yet, so the first filling waits a turn
     setTimeout(tellTheHead, 0);

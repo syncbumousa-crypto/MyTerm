@@ -523,3 +523,92 @@ body.board-on {
 .day.ahead { background: transparent; border: 1px solid rgba(255, 255, 255, 0.2); }
 .day.today { outline: 1px solid #ffffff; outline-offset: 1px; }
 .day.pad { background: transparent; cursor: default; }
+
+/* ============================================================ */
+/* # 📖 🚪  THE COURSE PAGE */
+/* # 🔤 CSS */
+/* # 🎯 The same dark page, but one course wide: a name across the */
+/* #    middle, the shapes under it at their largest, and chapter rows */
+/* #    wide enough to read a real title */
+/* # 🔗 It borrows the board's own frame, so opening a course does not */
+/* #    feel like landing in a different site */
+/* ============================================================ */
+.course-shape { display: flex; justify-content: center; }
+
+.crows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.crow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.crow-name {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: #f4f4f4;
+}
+
+.crow-name::placeholder { color: rgba(255, 255, 255, 0.4); }
+.crow-name:focus { outline: none; background: rgba(255, 255, 255, 0.08); border-radius: 5px; }
+
+.col-open {
+  flex: none;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+
+.col-open:hover { color: #ffffff; background: rgba(255, 255, 255, 0.12); }
+
+/* ============================================================ */
+/* # 📊 🔢  THE STATISTICS STRIP */
+/* # 🔤 CSS */
+/* # 🎯 A row of small boxes, each a number over the word for what it */
+/* #    counts. It wraps onto more lines rather than shrinking */
+/* # 🔗 The number is the loud part and the label the quiet one, so the */
+/* #    strip is read at a glance and only then in detail */
+/* ============================================================ */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 86px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.stat b { font-size: 0.95rem; color: #ffffff; }
+.stat span { font-size: 0.7rem; color: rgba(255, 255, 255, 0.5); }

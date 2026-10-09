@@ -14,9 +14,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=39">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=39">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=39">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=40">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=40">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=40">
 </head>
 <body>
 
@@ -136,6 +136,8 @@
   <div class="columns" id="columns"></div>
   <p class="lede" id="board-empty" hidden>ابدأ بأوّل مادة — اضغط «أضف مادة».</p>
 
+  <div class="stats" id="stats"></div>
+
   <p class="save-state" id="save-state"></p>
 
   <button class="btn" type="button" id="renew-access" hidden>جدّد الوصول إلى درايفك</button>
@@ -143,6 +145,22 @@
   <button class="btn btn-flat board-foot" type="button" id="board-more">مكان الحفظ والحساب</button>
 </div>
 
+<!-- ============================================================ -->
+<!-- # 📖 🚪  ONE COURSE ON A PAGE OF ITS OWN -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 The course opened from the board: its name, its three shapes -->
+<!-- #    read large, and its chapters in full rows -->
+<!-- # 🔗 Hidden until a course is opened. The board is hidden while it -->
+<!-- #    shows, so they are never both on screen at once -->
+<!-- ============================================================ -->
+<div class="board" id="course" hidden>
+  <button class="btn btn-flat" type="button" id="course-back">→ رجوع إلى الترم</button>
+  <input class="field term-input" id="course-name" placeholder="اسم المادة">
+  <div class="course-shape" id="course-shape"></div>
+  <p class="lede" id="course-line"></p>
+  <div class="crows" id="course-chapters"></div>
+  <button class="btn" type="button" id="course-add">أضف فصلًا</button>
+</div>
 <!-- ============================================================ -->
 <!-- # 🔖 👁️  VERSION MARK -->
 <!-- # 🔤 HTML -->
@@ -152,7 +170,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v39</p>
+<p class="build">v40</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -175,15 +193,16 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=39"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=39"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=39"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=39"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=39"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=39"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=39"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=39"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=39"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=40"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=40"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=40"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=40"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=40"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=40"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=40"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=40"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=40"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=40"></script>
 
 </body>
 </html>

@@ -14,8 +14,8 @@
 
   const board = $('board'), session = $('session'), backBtn = $('to-board');
   const setBtn = $('term-set'), nameBox = $('term-input'), title = $('term-title');
-  const columns = $('columns'), addBtn = $('add-course'), moreBtn = $('board-more');
-  const state = $('save-state'), renewBtn = $('renew-access'), empty = $('board-empty');
+  const columns = $('columns'), addBtn = $('add-course');
+  const renewBtn = $('renew-access'), empty = $('board-empty');
   const termGpa = $('term-gpa'), termShape = $('term-shape'), termNotes = $('term-notes');
 
   const arabic = n => String(n);
@@ -530,7 +530,8 @@
     arrived: 'An update arrived from your other device'
   };
 
-  const say = name => { state.textContent = WORDS[name] || ''; };
+  // The corner says it now: a tick when it is in Drive, a turning circle while it is not
+  const say = name => window.MyTermHud?.sync(name);
   keep.onStatus(name => {
     say(name);
     if (name === 'failed') renewBtn.hidden = false;
@@ -590,7 +591,6 @@
     document.body.classList.remove('board-on');
   };
 
-  moreBtn.onclick = () => { leaveBoard(); session.hidden = false; };
   backBtn.onclick = () => openBoard();
 
   // ============================================================
@@ -610,7 +610,7 @@
     data = fresh;
     paint();
     say('arrived');
-    setTimeout(() => { if (state.textContent === WORDS.arrived) say(''); }, 2500);
+    setTimeout(() => say('saved'), 2500);
     if (typing && typing.id === 'term-input') editName();
   };
 

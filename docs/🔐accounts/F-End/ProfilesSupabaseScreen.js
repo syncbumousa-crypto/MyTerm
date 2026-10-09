@@ -93,6 +93,7 @@
   // ============================================================
   function openSession(email) {
     who.textContent = 'Hello, ' + email;
+    window.MyTermHud?.face(email);
     show('session');
     window.myTermSignedIn = true;
     document.dispatchEvent(new CustomEvent('signed-in'));
@@ -101,6 +102,7 @@
   document.getElementById('logout').onclick = async () => {
     await auth.signOut();
     window.myTermSignedIn = false;
+    window.MyTermHud?.hide();
     document.dispatchEvent(new CustomEvent('signed-out'));
     show('choice');
   };

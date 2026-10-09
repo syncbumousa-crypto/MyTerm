@@ -16,7 +16,7 @@
   const setBtn = $('term-set'), nameBox = $('term-input'), title = $('term-title');
   const columns = $('columns'), addBtn = $('add-course');
   const renewBtn = $('renew-access'), empty = $('board-empty');
-  const termGpa = $('term-gpa'), termShape = $('term-shape'), termNotes = $('term-notes');
+  const termGpa = $('term-gpa'), termShape = $('term-shape');
 
   const arabic = n => String(n);
   const now = () => new Date().toISOString();
@@ -310,15 +310,14 @@
   };
 
   // ============================================================
-  // # 🔲 🧾  THE WHOLE TERM IN THREE SHAPES, AND A FEW LINES
+  // # 🔲 🧾  THE WHOLE TERM IN THREE SHAPES
   // # 🔤 JavaScript
   // # 🎯 The same three shapes as a course, read once over everything:
-  //  #   how much is set up, how much is finished, and how the marks
-  // #    stand. Under them a few plain lines saying the same in words
+  // #    how much is set up, how much is finished, and how the marks
+  // #    stand
   // # 🔗 Every number is counted from the courses, never stored and
-  // #    never typed. Lines with nothing behind them are left out
-  // #    instead of printed as zeros: no chapters means no sentence
-  // #    about chapters, not a sentence saying none
+  // #    never typed. What the shapes mean in words is in their tips,
+  // #    so the reading is the shapes and nothing crowds them
   // ============================================================
   const termReading = () => {
     const courses = living();
@@ -353,13 +352,9 @@
 
     return {
       courses: courses.length, chapters: chapters.length, named, done,
-      hours, hoursDone,
       ok, bad, unknown: Math.max(0, weight - ok - bad), weight
     };
   };
-
-  // 4.5 not 4.5000, and 3 not 3.0
-  const tidy = n => (Math.round(n * 10) / 10).toString();
 
   const drawTermShape = () => {
     const r = termReading();
@@ -374,27 +369,6 @@
         ? `Marks — ${Math.round(r.ok)} earned, ${Math.round(r.bad)} lost, ${Math.round(r.unknown)} not graded yet`
         : 'Marks — nothing recorded yet'
     }));
-
-    const d = window.MyTermDaysReading;
-    const notes = [];
-    if (r.hours) notes.push(`${tidy(r.hoursDone)} of ${tidy(r.hours)} term hours finished`);
-    if (r.courses) notes.push(`${r.courses} course${r.courses === 1 ? '' : 's'}`
-      + (r.chapters ? ` · ${r.chapters} chapter${r.chapters === 1 ? '' : 's'} · ${r.done} finished` : ''));
-    if (d && d.all) notes.push(`${d.done} of ${d.past} days worked · ${d.left} day${d.left === 1 ? '' : 's'} left`);
-    if (d && d.all && r.chapters) {
-      const got = Math.round((r.done / r.chapters) * 100);
-      const gone = Math.round((d.past / d.all) * 100);
-      const gap = got - gone;
-      notes.push(`${got}% finished against ${gone}% of the term gone — ${gap >= 0 ? gap + '% ahead' : -gap + '% behind'}`);
-    }
-
-    termNotes.textContent = '';
-    notes.forEach(words => {
-      const line = document.createElement('p');
-      line.className = 'term-note';
-      line.textContent = words;
-      termNotes.append(line);
-    });
   };
 
   const refreshTermGpa = () => {

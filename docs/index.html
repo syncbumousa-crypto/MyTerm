@@ -14,8 +14,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=26">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=26">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=27">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=27">
 </head>
 <body>
 
@@ -24,8 +24,8 @@
 <!-- # 🔤 HTML -->
 <!-- # 🎯 The first panel: two buttons to pick what to do, -->
 <!-- #    make a new account or log in -->
-<!-- # 🔗 ProfilesSupabase.js hides this panel and shows the form panel -->
-<!-- #    below when one of the buttons is clicked -->
+<!-- # 🔗 The accounts screen file hides this panel and shows the form -->
+<!-- #    panel below when one of the buttons is clicked -->
 <!-- ============================================================ -->
 <div class="box" id="choice">
   <button class="btn btn-main" type="button" id="go-signup">إنشاء حساب</button>
@@ -37,7 +37,7 @@
 <!-- # 🔤 HTML -->
 <!-- # 🎯 The form panel: an email box, a password box, a send button, -->
 <!-- #    a back button, and a line for messages -->
-<!-- # 🔗 Hidden until a button above is clicked. ProfilesSupabase.js -->
+<!-- # 🔗 Hidden until a button above is clicked. The accounts screen file -->
 <!-- #    changes the title and the send button text, because the same -->
 <!-- #    form is used for both signing up and logging in -->
 <!-- ============================================================ -->
@@ -54,9 +54,9 @@
 <!-- # 👤 ✅  LOGGED IN PANEL -->
 <!-- # 🔤 HTML -->
 <!-- # 🎯 Shows which account is open, the Google Drive part, and a way out -->
-<!-- # 🔗 ProfilesSupabase.js shows this one after a good login. The -->
-<!-- #    three groups inside are three steps, and ProfilesClouding.js -->
-<!-- #    shows one at a time: link the account, then pick the place, -->
+<!-- # 🔗 The accounts screen file shows this one after a good login. The -->
+<!-- #    three groups inside are three steps, and the storage screen -->
+<!-- #    file shows one at a time: link the account, pick the place, -->
 <!-- #    then the finished file. All three start hidden behind a turning -->
 <!-- #    circle, because working out which one is right needs answers -->
 <!-- #    from two services. Showing any of them first would flash a -->
@@ -104,25 +104,30 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v26</p>
+<p class="build">v27</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 Brings in three outside libraries, then this site's own two files: -->
-<!-- #    the sign in service, Google permission, and the Google file window -->
+<!-- # 🎯 Brings in three outside libraries: the sign in service, Google -->
+<!-- #    permission, and the Google file window. Then this site's own four -->
+<!-- #    files, in the order they need each other -->
 <!-- # 🔗 Sits at the end of body so the panels above already exist when the -->
-<!-- #    scripts look for them. The libraries come first because the two -->
-<!-- #    site files use them. The third one is only needed by the pick your -->
-<!-- #    own place path, and a strict browser may block the frame it opens. -->
-<!-- #    The v number on the two site files is bumped on every publish, so -->
-<!-- #    a reload always brings the new code and never an old copy -->
+<!-- #    scripts look for them. The libraries come first because the site -->
+<!-- #    files use them. Then the two B-End files, which show nothing and -->
+<!-- #    only talk to the two services. Then the two F-End files, which -->
+<!-- #    draw the screen and call the names the B-End files left ready. -->
+<!-- #    The order matters: a screen file loaded first would look for a -->
+<!-- #    name that does not exist yet. The v number is bumped on every -->
+<!-- #    publish, so a reload always brings the new code, never an old copy -->
 <!-- ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/F-End/ProfilesSupabase.js?v=26"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesClouding.js?v=26"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=27"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=27"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=27"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=27"></script>
 
 </body>
 </html>

@@ -18,7 +18,7 @@
   const list = $('course-chapters'), addBtn = $('course-add'), backBtn = $('course-back');
   const line = $('course-line');
 
-  const arabic = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+  const arabic = n => String(n);
   const now = () => new Date().toISOString();
   const alive = course => (course.chapters || []).filter(h => !h.deleted);
 
@@ -56,7 +56,7 @@
       const name = document.createElement('input');
       name.className = 'crow-name';
       name.value = ch.name;
-      name.placeholder = 'اسم الفصل';
+      name.placeholder = 'Chapter name';
       name.oninput = () => { ch.name = name.value; ch.updatedAt = now(); touch(); };
 
       const off = document.createElement('button');
@@ -72,8 +72,8 @@
     const here = alive(c);
     const done = here.filter(h => h.done).length;
     line.textContent = here.length
-      ? `${arabic(done)} من ${arabic(here.length)} فصلًا · ${arabic(Math.round((done / here.length) * 100))}٪`
-      : 'لا فصول بعد — أضف أوّلها.';
+      ? `${done} of ${here.length} chapters · ${Math.round((done / here.length) * 100)}%`
+      : 'No chapters yet — add the first one.';
 
     shapeBox.textContent = '';
     shapeBox.append(window.MyTermBoardReading(c, 'lg'));
@@ -84,7 +84,7 @@
   addBtn.onclick = () => {
     const c = course();
     c.chapters = c.chapters || [];
-    c.chapters.push({ id: 'h-' + Math.random().toString(36).slice(2, 8), name: 'فصل ' + arabic(alive(c).length + 1), done: false, updatedAt: now(), deleted: false });
+    c.chapters.push({ id: 'h-' + Math.random().toString(36).slice(2, 8), name: 'Chapter ' + arabic(alive(c).length + 1), done: false, updatedAt: now(), deleted: false });
     touch();
     draw();
     list.lastElementChild?.querySelector('.crow-name')?.focus();

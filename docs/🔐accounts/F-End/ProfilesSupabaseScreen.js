@@ -30,7 +30,7 @@
 
   function openForm(which) {
     mode = which;
-    const label = which === 'signup' ? 'إنشاء حساب' : 'تسجيل الدخول';
+    const label = which === 'signup' ? 'Create account' : 'Log in';
     formTitle.textContent = label;
     sendButton.textContent = label;
     note.textContent = '';
@@ -60,7 +60,7 @@
     const password = passwordBox.value;
 
     sendButton.disabled = true;
-    note.textContent = 'لحظة…';
+    note.textContent = 'One moment…';
 
     const answer = mode === 'signup'
       ? await auth.signUp(email, password)
@@ -76,7 +76,7 @@
     if (answer.data.session) {
       openSession(answer.data.session.user.email);
     } else {
-      note.textContent = 'تم إنشاء الحساب. افتح بريدك لتأكيده ثم سجّل الدخول.';
+      note.textContent = 'Account created. Open your email to confirm it, then log in.';
     }
   };
 
@@ -92,7 +92,7 @@
   // #    flag can still be read by that file a moment later
   // ============================================================
   function openSession(email) {
-    who.textContent = 'مرحبًا، ' + email;
+    who.textContent = 'Hello, ' + email;
     show('session');
     window.myTermSignedIn = true;
     document.dispatchEvent(new CustomEvent('signed-in'));

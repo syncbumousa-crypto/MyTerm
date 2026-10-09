@@ -16,7 +16,7 @@
   const NS = 'http://www.w3.org/2000/svg';
   const SIZES = { lg: 44, md: 16, sm: 10 };
 
-  // قرصٌ مصمت: عرضُ القوس نصفُ القطر ونصفُ قطره الربع، فيلتقي المركزَ بلا ثقب
+  // A solid disc: the arc is half the width and a quarter the radius, so it meets the middle with no hole
   const disc = (px, ok, bad, unknown) => {
     const svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('width', px);
@@ -48,7 +48,7 @@
     return svg;
   };
 
-  // ready · done · {ok,bad,unknown} — كلُّها نسبٌ من مئة أو أعداد
+  // ready and done are percentages; marks are counts of earned, lost and ungraded
   window.MyTermShapes = {
     draw: (size, reading) => {
       const box = document.createElement('div');
@@ -71,7 +71,7 @@
       const marks = reading.marks;
       const dot = document.createElement('span');
       dot.className = 'dot' + (marks && (marks.ok + marks.bad + marks.unknown) > 0 ? ' disc' : ' none');
-      dot.title = reading.marksTip || 'لم يُحكم عليه بعد';
+      dot.title = reading.marksTip || 'Not judged yet';
       if (marks && (marks.ok + marks.bad + marks.unknown) > 0) {
         dot.appendChild(disc(SIZES[size] || 16, marks.ok, marks.bad, marks.unknown));
       }

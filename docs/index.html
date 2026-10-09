@@ -14,7 +14,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="style.css?v=19">
+<link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
 
@@ -55,12 +55,17 @@
 <!-- # 🎯 Shows which account is open, the Google Drive part, and a way out -->
 <!-- # 🔗 script.js shows this one after a good login. The three groups -->
 <!-- #    inside are three steps, and drive.js shows one at a time: -->
-<!-- #    link the account, then pick the place, then the finished file -->
+<!-- #    link the account, then pick the place, then the finished file. -->
+<!-- #    All three start hidden behind a turning circle, because working -->
+<!-- #    out which one is right needs answers from two services. Showing -->
+<!-- #    any of them first would flash a wrong step for a moment -->
 <!-- ============================================================ -->
 <div class="box" id="session" hidden>
   <p class="who" id="who"></p>
 
-  <div class="stack" id="step-link">
+  <div class="spinner" id="session-spin"></div>
+
+  <div class="stack" id="step-link" hidden>
     <button class="btn btn-main" type="button" id="link-google">اربط حساب قوقل</button>
   </div>
 
@@ -97,7 +102,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v19</p>
+<p class="build">v20</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -114,8 +119,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="script.js?v=19"></script>
-<script src="drive.js?v=19"></script>
+<script src="script.js?v=20"></script>
+<script src="drive.js?v=20"></script>
 
 </body>
 </html>

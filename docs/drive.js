@@ -321,6 +321,7 @@ const steps = {
 const pickButton = document.getElementById('pick-place');
 const placeButtons = document.getElementById('place-buttons');
 const probeSpin = document.getElementById('probe-spin');
+const sessionSpin = document.getElementById('session-spin');
 const driveWhere = document.getElementById('drive-where');
 const driveOpen = document.getElementById('drive-open');
 const driveNote = document.getElementById('drive-note');
@@ -329,9 +330,17 @@ const shieldHint = document.getElementById('shield-hint');
 let profile = null;
 
 function showStep(name) {
+  sessionSpin.hidden = true;
   Object.keys(steps).forEach(function (key) {
     steps[key].hidden = key !== name;
   });
+}
+
+function waitForStep() {
+  Object.keys(steps).forEach(function (key) {
+    steps[key].hidden = true;
+  });
+  sessionSpin.hidden = false;
 }
 
 function markBlocked() {
@@ -372,6 +381,7 @@ async function onSignedIn() {
   try {
     driveNote.textContent = '';
     shieldHint.hidden = true;
+    waitForStep();
     let lost = false;
 
     googleToken = takeToken();
@@ -519,5 +529,5 @@ document.addEventListener('signed-out', function () {
   probeSpin.hidden = true;
   placeButtons.hidden = false;
   pickButton.disabled = false;
-  showStep('link');
+  waitForStep();
 });

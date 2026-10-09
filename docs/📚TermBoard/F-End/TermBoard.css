@@ -80,6 +80,34 @@ body.board-on {
 @media (max-width: 720px)  { .columns { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 460px)  { .columns { grid-template-columns: 1fr; } }
 
+/* ============================================================ */
+/* # ➕ 🪧  THE ONE BUTTON OVER THE CARDS */
+/* # 🔤 CSS */
+/* # 🎯 Adds a course, and sits directly over the row it adds to */
+/* # 🔗 It wore the big white frame the sign in screens use, which on a */
+/* #    near black board beside dense dark cards was the loudest thing */
+/* #    on the page — and it is not the most important thing on it. */
+/* #    Quiet until wanted, and lit on hover */
+/* ============================================================ */
+#add-course {
+  align-self: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .3px;
+  padding: 7px 18px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel2);
+  color: var(--dim);
+}
+
+#add-course:hover:not(:disabled) {
+  background: #2c2d34;
+  border-color: var(--dim2);
+  color: #ffffff;
+}
+
+
 .col {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -165,11 +193,18 @@ body.board-on {
 .col-grade b { font-size: 11px; line-height: 11px; font-weight: 700; letter-spacing: -.2px; }
 .col-grade s { font-size: 7px; line-height: 8px; opacity: .85; text-decoration: none; }
 
+/* The name gives way, the shapes do not. A text box asks for about
+   twenty characters of room whether or not it holds them, and asking
+   first it took the whole line: the bar was squeezed to two pixels and
+   read as a stray mark. So the shapes are given a fixed width and the
+   name takes what is left — which also puts every card's bar at the
+   same place and the same length, the one thing that lets two courses
+   be compared without reading either of them */
 .col-title {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
 }
 
 .col-name {
@@ -199,10 +234,7 @@ body.board-on {
 
 .col-count b { color: var(--green); font-weight: 400; }
 
-/* The three shapes take whatever the line has left, so the bar is as
-   long as the card allows and every card's bar starts in the same
-   place — which is the only way two of them can be compared by eye */
-.col-top .trio { flex: 1 1 auto; min-width: 0; margin-inline-start: 2px; }
+.col-top .trio { flex: 0 0 92px; min-width: 0; margin-inline-start: 2px; }
 
 .col-icon {
   flex: none;

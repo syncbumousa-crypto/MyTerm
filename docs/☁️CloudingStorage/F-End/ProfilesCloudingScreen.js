@@ -13,8 +13,8 @@
 (() => {
   const cloud = window.MyTermCloud;
 
-  const BLOCKED_TEXT = 'لا يمكنك اختيار المكان بنفسك، متصفّحك يحجب كوكيز قوقل. ' +
-    'اسمح بها لهذا الموقع ثم حدّث الصفحة، أو خزّنه في مجلد My Term وانقله في درايفك بعدها كيف شئت.';
+  const BLOCKED_TEXT = 'You cannot pick the place yourself: your browser blocks Google cookies. ' +
+    'Allow them for this site and reload, or keep it in a MyTerm folder and move it in your Drive afterwards however you like.';
 
   const $ = id => document.getElementById(id);
   const steps = { link: $('step-link'), place: $('step-place'), done: $('step-done') };
@@ -41,7 +41,7 @@
   const tell = (name, detail) => document.dispatchEvent(new CustomEvent(name, { detail }));
 
   const showFile = (name, id) => {
-    $('drive-where').textContent = `ملفك في مجلد: ${name}`;
+    $('drive-where').textContent = `Your file is in: ${name}`;
     $('drive-open').href = `https://drive.google.com/file/d/${id}/view`;
     show('done');
     tell('place-ready', { fileId: id, folderName: name });
@@ -60,7 +60,7 @@
   async function runProbe() {
     placeBtns.hidden = true;
     probeSpin.hidden = false;
-    note.textContent = 'نفحص إمكانيات متصفّحك…';
+    note.textContent = 'Checking what your browser allows…';
     const works = await cloud.probePicker();
     probeSpin.hidden = true;
     placeBtns.hidden = false;
@@ -70,25 +70,25 @@
 
   async function toPlace() {
     tell('place-needed');
-    if (!cloud.hasToken()) { note.textContent = 'لحظة…'; await cloud.askGoogle(); }
+    if (!cloud.hasToken()) { note.textContent = 'One moment…'; await cloud.askGoogle(); }
     show('place');
     await runProbe();
   }
 
   async function finish(folder) {
-    note.textContent = 'ننشئ الملف…';
+    note.textContent = 'Creating the file…';
     const id = await cloud.createJson(folder.id, cloud.FILE, { app: 'MyTerm', linked_at: cloud.now(), term: { name: '', updatedAt: null }, courses: [] });
     await cloud.savePlace(folder.name, id);
     place = { drive_folder_name: folder.name, drive_file_id: id };
     showFile(folder.name, id);
-    note.textContent = 'تم. انقل المجلد في درايفك حيث شئت، والرابط يبقى.';
+    note.textContent = 'Done. Move the folder anywhere in your Drive; the link holds.';
   }
 
   async function fileIsGone() {
     place = null;
     await cloud.forgetPlace();
     await toPlace();
-    note.textContent = 'لم نجد ملفك في درايف. اختر مكانًا جديدًا.';
+    note.textContent = 'Your file was not found in Drive. Pick a new place.';
   }
 
   async function onSignedIn() {
@@ -115,19 +115,19 @@
   }
 
   const act = fn => async () => {
-    try { await fn(); } catch (e) { note.textContent = 'تعذّر: ' + e.message; }
+    try { await fn(); } catch (e) { note.textContent = 'Could not: ' + e.message; }
   };
 
   $('link-google').onclick = act(toPlace);
   $('change-place').onclick = act(toPlace);
   $('auto-place').onclick = act(async () => {
-    note.textContent = 'نجهّز المجلد…';
+    note.textContent = 'Preparing the folder…';
     await finish(await cloud.findOrMakeFolder());
   });
 
   pickBtn.onclick = async () => {
     try {
-      note.textContent = 'تُفتح نافذة قوقل…';
+      note.textContent = 'Opening the Google window…';
       const folder = await cloud.pickFolder();
       note.textContent = '';
       if (folder) await finish(folder);

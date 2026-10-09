@@ -1,22 +1,22 @@
 <!-- ============================================================ -->
 <!-- # ⚙️ 📄  PAGE SETUP -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 Sets up the page: its type, Arabic language, right to left text, -->
-<!-- #    letter encoding so Arabic shows the right way, phone screen size, -->
+<!-- # 🎯 Sets up the page: its type, English language, left to right text, -->
+<!-- #    letter encoding, phone screen size, -->
 <!-- #    the tab name, and it calls the style file -->
 <!-- # 🔗 None of this shows on the page. It all runs before the content is -->
 <!-- #    drawn. The v number on the style file is bumped on every publish, -->
 <!-- #    so a visitor never gets an old copy out of the browser memory -->
 <!-- ============================================================ -->
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=40">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=40">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=40">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=41">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=41">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=41">
 </head>
 <body>
 
@@ -30,9 +30,9 @@
 <!-- ============================================================ -->
 <div class="box" id="choice">
   <h1 class="title">MyTerm</h1>
-  <p class="lede">لوحةُ ترمك — ومَوادُّك تُحفظ في درايفك أنت، لا عندنا.</p>
-  <button class="btn btn-main" type="button" id="go-signup">إنشاء حساب</button>
-  <button class="btn" type="button" id="go-login">تسجيل الدخول</button>
+  <p class="lede">Your term board — and your courses are saved in your own Drive, not with us.</p>
+  <button class="btn btn-main" type="button" id="go-signup">Create account</button>
+  <button class="btn" type="button" id="go-login">Log in</button>
 </div>
 
 <!-- ============================================================ -->
@@ -46,10 +46,10 @@
 <!-- ============================================================ -->
 <form class="box" id="form" hidden>
   <h1 class="title" id="form-title"></h1>
-  <input class="field" id="email" type="email" placeholder="البريد" required autocomplete="email">
-  <input class="field" id="password" type="password" placeholder="كلمة السر" required minlength="6" autocomplete="current-password">
+  <input class="field" id="email" type="email" placeholder="Email" required autocomplete="email">
+  <input class="field" id="password" type="password" placeholder="Password" required minlength="6" autocomplete="current-password">
   <button class="btn btn-main" type="submit" id="submit"></button>
-  <button class="btn btn-flat" type="button" id="back">رجوع</button>
+  <button class="btn btn-flat" type="button" id="back">Back</button>
   <p class="note" id="note"></p>
 </form>
 
@@ -71,19 +71,19 @@
   <div class="spinner" id="session-spin"></div>
 
   <div class="stack" id="step-link" hidden>
-    <button class="btn btn-main" type="button" id="link-google">اربط حساب قوقل</button>
-    <p class="lede">لنحفظ موادّك في مجلدٍ من درايفك. ولا نرى من ملفاتك إلا ما ننشئه نحن.</p>
+    <button class="btn btn-main" type="button" id="link-google">Link your Google account</button>
+    <p class="lede">So we can keep your courses in a folder of your Drive. We see nothing of your files but what we make ourselves.</p>
   </div>
 
   <div class="stack" id="step-place" hidden>
-    <p class="where">مكان الحفظ المستمر</p>
-    <p class="lede">اختر مجلدًا عندك، أو ننشئ لك مجلدًا باسم MyTerm في جذر درايفك.</p>
+    <p class="where">Where your work is kept</p>
+    <p class="lede">Pick a folder of your own, or we make you a MyTerm folder at the root of your Drive.</p>
 
     <div class="spinner" id="probe-spin" hidden></div>
 
     <div class="stack" id="place-buttons">
-      <button class="btn btn-main" type="button" id="pick-place">اختر المكان بنفسك</button>
-      <button class="btn" type="button" id="auto-place">خزّنه في مجلد My Term في جذر ملفاتي</button>
+      <button class="btn btn-main" type="button" id="pick-place">Pick the place yourself</button>
+      <button class="btn" type="button" id="auto-place">Keep it in a MyTerm folder at my Drive root</button>
     </div>
 
     <p class="hint" id="shield-hint" hidden></p>
@@ -91,13 +91,13 @@
 
   <div class="stack" id="step-done" hidden>
     <p class="where" id="drive-where"></p>
-    <a class="btn btn-flat" id="drive-open" href="#" target="_blank" rel="noopener">افتح الملف في درايف</a>
-    <button class="btn btn-flat" type="button" id="change-place">غيّر مكان الحفظ</button>
+    <a class="btn btn-flat" id="drive-open" href="#" target="_blank" rel="noopener">Open the file in Drive</a>
+    <button class="btn btn-flat" type="button" id="change-place">Change where it is kept</button>
   </div>
 
   <p class="note" id="drive-note"></p>
-  <button class="btn btn-flat" type="button" id="to-board" hidden>رجوع إلى الترم</button>
-  <button class="btn btn-flat" type="button" id="logout">خروج</button>
+  <button class="btn btn-flat" type="button" id="to-board" hidden>Back to the term</button>
+  <button class="btn btn-flat" type="button" id="logout">Log out</button>
 </div>
 
 <!-- ============================================================ -->
@@ -115,34 +115,34 @@
 <div class="board" id="board" hidden>
 
   <div class="term">
-    <button class="btn btn-main" type="button" id="term-set">ادخل اسم الترم</button>
-    <input class="field term-input" id="term-input" placeholder="اسم الترم" hidden>
+    <button class="btn btn-main" type="button" id="term-set">Name your term</button>
+    <input class="field term-input" id="term-input" placeholder="Term name" hidden>
     <h1 class="term-title" id="term-title" hidden></h1>
   </div>
 
   <p class="term-score" id="term-score"></p>
   <p class="term-gpa" id="term-gpa"></p>
 
-  <button class="btn" type="button" id="add-course">أضف مادة</button>
+  <button class="btn" type="button" id="add-course">Add a course</button>
 
   <div class="days" id="days">
     <div class="days-when">
-      <label class="days-label">من <input class="field days-date" id="term-from" type="date"></label>
-      <label class="days-label">إلى <input class="field days-date" id="term-to" type="date"></label>
+      <label class="days-label">From <input class="field days-date" id="term-from" type="date"></label>
+      <label class="days-label">To <input class="field days-date" id="term-to" type="date"></label>
     </div>
     <div class="days-grid" id="days-grid"></div>
     <p class="lede" id="days-line"></p>
   </div>
   <div class="columns" id="columns"></div>
-  <p class="lede" id="board-empty" hidden>ابدأ بأوّل مادة — اضغط «أضف مادة».</p>
+  <p class="lede" id="board-empty" hidden>Start with your first course — press "Add a course".</p>
 
   <div class="stats" id="stats"></div>
 
   <p class="save-state" id="save-state"></p>
 
-  <button class="btn" type="button" id="renew-access" hidden>جدّد الوصول إلى درايفك</button>
+  <button class="btn" type="button" id="renew-access" hidden>Renew access to your Drive</button>
 
-  <button class="btn btn-flat board-foot" type="button" id="board-more">مكان الحفظ والحساب</button>
+  <button class="btn btn-flat board-foot" type="button" id="board-more">Storage and account</button>
 </div>
 
 <!-- ============================================================ -->
@@ -154,12 +154,12 @@
 <!-- #    shows, so they are never both on screen at once -->
 <!-- ============================================================ -->
 <div class="board" id="course" hidden>
-  <button class="btn btn-flat" type="button" id="course-back">→ رجوع إلى الترم</button>
-  <input class="field term-input" id="course-name" placeholder="اسم المادة">
+  <button class="btn btn-flat" type="button" id="course-back">← Back to the term</button>
+  <input class="field term-input" id="course-name" placeholder="Course name">
   <div class="course-shape" id="course-shape"></div>
   <p class="lede" id="course-line"></p>
   <div class="crows" id="course-chapters"></div>
-  <button class="btn" type="button" id="course-add">أضف فصلًا</button>
+  <button class="btn" type="button" id="course-add">Add a chapter</button>
 </div>
 <!-- ============================================================ -->
 <!-- # 🔖 👁️  VERSION MARK -->
@@ -170,7 +170,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v40</p>
+<p class="build">v41</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -193,16 +193,16 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=40"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=40"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=40"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=40"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=40"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=40"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=40"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=40"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=40"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=40"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=41"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=41"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=41"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=41"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=41"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=41"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=41"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=41"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=41"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=41"></script>
 
 </body>
 </html>

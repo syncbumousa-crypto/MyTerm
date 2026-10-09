@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>حارس MyTerm</title>
+<title>MyTerm guard</title>
 <style>
   body { margin: 0; padding: 24px 16px; background: #1e1e1e; color: #eaeaea;
          font-family: system-ui, "Segoe UI", sans-serif; line-height: 1.7; }
@@ -24,12 +24,12 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>حارس MyTerm</h1>
-  <p class="sub">يفحص الموقع كما هو منشور. وكل فحصٍ هنا وُلد من عطبٍ وقع فعلًا.</p>
+  <h1>MyTerm guard</h1>
+  <p class="sub">Checks the site as published. Every question here was born from a defect that actually happened.</p>
 
   <div class="bar">
     <input id="base" size="46" value="">
-    <button id="run" type="button">افحص</button>
+    <button id="run" type="button">Check</button>
   </div>
 
   <p class="score" id="score">…</p>
@@ -74,16 +74,16 @@
   // ============================================================
   const run = async () => {
     rows.length = 0;
-    $('score').textContent = 'يفحص…';
+    $('score').textContent = 'Checking…';
     $('rows').innerHTML = '';
     const base = $('base').value.replace(/\/?$/, '/');
 
     const page = await text(base + 'index.html');
     if (!page.ok) {
-      check('الصفحة تُحمَّل', false, 'HTTP ' + page.status);
+      check('The page loads', false, 'HTTP ' + page.status);
       return draw();
     }
-    check('الصفحة تُحمَّل', true);
+    check('The page loads', true);
 
     const doc = new DOMParser().parseFromString(page.body, 'text/html');
     const ids = [...doc.querySelectorAll('[id]')].map(e => e.id);
@@ -93,7 +93,7 @@
       .map(e => e.getAttribute('src') || e.getAttribute('href'))
       .filter(u => u && !/^https?:/.test(u));
 
-    // ١ — كل ملف تطلبه الصفحة موجود
+    // 1 - every file the page asks for exists
     const files = {};
     let missing = [];
     for (const ref of refs) {
@@ -101,47 +101,47 @@
       const got = await text(base + path.split('/').map(encodeURIComponent).join('/'));
       if (!got.ok) missing.push(path + ' → ' + got.status); else files[path] = got.body;
     }
-    check('كل ملف تطلبه الصفحة موجود', missing.length === 0, missing.join(' · '));
+    check('Every file the page asks for exists', missing.length === 0, missing.join(' · '));
 
-    // ٢ — بصمة الإصدار واحدة في الكل، وتطابق علامة الزاوية
+    // 2 - one version stamp everywhere, matching the corner mark
     const stamps = [...new Set(refs.map(r => (r.match(/\?v=(\d+)/) || [])[1]).filter(Boolean))];
     const sameStamp = stamps.length === 1 && mark === 'v' + stamps[0];
-    check('بصمة الإصدار متّفقة', sameStamp, 'في الاستدعاءات: ' + stamps.join(',') + ' · في الزاوية: ' + mark);
+    check('The version stamp agrees everywhere', sameStamp, 'in the calls: ' + stamps.join(',') + ' · in the corner: ' + mark);
 
     const js = Object.entries(files).filter(([p]) => p.endsWith('.js'));
 
-    // ٣ — كل ملف برمجة سليم نحويًّا
+    // 3 - every script parses
     const broken = js.filter(([, src]) => { try { new Function(src); return false; } catch { return true; } });
-    check('كل ملف برمجة سليم نحويًّا', broken.length === 0, broken.map(([p]) => p).join(' · '));
+    check('Every script parses', broken.length === 0, broken.map(([p]) => p).join(' · '));
 
-    // ٤ — لا اسم يتسرّب إلى المساحة العامة (قتل هذا ملفًّا كاملًا مرّة)
+    // 4 - no name leaks into the shared space (this once killed a whole file)
     const leaks = [];
     js.forEach(([p, src]) => src.split('\n').forEach(l => {
       if (/^(const|let|var|function|async function|class)\s/.test(l)) leaks.push(p + ': ' + l.trim().slice(0, 40));
     }));
-    check('لا اسم يتسرّب خارج غلافه', leaks.length === 0, leaks.join(' · '));
+    check('No name leaks out of its wrapper', leaks.length === 0, leaks.join(' · '));
 
-    // ٥ — كل معرّف يطلبه الكود مرسومٌ في الصفحة
+    // 5 - every id the code asks for is drawn in the page
     const wanted = new Set();
     js.forEach(([, src]) => {
       [...src.matchAll(/getElementById\('([^']+)'\)/g)].forEach(m => wanted.add(m[1]));
       [...src.matchAll(/[^A-Za-z_$]\$\('([^']+)'\)/g)].forEach(m => wanted.add(m[1]));
     });
     const noSuchId = [...wanted].filter(id => !ids.includes(id));
-    check('كل معرّف يطلبه الكود موجود في الصفحة', noSuchId.length === 0, noSuchId.join(' · '));
+    check('Every id the code asks for is in the page', noSuchId.length === 0, noSuchId.join(' · '));
 
-    // ٦ — كل اسمٍ عامّ يُستعمل، يُعرّفه ملفٌ قبله
+    // 6 - every shared name used is defined by some file
     const made = new Set(), used = new Set();
     js.forEach(([, src]) => {
       [...src.matchAll(/window\.(MyTerm[A-Za-z]*)\s*=/g)].forEach(m => made.add(m[1]));
-      // حدُّ الكلمة \b لازمٌ هنا: بدونه يتراجع المُطابِق فيقتطع آخر حرف من
-      // الاسم ليُرضي الشرط، فيشكو من اسمٍ لا وجود له
+      // The word boundary is needed: without it the matcher backs up and
+      // clips the last letter off the name to satisfy the rule, then
       [...src.matchAll(/window\.(MyTerm[A-Za-z]*)\b(?!\s*=)/g)].forEach(m => used.add(m[1]));
     });
     const orphan = [...used].filter(n => !made.has(n));
-    check('كل اسمٍ مشترك يُعرّفه ملف', orphan.length === 0, orphan.join(' · '));
+    check('Every shared name is defined by some file', orphan.length === 0, orphan.join(' · '));
 
-    // ٧ — لا تعليق يذكر ملفًّا لم يبقَ (وجدنا تسعةً منها مرّة)
+    // 7 - no comment names a file that is gone (nine were found once)
     const names = new Set(Object.keys(files).map(p => p.split('/').pop()));
     names.add('index.html');
     const ghosts = [];
@@ -153,14 +153,14 @@
         });
       });
     });
-    check('لا تعليق يذكر ملفًّا لم يبقَ', ghosts.length === 0, [...new Set(ghosts)].join(' · '));
+    check('No comment names a file that is gone', ghosts.length === 0, [...new Set(ghosts)].join(' · '));
 
-    // ٨ — ترتيب التحميل: الخفيّ قبل الشاشة
+    // 8 - loading order: the hidden files before the screens
     const order = [...doc.querySelectorAll('script[src]')].map(s => s.getAttribute('src')).filter(u => !/^https?:/.test(u));
     const lastBack = order.map((u, i) => u.includes('B-End') ? i : -1).reduce((a, b) => Math.max(a, b), -1);
     const firstFront = order.findIndex(u => u.includes('F-End'));
-    check('ملفات B-End كلها قبل ملفات F-End', lastBack < firstFront || firstFront === -1,
-          'آخر خفيّ عند ' + lastBack + ' وأول شاشة عند ' + firstFront);
+    check('Every B-End file loads before every F-End file', lastBack < firstFront || firstFront === -1,
+          'last back-end at ' + lastBack + ', first screen at ' + firstFront);
 
     draw();
   };
@@ -168,8 +168,8 @@
   const draw = () => {
     const bad = rows.filter(r => !r.pass).length;
     $('score').innerHTML = bad
-      ? `<span class="bad">سقط ${bad} من ${rows.length}</span>`
-      : `<span class="ok">مرّ ${rows.length} من ${rows.length}</span>`;
+      ? `<span class="bad">${bad} of ${rows.length} failed</span>`
+      : `<span class="ok">all ${rows.length} passed</span>`;
     $('rows').innerHTML = rows.map(r =>
       `<tr><td>${r.pass ? '<span class="ok">✓</span>' : '<span class="bad">✗</span>'}</td>` +
       `<td>${r.name}${r.why ? `<div class="why">${r.why}</div>` : ''}</td></tr>`).join('');

@@ -18,9 +18,9 @@
 
   const grid = $('days-grid'), fromBox = $('term-from'), toBox = $('term-to'), line = $('days-line');
   const DAY = 86400000;
-  const NAMES = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
-  const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-  const arabic = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+  const NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const arabic = n => String(n);
 
   const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const fromKey = s => { const p = (s || '').split('-'); return p.length === 3 ? new Date(+p[0], +p[1] - 1, +p[2]) : null; };
@@ -44,7 +44,7 @@
     const start = fromKey(board?.term?.start), end = fromKey(board?.term?.end);
     grid.textContent = '';
     if (!start || !end || end < start) {
-      line.textContent = 'حدّد بداية الترم ونهايته ليظهر جدول أيّامك.';
+      line.textContent = 'Set the term start and end to see your days.';
       return;
     }
 
@@ -101,7 +101,7 @@
           else if (!isToday) cell.classList.add('miss');
           if (isToday) cell.classList.add('today');
           if (!ahead) past++;
-          cell.title = `${arabic(walk.getDate())} ${MONTHS[walk.getMonth()]}` + (mark?.done ? ' · أنجزتَه' : ahead ? ' · لم يأتِ بعد' : '');
+          cell.title = `${MONTHS[walk.getMonth()]} ${walk.getDate()}` + (mark?.done ? ' · worked' : ahead ? ' · still ahead' : '');
           cell.onclick = () => {
             board.days = board.days || {};
             const was = board.days[k]?.done === true;
@@ -125,7 +125,7 @@
 
     const all = Math.round((end - start) / DAY) + 1;
     const left = Math.max(0, Math.round((end - today) / DAY));
-    line.textContent = `${arabic(done)} يومًا من ${arabic(past)} مضت · ${arabic(all)} يومًا في الترم · بقي ${arabic(left)}`;
+    line.textContent = `${done} of ${past} days worked · ${all} days in the term · ${left} left`;
     window.MyTermDaysReading = { done, past, all, left };
   };
 

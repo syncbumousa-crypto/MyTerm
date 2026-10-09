@@ -12,20 +12,20 @@
 // #    on one browser never read each other's board
 // ============================================================
 (() => {
-  const QUIET = 900;            // كم ينتظر السكون قبل الكتابة في درايف
+  const QUIET = 900;            // how long the quiet lasts before writing to Drive
   const cloud = () => window.MyTermCloud;
 
-  let fileId = null;            // الملف الذي نكتب فيه
-  let raw = null;               // كل ما في الملف، حتى ما لا نعرفه
+  let fileId = null;            // the file we write into
+  let raw = null;               // everything in the file, even what we do not know
   let timer = null;
   let sending = false;
   let dirty = false;
   let tellStatus = () => {};
-  const movedCourses = new Set();   // المواد التي تغيّرت فصولها فتحتاج كتابة
+  const movedCourses = new Set();   // courses whose chapters changed and need writing
 
   const cacheKey = () => 'myterm.board.' + fileId;
 
-  // أيّامُ الترم: مفتاحٌ لكل يوم، وفي كلٍّ حالتُه وختمُ وقتها، فيُدمج يومًا بيوم
+  // Term days: a key per day holding its state and its stamp, so days merge one by one
   const shapeDays = days => {
     const out = {};
     if (days && typeof days === 'object') {
@@ -95,7 +95,7 @@
       }))
     : [];
 
-  // بنود التقييم: اسمٌ ووزنٌ من ١٠٠، ودرجةٌ خام من أصلٍ، وتاريخ
+  // Marks: a name, a weight out of 100, a raw score out of a total, and a date
   const shapeItems = list => Array.isArray(list)
     ? list.filter(i => i && typeof i.name === 'string').map(i => ({
         id: typeof i.id === 'string' ? i.id : 'i-' + Math.random().toString(36).slice(2, 8),
@@ -123,7 +123,7 @@
     const a = mine?.updatedAt || '', b = theirs?.updatedAt || '';
     if (a > b) return mine;
     if (b > a) return theirs;
-    return mine?.deleted ? mine : theirs;      // تعادلٌ في الوقت: الشاهدة تغلب
+    return mine?.deleted ? mine : theirs;      // a tie in time: the tombstone wins
   };
 
   const mergeCourse = (mine, theirs) => {
@@ -147,7 +147,7 @@
       left.delete(t.id);
       return m ? mergeCourse(m, t) : t;
     });
-    // الأيّام تُدمج يومًا بيوم: يومٌ أشّرته على جوالك ويومٌ على حاسبك يبقيان معًا
+    // Days merge one by one: a day marked on the phone and one marked on the laptop both stay
     const days = { ...theirs.days };
     Object.keys(mine.days || {}).forEach(key => {
       days[key] = days[key] ? pick(mine.days[key], days[key]) : mine.days[key];
@@ -170,7 +170,7 @@
     read: () => {
       try {
         const kept = localStorage.getItem(cacheKey());
-        return kept === null ? null : shape(JSON.parse(kept));   // null = لا نسخة، لا «نسخة فارغة»
+        return kept === null ? null : shape(JSON.parse(kept));   // null means no copy at all, never an empty one
       } catch { return null; }
     },
     write: board => { try { localStorage.setItem(cacheKey(), JSON.stringify(board)); } catch {} },
@@ -200,12 +200,12 @@
       await settleFolders();
       const body = { ...(raw || {}), ...shape(raw), version: Number(raw?.version || 0) + 1, updatedAt: new Date().toISOString() };
 
-      // الفصول تُحذف من ورقة الترم قبل كتابتها: مكانها ملفّ مادّتها، وورقةُ
-      // الترم فهرسٌ يُقرأ في كل فتحة فيجب أن يبقى خفيفًا
+      // Chapters are taken out of the term paper before it is written: they
+      // belong in their course's file, and the term paper is an index read on every open, so it stays light
       const index = { ...body, courses: body.courses.map(({ chapters, items, ...rest }) => rest) };
       await cloud().writeFile(fileId, index);
 
-      // ثم ملفّات المواد التي تغيّرت فصولها وحدَها
+      // then only the files of the courses whose chapters changed
       for (const id of [...movedCourses]) {
         const course = (raw?.courses || []).find(c => c.id === id);
         if (course?.fileId) await cloud().writeFile(course.fileId, courseBody(course));
@@ -213,12 +213,12 @@
       }
 
       raw = body;
-      // النسخة السريعة تُحدَّث هنا أيضًا لا عند التعديل وحده: الكتابةُ تُضيف
-      // ما لم يكن في يد الشاشة — معرّفات المجلدات — فلو لم تُحدَّث لبقيت
-      // النسخة تقول «لا مجلد» بعد أن صار للمادة مجلد
+      // The fast copy is written here too, not only on a change: the write adds
+      // what the screen never had, the folder ids, and without this the copy
+      // would keep saying 'no folder' after the course had one
       cache.write(shape(body));
       tellStatus('saved');
-      window.MyTermBell?.ring(body.version).catch(() => {});   // اقرع الجرس للأجهزة الأخرى
+      window.MyTermBell?.ring(body.version).catch(() => {});   // ring the bell for the other devices
     } catch (e) {
       dirty = true;
       tellStatus('failed');
@@ -252,7 +252,7 @@
     if (!termFolder) return;
 
     for (const course of needs) {
-      const title = course.name.trim() || 'مادة بلا اسم';
+      const title = course.name.trim() || 'Untitled course';
       if (!course.folderId) {
         course.folderId = await cloud().makeFolder(title, termFolder);
         course.fileId = await cloud().createJson(course.folderId, 'course.json', {
@@ -276,8 +276,8 @@
 
     cached: () => (fileId ? cache.read() : null),
 
-    // تُعيد null إذا تعذّرت القراءة — ولا تعيد «لوحةً فارغة»، فبينهما فرقٌ
-    // يراه المستخدم: الفراغُ حقيقةٌ عنه، والتعذّرُ عطبٌ عندنا
+    // Gives back null when the read failed — never an empty board. The
+    // difference shows: empty is a fact about the user, failure is our fault
     load: async () => {
       if (!fileId) return null;
       const doc = await cloud().readFile(fileId);
@@ -287,8 +287,8 @@
       const local = raw ? shape(raw) : null;
       const mineById = new Map((local?.courses || []).map(c => [c.id, c]));
 
-      // فصولُ كل مادة تُقرأ من ملفها، والمواد تُقرأ معًا لا واحدةً بعد أخرى.
-      // وإن تعذّرت قراءةُ ملفِ مادة بقيت فصولُها التي عندنا، فالتعذّر لا يمحو
+      // Each course's chapters are read from its own file, and the courses are
+      // read together, not one after another. A course whose file could not be
       await Promise.all(incoming.courses.map(async course => {
         if (course.deleted) return;
         const kept = mineById.get(course.id)?.chapters || [];
@@ -320,13 +320,13 @@
 
     version: () => Number(raw?.version || 0),
 
-    // اللوحة الحيّة التي يملكها المخزن، تقرأها الشاشتان كلتاهما فلا نسختان
+    // The live board the store owns; both screens read it, so there is no second copy
     board: () => (raw ? shape(raw) : null),
     live: () => raw,
 
     busy: () => dirty || sending,
 
-    // تُنادى حين تتغيّر فصولُ مادة، فيُكتب ملفُّها هي وحدَها في الإرسال التالي
+    // Called when a course's chapters change, so only its file is written next
     touchCourse: id => { movedCourses.add(id); },
 
     onStatus: fn => { tellStatus = fn; },

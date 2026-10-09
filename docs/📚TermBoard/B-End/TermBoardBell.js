@@ -24,8 +24,8 @@
   window.MyTermBell = {
     me,
 
-    // يُقرع بعد كل كتابة ناجحة في درايف. ورقم النسخة هو نفسه الذي في الملف،
-    // فيعرف الجهاز الآخر أنّ عنده أقدمَ منه
+    // Rung after every good write to Drive. The number is the file's own,
+    // so the other device knows what it holds is older
     ring: async version => {
       const id = await myId();
       if (!id) return;
@@ -35,8 +35,8 @@
         .eq('id', id);
     },
 
-    // تُستدعى مرّة. وتُهمل قرعَ هذا الجهاز نفسِه، وتُهمل رقمًا ليس أحدث ممّا
-    // عندنا — فإعادةُ قراءةِ الملف لغير سببٍ تكلفة بلا فائدة
+    // Called once. It ignores this page's own ring, and ignores a number
+    // that is not newer: reading the file for no reason costs and gives nothing
     listen: async onRing => {
       const id = await myId();
       if (!id || channel) return false;
@@ -46,8 +46,8 @@
             payload => {
               const version = Number(payload.new?.board_version || 0);
               if (payload.new?.board_by === me) return;
-              // يُهمَل الرقم نفسُه لا ما دونه: لو سبق الرقمُ في قاعدة البيانات
-              // رقمَ الملفّ يومًا لَسكت الجرسُ أبدًا، وإعادةُ القراءة لا تضرّ
+              // The same number is ignored, not everything below it: if the
+              // database ever ran ahead of the file the bell would fall silent for ever
               if (version === lastHeard) return;
               lastHeard = version;
               onRing(version);

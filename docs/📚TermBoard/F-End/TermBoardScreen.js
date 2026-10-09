@@ -18,7 +18,7 @@
   const state = $('save-state'), renewBtn = $('renew-access'), empty = $('board-empty');
   const termScore = $('term-score'), termGpa = $('term-gpa'), statsBox = $('stats');
 
-  const arabic = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+  const arabic = n => String(n);
   const now = () => new Date().toISOString();
   const newId = () => 'c-' + Math.random().toString(36).slice(2, 8);
   const newChapterId = () => 'h-' + Math.random().toString(36).slice(2, 8);
@@ -82,24 +82,24 @@
     const head = document.createElement('input');
     head.className = 'col-name';
     head.value = course.name;
-    head.placeholder = 'اسم المادة';
+    head.placeholder = 'Course name';
     head.oninput = () => {
       course.name = head.value;
       course.updatedAt = now();
       touched();
     };
 
-    // الحذف بضغطتين لا بنافذة سؤال: الأولى تسأل، والثانية تنفّذ، وتعود
-    // إلى حالها إن تركتها. ومجلد المادة في درايفك لا يُمسّ — فيه ملفاتك
+    // Removing takes two presses, not a dialog box: the first asks and
+    // the second does it, and it goes back if left alone. The course
     const drop = document.createElement('button');
     drop.className = 'col-drop';
     drop.type = 'button';
     drop.textContent = '×';
-    drop.title = 'احذف المادة من اللوحة';
+    drop.title = 'Remove this course from the board';
     let asking = null;
     drop.onclick = () => {
       if (!asking) {
-        drop.textContent = 'احذف؟';
+        drop.textContent = 'Remove?';
         drop.classList.add('asking');
         asking = setTimeout(() => { drop.textContent = '×'; drop.classList.remove('asking'); asking = null; }, 3000);
         return;
@@ -111,12 +111,12 @@
       drawColumns();
     };
 
-    // زرُّ الفتح: صفحةٌ للمادة وحدها، فيها فصولُها بعرضٍ يَسَعُ أسماءها
+    // folder in Drive is never touched: your own files live in it
     const open = document.createElement('button');
     open.className = 'col-open';
     open.type = 'button';
     open.textContent = '⤢';
-    open.title = 'افتح صفحة المادة';
+    open.title = 'Open the course page';
     open.onclick = () => window.MyTermCoursePage?.open(course.id);
 
     const top = document.createElement('div');
@@ -130,10 +130,10 @@
     const add = document.createElement('button');
     add.className = 'col-add';
     add.type = 'button';
-    add.textContent = '+ فصل';
+    add.textContent = '+ chapter';
     add.onclick = () => {
       course.chapters = course.chapters || [];
-      course.chapters.push({ id: newChapterId(), name: 'فصل ' + arabic(alive(course).length + 1), done: false, updatedAt: now(), deleted: false });
+      course.chapters.push({ id: newChapterId(), name: 'Chapter ' + arabic(alive(course).length + 1), done: false, updatedAt: now(), deleted: false });
       changed(course);
       drawChapters(course, body);
       const fresh = body.lastElementChild?.querySelector('.ch-name');
@@ -168,11 +168,11 @@
 
     return window.MyTermShapes.draw(size, {
       ready: list.length ? Math.round((named / list.length) * 100) : 0,
-      readyTip: list.length ? `${arabic(named)} من ${arabic(list.length)} فصلًا مسمّى` : 'لا فصول بعد',
+      readyTip: list.length ? `${named} of ${list.length} chapters named` : 'No chapters yet',
       done: list.length ? Math.round((done / list.length) * 100) : 0,
-      doneTip: list.length ? `أنجزت ${arabic(done)} من ${arabic(list.length)}` : 'لا فصول بعد',
+      doneTip: list.length ? `${done} of ${list.length} finished` : 'No chapters yet',
       marks: { ok, bad, unknown: Math.max(0, weight - ok - bad) },
-      marksTip: graded.length ? `${arabic(Math.round(ok))} مكسوبة · ${arabic(Math.round(bad))} ضائعة · ${arabic(Math.round(Math.max(0, weight - ok - bad)))} لم تُرصد` : 'لم تُرصد درجات بعد'
+      marksTip: graded.length ? `${Math.round(ok)} earned · ${Math.round(bad)} lost · ${Math.round(Math.max(0, weight - ok - bad))} not graded` : 'No marks recorded yet'
     });
   };
 
@@ -218,8 +218,8 @@
 
     const showStanding = () => {
       const s = standingOf(course);
-      standing.textContent = s ? `${arabic(s.pct)}٪ · ${s.letter} · ${arabic(s.points)} من ٤` : '';
-      toggle.textContent = (inner.hidden ? '▸ ' : '▾ ') + 'التقييم';
+      standing.textContent = s ? `${s.pct}% · ${s.letter} · ${s.points} / 4` : '';
+      toggle.textContent = (inner.hidden ? '▸ ' : '▾ ') + 'Marks';
       refreshTermGpa();
     };
 
@@ -232,7 +232,7 @@
       hours.className = 'mark-row';
       const hoursLabel = document.createElement('span');
       hoursLabel.className = 'mark-label';
-      hoursLabel.textContent = 'الساعات';
+      hoursLabel.textContent = 'Hours';
       const hoursBox = document.createElement('input');
       hoursBox.className = 'mark-num';
       hoursBox.type = 'number';
@@ -249,34 +249,34 @@
         const name = document.createElement('input');
         name.className = 'mark-name';
         name.value = item.name;
-        name.placeholder = 'البند';
+        name.placeholder = 'Item';
         name.oninput = () => { item.name = name.value; item.updatedAt = now(); changed(course); };
 
         const weight = document.createElement('input');
         weight.className = 'mark-num';
         weight.type = 'number';
         weight.min = '0';
-        weight.title = 'وزنه من ١٠٠';
+        weight.title = 'Its weight out of 100';
         weight.value = item.weight || '';
-        weight.placeholder = 'وزن';
+        weight.placeholder = 'wt';
         weight.oninput = () => { item.weight = Number(weight.value) || 0; item.updatedAt = now(); changed(course); showStanding(); };
 
         const got = document.createElement('input');
         got.className = 'mark-num';
         got.type = 'number';
         got.min = '0';
-        got.title = 'درجتك';
+        got.title = 'Your mark';
         got.value = item.got ?? '';
-        got.placeholder = 'لك';
+        got.placeholder = 'got';
         got.oninput = () => { item.got = got.value === '' ? null : Number(got.value); item.updatedAt = now(); changed(course); showStanding(); };
 
         const outOf = document.createElement('input');
         outOf.className = 'mark-num';
         outOf.type = 'number';
         outOf.min = '0';
-        outOf.title = 'من أصل';
+        outOf.title = 'out of';
         outOf.value = item.outOf || '';
-        outOf.placeholder = 'من';
+        outOf.placeholder = 'of';
         outOf.oninput = () => { item.outOf = Number(outOf.value) || 0; item.updatedAt = now(); changed(course); showStanding(); };
 
         const off = document.createElement('button');
@@ -292,7 +292,7 @@
       const more = document.createElement('button');
       more.className = 'col-add';
       more.type = 'button';
-      more.textContent = '+ بند';
+      more.textContent = '+ item';
       more.onclick = () => {
         course.items = course.items || [];
         course.items.push({ id: 'i-' + Math.random().toString(36).slice(2, 8), name: '', weight: 0, got: null, outOf: 0, due: '', updatedAt: now(), deleted: false });
@@ -325,16 +325,16 @@
     const d = window.MyTermDaysReading;
 
     const rows = [];
-    rows.push(['المواد', arabic(courses.length)]);
-    rows.push(['الفصول', chapters.length ? `${arabic(done)} من ${arabic(chapters.length)}` : '—']);
-    rows.push(['الاكتمال', chapters.length ? arabic(Math.round((done / chapters.length) * 100)) + '٪' : '—']);
+    rows.push(['Courses', arabic(courses.length)]);
+    rows.push(['Chapters', chapters.length ? `${done} of ${chapters.length}` : '—']);
+    rows.push(['Finished', chapters.length ? Math.round((done / chapters.length) * 100) + '%' : '—']);
 
     if (d && d.all) {
-      rows.push(['من الترم مضى', arabic(Math.round((d.past / d.all) * 100)) + '٪']);
-      rows.push(['أيام أنجزتها', `${arabic(d.done)} من ${arabic(d.past)}`]);
+      rows.push(['Term elapsed', Math.round((d.past / d.all) * 100) + '%']);
+      rows.push(['Days worked', `${d.done} of ${d.past}`]);
       if (chapters.length) {
         const ahead = Math.round((done / chapters.length) * 100) - Math.round((d.past / d.all) * 100);
-        rows.push(['إيقاعك', ahead >= 0 ? `متقدّم ${arabic(ahead)}٪` : `متأخّر ${arabic(-ahead)}٪`]);
+        rows.push(['Your pace', ahead >= 0 ? `${ahead}% ahead` : `${-ahead}% behind`]);
       }
     }
 
@@ -342,7 +342,7 @@
     if (graded.length) {
       const hours = graded.reduce((s, x) => s + x.h, 0);
       const pts = graded.reduce((s, x) => s + x.s.points * x.h, 0);
-      rows.push(['المعدّل الآن', arabic((pts / hours).toFixed(2)) + ' من ٤']);
+      rows.push(['GPA now', (pts / hours).toFixed(2) + ' / 4']);
     }
     return rows;
   };
@@ -366,7 +366,7 @@
     if (!graded.length) { termGpa.textContent = ''; return; }
     const hours = graded.reduce((s, x) => s + x.credits, 0);
     const points = graded.reduce((s, x) => s + x.s.points * x.credits, 0);
-    termGpa.textContent = `معدّل الترم ${arabic((points / hours).toFixed(2))} من ٤ · ${arabic(hours)} ساعات`;
+    termGpa.textContent = `Term GPA ${(points / hours).toFixed(2)} / 4 · ${hours} hours`;
     drawStats();
   };
 
@@ -394,7 +394,7 @@
     const line = document.createElement('p');
     line.className = 'col-score';
     const s = scoreOf(course);
-    line.textContent = s ? `${arabic(s.done)} من ${arabic(s.total)} · ${arabic(s.pct)}٪` : '';
+    line.textContent = s ? `${s.done} of ${s.total} · ${s.pct}%` : '';
     return line;
   };
 
@@ -408,7 +408,7 @@
       mark.className = 'ch-mark' + (ch.done ? ' done' : '');
       mark.type = 'button';
       mark.textContent = ch.done ? '✓' : '';
-      mark.title = ch.done ? 'أنجزته' : 'لم تنجزه بعد';
+      mark.title = ch.done ? 'Finished' : 'Not finished yet';
       mark.onclick = () => {
         ch.done = !ch.done;
         ch.updatedAt = now();
@@ -420,14 +420,14 @@
       const name = document.createElement('input');
       name.className = 'ch-name';
       name.value = ch.name;
-      name.placeholder = 'اسم الفصل';
+      name.placeholder = 'Chapter name';
       name.oninput = () => { ch.name = name.value; ch.updatedAt = now(); changed(course); };
 
       const off = document.createElement('button');
       off.className = 'ch-off';
       off.type = 'button';
       off.textContent = '×';
-      off.title = 'احذف الفصل';
+      off.title = 'Remove chapter';
       off.onclick = () => {
         ch.deleted = true;
         ch.updatedAt = now();
@@ -446,11 +446,11 @@
       const course = living()[i];
       const line = col.querySelector('.col-score');
       const s = course && scoreOf(course);
-      if (line) line.textContent = s ? `${arabic(s.done)} من ${arabic(s.total)} · ${arabic(s.pct)}٪` : '';
+      if (line) line.textContent = s ? `${s.done} of ${s.total} · ${s.pct}%` : '';
     });
     const all = living().flatMap(c => alive(c));
     const done = all.filter(h => h.done).length;
-    termScore.textContent = all.length ? `${arabic(done)} من ${arabic(all.length)} · ${arabic(Math.round((done / all.length) * 100))}٪ من ترمك` : '';
+    termScore.textContent = all.length ? `${done} of ${all.length} · ${Math.round((done / all.length) * 100)}% of your term` : '';
   };
 
   const drawColumns = () => {
@@ -462,7 +462,7 @@
   };
 
   addBtn.onclick = () => {
-    data.courses.push({ id: newId(), name: 'مادة ' + arabic(living().length + 1), updatedAt: now(), deleted: false });
+    data.courses.push({ id: newId(), name: 'Course ' + arabic(living().length + 1), updatedAt: now(), deleted: false });
     touched();
     drawColumns();
     const fresh = columns.lastElementChild?.querySelector('.col-name');
@@ -487,11 +487,11 @@
   // ============================================================
   const WORDS = {
     waiting: '…',
-    saving: 'يُحفظ في درايفك…',
-    saved: 'محفوظ في درايفك',
-    failed: 'لم يُحفظ — الوصول إلى درايفك انتهى. عملك محفوظ هنا ولم يضع.',
-    unread: 'تعذّر قراءة ملفك من درايف — ما تراه قد لا يكون كامله.',
-    arrived: 'وصل تعديل من جهازك الآخر'
+    saving: 'Saving to your Drive…',
+    saved: 'Saved to your Drive',
+    failed: 'Not saved — your Drive access ran out. Your work is kept here and is not lost.',
+    unread: 'Could not read your file from Drive — what you see may not be all of it.',
+    arrived: 'An update arrived from your other device'
   };
 
   const say = name => { state.textContent = WORDS[name] || ''; };
@@ -584,7 +584,7 @@
   document.addEventListener('place-needed', () => { leaveBoard(); backBtn.hidden = true; keep.detach(); });
   document.addEventListener('signed-out', () => { leaveBoard(); backBtn.hidden = true; keep.detach(); });
 
-  // ما تحتاجه صفحة المادة من هذه الشاشة: قراءةُ الأشكال، وإعادةُ الرسم عند الرجوع
+  // What the course page needs from here: the shapes, and a redraw on return
   window.MyTermBoardReading = readingOf;
   window.MyTermBoardRedraw = () => { data = keep.board() || data; paint(); };
 

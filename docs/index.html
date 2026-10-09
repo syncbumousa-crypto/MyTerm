@@ -14,9 +14,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=38">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=38">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=38">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=39">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=39">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=39">
 </head>
 <body>
 
@@ -125,6 +125,14 @@
 
   <button class="btn" type="button" id="add-course">أضف مادة</button>
 
+  <div class="days" id="days">
+    <div class="days-when">
+      <label class="days-label">من <input class="field days-date" id="term-from" type="date"></label>
+      <label class="days-label">إلى <input class="field days-date" id="term-to" type="date"></label>
+    </div>
+    <div class="days-grid" id="days-grid"></div>
+    <p class="lede" id="days-line"></p>
+  </div>
   <div class="columns" id="columns"></div>
   <p class="lede" id="board-empty" hidden>ابدأ بأوّل مادة — اضغط «أضف مادة».</p>
 
@@ -144,7 +152,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v38</p>
+<p class="build">v39</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -167,13 +175,15 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=38"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=38"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=38"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=38"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=38"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=38"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=38"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=39"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=39"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=39"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=39"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=39"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=39"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=39"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=39"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=39"></script>
 
 </body>
 </html>

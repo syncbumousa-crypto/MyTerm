@@ -134,7 +134,9 @@
     const made = new Set(), used = new Set();
     js.forEach(([, src]) => {
       [...src.matchAll(/window\.(MyTerm[A-Za-z]*)\s*=/g)].forEach(m => made.add(m[1]));
-      [...src.matchAll(/window\.(MyTerm[A-Za-z]*)[^=\s]/g)].forEach(m => used.add(m[1]));
+      // حدُّ الكلمة \b لازمٌ هنا: بدونه يتراجع المُطابِق فيقتطع آخر حرف من
+      // الاسم ليُرضي الشرط، فيشكو من اسمٍ لا وجود له
+      [...src.matchAll(/window\.(MyTerm[A-Za-z]*)\b(?!\s*=)/g)].forEach(m => used.add(m[1]));
     });
     const orphan = [...used].filter(n => !made.has(n));
     check('كل اسمٍ مشترك يُعرّفه ملف', orphan.length === 0, orphan.join(' · '));

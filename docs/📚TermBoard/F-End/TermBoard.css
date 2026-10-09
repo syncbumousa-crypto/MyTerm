@@ -1,15 +1,15 @@
 /* ============================================================ */
 /* # 🌑 🖥️  THE DARK BOARD */
 /* # 🔤 CSS */
-/* # 🎯 Turns the page a darker gray while the board is open, and moves */
-/* #    the content to the top instead of the middle, so a long row of */
-/* #    columns is never cut off the screen */
+/* # 🎯 Moves the content to the top instead of the middle while the */
+/* #    board is open, so a long row of columns is never cut off the */
+/* #    screen */
 /* # 🔗 The screen file puts board-on on the body when it opens the */
-/* #    board and takes it off when it closes. The gray in shell.css */
-/* #    stays the one for the sign in screens */
+/* #    board and takes it off when it closes. The ground is the one */
+/* #    ground in shell.css: the board used to be its own shade, and the */
+/* #    step between the two screens was visible on every sign in */
 /* ============================================================ */
 body.board-on {
-  background: #3a3a3a;
   align-items: flex-start;
 }
 

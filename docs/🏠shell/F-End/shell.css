@@ -1,16 +1,20 @@
 /* ============================================================ */
 /* # 🎨 🖥️  GRAY PAGE, CENTERED */
 /* # 🔤 CSS */
-/* # 🎯 The base of the page: a gray background that fills the screen */
+/* # 🎯 The base of the page: one near black ground that fills the screen */
 /* #    with no white gaps, and it puts whatever is inside in the middle */
 /* # 🔗 index.html calls this file with a link tag. */
-/* #    Without that one line, this file does nothing */
+/* #    Without that one line, this file does nothing. */
+/* #    color-scheme is not decoration: without it the browser believes */
+/* #    this is a light page and darkens the colors a second time by */
+/* #    itself, so what is drawn is never what was written here */
 /* ============================================================ */
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: #808080;
+  background: #1b1c1f;
+  color-scheme: dark;
 }
 
 body {

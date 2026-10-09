@@ -1,13 +1,14 @@
 // ============================================================
-// # 🔑 ☁️  GOOGLE PERMISSION AND THE SAVED TOKEN
+// # 🔑 ☁️  GOOGLE PERMISSION, AND THE PERMIT OF THE HOUR
 // # 🔤 JavaScript
 // # 🎯 Nothing here draws anything. It holds the public Google values,
-// #    asks the user to allow this site, and keeps the permission so a
-// #    reload does not undo the linking
+// #    links the account once through Google's window, and from then
+// #    on gets its hour-long permits from our own server
 // # 🔗 drive.file is the narrow permission: only what this site made, or
-// #    what the user handed it through the Google window. The permission
-// #    is kept in the lasting store because changing a browser shield
-// #    reloads the page and can wipe the short term store with it
+// #    what the user handed it through the Google window. The lasting
+// #    key is NOT here and never will be — a page cannot keep a secret,
+// #    so it lives on the server. What is kept here is one permit that
+// #    dies within the hour, saved only to spare a call on every reload
 // ============================================================
 (() => {
   const CLIENT_ID = '730425860367-ptdsv9f8u1vf9vvap7r8hpivd4v4be9n.apps.googleusercontent.com';
@@ -26,47 +27,74 @@
   };
 
   // ============================================================
-  // # 🔄 🤫  ASKING AGAIN, QUIETLY
+  // # 🤝 ♻️  LINKING ONCE, THEN RENEWING FOR EVER
   // # 🔤 JavaScript
-  // # 🎯 Google's permission lasts about an hour. This asks for a fresh
-  // #    one. Called with no prompt it opens Google's window; called
-  // #    with an empty prompt it asks for no window at all, which works
-  // #    when the user already said yes once before
-  // # 🔗 The quiet way is tried first by the Drive helper below, so a
-  // #    permission that ran out while the page sat open heals itself
-  // #    with nothing for the user to press. It is given a short rope:
-  // #    a browser that blocks Google cookies can leave the quiet ask
-  // #    hanging with no answer at all, and a hang is worse than a no,
-  // #    so after a few seconds it counts as a no and the button shows
+  // # 🎯 Two ways of getting a permit for Drive. The first opens
+  // #    Google's window, and runs once in a person's life: what comes
+  // #    back is handed to our own server, which trades it for a
+  // #    lasting key and keeps it. The second asks that server for a
+  // #    fresh permit, and opens nothing at all
+  // # 🔗 This is why the permit can be renewed in silence now. The old
+  // #    way asked Google straight from the page, and Google answers a
+  // #    page only through a window; a browser that blocks Google's
+  // #    cookies then turns every quiet ask into a visible one, and a
+  // #    window that nobody clicked for is blocked. A server has no
+  // #    such trouble: it holds a secret, so Google answers it plainly
   // ============================================================
-  const SILENT_WAIT = 4000;
+  const SERVER = 'https://qpxltggjchspcmqwibqg.supabase.co/functions/v1/google-drive';
 
-  const askGoogle = prompt => new Promise((ok, fail) => {
-    let over = false;
-    const once = fn => value => { if (!over) { over = true; clearTimeout(timer); fn(value); } };
-    const good = once(ok), bad = once(fail);
+  const server = async (action, extra = {}) => {
+    const { data } = await window.MyTermAuth.db.auth.getSession();
+    const jwt = data.session?.access_token;
+    if (!jwt) throw new Error('not signed in');
 
-    const config = {
-      client_id: CLIENT_ID, scope: SCOPE,
-      callback: a => a.error ? bad(new Error(a.error))
-        : (token = a.access_token, store.save(token, a.expires_in), good()),
-      error_callback: e => bad(new Error(e?.type || 'google window failed'))
-    };
-    if (prompt !== undefined) config.prompt = prompt;
+    const answer = await fetch(SERVER, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...extra })
+    });
+    const body = await answer.json().catch(() => ({}));
+    if (!answer.ok) {
+      throw Object.assign(new Error(body.error || 'HTTP ' + answer.status), {
+        relink: body.relink === true,
+        needConsent: body.needConsent === true
+      });
+    }
+    return body;
+  };
 
-    const timer = prompt === '' ? setTimeout(() => bad(new Error('silent ask timed out')), SILENT_WAIT) : null;
-    google.accounts.oauth2.initTokenClient(config).requestAccessToken();
+  const keepPermit = body => {
+    token = body.access_token;
+    store.save(token, body.expires_in);
+    return token;
+  };
+
+  // The one window the user ever sees. It must be opened from a press
+  // of theirs, or the browser blocks it — so it is only ever wired to
+  // a button, never called from code that noticed something expired
+  const askGoogle = () => new Promise((ok, fail) => {
+    google.accounts.oauth2.initCodeClient({
+      client_id: CLIENT_ID,
+      scope: SCOPE,
+      ux_mode: 'popup',
+      callback: async answer => {
+        if (answer.error || !answer.code) return fail(new Error(answer.error || 'no code'));
+        try { keepPermit(await server('link', { code: answer.code })); ok(); }
+        catch (e) { fail(e); }
+      },
+      error_callback: e => fail(new Error(e?.type || 'google window failed'))
+    }).requestCode();
   });
 
-  // One quiet ask at a time: five Drive calls failing together must not
-  // open five asks. They all wait on the same one and share its answer
-  let quietAsk = null;
-  const renewQuietly = () => {
-    if (!quietAsk) {
-      quietAsk = askGoogle('').then(() => true, () => false);
-      quietAsk.then(() => { quietAsk = null; });
+  // One renewal at a time: five Drive calls failing together must not
+  // start five renewals. They all wait on the same one and share it
+  let renewing = null;
+  const renew = () => {
+    if (!renewing) {
+      renewing = server('token').then(body => { keepPermit(body); return true; }, () => false);
+      renewing.then(() => { renewing = null; });
     }
-    return quietAsk;
+    return renewing;
   };
 
   // ============================================================
@@ -87,13 +115,13 @@
     fetch(url, { ...opts, headers: { Authorization: `Bearer ${token}`, ...opts.headers } });
 
   // Every call goes through here, so every call heals the same way: a
-  // 401 means the permission ran out, and the only honest answer is to
-  // ask for a new one and send the very same call again. Once, not in a
-  // loop: if the quiet ask fails the first time it will fail the second
+  // 401 means the permit ran out, and the only honest answer is to ask
+  // the server for a new one and send the very same call again. Once,
+  // not in a loop: if the server cannot renew now it will not in a second
   const drive = async (url, opts = {}) => {
     const first = await send(url, opts);
     if (first.status !== 401) return first;
-    return (await renewQuietly()) ? send(url, opts) : first;
+    return (await renew()) ? send(url, opts) : first;
   };
 
   const json = (method, body) =>
@@ -251,9 +279,10 @@
   window.MyTermCloud = {
     FOLDER, FILE, now,
     hasToken: () => Boolean(token),
-    remember: () => Boolean(token = store.read()),
+    remember: async () => Boolean(token = store.read()) || await renew(),
     forgetToken: () => { token = null; store.clear(); },
     askGoogle,
+    unlink: () => server('unlink'),
     findOrMakeFolder, createJson, fileAlive, readFile, writeFile,
     parentOf, makeFolder, rename,
     pickFolder, probePicker,

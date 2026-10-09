@@ -1,4 +1,5 @@
 <!-- ============================================================ -->
+<!-- # ⚙️ 📄  PAGE SETUP -->
 <!-- # 🔤 HTML -->
 <!-- # 🎯 Sets up the page: its type, Arabic language, right to left text, -->
 <!-- #    letter encoding so Arabic shows the right way, phone screen size, -->
@@ -16,6 +17,7 @@
 <body>
 
 <!-- ============================================================ -->
+<!-- # 👆 🔘  PICK WHAT TO DO -->
 <!-- # 🔤 HTML -->
 <!-- # 🎯 The first panel: two buttons to pick what to do, -->
 <!-- #    make a new account or log in -->
@@ -28,6 +30,7 @@
 </div>
 
 <!-- ============================================================ -->
+<!-- # 📝 🔑  EMAIL AND PASSWORD FORM -->
 <!-- # 🔤 HTML -->
 <!-- # 🎯 The form panel: an email box, a password box, a send button, -->
 <!-- #    a back button, and a line for messages -->
@@ -45,27 +48,45 @@
 </form>
 
 <!-- ============================================================ -->
+<!-- # 👤 ✅  LOGGED IN PANEL -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 The logged in panel: shows which account is open, -->
-<!-- #    and a button to leave it -->
-<!-- # 🔗 script.js shows this one after a good login, and also on page -->
-<!-- #    load if the visitor is still logged in from an earlier visit -->
+<!-- # 🎯 Shows which account is open, the Google Drive part, and a way out -->
+<!-- # 🔗 script.js shows this one after a good login. drive.js fills the -->
+<!-- #    two inner groups: one asks to link Google, the other shows the -->
+<!-- #    chosen place once it is linked -->
 <!-- ============================================================ -->
 <div class="box" id="session" hidden>
   <p class="who" id="who"></p>
-  <button class="btn" type="button" id="logout">خروج</button>
+
+  <div class="stack" id="drive-none">
+    <button class="btn btn-main" type="button" id="link-drive">اربط حساب قوقل</button>
+  </div>
+
+  <div class="stack" id="drive-linked" hidden>
+    <p class="where" id="drive-where"></p>
+    <button class="btn" type="button" id="save-test">احفظ في ملفي</button>
+    <button class="btn btn-flat" type="button" id="relink">غيّر المكان</button>
+  </div>
+
+  <p class="note" id="drive-note"></p>
+  <button class="btn btn-flat" type="button" id="logout">خروج</button>
 </div>
 
 <!-- ============================================================ -->
+<!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 Brings in the sign in service library from a CDN, -->
-<!-- #    then this site's own script -->
-<!-- # 🔗 Sits at the end of body so the panels above already exist -->
-<!-- #    when script.js looks for them. The library must come first, -->
-<!-- #    because script.js uses it -->
+<!-- # 🎯 Brings in three outside libraries, then this site's own two files: -->
+<!-- #    the sign in service, Google permission, and the Google file picker -->
+<!-- # 🔗 Sits at the end of body so the panels above already exist when the -->
+<!-- #    scripts look for them. The libraries come first because the two -->
+<!-- #    site files use them. script.js runs the login, and drive.js -->
+<!-- #    listens for it and then takes over the Google part -->
 <!-- ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script src="https://apis.google.com/js/api.js"></script>
 <script src="script.js"></script>
+<script src="drive.js"></script>
 
 </body>
 </html>

@@ -1,4 +1,5 @@
 // ============================================================
+// # 🔌 ☁️  CONNECT TO THE SERVICE
 // # 🔤 JavaScript
 // # 🎯 Connects the page to the sign in service. The address says which
 // #    project, and the key says which app is asking
@@ -12,6 +13,7 @@ const PUBLIC_KEY = 'sb_publishable_2Zhv75beNB67TjU4FzuKow_usYx7HBP';
 const db = supabase.createClient(SERVICE_URL, PUBLIC_KEY);
 
 // ============================================================
+// # 🧩 🔀  PAGE PARTS AND PANEL SWITCHING
 // # 🔤 JavaScript
 // # 🎯 Picks up the three panels and the form parts from the page,
 // #    and switches which panel is on screen
@@ -56,6 +58,7 @@ document.getElementById('go-login').onclick = function () { openForm('login'); }
 document.getElementById('back').onclick = function () { show('choice'); };
 
 // ============================================================
+// # 📤 🔐  SEND SIGN UP OR LOG IN
 // # 🔤 JavaScript
 // # 🎯 Sends the email and password to the service, either to make a new
 // #    account or to log in, and shows what came back
@@ -91,20 +94,25 @@ panels.form.onsubmit = async function (event) {
 };
 
 // ============================================================
+// # 🚪 🔄  LOG OUT AND SESSION CHECK
 // # 🔤 JavaScript
 // # 🎯 Shows who is logged in, lets them leave, and checks on page load
 // #    whether they are still logged in from an earlier visit
 // # 🔗 The service keeps the login token in the browser, so the visitor
 // #    stays logged in after a refresh. The check at the end decides
-// #    which panel the page opens with
+// #    which panel the page opens with. It also sends a signed-in message
+// #    that drive.js waits for, so the two files stay apart and neither
+// #    has to load before the other
 // ============================================================
 function openSession(email) {
   who.textContent = 'مرحبًا، ' + email;
   show('session');
+  document.dispatchEvent(new CustomEvent('signed-in'));
 }
 
 document.getElementById('logout').onclick = async function () {
   await db.auth.signOut();
+  document.dispatchEvent(new CustomEvent('signed-out'));
   show('choice');
 };
 

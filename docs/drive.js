@@ -18,36 +18,64 @@ let googleToken = null;
 let pickerReady = false;
 
 // ============================================================
-// # 📣 🧠  THE MESSAGE, AND WHAT THE LAST TEST FOUND
+// # 📣 🧠  THE MESSAGE, AND WHAT IS REMEMBERED
 // # 🔤 JavaScript
-// # 🎯 Keeps the line shown when Google is blocked, and remembers in this
-// #    browser what the hidden test found last time
+// # 🎯 Keeps the line shown when Google is blocked, what the hidden test
+// #    found last time, and the Google token so a reload does not undo it
 // # 🔗 None of the usual checks work. Brave does not support
 // #    hasStorageAccess, cookieEnabled still says true, and writing a
 // #    cookie still works, so every one of them lies. So the site runs a
-// #    real test instead, further down, and keeps the answer here
+// #    real test instead, further down, and keeps the answer here.
+// #    The token sits in session storage, which the browser wipes when the
+// #    tab closes, so a reload keeps the user where they were while the
+// #    token still lives no longer than the hour Google gives it
 // ============================================================
 const BLOCKED_TEXT =
   'لا يمكنك اختيار المكان بنفسك، متصفّحك يحجب كوكيز قوقل. ' +
   'اسمح بها لهذا الموقع ثم حدّث الصفحة، أو خزّنه في مجلد My Term وانقله في درايفك بعدها كيف شئت.';
 
-const BLOCKED_MEMO = 'myterm.pickerBlocked';
+const PROBE_MEMO = 'myterm.pickerProbe';
+const TOKEN_MEMO = 'myterm.googleToken';
 
-function rememberBlocked(yes) {
+function rememberProbe(works) {
   try {
-    if (yes) localStorage.setItem(BLOCKED_MEMO, '1');
-    else localStorage.removeItem(BLOCKED_MEMO);
+    localStorage.setItem(PROBE_MEMO, works ? 'open' : 'blocked');
   } catch (e) {
-    // some browsers refuse storage. The site still works, it just asks again
+    // some browsers refuse storage. The site still works, it just tests again
   }
 }
 
-function wasBlockedBefore() {
+function lastProbe() {
   try {
-    return localStorage.getItem(BLOCKED_MEMO) === '1';
+    return localStorage.getItem(PROBE_MEMO);
   } catch (e) {
-    return false;
+    return null;
   }
+}
+
+function keepToken(token, seconds) {
+  try {
+    sessionStorage.setItem(TOKEN_MEMO, JSON.stringify({
+      token: token,
+      until: Date.now() + ((seconds || 3600) - 60) * 1000
+    }));
+  } catch (e) {
+    // no storage means the user links again after a reload, nothing breaks
+  }
+}
+
+function takeToken() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(TOKEN_MEMO) || 'null');
+    if (saved && saved.until > Date.now()) return saved.token;
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
+function dropToken() {
+  try { sessionStorage.removeItem(TOKEN_MEMO); } catch (e) { /* nothing to drop */ }
 }
 
 // ============================================================
@@ -67,6 +95,7 @@ function askGoogle() {
       callback: function (answer) {
         if (answer.error) { fail(new Error(answer.error)); return; }
         googleToken = answer.access_token;
+        keepToken(googleToken, answer.expires_in);
         done(googleToken);
       }
     });
@@ -296,16 +325,29 @@ function showStep(name) {
 }
 
 function markBlocked() {
-  rememberBlocked(true);
+  rememberProbe(false);
   pickButton.disabled = true;
   shieldHint.textContent = BLOCKED_TEXT;
   shieldHint.hidden = false;
 }
 
 function markOpen() {
-  rememberBlocked(false);
+  rememberProbe(true);
   pickButton.disabled = false;
   shieldHint.hidden = true;
+}
+
+async function runProbe() {
+  placeButtons.hidden = true;
+  probeSpin.hidden = false;
+  driveNote.textContent = 'نفحص إمكانيات متصفّحك…';
+
+  const works = await probePicker();
+
+  probeSpin.hidden = true;
+  placeButtons.hidden = false;
+  driveNote.textContent = '';
+  if (works) markOpen(); else markBlocked();
 }
 
 function showFile(folderName, fileId) {
@@ -318,29 +360,31 @@ async function onSignedIn() {
   driveNote.textContent = '';
   shieldHint.hidden = true;
   profile = await loadProfile();
+
   if (profile && profile.drive_file_id) {
     showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
-  } else {
-    showStep('link');
+    return;
   }
+
+  googleToken = takeToken();
+  if (!googleToken) {
+    showStep('link');
+    return;
+  }
+
+  showStep('place');
+  const known = lastProbe();
+  if (known === 'open') markOpen();
+  else if (known === 'blocked') markBlocked();
+  else await runProbe();
 }
 
 async function linkGoogle() {
   try {
     driveNote.textContent = 'لحظة…';
     await askGoogle();
-
-    driveNote.textContent = 'نفحص إمكانيات متصفّحك…';
     showStep('place');
-    placeButtons.hidden = true;
-    probeSpin.hidden = false;
-
-    const works = await probePicker();
-
-    probeSpin.hidden = true;
-    placeButtons.hidden = false;
-    driveNote.textContent = '';
-    if (works) markOpen(); else markBlocked();
+    await runProbe();
   } catch (e) {
     driveNote.textContent = 'تعذّر الربط: ' + e.message;
   }
@@ -404,6 +448,7 @@ document.getElementById('save-test').onclick = saveTest;
 document.addEventListener('signed-in', onSignedIn);
 document.addEventListener('signed-out', function () {
   googleToken = null;
+  dropToken();
   profile = null;
   driveNote.textContent = '';
   shieldHint.hidden = true;

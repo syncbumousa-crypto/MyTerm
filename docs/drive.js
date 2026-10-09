@@ -204,13 +204,14 @@ async function probePicker() {
 }
 
 // ============================================================
-// # 💾 📄  MAKE, READ AND SAVE THE DATA FILE
+// # 💾 📄  MAKE, CHECK, READ AND SAVE THE DATA FILE
 // # 🔤 JavaScript
-// # 🎯 Creates one json file inside the chosen folder, reads it back, and
-// #    writes new content over it
-// # 🔗 The file belongs to the user, not to this site. They can open it,
-// #    edit it or delete it from Drive at any time, so the reader gives
-// #    back nothing instead of breaking when the file is gone or spoiled
+// # 🎯 Creates one json file inside the chosen folder, asks Drive whether
+// #    it is still there, reads it back, and writes new content over it
+// # 🔗 The file belongs to the user, not to this site. They can move it,
+// #    edit it, trash it or delete the whole folder at any time. So the
+// #    saved id is never trusted on its own: Drive is asked first, and a
+// #    file that is gone or in the bin counts as gone
 // ============================================================
 async function driveCreateFile(folderId, content) {
   const info = { name: DATA_FILE_NAME, mimeType: 'application/json', parents: [folderId] };
@@ -229,6 +230,20 @@ async function driveCreateFile(folderId, content) {
   });
   if (!answer.ok) throw new Error('Drive create failed: ' + answer.status);
   return (await answer.json()).id;
+}
+
+async function driveFileAlive(fileId) {
+  const answer = await fetch(
+    'https://www.googleapis.com/drive/v3/files/' + fileId + '?fields=id,trashed',
+    { headers: driveHeaders() }
+  );
+  if (answer.status === 404) return false;
+  if (!answer.ok) return true;
+  try {
+    return (await answer.json()).trashed !== true;
+  } catch (e) {
+    return true;
+  }
 }
 
 async function driveReadFile(fileId) {
@@ -273,6 +288,17 @@ async function saveProfile(folderName, fileId) {
     drive_file_id: fileId,
     updated_at: new Date().toISOString()
   });
+}
+
+async function forgetPlace() {
+  profile = null;
+  const me = (await db.auth.getUser()).data.user;
+  if (!me) return;
+  await db.from('profiles').update({
+    drive_folder_name: null,
+    drive_file_id: null,
+    updated_at: new Date().toISOString()
+  }).eq('id', me.id);
 }
 
 // ============================================================
@@ -346,6 +372,7 @@ async function onSignedIn() {
   try {
     driveNote.textContent = '';
     shieldHint.hidden = true;
+    let lost = false;
 
     googleToken = takeToken();
 
@@ -356,8 +383,22 @@ async function onSignedIn() {
     }
 
     if (profile && profile.drive_file_id) {
-      showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
-      return;
+      if (!googleToken) {
+        showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
+        return;
+      }
+      let alive = true;
+      try {
+        alive = await driveFileAlive(profile.drive_file_id);
+      } catch (e) {
+        alive = true;
+      }
+      if (alive) {
+        showFile(profile.drive_folder_name || FOLDER_NAME, profile.drive_file_id);
+        return;
+      }
+      await forgetPlace();
+      lost = true;
     }
 
     if (!googleToken) {
@@ -367,6 +408,7 @@ async function onSignedIn() {
 
     showStep('place');
     await runProbe();
+    if (lost) driveNote.textContent = 'لم نجد ملفك في درايف. اختر مكانًا جديدًا.';
   } finally {
     signingIn = false;
   }
@@ -421,6 +463,14 @@ async function saveTest() {
   try {
     driveNote.textContent = 'لحظة…';
     if (!googleToken) await askGoogle();
+
+    if (!(await driveFileAlive(profile.drive_file_id))) {
+      await forgetPlace();
+      showStep('place');
+      await runProbe();
+      driveNote.textContent = 'لم نجد ملفك في درايف. اختر مكانًا جديدًا.';
+      return;
+    }
 
     const current = (await driveReadFile(profile.drive_file_id)) || { app: 'MyTerm', notes: [] };
     if (!Array.isArray(current.notes)) current.notes = [];

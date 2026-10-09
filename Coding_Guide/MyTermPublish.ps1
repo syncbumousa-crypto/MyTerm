@@ -53,7 +53,24 @@ foreach ($f in $Files) {
 "guard: $($Files.Count) paths checked against $Publish, none mangled" +
   $(if ($New.Count) { ", $($New.Count) allowed as new" })
 
-# --- refusal 2: the version must actually be stamped in what is being sent
+# --- refusal 2: no half-cut comment frame. Editing a file by character
+# --- offsets can slice a header in two and take the code under it with it;
+# --- what is left parses perfectly and throws at the first call. It shows
+# --- as two title lines with no frame between them, so that is what is
+# --- counted: every block opens with a frame and closes with one
+foreach ($f in $Files) {
+  if ($f.path -notmatch '\.(js|css|html)$') { continue }
+  $text = Get-Content $f.local -Raw -Encoding UTF8
+  $marks = [regex]::Matches($text, '(?m)^\s*(?://|/\*)\s*(?<kind>#\s*\p{So}|=+\s*\*/|#\s*=+|-{10,})')
+  $titles = ([regex]::Matches($text, '(?m)^\s*(?://|/\*)\s*#\s*🔤')).Count
+  $frames = ([regex]::Matches($text, '(?m)^\s*(?://|/\*)\s*=====')).Count
+  if ($titles -gt 0 -and $frames -lt ($titles * 2)) {
+    throw "GUARD a comment frame is cut in $($f.path): $titles headers but only $frames frame lines (needs $($titles * 2))"
+  }
+}
+"guard: every comment frame is whole"
+
+# --- refusal 3: the version must actually be stamped in what is being sent
 $idx = $Files | Where-Object { $_.path -eq 'docs/index.html' }
 if ($idx) {
   $h = Get-Content $idx.local -Raw -Encoding UTF8
@@ -77,7 +94,7 @@ $commit = Post "git/commits" @{ message = $Message; tree = $tree.sha; parents = 
 $ref    = Post "git/refs"    @{ ref = "refs/heads/$Branch"; sha = $commit.sha } "ref"
 "branch $Branch at " + $commit.sha.Substring(0, 8)
 
-# --- refusal 3: never merge a branch that is behind the publishing branch
+# --- refusal 4: never merge a branch that is behind the publishing branch
 $behind = [int](& $gh api "repos/$Repo/compare/$Publish...$Branch" --jq ".behind_by").Trim()
 if ($behind -ne 0) { throw "GUARD $Branch is $behind commits behind $Publish - merge $Publish into it first" }
 if ($NoMerge) { "held: not merged (asked not to)"; return }

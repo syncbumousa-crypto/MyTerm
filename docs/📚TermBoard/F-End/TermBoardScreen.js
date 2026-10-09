@@ -284,18 +284,61 @@
   };
 
   // ============================================================
-  // # 💯 🎓  THE MARKS, THE STANDING, AND THE POINTS
+  // # 🧮 🎓  HOW A COURSE STANDS
   // # 🔤 JavaScript
-  // # 🎯 A folded part under every course: the items it is graded on,
-  // #    each with a weight out of a hundred and a raw mark, then the
-  // #    standing they add up to, its letter, and its points out of four
-  // # 🔗 An item with no mark yet is left out of the standing instead of
-  // #    counted as zero, and the weights that remain are scaled up — so
-  // #    the number means "where you stand now", not "what you end with
-  // #    if you never sit the rest". The scale is the common one out of
-  // #    four, and it is written once here and read nowhere else
+  // # 🎯 The scale of letters and points, and the rules that turn a list
+  // #    of items into one percentage
+  // # 🔗 Written once and read by everything that shows a grade — the
+  // #    chip on a card, the table behind it, the disc in the three
+  // #    shapes, and the term average — so no two of them can disagree
+  // #    about the same course
   // ============================================================
-  // # 💯 🎓  THE MARKS, BEHIND THE GRADE
+  const CUTS = [[95, 'A+', 4], [90, 'A', 3.75], [85, 'B+', 3.5], [80, 'B', 3], [75, 'C+', 2.5], [70, 'C', 2], [65, 'D+', 1.5], [60, 'D', 1], [0, 'F', 0]];
+  const gradeOf = pct => CUTS.find(c => pct >= c[0]) || CUTS[CUTS.length - 1];
+  const gradeColour = points => `hsl(${Math.round((points / 4) * 130)}, 58%, 44%)`;
+
+  const marksOf = course => (course.items || []).filter(i => !i.deleted);
+
+  const isGraded = item => !(item.got === null || item.got === undefined || item.got === '' || !(Number(item.got) >= 0));
+
+  // A score that cannot be true: more than the item is out of, or — with
+  // no "out of" given — more than the item is worth. It is not guessed
+  // at. Dividing by the weight when "out of" was missing turned an item
+  // worth 2 with a score of 6 into 6 points of the course, three times
+  // its weight, and a course totalled 101.8 out of 90. Six may be six
+  // out of six or six out of ten: the difference is 2% or 12%
+  const isOdd = item => {
+    if (!isGraded(item)) return false;
+    const w = Number(item.weight) || 0, got = Number(item.got), outOf = Number(item.outOf) || 0;
+    return outOf > 0 ? got > outOf : (w > 0 && got > w);
+  };
+
+  // What this item has earned of the course, out of a hundred. An item
+  // with no score yet counts as FULL marks, so the standing starts at the
+  // top and comes down as real scores arrive — it does not start at zero
+  // and frighten you with exams you have not sat
+  const earnedOf = item => {
+    const w = Number(item.weight) || 0, outOf = Number(item.outOf) || 0;
+    if (!isGraded(item) || isOdd(item)) return w;
+    const got = Number(item.got);
+    return outOf > 0 ? w * (got / outOf) : got;
+  };
+
+  const standingOf = course => {
+    const list = marksOf(course);
+    const weight = list.reduce((s, i) => s + (Number(i.weight) || 0), 0);
+    if (!list.length || weight <= 0) return null;
+    const earned = list.reduce((s, i) => s + earnedOf(i), 0);
+    // Over every weight, not only the marked ones, because the unmarked
+    // are already counted as full above
+    const pct = (earned / weight) * 100;
+    const [, letter, points] = gradeOf(pct);
+    return { pct: Math.round(pct * 10) / 10, letter, points, weight, earned,
+             marked: list.filter(isGraded).length, of: list.length };
+  };
+
+  // ============================================================
+  // # 💯 📋  THE TABLE OF MARKS, BEHIND THE GRADE
   // # 🔤 JavaScript
   // # 🎯 A table of everything the course is graded on, opened from the
   // #    grade in the head of its card. One row per item, seven columns:

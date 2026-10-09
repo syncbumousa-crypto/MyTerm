@@ -68,11 +68,19 @@
     allowPick(works);
   }
 
+  const HALF_LINKED = 'Google gave this hour but not the lasting key, because you had said yes once before. ' +
+    'Take the permission back at myaccount.google.com/permissions, then press link again — once, and it holds.';
+
   async function toPlace() {
+    let half = false;
     tell('place-needed');
-    if (!cloud.hasToken()) { note.textContent = 'One moment…'; await cloud.askGoogle(); }
+    if (!cloud.hasToken()) {
+      note.textContent = 'One moment…';
+      half = (await cloud.askGoogle())?.needConsent === true;
+    }
     show('place');
     await runProbe();
+    if (half) note.textContent = HALF_LINKED;
   }
 
   async function finish(folder) {

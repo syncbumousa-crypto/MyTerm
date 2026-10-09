@@ -79,7 +79,12 @@
       ux_mode: 'popup',
       callback: async answer => {
         if (answer.error || !answer.code) return fail(new Error(answer.error || 'no code'));
-        try { keepPermit(await server('link', { code: answer.code })); ok(); }
+        // The server may answer with a permit and no lasting key, when
+        // Google decided this person had already agreed once. That hour
+        // still works, so it is not a failure; but it must not pass in
+        // silence either, or the link looks whole and dies at the hour.
+        // It is handed back for the screen to say out loud
+        try { const body = await server('link', { code: answer.code }); keepPermit(body); ok(body); }
         catch (e) { fail(e); }
       },
       error_callback: e => fail(new Error(e?.type || 'google window failed'))

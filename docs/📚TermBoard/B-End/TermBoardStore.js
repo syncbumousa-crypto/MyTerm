@@ -43,6 +43,36 @@
   });
 
   // ============================================================
+  // # 🤝 ⏱️  PUTTING TWO VERSIONS TOGETHER
+  // # 🔤 JavaScript
+  // # 🎯 When this device has work not yet sent and the other device has
+  // #    already saved, neither side is thrown away: the two are put
+  // #    together item by item, and for each item the newer stamp wins
+  // # 🔗 This is why every course carries an id and a stamp of its own.
+  // #    Without the id a rename here and a new course there look the
+  // #    same. Without the stamp there is no way to tell which came
+  // #    later. A course removed is kept with a mark instead of being
+  // #    dropped: a dropped course looks brand new to the other device
+  // #    and walks straight back in on the next read
+  // ============================================================
+  const pick = (mine, theirs) => {
+    const a = mine?.updatedAt || '', b = theirs?.updatedAt || '';
+    if (a > b) return mine;
+    if (b > a) return theirs;
+    return mine?.deleted ? mine : theirs;      // تعادلٌ في الوقت: الشاهدة تغلب
+  };
+
+  const merge = (mine, theirs) => {
+    const left = new Map(mine.courses.map(c => [c.id, c]));
+    const courses = theirs.courses.map(t => {
+      const m = left.get(t.id);
+      left.delete(t.id);
+      return m ? pick(m, t) : t;
+    });
+    return { term: pick(mine.term, theirs.term), courses: courses.concat([...left.values()]) };
+  };
+
+  // ============================================================
   // # 💾 ⚡  THE FAST COPY IN THE BROWSER
   // # 🔤 JavaScript
   // # 🎯 Writes and reads a copy next to the user, so the board draws
@@ -156,8 +186,12 @@
       if (!fileId) return null;
       const doc = await cloud().readFile(fileId);
       if (!doc || typeof doc !== 'object') return null;
-      raw = doc;
-      const board = shape(raw);
+
+      const incoming = shape(doc);
+      const local = raw ? shape(raw) : null;
+      const board = (local && dirty) ? merge(local, incoming) : incoming;
+
+      raw = { ...doc, ...board };
       cache.write(board);
       return board;
     },

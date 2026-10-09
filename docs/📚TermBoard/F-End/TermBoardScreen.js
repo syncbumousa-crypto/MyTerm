@@ -336,11 +336,29 @@
       });
     });
 
+    // The hours of the term come from the courses and nowhere else: each
+    // course brings its own credit hours, and how much of it is finished
+    // says how many of those hours are finished. Half of a three hour
+    // course is an hour and a half. A course with no chapters yet still
+    // brings its hours to the total — they are hours you owe, not hours
+    // you have done — so the number never flatters by shrinking
+    let hours = 0, hoursDone = 0;
+    courses.forEach(c => {
+      const credits = Number(c.credits) || 0;
+      const list = alive(c);
+      hours += credits;
+      if (list.length) hoursDone += credits * (list.filter(h => h.done).length / list.length);
+    });
+
     return {
       courses: courses.length, chapters: chapters.length, named, done,
+      hours, hoursDone,
       ok, bad, unknown: Math.max(0, weight - ok - bad), weight
     };
   };
+
+  // 4.5 not 4.5000, and 3 not 3.0
+  const tidy = n => (Math.round(n * 10) / 10).toString();
 
   const drawTermShape = () => {
     const r = termReading();
@@ -358,6 +376,7 @@
 
     const d = window.MyTermDaysReading;
     const notes = [];
+    if (r.hours) notes.push(`${tidy(r.hoursDone)} of ${tidy(r.hours)} term hours finished`);
     if (r.courses) notes.push(`${r.courses} course${r.courses === 1 ? '' : 's'}`
       + (r.chapters ? ` · ${r.chapters} chapter${r.chapters === 1 ? '' : 's'} · ${r.done} finished` : ''));
     if (d && d.all) notes.push(`${d.done} of ${d.past} days worked · ${d.left} day${d.left === 1 ? '' : 's'} left`);

@@ -21,6 +21,7 @@
   let sending = false;
   let dirty = false;
   let tellStatus = () => {};
+  const movedCourses = new Set();   // المواد التي تغيّرت فصولها فتحتاج كتابة
 
   const cacheKey = () => 'myterm.board.' + fileId;
 
@@ -37,7 +38,8 @@
           deleted: c.deleted === true,
           folderId: typeof c.folderId === 'string' ? c.folderId : null,
           folderName: typeof c.folderName === 'string' ? c.folderName : null,
-          fileId: typeof c.fileId === 'string' ? c.fileId : null
+          fileId: typeof c.fileId === 'string' ? c.fileId : null,
+          chapters: shapeChapters(c.chapters)
         }))
       : []
   });
@@ -55,6 +57,34 @@
   // #    dropped: a dropped course looks brand new to the other device
   // #    and walks straight back in on the next read
   // ============================================================
+  // ============================================================
+  // # 📑 🧩  THE CHAPTERS OF A COURSE
+  // # 🔤 JavaScript
+  // # 🎯 Reads and writes the chapter list that lives in the course's
+  // #    own file, inside the course's own folder in Drive
+  // # 🔗 Chapters are kept out of the term paper on purpose: the term
+  // #    paper is the index, and it is read on every open, so it stays
+  // #    small. A course's chapters are read once beside it and written
+  // #    only when that course changed — not on every save of anything
+  // ============================================================
+  const shapeChapters = list => Array.isArray(list)
+    ? list.filter(c => c && typeof c.name === 'string').map(c => ({
+        id: typeof c.id === 'string' ? c.id : 'h-' + Math.random().toString(36).slice(2, 8),
+        name: c.name,
+        done: c.done === true,
+        updatedAt: c.updatedAt ?? null,
+        deleted: c.deleted === true
+      }))
+    : [];
+
+  const courseBody = course => ({
+    app: 'MyTerm',
+    id: course.id,
+    name: course.name,
+    chapters: shapeChapters(course.chapters),
+    updatedAt: new Date().toISOString()
+  });
+
   const pick = (mine, theirs) => {
     const a = mine?.updatedAt || '', b = theirs?.updatedAt || '';
     if (a > b) return mine;
@@ -62,12 +92,23 @@
     return mine?.deleted ? mine : theirs;      // تعادلٌ في الوقت: الشاهدة تغلب
   };
 
+  const mergeCourse = (mine, theirs) => {
+    const base = pick(mine, theirs);
+    const left = new Map((mine.chapters || []).map(h => [h.id, h]));
+    const chapters = (theirs.chapters || []).map(t => {
+      const m = left.get(t.id);
+      left.delete(t.id);
+      return m ? pick(m, t) : t;
+    });
+    return { ...base, chapters: chapters.concat([...left.values()]) };
+  };
+
   const merge = (mine, theirs) => {
     const left = new Map(mine.courses.map(c => [c.id, c]));
     const courses = theirs.courses.map(t => {
       const m = left.get(t.id);
       left.delete(t.id);
-      return m ? pick(m, t) : t;
+      return m ? mergeCourse(m, t) : t;
     });
     return { term: pick(mine.term, theirs.term), courses: courses.concat([...left.values()]) };
   };
@@ -115,7 +156,19 @@
     try {
       await settleFolders();
       const body = { ...(raw || {}), ...shape(raw), version: Number(raw?.version || 0) + 1, updatedAt: new Date().toISOString() };
-      await cloud().writeFile(fileId, body);
+
+      // الفصول تُحذف من ورقة الترم قبل كتابتها: مكانها ملفّ مادّتها، وورقةُ
+      // الترم فهرسٌ يُقرأ في كل فتحة فيجب أن يبقى خفيفًا
+      const index = { ...body, courses: body.courses.map(({ chapters, ...rest }) => rest) };
+      await cloud().writeFile(fileId, index);
+
+      // ثم ملفّات المواد التي تغيّرت فصولها وحدَها
+      for (const id of [...movedCourses]) {
+        const course = (raw?.courses || []).find(c => c.id === id);
+        if (course?.fileId) await cloud().writeFile(course.fileId, courseBody(course));
+        movedCourses.delete(id);
+      }
+
       raw = body;
       // النسخة السريعة تُحدَّث هنا أيضًا لا عند التعديل وحده: الكتابةُ تُضيف
       // ما لم يكن في يد الشاشة — معرّفات المجلدات — فلو لم تُحدَّث لبقيت
@@ -189,6 +242,18 @@
 
       const incoming = shape(doc);
       const local = raw ? shape(raw) : null;
+      const mineById = new Map((local?.courses || []).map(c => [c.id, c]));
+
+      // فصولُ كل مادة تُقرأ من ملفها، والمواد تُقرأ معًا لا واحدةً بعد أخرى.
+      // وإن تعذّرت قراءةُ ملفِ مادة بقيت فصولُها التي عندنا، فالتعذّر لا يمحو
+      await Promise.all(incoming.courses.map(async course => {
+        if (course.deleted) return;
+        const kept = mineById.get(course.id)?.chapters || [];
+        if (!course.fileId) { course.chapters = kept; return; }
+        const own = await cloud().readFile(course.fileId).catch(() => null);
+        course.chapters = own ? shapeChapters(own.chapters) : kept;
+      }));
+
       const board = (local && dirty) ? merge(local, incoming) : incoming;
 
       raw = { ...doc, ...board };
@@ -210,6 +275,9 @@
     version: () => Number(raw?.version || 0),
 
     busy: () => dirty || sending,
+
+    // تُنادى حين تتغيّر فصولُ مادة، فيُكتب ملفُّها هي وحدَها في الإرسال التالي
+    touchCourse: id => { movedCourses.add(id); },
 
     onStatus: fn => { tellStatus = fn; },
 

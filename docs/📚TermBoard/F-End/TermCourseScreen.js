@@ -758,11 +758,91 @@
 
   const shutPace = () => { if (paceBox) paceBox.remove(); paceBox = null; };
 
+  // ============================================================
+  // # 🗑️ 🧩  TAKING A PART OUT, FROM THE SAME PANEL
+  // # 🔤 JavaScript
+  // # 🎯 A quiet line under the pace, and the panel turns into the
+  // #    question before anything goes
+  // # 🔗 It asks INSIDE the panel it was pressed from, the way the row
+  // #    menu does: the question is answered where it was asked and
+  // #    nothing else on the page moves.
+  // #
+  // #    And it says HOW MANY ROWS GO WITH IT, because that is the whole
+  // #    weight of the press and the word "Delete" does not carry it. A
+  // #    part is a box on a strip; twenty rows are an evening's work.
+  // #
+  // #    The last part standing is refused and SAYS SO on itself rather
+  // #    than answering a press with nothing — a chapter with no part
+  // #    has nowhere to put the next row
+  // ============================================================
+  const deleteRow = (part, bank, near) => {
+    const foot = document.createElement('div');
+    foot.className = 'cpace-foot';
+
+    const last = (window.MyTermChapterStore?.sections() || []).length < 2;
+    const what = bank ? 'bank' : 'part';
+
+    const go = document.createElement('button');
+    go.type = 'button';
+    go.className = 'cpace-drop';
+    go.textContent = 'Delete this ' + what;
+    go.disabled = last;
+    go.title = last ? 'A chapter keeps at least one part' : '';
+
+    go.onclick = () => {
+      foot.textContent = '';
+
+      const ask = document.createElement('p');
+      ask.className = 'cmenu-why';
+      ask.textContent = part.rows
+        ? 'Delete “' + part.name + '”? Its ' + part.rows
+          + (bank ? (part.rows === 1 ? ' question goes' : ' questions go')
+                  : (part.rows === 1 ? ' row goes' : ' rows go')) + ' with it.'
+        : 'Delete “' + part.name + '”? There is nothing in it.';
+
+      const no = document.createElement('button');
+      no.type = 'button';
+      no.className = 'cpace-keep';
+      no.textContent = 'Keep it';
+      no.onclick = () => shutPace();
+
+      const yes = document.createElement('button');
+      yes.type = 'button';
+      yes.className = 'cpace-drop sure';
+      yes.textContent = 'Delete';
+      yes.onclick = () => {
+        if (!window.MyTermChapterStore.dropSection(part.id)) return;
+        shutPace();
+        drawRows();
+        retime();
+        drawTabs();
+      };
+
+      const pair = document.createElement('div');
+      pair.className = 'cpace-pair';
+      pair.append(no, yes);
+      foot.append(ask, pair);
+      placePace(near);
+    };
+
+    foot.append(go);
+    return foot;
+  };
+
   const askPace = (part, near) => {
     shutPace();
 
-    let per = part.per, each = part.each;
-    const pages = window.MyTermPaper?.pagesOf(window.MyTermChapterStore?.rowsOf(part.id) || []) || 0;
+    // A BANK IS PACED BY THE QUESTION AND BY NOTHING ELSE. The row and
+    // the page are two cuts of something read end to end; a bank is
+    // neither read nor paged, and one question is one sitting of work
+    // whatever its length. So there is no choice to offer — but the one
+    // pace is still shown, in the place the choice would have been,
+    // because a reader who opens this to see how it is counted must
+    // find an answer there and not an empty space
+    const bank = part.kind === 'tb';
+    let per = bank ? 'ask' : part.per, each = part.each;
+    const pages = bank ? 0
+      : (window.MyTermPaper?.pagesOf(window.MyTermChapterStore?.rowsOf(part.id) || []) || 0);
 
     paceBox = document.createElement('div');
     paceBox.className = 'cmenu asking cpace';
@@ -786,18 +866,23 @@
     box.placeholder = '0';
 
     const howMany = () => (per === 'page' ? pages : part.rows);
+    const named = () => (per === 'page' ? ' pages' : per === 'ask' ? ' questions' : ' rows');
 
     const retell = () => {
       const minutes = (Number(plainDigits(box.value)) || 0) * howMany();
-      sum.textContent = howMany() + (per === 'page' ? ' pages' : ' rows') + ' → '
+      sum.textContent = howMany() + named() + ' → '
         + (minutes ? (window.MyTermHours ? window.MyTermHours.fmt(minutes) : minutes + 'm') : 'nothing yet');
     };
 
-    [['row', 'By the row'], ['page', 'By the page']].forEach(([which, words]) => {
+    const paces = bank ? [['ask', 'By the question']]
+                       : [['row', 'By the row'], ['page', 'By the page']];
+
+    paces.forEach(([which, words]) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'cpace-one' + (per === which ? ' on' : '');
+      button.className = 'cpace-one' + (per === which ? ' on' : '') + (bank ? ' only' : '');
       button.textContent = words;
+      if (bank) button.disabled = true;
       button.onclick = () => {
         per = which;
         [...pick.children].forEach(b => b.classList.toggle('on', b === button));
@@ -830,16 +915,25 @@
     };
 
     line.append(box, unit, go);
-    paceBox.append(title, pick, line, sum);
+    paceBox.append(title, pick, line, sum, deleteRow(part, bank, near));
     retell();
 
     document.body.append(paceBox);
+    placePace(near);
+    box.focus();
+    box.select();
+  };
+
+  // Read again every time the panel changes shape. Turning the delete
+  // line into its question makes the panel taller, and a panel placed
+  // once by the height it had then hangs off the bottom of the window
+  // at the moment it is asking whether to throw something away
+  const placePace = near => {
+    if (!paceBox || !near) return;
     const spot = near.getBoundingClientRect();
     const wide = paceBox.offsetWidth, tall = paceBox.offsetHeight;
     paceBox.style.left = Math.min(Math.round(spot.left), window.innerWidth - wide - 8) + 'px';
     paceBox.style.top = Math.min(Math.round(spot.bottom + 6), window.innerHeight - tall - 8) + 'px';
-    box.focus();
-    box.select();
   };
 
   // An Arabic keyboard writes ٥ and not 5, and both are taken — the same

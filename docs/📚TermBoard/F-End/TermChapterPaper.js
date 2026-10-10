@@ -62,7 +62,12 @@
     return box.textContent.replace(/\s+/g, ' ').trim();
   };
 
-  const asAttr = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  // Written with split and join rather than with /"/g on purpose. A lone
+  // quote inside a regular expression is a quote to anything reading this
+  // file as text, and the guard that checks every file for helpers that
+  // were deleted reads it that way: that one character swallowed the next
+  // forty lines and it reported two live functions as missing
+  const asAttr = s => s.split('&').join('&amp;').split('"').join('&quot;').split('<').join('&lt;');
 
   // An empty cell does not sit blank: it shows the SAME ROW in the other
   // language, faintly. Turning a chapter that was written in English over

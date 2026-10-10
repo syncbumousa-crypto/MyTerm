@@ -1204,8 +1204,7 @@ body.reading .build { bottom: 46px; }
 
 .cpull-top {
   top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 16px;
   border-radius: 0 0 8px 8px;
 }
 
@@ -1227,7 +1226,11 @@ body.reading .build { bottom: 46px; }
 .cbody {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  /* Both ways, because a sheet pinched larger than the desk has to be
+     reachable sideways. It is laid to the start and centred by its own
+     margin, so there is never a strip of it hanging off the near side
+     where no scrolling goes */
+  overflow: auto;
   /* Room at the foot for the strip that floats over it, so the last
      sheet is never sat on — and less of it when the strip is shut away,
      because then only its tab is down there */
@@ -1360,6 +1363,31 @@ body.reading .build { bottom: 46px; }
 }
 
 .ctxt { font-size: 12.5px; font-weight: 700; line-height: 1; letter-spacing: -.3px; }
+
+/* The quiet half of a trough: a drawing that is not a button, standing
+   beside a reading. It is dimmer than the buttons on purpose — nothing
+   happens when it is pressed, and it should not invite the press */
+.clabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 30px;
+  color: #70727a;
+  user-select: none;
+}
+
+.clabel svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 /* ============================================================ */
 /* # 🗂️ 📊  THE TAB OF A CHAPTER */

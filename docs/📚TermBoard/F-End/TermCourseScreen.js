@@ -25,6 +25,7 @@
   const langBtn = $('course-lang');
   const eyeBtn = $('course-eye'), darkBtn = $('course-dark'), bookBtn = $('course-book');
   const barPull = $('course-bar-pull'), footPull = $('course-foot-pull');
+  const zoomNow = $('zoom-now');
 
   // ============================================================
   // # 🖼️ ✒️  THE ICONS OF THE STRIP
@@ -116,6 +117,96 @@
     // ever as wide as the desk — so it is refitted, never recut
     window.MyTermPaper?.fit();
   };
+
+  // ============================================================
+  // # 🔍 🤏  PINCHING THE PAPER LARGER
+  // # 🔤 JavaScript
+  // # 🎯 Two fingers on a trackpad or on a screen make the sheet bigger
+  // #    or smaller, and the strip says by how much
+  // # 🔗 A TRACKPAD PINCH ARRIVES AS A WHEEL EVENT WITH CTRL HELD. That
+  // #    is how the browser reports it, so catching that one event
+  // #    covers both the pinch and a mouse held with ctrl — and catching
+  // #    it is also what stops the browser zooming its own page, which
+  // #    would blow up the strips and the menus along with the paper.
+  // #
+  // #    Zooming moves no row and changes no page number: what fits on a
+  // #    sheet is counted against the sheet's real size, and this only
+  // #    changes how large that sheet is DRAWN
+  // ============================================================
+  const ZOOM_PREF = 'myterm.read.zoom';
+
+  const paintZoom = () => {
+    zoomNow.textContent = Math.round((window.MyTermPaper?.zoomNow() ?? 1) * 100) + '%';
+  };
+
+  const zoomTo = (next, keep) => {
+    const got = window.MyTermPaper?.zoom(next);
+    if (got === undefined) return;
+    paintZoom();
+    if (keep) writePref(ZOOM_PREF, got);
+  };
+
+  document.addEventListener('wheel', event => {
+    if (!openId || !event.ctrlKey) return;
+    event.preventDefault();
+    // Held to small steps. A trackpad sends these in a flood, and one
+    // unclamped report from a fast pinch jumps the whole range at once
+    const step = Math.max(-0.08, Math.min(0.08, -event.deltaY * 0.01));
+    zoomTo((window.MyTermPaper?.zoomNow() ?? 1) + step, true);
+  }, { passive: false });
+
+  // ============================================================
+  // # 🤏 📐  TWO FINGERS ON A SCREEN
+  // # 🔤 JavaScript
+  // # 🎯 The same, for a touch screen, where the browser reports two
+  // #    fingers and not a pinch
+  // # 🔗 THE FIRST TOUCH IS NOT REFUSED. Two fingers moving together is
+  // #    a two-finger scroll, which every touchpad and screen allows,
+  // #    and refusing the event at the start would kill that scroll on
+  // #    every two-fingered touch — including the ones that were never
+  // #    going to be a pinch. So the refusal waits until the distance
+  // #    between the fingers has actually changed, at which point it is
+  // #    a pinch for certain.
+  // #
+  // #    And the measure is the RATIO between now and the start, not a
+  // #    running sum of changes: the paper then follows the fingers
+  // #    exactly, and nothing drifts over a long pinch. The starting
+  // #    distance is taken again at the moment it arms, or the paper
+  // #    would jump by the whole threshold on the first frame
+  // ============================================================
+  const PINCH_ARM = 12;
+
+  const spanOf = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+  let pinch = null;
+
+  document.addEventListener('touchstart', event => {
+    if (!openId || event.touches.length !== 2) { pinch = null; return; }
+    pinch = { from: spanOf(event.touches[0], event.touches[1]),
+              was: window.MyTermPaper?.zoomNow() ?? 1, armed: false };
+  }, { passive: true });
+
+  document.addEventListener('touchmove', event => {
+    if (!pinch) return;
+    if (event.touches.length !== 2) { pinch = null; return; }
+    const span = spanOf(event.touches[0], event.touches[1]);
+    if (!pinch.armed) {
+      if (Math.abs(span - pinch.from) < PINCH_ARM) return;
+      pinch.armed = true;
+      pinch.from = span;
+    }
+    event.preventDefault();
+    zoomTo(pinch.was * (span / pinch.from), false);
+  }, { passive: false });
+
+  // Written down once the fingers are off, not on every frame of the
+  // pinch — and only if it ever became a pinch at all
+  ['touchend', 'touchcancel'].forEach(name => document.addEventListener(name, event => {
+    if (!pinch || event.touches.length >= 2) return;
+    const armed = pinch.armed;
+    pinch = null;
+    if (armed) writePref(ZOOM_PREF, window.MyTermPaper?.zoomNow() ?? 1);
+  }, { passive: true }));
 
   const now = () => new Date().toISOString();
   const alive = course => (course.chapters || []).filter(h => !h.deleted);
@@ -511,6 +602,11 @@
       // mark over the first button. A page that fills the window says so
       document.body.classList.add('reading');
       paintStrips();
+      // Whatever was left last time, put back before the first sheet is
+      // drawn — a reader who reads at 140% should not watch the page
+      // arrive small and then jump
+      window.MyTermPaper?.zoom(readPref(ZOOM_PREF, 1));
+      paintZoom();
       applyRead();
       draw();
     },

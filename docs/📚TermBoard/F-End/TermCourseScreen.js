@@ -70,7 +70,14 @@
   // #    two pixels on the way to a button at the other end of it would
   // #    otherwise drop it out from under the hand. And the zone is a
   // #    thing of its own because a strip that is off the screen cannot
-  // #    be hovered and so can never call itself up
+  // #    be hovered and so can never call itself up.
+  // #
+  // #    It answers a TOUCH as well as a pointer. The first version
+  // #    asked the browser whether it could hover and left the strip
+  // #    standing still when it said no — and this very browser, driven
+  // #    by a mouse, answers no: the strip never moved once. Asking a
+  // #    browser what kind of machine it is on is a guess; answering
+  // #    both ways is not
   // ============================================================
   let footTimer = null;
 
@@ -81,8 +88,15 @@
   };
 
   footZone.addEventListener('mouseenter', showFoot);
+  footZone.addEventListener('pointerdown', showFoot);
   foot.addEventListener('mouseenter', showFoot);
   foot.addEventListener('mouseleave', hideFoot);
+
+  // A finger has no "away", so the strip is let go when the reader
+  // touches the paper again rather than when a pointer leaves the strip
+  body.addEventListener('pointerdown', () => {
+    if (foot.classList.contains('show')) hideFoot();
+  });
 
   const now = () => new Date().toISOString();
   const alive = course => (course.chapters || []).filter(h => !h.deleted);

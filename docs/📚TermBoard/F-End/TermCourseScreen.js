@@ -252,6 +252,7 @@
   const leave = () => {
     page.hidden = true;
     board.hidden = false;
+    document.body.classList.remove('reading');
     openId = null;
     window.MyTermBoardRedraw?.();
   };
@@ -300,6 +301,11 @@
       openId = id;
       board.hidden = true;
       page.hidden = false;
+      // The shell's floating corner and its build mark belong to the board.
+      // This page pins its own strips to both edges, and the two of them
+      // landed on top of it — the avatar over the chapter tabs, the build
+      // mark over the first button. A page that fills the window says so
+      document.body.classList.add('reading');
       applyRead();
       draw();
     },

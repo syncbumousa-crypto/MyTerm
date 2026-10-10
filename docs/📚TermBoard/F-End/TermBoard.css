@@ -1126,7 +1126,10 @@ body.board-on {
    the middle of the screen is not a page */
 .course-page {
   --read-font: 100%;
-  --read-width: 720px;
+  /* How wide the Term column is drawn on the sheet. The reader sets it,
+     and whatever it loses the meaning column gains — the sheet itself is
+     an A4 and does not move */
+  --term-col: 180px;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -1193,6 +1196,10 @@ body.reading .build { bottom: 46px; }
 
 .cbtn:hover:not(:disabled) { background: #3a3b44; color: #ffffff; }
 .cbtn:disabled { opacity: .35; cursor: default; }
+
+/* A button that is not doing a thing but IS a state — the eye while the
+   sheet is covered over — wears the colour instead of saying so */
+.cbtn.on { color: var(--ready); border-color: var(--ready); }
 
 /* ============================================================ */
 /* # 🗂️ 📊  THE TAB OF A CHAPTER */
@@ -1283,65 +1290,13 @@ body.reading .build { bottom: 46px; }
 }
 
 /* ============================================================ */
-/* # 📄 📏  THE SHEET, AND THE STRIP THAT SETS HOW IT READS */
+/* # 🔘 ⌨️  THE BUTTON THAT RUNS THE WHOLE WIDTH OF THE DESK */
 /* # 🔤 CSS */
-/* # 🎯 One column of a width the reader chose, centred, and the */
-/* #    controls that choose it */
-/* # 🔗 The numbers beside the buttons are shown because a control with */
-/* #    no reading is a guess: pressing A+ four times should say where */
-/* #    it has got to, not leave it to be felt */
+/* # 🎯 Adding a row, and trying a chapter again after it could not be */
+/* #    read: the two things pressed from under the paper, not on it */
+/* # 🔗 It is as wide as a sheet and no wider. Left to the desk it ran */
+/* #    the whole dark ground and read as a bar, not a button */
 /* ============================================================ */
-.csheet {
-  width: 100%;
-  max-width: var(--read-width);
-  margin: 0 auto;
-}
-
-.csheet-title {
-  margin: 0 0 10px;
-  font-family: var(--mono);
-  font-size: 1.15em;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.csheet-note {
-  margin: 0 0 18px;
-  font-size: .8em;
-  line-height: 1.7;
-  color: var(--dim);
-}
-
-.csheet-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: .82em;
-  color: var(--dim);
-}
-
-.csheet-num {
-  width: 70px;
-  height: 26px;
-  margin-inline-start: auto;
-  box-sizing: border-box;
-  font-family: var(--mono);
-  font-size: 12px;
-  text-align: center;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  background: var(--well);
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  -moz-appearance: textfield;
-}
-
-.csheet-num::-webkit-outer-spin-button,
-.csheet-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.csheet-num:focus { outline: 2px solid var(--blue); outline-offset: 0; }
-.csheet-unit { flex: none; font-size: .9em; color: var(--dim2); width: 42px; }
-
 .csheet-done {
   display: block;
   width: 100%;
@@ -1376,34 +1331,73 @@ body.reading .build { bottom: 46px; }
 /* #    highlight stops being the yellow of a highlighter and the red */
 /* #    of a warning stops being red */
 /* ============================================================ */
+/* Laid to the START and centred by its own automatic margin, never by
+   align-items:center. The difference is not decoration. An element
+   WIDER than the box that centres it overflows on both sides, and the
+   scrolling only ever covers the end side — so whatever hangs off the
+   start side can NEVER be reached. The reader met this in their own
+   pages and said so: turning right showed the sheet to its edge, and
+   turning left stopped at a wall short of it. An automatic margin does
+   both jobs: it centres while there is room to share, and becomes zero
+   when there is none, so the sheet leans on the start and the whole
+   width can be scrolled to */
 .cstage {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
 }
 
-.cpaper-slot { width: var(--read-width); max-width: 100%; }
+/* ============================================================ */
+/* # 📐 🔒  A4 IS A FIXED SIZE */
+/* # 🔤 CSS */
+/* # 🎯 The sheet is drawn at its one real size whatever the window is, */
+/* #    and then SHRUNK to fit — the slot holds exactly the room the */
+/* #    shrunken sheet takes */
+/* # 🔗 THIS IS WHAT MAKES A PAGE A PAGE. The division into sheets is */
+/* #    measured against the sheet, so if the sheet changed with the */
+/* #    window the same chapter would break at different rows on the */
+/* #    laptop and on the phone, and "the row that begins a page" would */
+/* #    mean a different row on each. At one fixed size it breaks in the */
+/* #    same place everywhere, and the window only decides how small it */
+/* #    is drawn. Which is also why the sheet's own size must never be */
+/* #    touched in a narrow-window rule: that changes what was measured */
+/* ============================================================ */
+.cpaper-slot {
+  position: relative;
+  width: var(--pageMaxW, 800px);
+  height: calc(var(--pageMaxW, 800px) * 297 / 210);
+  flex-shrink: 0;
+  margin-inline: auto;
+}
 
 /* The height is a floor and nothing is ever hidden. The division into
-   sheets is MEASURED, and a measurement taken before a font has
-   finished loading can be a line out; a sheet that clipped what did
-   not fit would swallow a row of the reader's own writing without a
-   word. So a sheet that was mis-measured grows a few millimetres and
-   is merely ugly. --page-h is written by the code from the sheet's
-   real width, because a width in per cent cannot be read back in CSS
-   and a page of the wrong proportions on a phone is a page of empty
-   white */
+   sheets is measured, and a measurement taken before a font has
+   finished loading can be a line out; a sheet that clipped what did not
+   fit would swallow a row of the reader's own writing without a word.
+   So a sheet that was mis-measured grows a few millimetres — and the
+   code gives its slot the extra room, so the next sheet is not sat on */
 .cpaper {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  transform: scale(var(--pageScale, 1));
   box-sizing: border-box;
-  width: 100%;
-  min-height: var(--page-h, 900px);
+  width: 800px;
+  min-height: calc(800px * 297 / 210);
   padding: 34px 26px 46px;
   background: #ffffff;
   color: #141414;
   border: 1px solid #3c3d44;
   box-shadow: 0 3px 16px rgba(0, 0, 0, .55);
+}
+
+/* The reading and the way to add a row sit on the desk under the last
+   sheet, as wide as a sheet is drawn and no wider */
+.cdesk-foot {
+  width: var(--pageMaxW, 800px);
+  margin-inline: auto;
 }
 
 .cpaper-no {
@@ -1417,10 +1411,12 @@ body.reading .build { bottom: 46px; }
   color: #8a8a8a;
 }
 
-/* The measurer stands at the true width of a sheet and is never seen.
-   It is out of the flow entirely, not merely invisible: hidden alone,
-   it still reserved its own height and pushed the end of the page
-   below everything the reader could scroll to */
+/* The measurer stands at the sheet's one REAL size and is never shrunk:
+   it is what the division into sheets is counted against, and counting
+   against a shrunken copy would make the count depend on the window
+   again. It is out of the flow entirely, not merely invisible: hidden
+   alone, it still reserved its own height and pushed the end of the
+   page below everything the reader could scroll to */
 .cprobe {
   position: fixed;
   top: -9999px;
@@ -1428,6 +1424,7 @@ body.reading .build { bottom: 46px; }
   z-index: -1;
   visibility: hidden;
   pointer-events: none;
+  transform: none;
 }
 
 /* ============================================================ */
@@ -1480,6 +1477,50 @@ body.reading .build { bottom: 46px; }
 
 .ctbl td.cterm { background: #e2e2e2; font-weight: 700; }
 .ctbl td.cbox { text-align: center; vertical-align: middle; }
+
+/* ============================================================ */
+/* # 🙈 🧪  A CELL TURNED FACE DOWN */
+/* # 🔤 CSS */
+/* # 🎯 The words go invisible and a panel is laid over them, so the */
+/* #    reader can try to say what is under it */
+/* # 🔗 THE WORDS ARE NOT REMOVED, they are made transparent, and the */
+/* #    panel is laid on top without taking any room. The height of the */
+/* #    cell must not move by a hair: the sheets were cut against these */
+/* #    heights, so a cell that shrank when it was covered would pull */
+/* #    the last rows of every page up off their sheet — and pressing */
+/* #    the eye would silently repage the whole chapter. */
+/* # */
+/* #    The dashes say it is hiding something rather than being empty: */
+/* #    a flat grey block reads as a cell with nothing in it */
+/* ============================================================ */
+.ctbl td.cterm, .ctbl td.cdef { position: relative; cursor: pointer; }
+.ctbl td[contenteditable="true"] { cursor: text; }
+
+/* The only !important on this sheet, and it is earned. A covered cell
+   must beat EVERY other rule that colours it, and there are several:
+   a ticked row greys its words, a highlight paints its ground, red and
+   green paint the letters. Measured: the ticked-row rule and the
+   covered rule weigh exactly the same, so the later one won and a row
+   already learnt could not be covered at all. The alternative is to
+   keep this block last in the file for ever and trust that nobody adds
+   a rule under it — which is a rule nobody can see */
+.ctbl td.covered { color: transparent !important; }
+
+.ctbl td.covered * {
+  color: transparent !important;
+  background-color: transparent !important;
+  text-decoration-color: transparent !important;
+}
+
+.ctbl td.covered::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  pointer-events: none;
+  background: #e6e6e9;
+  border: 1px dashed #b6b7bd;
+  border-radius: 4px;
+}
 
 .ctbl td.cterm:empty::before,
 .ctbl td.cdef:empty::before {
@@ -1670,10 +1711,13 @@ body.reading .build { bottom: 46px; }
   text-align: right;
 }
 
-@media (max-width: 620px) {
-  .cpaper { padding: 20px 12px 38px; }
-  .ctbl td, .ctbl th { padding: 6px 5px; }
-}
+/* There is deliberately NO narrow-window rule for the sheet. One was
+   here — smaller padding under 620px — and it is the one change that
+   must never be made: the division into sheets is measured against this
+   padding at this width, so shrinking it on a phone makes every page
+   hold more than the page it was cut to be, and the last rows fall off
+   the bottom. The whole sheet is scaled down instead, which suits any
+   width and leaves what was measured exactly as it was measured */
 
 .cempty {
   margin: 0;

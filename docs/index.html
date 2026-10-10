@@ -19,9 +19,9 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=91">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=91">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=91">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=92">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=92">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=92">
 </head>
 <body>
 
@@ -223,10 +223,15 @@
       <span class="cnum" id="font-now"></span>
       <button class="cbtn" type="button" id="font-up" title="Larger type">A+</button>
     </span>
+    <!-- These two set how wide the TERM column is drawn on the sheet, and
+         whatever it loses the meaning column gains. The sheet itself is
+         an A4 and never changes size: what fits on a page is measured
+         against it, so a sheet that moved with the window would break the
+         same chapter at different rows on the laptop and on the phone. -->
     <span class="cgroup">
-      <button class="cbtn" type="button" id="width-down" title="Narrower column">−</button>
-      <span class="cnum" id="width-now"></span>
-      <button class="cbtn" type="button" id="width-up" title="Wider column">+</button>
+      <button class="cbtn" type="button" id="col-down" title="Narrower Term column">−</button>
+      <span class="cnum" id="col-now"></span>
+      <button class="cbtn" type="button" id="col-up" title="Wider Term column">+</button>
     </span>
     <!-- A row carries both languages at once, in four fields on the one
          row, and this is the switch between the two that are on the
@@ -237,6 +242,16 @@
          ع goes into the Arabic fields and never over the English. -->
     <span class="cgroup">
       <button class="cbtn" type="button" id="course-lang" title="Arabic / English">EN</button>
+    </span>
+
+    <!-- The whole sheet at once. Covering covers the MEANINGS and leaves
+         the terms, because that is what turns a summary into a test;
+         showing shows everything there is, terms included. A single
+         press on any one cell turns that cell over by itself. None of it
+         is written to any file: what you covered up this evening is not
+         a fact about the course. -->
+    <span class="cgroup">
+      <button class="cbtn" type="button" id="course-eye" title="Hide the meanings">👁</button>
     </span>
     <span class="cfoot-right">
       <span class="csync" id="course-sync" title="Saved to your Drive">✓</span>
@@ -254,7 +269,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v91</p>
+<p class="build">v92</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -277,19 +292,19 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=91"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=91"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=91"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=91"></script>
-<script src="📚TermBoard/B-End/TermChapterStore.js?v=91"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=91"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=91"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=91"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=91"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=91"></script>
-<script src="📚TermBoard/F-End/TermChapterPaper.js?v=91"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=91"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=91"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=92"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=92"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=92"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=92"></script>
+<script src="📚TermBoard/B-End/TermChapterStore.js?v=92"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=92"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=92"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=92"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=92"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=92"></script>
+<script src="📚TermBoard/F-End/TermChapterPaper.js?v=92"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=92"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=92"></script>
 
 </body>
 </html>

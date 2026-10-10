@@ -19,7 +19,18 @@
 (() => {
   const store = () => window.MyTermChapterStore;
 
-  const COLS = '<colgroup><col style="width:34px"><col style="width:31%"><col><col style="width:34px"></colgroup>';
+  // The sheet's one real size, in the units everything on it is drawn
+  // in. Nothing may make these depend on the window: they are what the
+  // division into sheets is counted against
+  const PAPER_W = 800;
+  const PAPER_H = Math.round(PAPER_W * 297 / 210);
+
+  // The number and the box are the width of what they hold and never
+  // move. The Term column is the reader's to set, and the meaning column
+  // is given no width at all — so it takes whatever is left, and every
+  // millimetre taken off the Term is a millimetre the meaning gains
+  const COLS = '<colgroup><col style="width:34px"><col style="width:var(--term-col,180px)">'
+    + '<col><col style="width:34px"></colgroup>';
 
   // ============================================================
   // # 🌍 🔁  THE TWO LANGUAGES OF A ROW
@@ -44,6 +55,22 @@
 
   let host = null, stage = null, probe = null, told = () => {};
   let menu = null, bar = null, listening = false, lang = 'en';
+
+  // ============================================================
+  // # 🙈 🧠  COVERING A CELL, TO SEE IF YOU KNOW IT
+  // # 🔤 JavaScript
+  // # 🎯 Remembers which cells are covered over, so a sheet can be read
+  // #    as a test instead of as a summary
+  // # 🔗 KEPT FOR THE SITTING ONLY, and written to no file. What you have
+  // #    covered up this evening is not a fact about the course and has
+  // #    no business travelling to the phone — nor being there tomorrow.
+  // #
+  // #    And it is kept by COLUMN, not by language: covering the meaning
+  // #    of a row covers that row's meaning, whichever of the two
+  // #    languages happens to be on the paper
+  // ============================================================
+  const covered = new Set();
+  const coverKey = (rowId, col) => rowId + ':' + col;
 
   // ============================================================
   // # 🧾 🔤  ONE ROW, WRITTEN OUT
@@ -86,8 +113,14 @@
     let hintDir = there.dir;
     if (hint.length > 90) hint = hint.slice(0, 89) + '…';
     if (!hint) { hint = here.head[which === 'term' ? 1 : 2]; hintDir = here.dir; }
-    return `<td class="c${which === 'term' ? 'term' : 'def'}" contenteditable="true" dir="${here.dir}"`
-      + ` data-field="${here[which]}" data-hintdir="${hintDir}" data-empty="${asAttr(hint)}">${words}</td>`;
+    // No contenteditable until it is asked for by a double press. A cell
+    // that is always open to typing cannot also answer a single press,
+    // and the single press is the one a reader makes a hundred times an
+    // evening: cover this, uncover that, do I know it
+    const hide = covered.has(coverKey(row.id, which)) ? ' covered' : '';
+    return `<td class="c${which === 'term' ? 'term' : 'def'}${hide}" dir="${here.dir}"`
+      + ` data-col="${which}" data-field="${here[which]}"`
+      + ` data-hintdir="${hintDir}" data-empty="${asAttr(hint)}">${words}</td>`;
   };
 
   const headHtml = () => '<tr>' + LANGS[lang].head.map(w => `<th>${w}</th>`).join('') + '</tr>';
@@ -175,9 +208,18 @@
     ['off', '⌫', 'Plain again']
   ];
 
+  // Which cell the SELECTION is in, not which one has the focus. A cell
+  // is only open to typing after a double press, so for most of the
+  // evening no cell has the focus at all — and marking a passage is a
+  // thing a reader does while reading, not while editing
+  const CELLS = '.ctbl td.cterm, .ctbl td.cdef';
+
   const editing = () => {
-    const node = document.activeElement;
-    return node && node.closest && node.closest('.ctbl [contenteditable]') ? node : null;
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return null;
+    let node = sel.getRangeAt(0).commonAncestorContainer;
+    if (node && node.nodeType !== 1) node = node.parentNode;
+    return node && node.closest ? node.closest(CELLS) : null;
   };
 
   const saveCell = cell => {
@@ -372,6 +414,47 @@
   // #    page between two letters. The sheet simply grows a little
   // #    until the reader looks away, and then it is cut properly
   // ============================================================
+  // ============================================================
+  // # 👆 👆👆  ONE PRESS COVERS, TWO PRESSES OPEN FOR TYPING
+  // # 🔤 JavaScript
+  // # 🎯 The single press that turns a cell over, and the double press
+  // #    that opens it to be written in
+  // # 🔗 The frequent action gets the single press. A summary is written
+  // #    over a few evenings and read over many, and on the evenings it
+  // #    is read a cell is turned over and back a hundred times — while
+  // #    typing into one happens a handful of times a week. Giving the
+  // #    single press to typing, which is where it was, made the common
+  // #    thing impossible and the rare thing free.
+  // #
+  // #    A double press lands as TWO single presses and then itself, so
+  // #    the cover is turned over and straight back — it ends where it
+  // #    started, and the only cost is one frame of grey. And whatever
+  // #    it was, opening a cell for typing always uncovers it: nobody
+  // #    can write in a box they cannot see
+  // ============================================================
+  const coverOf = cell => coverKey(cell.closest('tr[data-row]').dataset.row, cell.dataset.col);
+
+  const turnOver = (cell, on) => {
+    if (on) covered.add(coverOf(cell)); else covered.delete(coverOf(cell));
+    cell.classList.toggle('covered', on);
+    window.MyTermCourseEye?.();
+  };
+
+  const startTyping = cell => {
+    turnOver(cell, false);
+    cell.contentEditable = 'true';
+    cell.focus();
+    // The caret at the end of what is there. Left to itself the browser
+    // puts it wherever the second press landed, which after an uncover
+    // is wherever the grey panel happened to be
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  };
+
   const listenDesk = desk => {
     desk.addEventListener('click', event => {
       const tick = event.target.closest('[data-tick]');
@@ -392,10 +475,26 @@
       }
       const off = event.target.closest('[data-off]');
       if (off) { store().dropRow(off.dataset.off); repaint(); }
+
+      const cell = event.target.closest(CELLS);
+      if (!cell || cell.isContentEditable) return;
+      // A press that ended a selection is not a tap. The reader was
+      // picking out words to mark, and turning the cell over under their
+      // hand would throw away what they had just selected
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed) return;
+      turnOver(cell, !cell.classList.contains('covered'));
+    });
+
+    desk.addEventListener('dblclick', event => {
+      const cell = event.target.closest(CELLS);
+      if (!cell) return;
+      event.preventDefault();
+      startTyping(cell);
     });
 
     desk.addEventListener('input', event => {
-      const cell = event.target.closest('[contenteditable]');
+      const cell = event.target.closest(CELLS);
       const row = cell && cell.closest('tr[data-row]');
       if (row) store().editRow(row.dataset.row, cell.dataset.field, cell.innerHTML);
     });
@@ -404,7 +503,11 @@
     // from one cell to the next — a recut between two cells would take
     // the cell they were aiming at out from under them
     desk.addEventListener('focusout', event => {
-      if (!event.target.closest || !event.target.closest('[contenteditable]')) return;
+      const cell = event.target.closest && event.target.closest(CELLS);
+      if (!cell) return;
+      // Shut again behind them, or the cell stays open to typing and the
+      // next single press on it puts a caret in instead of covering it
+      cell.contentEditable = 'false';
       const to = event.relatedTarget;
       if (to && desk.contains(to)) return;
       hideBar();
@@ -436,14 +539,15 @@
   // ============================================================
   // # 🧮 🖌️  DRAWING THE WHOLE THING
   // # 🔤 JavaScript
-  // # 🎯 Builds the desk, measures a sheet, cuts the rows into sheets,
-  // #    and puts the reading and the way to add a row under the last
-  // # 🔗 The height of a sheet is written in as a number of pixels and
-  // #    not as a ratio of its width, because a width given in per cent
-  // #    cannot be read back in CSS. On a phone the sheet is as wide as
-  // #    the window allows and not as wide as the reader asked for, and
-  // #    a sheet kept at the proportions of the asked-for width would be
-  // #    a page and a half of empty white
+  // # 🎯 Builds the desk, cuts the rows into sheets of one fixed size,
+  // #    shrinks them to whatever room there is, and puts the reading
+  // #    and the way to add a row under the last
+  // # 🔗 The sheet is ALWAYS 800 by 1131, on a laptop and on a phone
+  // #    alike. The window decides only how small it is drawn, never how
+  // #    much goes on it — so a chapter breaks at the same rows on every
+  // #    device, and the row a reader made begin a page begins that same
+  // #    page everywhere. The window used to set the sheet's own size,
+  // #    and then "page 2 of 4" was a different four pages on the phone
   // ============================================================
   const countLine = () => {
     const line = stage && stage.querySelector('.ctable-count');
@@ -496,35 +600,66 @@
     try { layOut(); } finally { cutting = false; }
   };
 
+  // ============================================================
+  // # 🔍 📉  HOW SMALL THE SHEET IS DRAWN
+  // # 🔤 JavaScript
+  // # 🎯 Fits the sheets to whatever room the desk has, and gives each
+  // #    slot the room its sheet actually takes once shrunk
+  // # 🔗 THIS IS NOT A CUT, and that is the whole point of a sheet that
+  // #    never changes size: a window being dragged narrower changes
+  // #    only how small the paper is drawn, never what is on it, so
+  // #    nothing is rebuilt and nobody loses the cell they were typing
+  // #    in. And the room is read TWICE on purpose: the first reading is
+  // #    taken with the desk still empty, and the moment the sheets land
+  // #    a scrolling bar appears and takes fifteen pixels of the width
+  // #    that was just measured — which was fifteen pixels of sheet
+  // #    hanging off the side
+  // ============================================================
+  const fitOnce = () => {
+    const room = stage.clientWidth || PAPER_W;
+    // Shrunk to fit, never blown up: a sheet stretched past its real
+    // size on a wide screen is a blurry A4, and how large the words are
+    // is the reader's own control
+    const drawn = Math.min(PAPER_W, room);
+    const scale = drawn / PAPER_W;
+    stage.style.setProperty('--pageMaxW', drawn + 'px');
+    stage.style.setProperty('--pageScale', scale.toFixed(4));
+
+    // A slot holds the room a sheet takes once shrunk. Almost always
+    // that is exactly a page; a sheet that measured a line long is given
+    // the few millimetres it actually grew, so the next one does not sit
+    // on it
+    stage.querySelectorAll('.cpaper-slot').forEach(slot => {
+      const paper = slot.firstElementChild;
+      if (paper) slot.style.height = Math.ceil(paper.offsetHeight * scale) + 'px';
+    });
+    return room;
+  };
+
+  const fit = () => {
+    if (!stage) return;
+    const first = fitOnce();
+    if (stage.clientWidth !== first) fitOnce();
+  };
+
   const layOut = () => {
     const keptTop = host.scrollTop;
     stage.textContent = '';
 
-    // A sheet is as wide as a slot turns out to be, and only a real slot
-    // on the real desk knows that. So one is put down, read, and taken
-    // away again before anything is drawn
-    const gauge = document.createElement('div');
-    gauge.className = 'cpaper-slot';
-    stage.append(gauge);
-    const wide = gauge.clientWidth || 720;
-    gauge.remove();
-
-    const pageH = Math.round(wide * 297 / 210);
-    stage.style.setProperty('--page-h', pageH + 'px');
-    probe.style.width = wide + 'px';
-
     const rows = store().rows();
     const units = rows.map((row, i) => ({ row, n: i + 1, cid: row.cid, lead: row.lead }));
-    const pages = units.length ? splitPages(units, pageH) : [];
+    // Counted against the REAL height of a sheet, not the drawn one
+    const pages = units.length ? splitPages(units, PAPER_H) : [];
 
     if (!pages.length) lay(blankSheet());
     pages.forEach((page, i) => lay(sheetOf(page, i + 1, pages.length)));
+    fit();
 
     // The reading and the way to add a row belong on the desk, not on
     // the paper — but kept to the width of a sheet, or a button stretches
     // across the whole dark ground and reads as a bar, not a button
     const foot = document.createElement('div');
-    foot.className = 'cpaper-slot';
+    foot.className = 'cdesk-foot';
     stage.append(foot);
 
     const count = document.createElement('p');
@@ -540,8 +675,12 @@
       if (!section) return;
       store().addRow(section.id);
       repaint();
+      // Straight into typing. A row added and then left shut would need
+      // a double press before a word could go in it, which is a strange
+      // thing to ask of somebody who just pressed "add a row"
       const cells = stage.querySelectorAll('.ctbl tr[data-row] td.cterm');
-      cells[cells.length - 1]?.focus();
+      const last = cells[cells.length - 1];
+      if (last) startTyping(last);
     };
     foot.append(add);
 
@@ -578,6 +717,49 @@
       lang = LANGS[which] ? which : 'en';
       if (!stage || !stage.isConnected || stage.parentNode !== into) build(into);
       repaint();
+    },
+
+    // The window changed width. Nothing is rebuilt: the sheets are the
+    // same sheets with the same rows on them, drawn a little smaller or
+    // a little larger
+    fit,
+
+    // ============================================================
+    // # 👁️ 🗂️  THE WHOLE SHEET AT ONCE
+    // # 🔤 JavaScript
+    // # 🎯 Covers every meaning on the sheet, or shows everything there
+    // #    is to show
+    // # 🔗 The two are NOT each other's opposite, on purpose. Covering
+    // #    covers the MEANINGS and leaves the terms, because that is
+    // #    what turns a summary into a test: you read the term and try
+    // #    to say what it is. Showing shows EVERYTHING, terms included —
+    // #    a reader pressing it is asking to see their sheet, not to be
+    // #    handed back exactly the puzzle they were in the middle of.
+    // #    This is the reader's own rule from their own pages.
+    // #
+    // #    It is a pass over what is drawn and not a cut: covering
+    // #    changes no height, by design, so not one row moves
+    // ============================================================
+    covers: {
+      any: () => store().rows().some(r =>
+        covered.has(coverKey(r.id, 'term')) || covered.has(coverKey(r.id, 'text'))),
+
+      all: on => {
+        store().rows().forEach(r => {
+          if (on) {
+            covered.add(coverKey(r.id, 'text'));
+          } else {
+            covered.delete(coverKey(r.id, 'text'));
+            covered.delete(coverKey(r.id, 'term'));
+          }
+        });
+        if (!stage) return;
+        stage.querySelectorAll('.ctbl tr[data-row]').forEach(tr => {
+          tr.querySelectorAll('td.cterm, td.cdef').forEach(cell => {
+            cell.classList.toggle('covered', covered.has(coverKey(tr.dataset.row, cell.dataset.col)));
+          });
+        });
+      }
     },
 
     // The sheets come off the desk, and the two floating things with

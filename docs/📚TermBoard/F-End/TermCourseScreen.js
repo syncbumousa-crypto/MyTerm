@@ -21,8 +21,8 @@
   const title = $('course-title'), tabs = $('course-tabs'), body = $('course-body');
   const fullBtn = $('course-full'), syncDot = $('course-sync');
   const fontDown = $('font-down'), fontUp = $('font-up'), fontNow = $('font-now');
-  const widthDown = $('width-down'), widthUp = $('width-up'), widthNow = $('width-now');
-  const langBtn = $('course-lang');
+  const colDown = $('col-down'), colUp = $('col-up'), colNow = $('col-now');
+  const langBtn = $('course-lang'), eyeBtn = $('course-eye');
 
   const now = () => new Date().toISOString();
   const alive = course => (course.chapters || []).filter(h => !h.deleted);
@@ -43,9 +43,16 @@
   // #    next course. Which chapter was open does carry one, because a
   // #    chapter number means nothing outside the course it belongs to
   // ============================================================
-  const PREF = { font: 'myterm.read.font', width: 'myterm.read.width', lang: 'myterm.read.lang' };
+  const PREF = { font: 'myterm.read.font', col: 'myterm.read.termcol', lang: 'myterm.read.lang' };
   const FONTS = [85, 100, 115, 130, 150];
-  const WIDTHS = [560, 720, 880, 1040, 1240];
+
+  // How wide the Term column is drawn, in the sheet's own units. What it
+  // loses the meaning column gains, because that one is given no width
+  // and takes whatever is left. The sheet is an A4 and never moves: a
+  // reader whose terms are two words wants them narrow, and one writing
+  // whole phrases wants them wide, and neither of them wants a different
+  // sized page
+  const COLS = [110, 140, 180, 230, 290];
 
   const readPref = (key, fallback) => {
     try { const v = Number(localStorage.getItem(key)); return Number.isFinite(v) && v > 0 ? v : fallback; }
@@ -56,7 +63,7 @@
   const lastChapterKey = id => 'myterm.read.chapter.' + id;
 
   let fontPct = readPref(PREF.font, 100);
-  let columnPx = readPref(PREF.width, 720);
+  let termPx = readPref(PREF.col, 180);
 
   // Which of a row's two languages is on the paper. A preference of the
   // reader, like the size of type — not a fact of the term. Turning the
@@ -69,19 +76,20 @@
 
   const applyRead = () => {
     page.style.setProperty('--read-font', fontPct + '%');
-    page.style.setProperty('--read-width', columnPx + 'px');
+    page.style.setProperty('--term-col', termPx + 'px');
     fontNow.textContent = fontPct + '%';
-    widthNow.textContent = columnPx + 'px';
+    colNow.textContent = termPx + 'px';
     fontDown.disabled = fontPct <= FONTS[0];
     fontUp.disabled = fontPct >= FONTS[FONTS.length - 1];
-    widthDown.disabled = columnPx <= WIDTHS[0];
-    widthUp.disabled = columnPx >= WIDTHS[WIDTHS.length - 1];
+    colDown.disabled = termPx <= COLS[0];
+    colUp.disabled = termPx >= COLS[COLS.length - 1];
     langBtn.textContent = readLang === 'ar' ? 'ع' : 'EN';
-    // Every one of these moves where a sheet runs out — wider paper holds
-    // more rows, bigger type holds fewer, and the other language is not
-    // the same length — so the paper is cut again. It is the same reason
-    // a window being resized cuts it again below
+    // Every one of these moves where a sheet runs out — bigger type holds
+    // fewer rows, a narrower Term column makes its words wrap over more
+    // lines, and the other language is not the same length — so the paper
+    // is cut again. The sheet itself is the one thing that never moves
     if (window.MyTermChapterStore?.openId()) repaper();
+    paintEye();
   };
 
   // Steps, not free numbers: a reader pressing a button wants the next
@@ -94,8 +102,34 @@
 
   fontDown.onclick = () => { fontPct = step(FONTS, fontPct, -1); writePref(PREF.font, fontPct); applyRead(); };
   fontUp.onclick = () => { fontPct = step(FONTS, fontPct, 1); writePref(PREF.font, fontPct); applyRead(); };
-  widthDown.onclick = () => { columnPx = step(WIDTHS, columnPx, -1); writePref(PREF.width, columnPx); applyRead(); };
-  widthUp.onclick = () => { columnPx = step(WIDTHS, columnPx, 1); writePref(PREF.width, columnPx); applyRead(); };
+  colDown.onclick = () => { termPx = step(COLS, termPx, -1); writePref(PREF.col, termPx); applyRead(); };
+  colUp.onclick = () => { termPx = step(COLS, termPx, 1); writePref(PREF.col, termPx); applyRead(); };
+
+  // ============================================================
+  // # 👁️ 🔁  THE EYE
+  // # 🔤 JavaScript
+  // # 🎯 Covers every meaning on the sheet, or shows everything
+  // # 🔗 It is coloured while anything at all is covered — including one
+  // #    cell turned over by hand — so the eye is never claiming the
+  // #    sheet is open when part of it is not. That is why the paper
+  // #    calls back here whenever a single cell is turned over: two
+  // #    places showing the same state is two places to go wrong, and
+  // #    the one that knows is the one that tells
+  // ============================================================
+  const paintEye = () => {
+    const hidden = window.MyTermPaper?.covers.any() === true;
+    eyeBtn.classList.toggle('on', hidden);
+    eyeBtn.title = hidden ? 'Show everything' : 'Hide the meanings';
+  };
+
+  window.MyTermCourseEye = paintEye;
+
+  eyeBtn.onclick = () => {
+    const covers = window.MyTermPaper?.covers;
+    if (!covers) return;
+    covers.all(!covers.any());
+    paintEye();
+  };
 
   // The button says which language is ON the paper, not which one it
   // would turn to — the same way the one beside it says what size the
@@ -283,15 +317,16 @@
   // the tab is the way back, and it is the way back the reader already
   // knows without being told
 
-  // A window that changed width changed how wide a sheet is, and a sheet
-  // of another width runs out in another place. Waited out rather than
-  // answered at once: a drag across the screen fires this a hundred
-  // times, and cutting the paper a hundred times would recut every row
+  // A window that changed width changes only how SMALL the sheet is
+  // drawn — never what is on it, because the sheet is an A4 whatever the
+  // window is. So the paper is refitted and not recut: no row moves, no
+  // page number changes, and a reader typing in a cell while the window
+  // is dragged keeps the cell they were in
   let waiting = null;
   window.addEventListener('resize', () => {
     if (!openId || !window.MyTermChapterStore?.openId()) return;
     clearTimeout(waiting);
-    waiting = setTimeout(repaper, 180);
+    waiting = setTimeout(() => window.MyTermPaper.fit(), 120);
   });
 
   // The same tick the board's corner shows, said again here: this page can

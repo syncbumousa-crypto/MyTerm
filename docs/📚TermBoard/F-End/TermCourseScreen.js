@@ -66,6 +66,10 @@
     fontUp.disabled = fontPct >= FONTS[FONTS.length - 1];
     widthDown.disabled = columnPx <= WIDTHS[0];
     widthUp.disabled = columnPx >= WIDTHS[WIDTHS.length - 1];
+    // Both of these move where a sheet runs out — wider paper holds more
+    // rows, bigger type holds fewer — so the paper is cut again. It is
+    // the same reason a window being resized cuts it again below
+    if (window.MyTermChapterStore?.openId()) window.MyTermPaper.paint(body, drawTabs);
   };
 
   // Steps, not free numbers: a reader pressing a button wants the next
@@ -174,123 +178,14 @@
     body.append(box);
   };
 
+  // The sheets themselves are laid out elsewhere, because cutting rows
+  // into pages is a trade of its own: it measures, it counts, and it
+  // knows nothing about courses or chapters. All that is handed over is
+  // the box to draw in, and what to call when a tick changes — the strip
+  // of chapters above shows the same count and would otherwise go stale
   const drawRows = () => {
-    const content = window.MyTermChapterStore?.content();
-    if (!content) return;
-
-    const section = content.sections[0];
-    const sheet = document.createElement('article');
-    sheet.className = 'csheet';
-
-    const table = document.createElement('div');
-    table.className = 'ctable';
-
-    const legend = document.createElement('div');
-    legend.className = 'crow clegend';
-    ['#', 'Term', 'What it means', ''].forEach((word, i) => {
-      const cell = document.createElement('span');
-      cell.textContent = word;
-      if (i === 3) cell.className = 'crow-end';
-      legend.append(cell);
-    });
-    table.append(legend);
-
-    const rows = section.rows.filter(r => !r.deleted);
-
-    // The line under the table is counted from the ticks, so it has to be
-    // counted again whenever one is pressed. It was written once while the
-    // table was built and then sat there saying nought of one under a row
-    // that was plainly ticked
-    const paintCount = () => {
-      const line = body.querySelector('.ctable-count');
-      if (!line) return;
-      const done = rows.filter(r => window.MyTermChapterStore.isOn(r.id)).length;
-      line.textContent = rows.length ? `${done} of ${rows.length} done` : '';
-    };
-
-    rows.forEach((row, index) => {
-      const line = document.createElement('div');
-      line.className = 'crow';
-
-      const no = document.createElement('span');
-      no.className = 'crow-no';
-      no.textContent = row.no || String(index + 1);
-
-      const term = document.createElement('div');
-      term.className = 'crow-term';
-      term.contentEditable = 'true';
-      term.textContent = row.term;
-      term.dataset.empty = 'Term';
-      term.oninput = () => window.MyTermChapterStore.editRow(row.id, 'term', term.textContent);
-
-      const text = document.createElement('div');
-      text.className = 'crow-text';
-      text.contentEditable = 'true';
-      text.textContent = row.text;
-      text.dataset.empty = 'What it means';
-      text.oninput = () => window.MyTermChapterStore.editRow(row.id, 'text', text.textContent);
-
-      // The tick is the only thing on this line that goes to the small
-      // file, and it is the only thing pressed a hundred times an evening
-      const tick = document.createElement('button');
-      tick.className = 'crow-tick';
-      tick.type = 'button';
-      const paintTick = () => {
-        const on = window.MyTermChapterStore.isOn(row.id);
-        tick.classList.toggle('on', on);
-        tick.textContent = on ? '✓' : '';
-        tick.title = on ? 'Done' : 'Not done yet';
-        line.classList.toggle('done', on);
-      };
-      tick.onclick = () => {
-        window.MyTermChapterStore.mark(row.id, !window.MyTermChapterStore.isOn(row.id));
-        paintTick();
-        paintCount();
-        drawTabs();
-      };
-      paintTick();
-
-      const off = document.createElement('button');
-      off.className = 'crow-off';
-      off.type = 'button';
-      off.textContent = '×';
-      off.title = 'Remove this row';
-      off.onclick = () => { window.MyTermChapterStore.dropRow(row.id); drawBody(); };
-
-      const end = document.createElement('span');
-      end.className = 'crow-end';
-      end.append(tick, off);
-
-      line.append(no, term, text, end);
-      table.append(line);
-    });
-
-    if (!rows.length) {
-      const none = document.createElement('p');
-      none.className = 'ctable-none';
-      none.textContent = 'Nothing written in this chapter yet.';
-      table.append(none);
-    }
-
-    const add = document.createElement('button');
-    add.className = 'csheet-done';
-    add.type = 'button';
-    add.textContent = '+ row';
-    add.onclick = () => {
-      window.MyTermChapterStore.addRow(section.id);
-      drawBody();
-      const last = body.querySelector('.crow:last-of-type .crow-term');
-      last?.focus();
-    };
-
-    const count = document.createElement('p');
-    count.className = 'ctable-count';
-    const done = rows.filter(r => window.MyTermChapterStore.isOn(r.id)).length;
-    count.textContent = rows.length ? `${done} of ${rows.length} done` : '';
-
-    sheet.append(table, count, add);
-    body.textContent = '';
-    body.append(sheet);
+    if (!window.MyTermChapterStore?.content()) return;
+    window.MyTermPaper.paint(body, drawTabs);
   };
 
   const drawBody = () => {
@@ -364,10 +259,22 @@
     board.hidden = false;
     document.body.classList.remove('reading');
     openId = null;
+    window.MyTermPaper.shut();
     window.MyTermBoardRedraw?.();
   };
 
   backBtn.onclick = leave;
+
+  // A window that changed width changed how wide a sheet is, and a sheet
+  // of another width runs out in another place. Waited out rather than
+  // answered at once: a drag across the screen fires this a hundred
+  // times, and cutting the paper a hundred times would recut every row
+  let waiting = null;
+  window.addEventListener('resize', () => {
+    if (!openId || !window.MyTermChapterStore?.openId()) return;
+    clearTimeout(waiting);
+    waiting = setTimeout(() => window.MyTermPaper.paint(body, drawTabs), 180);
+  });
 
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && openId && !document.fullscreenElement) leave();

@@ -55,6 +55,13 @@
           folderId: typeof c.folderId === 'string' ? c.folderId : null,
           folderName: typeof c.folderName === 'string' ? c.folderName : null,
           fileId: typeof c.fileId === 'string' ? c.fileId : null,
+          // Where the course's books are. THE SHAPE IS WHAT SURVIVES A
+          // READ: a field written onto a course but not named here is
+          // dropped the next time the paper is read, so the id was lost
+          // on every refresh and a second, empty sources.json was made
+          // beside the first — the reader saw their books vanish
+          sourcesId: typeof c.sourcesId === 'string' ? c.sourcesId : null,
+          sourcesFolderId: typeof c.sourcesFolderId === 'string' ? c.sourcesFolderId : null,
           credits: Number(c.credits) || 3,
           chapters: shapeChapters(c.chapters),
           items: shapeItems(c.items)

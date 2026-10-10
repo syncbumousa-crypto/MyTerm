@@ -543,7 +543,12 @@
     rail.append(fill);
 
     line.append(rail);
-    if (words) {
+    // An EMPTY reading is still a reading's worth of room. The two lines
+    // of a part must hold their rails in the same place, and the second
+    // carries no number — given nothing at all it would centre a rail
+    // the eye reads as out of line with the one above it. Only a folded
+    // chapter, which has no readings at all, is given neither
+    if (words !== null) {
       const count = document.createElement('span');
       count.className = 'ctab-count';
       count.textContent = words;
@@ -575,7 +580,7 @@
 
     rail.append(got, missed);
     line.append(rail);
-    if (words) {
+    if (words !== null) {
       const count = document.createElement('span');
       count.className = 'ctab-count';
       count.textContent = words;
@@ -713,8 +718,8 @@
         // so a chapter could sit at half on the strip and at nothing in
         // every part it holds, and both were true
         lines.append(
-          barOf('learnt', learntOf, rowsOf),
-          mixOf(goodOf, badOf, rowsOf));
+          barOf('learnt', learntOf, rowsOf, null),
+          mixOf(goodOf, badOf, rowsOf, null));
         lines.title = readingOf(ch.name || 'This chapter', rowsOf, learntOf, goodOf, badOf);
         tab.append(lines);
       }
@@ -812,16 +817,16 @@
       // part at a time, at a size that can be read
       const lines = document.createElement('span');
       lines.className = 'ctab-lines';
-      // The first reading is of the whole part; the second is of what
-      // the bank has actually asked, and not of the part — "2 of 9
-      // right" out of forty rows is a true thing said plainly, where
-      // 2 of 40 would read as a part you have barely begun
-      const asked = part.good + part.bad;
+      // ONE READING PER PART AND NOT TWO. The first line is a count of
+      // rows and says how many are left to go, which is the thing you
+      // plan an evening around. The second is colour: how much is green
+      // and how much is red is the whole of what it has to say, and a
+      // fraction beside it was a second number to read on a strip whose
+      // job is to be glanced at
       lines.append(
         barOf('learnt', part.learnt, part.rows,
               part.rows ? part.learnt + '/' + part.rows : '—'),
-        mixOf(part.good, part.bad, part.rows,
-              asked ? part.good + '/' + asked : '—'));
+        mixOf(part.good, part.bad, part.rows, ''));
       one.append(line, lines);
 
       one.title = readingOf(part.name, part.rows, part.learnt, part.good, part.bad);

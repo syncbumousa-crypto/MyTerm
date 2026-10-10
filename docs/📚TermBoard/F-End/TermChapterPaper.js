@@ -62,7 +62,7 @@
           head: ['#', 'المصطلح', 'المعنى', ''] }
   };
 
-  let host = null, stage = null, probe = null, told = () => {};
+  let host = null, stage = null, probe = null, folio = null, told = () => {};
   let menu = null, bar = null, listening = false, lang = 'en';
 
   // ============================================================
@@ -155,10 +155,23 @@
       + '</tr>';
   };
 
-  // Consecutive rows sharing a table number are one table. The first
-  // table on a sheet wears no header when it is the same table that ran
-  // off the bottom of the sheet before: a break made by the paper must
-  // never be told apart from a break the reader asked for
+  // ============================================================
+  // # 🏷️ 📄  ONE HEADER TO A SHEET
+  // # 🔤 JavaScript
+  // # 🎯 Consecutive rows sharing a table number are one table, and the
+  // #    words naming the columns are written once at the top of a sheet
+  // # 🔗 A HEADER ON EVERY TABLE WAS A HEADER REPEATED MID-PAGE. The
+  // #    words "Term" and "What it means" answer one question — which
+  // #    column is which — and that question is asked once, by the eye,
+  // #    when the sheet is first looked at. Written again four inches
+  // #    lower it answers nothing and reads as the start of something
+  // #    new, so a table break looked like a page break.
+  // #
+  // #    And the first table still wears none when it is the same table
+  // #    that ran off the bottom of the sheet before: a break made by
+  // #    the paper must never be told apart from one the reader asked
+  // #    for. So a sheet carries one header or none — never two
+  // ============================================================
   const pageHtml = (list, carry) => {
     let out = '', i = 0, first = true;
     while (i < list.length) {
@@ -166,7 +179,8 @@
       const run = [];
       while (i < list.length && list[i].cid === cid) run.push(list[i++]);
       const cont = first && carry !== null && cid === carry;
-      out += `<table class="ctbl${cont ? ' cont' : ''}">${COLS}${cont ? '' : headHtml()}`
+      const wears = first && !cont;
+      out += `<table class="ctbl${cont ? ' cont' : ''}">${COLS}${wears ? headHtml() : ''}`
         + run.map(u => rowHtml(u.row, u.n)).join('') + '</table>';
       first = false;
     }
@@ -727,14 +741,13 @@
     return paper;
   };
 
-  const sheetOf = (page, n, of) => {
+  // Nothing is printed on the sheet but what is written on it. Which
+  // sheet this is belongs to the reading and not to the paper, and it
+  // floats over the desk instead
+  const sheetOf = page => {
     const paper = document.createElement('article');
     paper.className = 'cpaper';
     paper.innerHTML = pageHtml(page.list, page.carry);
-    const no = document.createElement('span');
-    no.className = 'cpaper-no';
-    no.textContent = n + ' / ' + of;
-    paper.append(no);
     return paper;
   };
 
@@ -802,6 +815,9 @@
     if (!stage) return;
     const first = fitOnce();
     if (stage.clientWidth !== first) fitOnce();
+    // The sheets are a different size now, so the step between them is
+    // too — and the step is what says which sheet is being read
+    folioLater();
   };
 
   const layOut = () => {
@@ -814,7 +830,7 @@
     const pages = units.length ? splitPages(units, PAPER_H) : [];
 
     if (!pages.length) lay(blankSheet());
-    pages.forEach((page, i) => lay(sheetOf(page, i + 1, pages.length)));
+    pages.forEach(page => lay(sheetOf(page)));
     fit();
 
     // The reading and the way to add a row belong on the desk, not on
@@ -849,6 +865,7 @@
 
     countLine();
     host.scrollTop = keptTop;
+    folioNow();
     // The paper has been cut again, so whatever is counted off it —
     // how much is written, how many pages, how long it takes — is now
     // something else. The strip above is told rather than left to find
@@ -856,15 +873,64 @@
     told();
   };
 
+  // ============================================================
+  // # 🔢 🪧  WHICH SHEET THE EYE IS ON
+  // # 🔤 JavaScript
+  // # 🎯 A small box floating over the paper saying which sheet of how
+  // #    many is being read
+  // # 🔗 IT IS NOT PRINTED ON THE SHEET ANY MORE. A number on the paper
+  // #    is part of the paper: it scrolls away with the sheet it belongs
+  // #    to, so the one moment a reader asks "where am I" — mid-page,
+  // #    mid-scroll — is the one moment there is nothing to read. And on
+  // #    a sheet it reads as the page number of a printed document,
+  // #    which this is not: the division into sheets is this site's own,
+  // #    and it moves when a row is added.
+  // #
+  // #    It floats, so it is always there; and it is kept BEHIND the
+  // #    top strip, because the strip is what the reader pressed to get
+  // #    anywhere and a reading must never stand in front of a control
+  // ============================================================
+  const folioNow = () => {
+    if (!folio || !stage || !host) return;
+    const slots = stage.querySelectorAll('.cpaper-slot');
+    if (slots.length < 2) { folio.hidden = true; return; }
+    folio.hidden = false;
+
+    const first = slots[0];
+    // Measured off two slots and not from a constant: the gap between
+    // sheets is a style, and a number worked out from a remembered gap
+    // goes wrong the first time the style changes
+    const step = slots[1].offsetTop - first.offsetTop;
+    if (step < 2) return;
+
+    // The sheet under a line a third of the way down the desk, not the
+    // one at the very top: at the top, a sheet two pixels from leaving
+    // the screen still counts as the one being read
+    const at = host.scrollTop + host.clientHeight * 0.33 - first.offsetTop;
+    const n = Math.max(1, Math.min(slots.length, Math.floor(at / step) + 1));
+    const says = n + ' / ' + slots.length;
+    if (folio.textContent !== says) folio.textContent = says;
+  };
+
+  let folioSoon = null;
+  const folioLater = () => {
+    if (folioSoon) return;
+    folioSoon = requestAnimationFrame(() => { folioSoon = null; folioNow(); });
+  };
+
   const build = into => {
     host = into;
     host.textContent = '';
+    folio = document.createElement('div');
+    folio.className = 'cfolio';
+    folio.hidden = true;
     stage = document.createElement('div');
     stage.className = 'cstage';
     probe = document.createElement('article');
     probe.className = 'cpaper cprobe';
     probe.style.minHeight = '0';
-    host.append(stage, probe);
+    host.append(folio, stage, probe);
+    host.addEventListener('scroll', folioLater, { passive: true });
     listenDesk(stage);
     if (!listening) { listenOnce(); listening = true; }
   };

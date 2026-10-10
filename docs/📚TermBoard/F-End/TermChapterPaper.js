@@ -378,7 +378,14 @@
   // #    again every time, and the hand should find the same item in
   // #    the same place twice
   // ============================================================
-  const hideMenu = () => { if (menu) menu.remove(); menu = null; };
+  // Only ever one gear awake, and it goes back to sleep the moment the
+  // list it opened is gone
+  const wake = gear => {
+    stage?.querySelectorAll('.crowgear.on').forEach(g => { if (g !== gear) g.classList.remove('on'); });
+    gear?.classList.add('on');
+  };
+
+  const hideMenu = () => { if (menu) menu.remove(); menu = null; wake(null); };
 
   // An Arabic keyboard writes ٥ and not 5, so both are taken. Otherwise
   // a right number typed by the owner of the keyboard is refused — and
@@ -593,12 +600,41 @@
       }
       // The menu opens BESIDE the gear, not under the pointer: the gear
       // is a place on the page and the reader's eye is already on it
+      // ============================================================
+      // # ⚙️ 💤  THE GEAR SLEEPS UNTIL IT IS WOKEN
+      // # 🔤 JavaScript
+      // # 🎯 One press in its place brings it out; the next opens its
+      // #    list
+      // # 🔗 It sits in the margin OUTSIDE the number, where nothing
+      // #    else is, and it is not drawn until it is asked for. A mark
+      // #    standing beside all forty rows of a sheet is forty small
+      // #    distractions on a page whose whole point is the two columns
+      // #    in the middle — and the thing it opens is wanted perhaps
+      // #    twice an evening.
+      // #
+      // #    Two presses and not one, for the same reason the cross
+      // #    became a gear: what this opens ends in removing the row,
+      // #    and a sleeping control cannot be opened by a hand that
+      // #    missed the number cell
+      // ============================================================
       const gear = event.target.closest('[data-gear]');
       if (gear) {
+        if (!gear.classList.contains('on')) {
+          wake(gear);
+          return;
+        }
         const box = gear.getBoundingClientRect();
         showMenu(gear.dataset.gear, Math.round(box.right + 4), Math.round(box.top), true);
+        // After, not before: opening a list clears the one standing, and
+        // clearing a list puts its gear to sleep — so the gear would go
+        // dark at the very moment its own list appeared beside it
+        wake(gear);
         return;
       }
+      // A press anywhere else on the paper puts it back to sleep: a gear
+      // left standing on a row the reader has walked away from is the
+      // very clutter it was hidden to avoid
+      wake(null);
 
       const cell = event.target.closest(CELLS);
       if (!cell || cell.isContentEditable) return;

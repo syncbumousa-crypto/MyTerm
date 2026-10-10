@@ -2152,21 +2152,39 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
    pointer found the row, which on a phone is never — and a control
    nobody can reach is a control that is not there. Faint enough that a
    page of thirty rows is not a page of thirty gears */
+/* OUTSIDE the number and asleep. It stands in the sheet's own left
+   margin, where nothing else is drawn, and it is not inked until it is
+   asked for: a mark beside all forty rows of a sheet is forty small
+   distractions on a page whose whole point is the two columns in the
+   middle — and what it opens is wanted perhaps twice an evening.
+   The PLACE is always there and always takes a press; only the picture
+   waits. One press wakes it, the next opens its list. */
 .crowgear {
   position: absolute;
-  top: 0;
-  left: 2px;
-  font-size: 9px;
-  line-height: 1.4;
-  color: #9a9a9a;
+  top: 50%;
+  inset-inline-start: -18px;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+  color: transparent;
   cursor: pointer;
+  user-select: none;
 }
 
-.crowgear:hover { color: #111111; }
-.ctbl tr:hover .crowgear { color: #555555; }
-.ctbl tr:hover .crowgear:hover { color: #111111; }
-.ctbl tr.clead .crowgear { color: #9a9a9a; }
-.ctbl tr.clead .crowgear:hover { color: #ffffff; }
+/* A mouse crossing the spot gets the faintest hint, so the place can be
+   found at all. A hand on a screen has no hover and needs none: there,
+   the first press is the hint */
+.crowgear:hover { color: #c0c0c0; }
+.crowgear.on, .crowgear.on:hover { color: #111111; }
+
+/* The sheet is drawn inside 26px of margin, which is the room the gear
+   stands in. It hangs off the number cell, so that cell must not clip */
+.ctbl td.cno { overflow: visible; }
 
 /* Two signals live on one box and neither is allowed to overwrite the
    other: the tick is what the reader said, and later the border will

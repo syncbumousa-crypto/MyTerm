@@ -196,6 +196,18 @@
     table.append(legend);
 
     const rows = section.rows.filter(r => !r.deleted);
+
+    // The line under the table is counted from the ticks, so it has to be
+    // counted again whenever one is pressed. It was written once while the
+    // table was built and then sat there saying nought of one under a row
+    // that was plainly ticked
+    const paintCount = () => {
+      const line = body.querySelector('.ctable-count');
+      if (!line) return;
+      const done = rows.filter(r => window.MyTermChapterStore.isOn(r.id)).length;
+      line.textContent = rows.length ? `${done} of ${rows.length} done` : '';
+    };
+
     rows.forEach((row, index) => {
       const line = document.createElement('div');
       line.className = 'crow';
@@ -233,6 +245,7 @@
       tick.onclick = () => {
         window.MyTermChapterStore.mark(row.id, !window.MyTermChapterStore.isOn(row.id));
         paintTick();
+        paintCount();
         drawTabs();
       };
       paintTick();

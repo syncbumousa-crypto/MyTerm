@@ -244,6 +244,40 @@
           strangers.length ? strangers.join(' · ')
                            : 'every file writes down everything it calls');
 
+    // 12 - every icon asked for is drawn somewhere. Born from a real one:
+    // the sources button reached for ICONS.bookOpen, which had never been
+    // written — and innerHTML given nothing does not fail, it writes the
+    // WORD "undefined" into the button. So the bottom strip carried that
+    // word where a picture belonged, the page worked perfectly otherwise,
+    // and nothing anywhere said why. A missing picture is a silent fault,
+    // which is exactly the kind this page exists to catch
+    const noSuchIcon = [];
+    js.forEach(([p, raw]) => {
+      // Read with the comments and the strings already gone, both halves
+      // for a reason. Counting braces in the raw text counts the ones
+      // inside strings; and looking for keys in the raw text misses
+      // every key written under a comment — which is most of them here,
+      // so the check's FIRST run reported the icon it had just been
+      // given as still missing
+      const src = onlyCode(raw);
+      const sets = [...src.matchAll(/\bICONS\s*=\s*\{/g)];
+      if (!sets.length) return;
+      const drawn = new Set();
+      sets.forEach(m => {
+        let depth = 0, i = m.index + m[0].length - 1;
+        for (; i < src.length; i++) {
+          if (src[i] === '{') depth++;
+          else if (src[i] === '}') { depth--; if (!depth) break; }
+        }
+        const body = src.slice(m.index, i);
+        [...body.matchAll(/(?:^|[,{])\s*([A-Za-z_$][\w$]*)\s*:/g)].forEach(k => drawn.add(k[1]));
+      });
+      [...new Set([...src.matchAll(/\bICONS\.([A-Za-z_$][\w$]*)/g)].map(m => m[1]))]
+        .forEach(name => { if (!drawn.has(name)) noSuchIcon.push(p.split('/').pop() + ' → ICONS.' + name); });
+    });
+    check('Every icon asked for is drawn', noSuchIcon.length === 0,
+          noSuchIcon.length ? noSuchIcon.join(' · ') : 'no button is left asking for a picture nobody drew');
+
     draw();
   };
 

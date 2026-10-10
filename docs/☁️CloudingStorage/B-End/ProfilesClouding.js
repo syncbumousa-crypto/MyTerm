@@ -173,6 +173,26 @@
     return (await r.json()).parents?.[0] || null;
   }
 
+  // ============================================================
+  // # 🔎 📁  WHAT IS ALREADY IN THERE
+  // # 🔤 JavaScript
+  // # 🎯 Looks inside one folder for a child with this name
+  // # 🔗 An id written down is a GUESS about Drive and not a fact: the
+  // #    user can trash it, and the page can lose it. Everything here
+  // #    that makes a file should look for it first, or a lost id makes
+  // #    a second file beside the first and the work in the first one
+  // #    simply stops being seen — which is exactly what happened to the
+  // #    source list, and the reader watched their books disappear
+  // ============================================================
+  const findChild = async (parentId, name, mimeType) => {
+    const quoted = String(name).split("'").join("\\'");
+    const bits = [`'${parentId}' in parents`, `name='${quoted}'`, 'trashed=false'];
+    if (mimeType) bits.push(`mimeType='${mimeType}'`);
+    const r = await drive(`${DRIVE}?q=${encodeURIComponent(bits.join(' and '))}&fields=files(id,name)`);
+    if (!r.ok) return null;
+    return (await r.json().catch(() => ({}))).files?.[0]?.id || null;
+  };
+
   async function makeFolder(name, parentId) {
     const made = await drive(DRIVE, json('POST', { name, mimeType: FOLDER_TYPE, parents: [parentId] }));
     if (!made.ok) throw new Error(`Drive folder failed: ${made.status}`);
@@ -373,7 +393,7 @@
     unlink: () => server('unlink'),
     findOrMakeFolder, createJson, fileAlive, readFile, writeFile,
     uploadBlob, readBlob, fileFacts, dropFile,
-    parentOf, makeFolder, rename,
+    parentOf, makeFolder, findChild, rename,
     pickFolder, probePicker,
     loadProfile, savePlace, forgetPlace
   };

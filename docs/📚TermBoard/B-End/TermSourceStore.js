@@ -92,27 +92,48 @@
     if (open && open.course.id === course.id) return open;
     await push();
 
+    // Three steps, and the middle one is the one that matters. The id
+    // we wrote down is only a GUESS about Drive — the user can trash the
+    // file, and a field the term paper does not know how to keep is lost
+    // on the next read. So before making anything, LOOK: a list already
+    // sitting in the course folder is this course's list, whatever this
+    // device happens to remember. Without the look, a lost id quietly
+    // makes a second empty list beside the full one, and every book in
+    // the first simply stops being seen
     let listId = course.sourcesId || null;
-    let list = listId ? shapeList(await cloud().readFile(listId).catch(() => null)) : null;
+    let doc = listId ? await cloud().readFile(listId).catch(() => null) : null;
 
-    if (!list) {
+    if (!doc) {
+      listId = await cloud().findChild(course.folderId, 'sources.json').catch(() => null);
+      doc = listId ? await cloud().readFile(listId).catch(() => null) : null;
+    }
+
+    if (!doc) {
       listId = await cloud().createJson(course.folderId, 'sources.json', { app: 'MyTerm', sources: [] });
+      doc = { app: 'MyTerm', sources: [] };
+    }
+
+    if (course.sourcesId !== listId) {
       course.sourcesId = listId;
       course.updatedAt = now();
       window.MyTermBoardStore?.change?.(board);
-      list = { app: 'MyTerm', sources: [] };
     }
 
-    open = { course, listId, list };
+    open = { course, listId, list: shapeList(doc) };
     return open;
   };
 
   // The folder the books themselves go in. Made on the first upload and
   // not before: a course with no sources should not leave an empty
   // folder in somebody's Drive explaining itself
+  const FOLDER_TYPE = 'application/vnd.google-apps.folder';
+
   async function sourcesFolder() {
     if (open.course.sourcesFolderId) return open.course.sourcesFolderId;
-    const id = await cloud().makeFolder('Sources', open.course.folderId);
+    // Looked for before it is made, for the same reason as the list: a
+    // forgotten id would leave a second Sources folder beside the first
+    const id = await cloud().findChild(open.course.folderId, 'Sources', FOLDER_TYPE).catch(() => null)
+      || await cloud().makeFolder('Sources', open.course.folderId);
     open.course.sourcesFolderId = id;
     open.course.updatedAt = now();
     window.MyTermBoardStore?.change?.(window.MyTermBoardStore?.live?.());

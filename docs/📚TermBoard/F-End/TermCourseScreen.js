@@ -43,6 +43,12 @@
   const ICONS = {
     book: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>'
       + '<path d="M6.5 2.5H20v19H6.5A2.5 2.5 0 0 1 4 19V5a2.5 2.5 0 0 1 2.5-2.5z"/></svg>',
+    // The shut book's open twin. It was missing while the button already
+    // reached for it, and innerHTML given nothing writes the WORD
+    // "undefined" into the button — so the strip carried that word where
+    // an icon belonged, with nothing anywhere saying why
+    bookOpen: '<svg viewBox="0 0 24 24"><path d="M2.5 4.5h5A3.5 3.5 0 0 1 11 8v11.5a3 3 0 0 0-3-2.5H2.5z"/>'
+      + '<path d="M21.5 4.5h-5A3.5 3.5 0 0 0 13 8v11.5a3 3 0 0 1 3-2.5h5.5z"/></svg>',
     moon: '<svg viewBox="0 0 24 24"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.6 6.6 0 0 0 9.7 9.7z"/></svg>',
     sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><line x1="12" y1="1.8" x2="12" y2="4"/>'
       + '<line x1="12" y1="20" x2="12" y2="22.2"/><line x1="4.2" y1="4.2" x2="5.8" y2="5.8"/>'

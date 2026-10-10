@@ -2779,3 +2779,319 @@ body.reading .build { bottom: 46px; }
 .qmissed-ask { margin: 0 0 6px; font-size: .88em; line-height: 1.6; color: #ffffff; }
 .qmissed-said { margin: 0; font-size: .8em; color: var(--mBad); }
 .qmissed-was { margin: 2px 0 0; font-size: .8em; color: var(--mOk); }
+
+/* ============================================================ */
+/* # 📖 🪟  THE SOURCES BESIDE THE SUMMARY */
+/* # 🔤 CSS */
+/* # 🎯 Three columns across the page, and three more inside the left */
+/* #    one, every width a fraction the reader sets by dragging */
+/* # 🔗 EVERY WIDTH IS A FRACTION AND NEVER A PIXEL COUNT. A book set to */
+/* #    600px on a wide screen has eaten the summary on a laptop; a book */
+/* #    set to 45% is 45% of whatever screen it is opened on. */
+/* # */
+/* #    And minmax(0, …) on every column, not a bare fraction: a grid */
+/* #    column's floor is the widest thing in it, so one long unbroken */
+/* #    word in a meaning would push the column wider than its share and */
+/* #    the handle would stop answering the drag */
+/* ============================================================ */
+.csplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.course-page.sourcing .csplit {
+  grid-template-columns: minmax(0, var(--srcW, 45%)) var(--gripW, 10px) minmax(0, 1fr);
+}
+
+.course-page.sourcing .csrc-cols.two {
+  grid-template-columns: minmax(0, var(--tbW, 50%)) var(--gripW, 10px) minmax(0, 1fr);
+}
+
+.csrc {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px 0 34px 14px;
+  overflow: hidden;
+}
+
+.csrc-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.csrc-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ============================================================ */
+/* # ↔️ 🎚️  THE HANDLE */
+/* # 🔤 CSS */
+/* # 🎯 A thin strip with a line down the middle that lights when it is */
+/* #    taken hold of */
+/* # 🔗 The strip is ten pixels and the line is two. A handle exactly as */
+/* #    wide as it looks is a two pixel target, and a reader hunting a */
+/* #    two pixel target with a mouse is a reader who stops moving the */
+/* #    edge at all. touch-action:none is what hands the drag to this */
+/* #    page instead of letting the browser read it as a scroll */
+/* ============================================================ */
+.cgrip {
+  align-self: stretch;
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.cgrip::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--line);
+  border-radius: 1px;
+  transition: background .15s ease, width .15s ease;
+}
+
+.cgrip:hover::before, .cgrip.on::before { background: var(--blue); width: 3px; }
+
+/* While a handle is held, the whole page wears the arrow and nothing
+   selects. Without this the drag picks up whatever text it passes over
+   and the reader ends a resize with half the summary highlighted */
+body.cdragging { cursor: col-resize; user-select: none; }
+
+/* ============================================================ */
+/* # ➕ 🔑  THE TOP OF THE PANE */
+/* # 🔤 CSS */
+/* # 🎯 The way to add a source, and the key to what the colours on a */
+/* #    page mean */
+/* # 🔗 The key is ABOVE the books and not under them: it is read once, */
+/* #    at the start, and never again — and a thing read once belongs */
+/* #    where the eye first lands, not where it has to be hunted for */
+/* ============================================================ */
+.csrc-top {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-inline-end: 4px;
+}
+
+.csrc-add {
+  align-self: flex-start;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 11px;
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--dim2);
+  cursor: pointer;
+  transition: color .12s ease, border-color .12s ease, background .12s ease;
+}
+
+.csrc-add:hover { color: #ffffff; border-color: var(--blue); background: var(--panel); }
+
+.csrc-keys { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 10px; color: var(--dim); }
+.csrc-key { display: inline-flex; align-items: center; gap: 5px; }
+
+.csrc-chip {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+  flex: none;
+}
+
+.csrc-chip.term { background: rgba(255, 230, 0, .55); outline: 1px solid #cbb600; }
+.csrc-chip.def  { background: rgba(90, 143, 216, .45); outline: 1px solid #3a6bb0; }
+.csrc-chip.ask  { background: rgba(193, 77, 110, .45); outline: 1px solid #96355a; }
+
+/* Not required: a grey hatch and not a flat colour. It has to be read
+   from across the page as "this is outside the syllabus" without
+   covering the words under it or competing with the three real colours */
+.csrc-chip.out {
+  background: repeating-linear-gradient(135deg,
+    rgba(130, 130, 140, .55) 0 3px, rgba(130, 130, 140, .12) 3px 6px);
+  outline: 1px dotted rgba(120, 120, 130, .6);
+}
+
+.csrc-none, .csrc-saying {
+  margin: 0;
+  padding: 12px 2px;
+  font-size: .8em;
+  line-height: 1.6;
+  color: var(--dim2);
+}
+
+.csrc-saying.bad { color: var(--mBad); }
+
+/* ============================================================ */
+/* # 📊 ⬆️  THE BAR WHILE A BOOK GOES UP */
+/* # 🔤 CSS */
+/* # 🎯 A rail that fills, and a line saying what is happening */
+/* # 🔗 It is not decoration. Forty megabytes on a slow line is two */
+/* #    minutes of a page that looks stopped, and a reader who cannot */
+/* #    tell a slow upload from a dead one presses the button again — */
+/* #    and then there are two copies of the book in their Drive */
+/* ============================================================ */
+.csrc-bar { flex: 0 0 auto; margin-bottom: 10px; padding-inline-end: 4px; }
+
+.csrc-rail {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--well);
+  overflow: hidden;
+}
+
+.csrc-rail i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--blue);
+  transition: width .2s ease;
+}
+
+.csrc-says { margin: 5px 0 0; font-size: 10px; color: var(--dim); }
+.csrc-bar.bad .csrc-rail i { background: var(--mBad); }
+.csrc-bar.bad .csrc-says { color: var(--mBad); }
+
+/* ============================================================ */
+/* # 📕 🧱  ONE SOURCE, AND ITS PAGES */
+/* # 🔤 CSS */
+/* # 🎯 A head with the name and the page count, and the stack of pages */
+/* #    under it with its own scrolling */
+/* # 🔗 Each column scrolls ITSELF and not the window. Two stacks of PDF */
+/* #    pages scrolling the page would mean the book and the test bank */
+/* #    could never be held on the same line — which is the one thing */
+/* #    having both of them open is for */
+/* ============================================================ */
+.csrc-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-bottom: 8px;
+  padding-inline-end: 4px;
+}
+
+.csrc-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: start;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: #cfd2d8;
+  cursor: text;
+}
+
+.csrc-name:hover { border-color: var(--line); background: var(--panel); }
+
+.csrc-rename {
+  flex: 0 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border: 1px solid var(--blue);
+  border-radius: 5px;
+  background: var(--well);
+  color: #ffffff;
+}
+
+.csrc-pages { font-size: 10px; font-weight: 600; color: var(--dim2); }
+
+.csrc-off {
+  margin-inline-start: auto;
+  flex: none;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+}
+
+.csrc-col:hover .csrc-off { color: var(--dim2); }
+.csrc-off:hover { color: var(--mBad); }
+
+.csrc-stack {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-inline-end: 4px;
+}
+
+/* The box is given the shape of the page BEFORE anything is drawn in
+   it. With no height, six hundred pages stack on one point, every one
+   of them counts as near the screen, every one is drawn, and the tab
+   dies opening a textbook */
+.csrc-page {
+  position: relative;
+  width: 100%;
+  flex: none;
+  background: #ffffff;
+  border: 1px solid #444444;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .5);
+  overflow: hidden;
+}
+
+.csrc-page.bad { background: var(--panel); border-color: var(--mBad); }
+.csrc-canvas { display: block; width: 100%; height: auto; }
+
+/* The question panel borrowed from the part menu, so a removal is asked
+   the same way wherever it is asked */
+.cdrop { width: 250px; padding: 10px; }
+
+/* ============================================================ */
+/* # 📱 📐  WHEN THERE IS NO ROOM FOR THREE */
+/* # 🔤 CSS */
+/* # 🎯 Below 900 pixels the columns stop sharing a line and stack */
+/* # 🔗 Only while the sources are OPEN. Applied always, a reader with */
+/* #    the pane shut got the summary alone at 60vh and a dead strip of */
+/* #    background under it — the reader's own site had exactly this */
+/* #    fault, and it is written down here so it is not copied in */
+/* ============================================================ */
+@media (max-width: 900px) {
+  .course-page.sourcing .csplit { grid-template-columns: minmax(0, 1fr); }
+  .course-page.sourcing .csrc-cols.two { grid-template-columns: minmax(0, 1fr); }
+  .course-page.sourcing .cgrip { display: none; }
+  /* The summary first: it is what the page is for, and the sources are
+     earlier in the markup only because they are on the left */
+  .course-page.sourcing .cbody { order: -1; min-height: 55vh; }
+  .course-page.sourcing .csrc { min-height: 70vh; padding-inline: 14px; }
+}

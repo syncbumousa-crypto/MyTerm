@@ -1556,9 +1556,13 @@ body.reading .build { bottom: 46px; }
 .ctab-part.on { background: #3a6bb0; border-color: #3a6bb0; color: #ffffff; }
 .ctab-part-new { font-size: 12px; padding: 3px 8px; color: #777777; }
 
+/* It keeps the height of a shut tab and does not stretch to the open
+   one. Stretched, it grew every time a chapter was opened — a door that
+   changes size depending on what is behind it */
 .ctab-new {
   flex: none;
-  align-self: stretch;
+  align-self: flex-start;
+  height: 56px;
   width: 34px;
   padding: 0;
   font: inherit;

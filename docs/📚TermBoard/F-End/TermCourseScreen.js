@@ -445,9 +445,19 @@
 
       head.append(no, name);
 
+      // The open chapter is counted from the rows themselves, the rest
+      // from the tally each wrote beside itself last time it saved. The
+      // open one has its two files in hand, so asking them is both
+      // cheaper and newer — and a reader ticking a box watches the bar
+      // move under it rather than waiting for the save
+      const live = open && window.MyTermChapterStore?.openId() === ch.id
+        ? window.MyTermChapterStore.counts() : null;
+      const rowsOf = live ? live.rows : ch.rows;
+      const learntOf = live ? live.learnt : ch.learnt;
+
       tab.append(head,
         barOf('done', ch.doneMinutes, ch.minutes, hours ? hours.fmt(ch.minutes) : ''),
-        barOf('learnt', ch.learnt, ch.rows, ch.rows ? ch.learnt + '/' + ch.rows : '—'));
+        barOf('learnt', learntOf, rowsOf, rowsOf ? learntOf + '/' + rowsOf : '—'));
 
       if (open) tab.append(partsOf());
       tab.onclick = () => { if (!open) openOne(ch.id); };
@@ -642,6 +652,11 @@
     // and those ids belong in the course paper or the next open makes
     // them all over again
     touch();
+    // And the strip is drawn AGAIN, now that the chapter's own files are
+    // here. The first drawing happened before they had been read, so the
+    // tab could not yet say what parts the chapter holds or how much of
+    // it is learnt — it showed an empty row of parts and a dash
+    drawTabs();
     drawRows();
   }
 

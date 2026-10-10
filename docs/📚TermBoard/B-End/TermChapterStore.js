@@ -112,12 +112,23 @@
     return rows;
   };
 
+  // THE TWO LANGUAGES ARE FOUR FIELDS ON ONE ROW — not two rows, not two
+  // files, not two chapters. A row IS the one idea; Arabic and English
+  // are two ways of saying it, and they must tick together, move
+  // together and be removed together. Split them into two rows and the
+  // day a reader reorders the English half, the Arabic half stays where
+  // it was. The plain names are the English ones so that every chapter
+  // written before this day keeps every word it had
+  const WORDS = new Set(['term', 'termAr', 'text', 'textAr']);
+
   const shapeRows = list => settleOrder(Array.isArray(list)
     ? list.filter(r => r && typeof r === 'object').map(r => ({
         id: typeof r.id === 'string' ? r.id : newRowId(),
         no: typeof r.no === 'string' ? r.no : '',
         term: clean(r.term),
         text: clean(r.text),
+        termAr: clean(r.termAr),
+        textAr: clean(r.textAr),
         // Which table this row sits in, where it sits, and whether it is
         // the row its table is built around
         cid: Math.max(1, Math.trunc(Number(r.cid)) || 1),
@@ -183,7 +194,11 @@
     const w = pickWords(mine, theirs), p = pickPlace(mine, theirs);
     return {
       id: mine.id,
-      no: w.no, term: w.term, text: w.text, updatedAt: w.updatedAt,
+      no: w.no, updatedAt: w.updatedAt,
+      // All four words move together, by the one clock. Taking each
+      // language by its own clock would let a device that only ever
+      // reads English drag the Arabic back with it
+      term: w.term, text: w.text, termAr: w.termAr, textAr: w.textAr,
       cid: p.cid, order: p.order, lead: p.lead, movedAt: p.movedAt,
       // A removal is never undone from here, so once either side has
       // buried a row it stays buried. The other reading is worse: a
@@ -444,7 +459,7 @@
       if (!section) return null;
       const living = livingRows();
       const row = {
-        id: newRowId(), no: '', term: '', text: '',
+        id: newRowId(), no: '', term: '', text: '', termAr: '', textAr: '',
         // It joins the table at the end rather than starting a new one:
         // a reader adding a row is carrying on, not opening a chapter
         cid: living.length ? living[living.length - 1].cid : 1,
@@ -462,7 +477,7 @@
       for (const section of open.content.sections) {
         const row = section.rows.find(r => r.id === rowId);
         if (!row) continue;
-        const next = field === 'term' || field === 'text' ? clean(value) : value;
+        const next = WORDS.has(field) ? clean(value) : value;
         if (row[field] === next) return;
         row[field] = next;
         row.updatedAt = now();

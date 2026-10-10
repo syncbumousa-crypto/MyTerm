@@ -121,6 +121,48 @@
   // written before this day keeps every word it had
   const WORDS = new Set(['term', 'termAr', 'text', 'textAr', 'ask']);
 
+  // ============================================================
+  // # ⚓ 📄  A PLACE IN A BOOK IS A PHRASE, NOT A RECTANGLE
+  // # 🔤 JavaScript
+  // # 🎯 The shape of one link from a row to a spot in a source, and
+  // #    what makes one fit to keep
+  // # 🔗 THE ANCHOR IS THE WORDS THEMSELVES. A rectangle of x and y is
+  // #    wrong the moment the page is drawn at another width, wrong
+  // #    again on a screen of another density, and wrong for good the
+  // #    day the file is replaced by a better scan — which is a thing
+  // #    that happens. A phrase is found again in the new file with no
+  // #    work at all, and it can be read by a person: "consists of all
+  // #    the hardware and software" says where it points; {x:31.9,
+  // #    y:40.2} says nothing to anybody.
+  // #
+  // #    AND FEWER THAN FIVE WORDS IS REFUSED. A short phrase matches
+  // #    by accident somewhere else on the page, and a jump to the
+  // #    wrong place is worse than no jump: the reader believes it
+  // ============================================================
+  const WHATS = ['term', 'text', 'ask'];
+  const LEAST_WORDS = 5;
+
+  // Plain words, never markup. An anchor is matched against the text
+  // pdf.js reads out of the page, and that text has no tags in it
+  const plainWords = s => String(s == null ? '' : s)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const longEnough = anchor => plainWords(anchor).split(' ').filter(Boolean).length >= LEAST_WORDS;
+
+  const shapeLinks = list => Array.isArray(list)
+    ? list.filter(l => l && typeof l === 'object' && typeof l.src === 'string').map(l => ({
+        id: typeof l.id === 'string' ? l.id : 'k-' + Math.random().toString(36).slice(2, 8),
+        src: l.src,
+        page: Math.max(1, Math.trunc(Number(l.page)) || 1),
+        anchor: plainWords(l.anchor),
+        what: WHATS.includes(l.what) ? l.what : 'term',
+        at: typeof l.at === 'string' ? l.at : null,
+        deleted: l.deleted === true
+      }))
+    : [];
+
   const shapeRows = list => settleOrder(Array.isArray(list)
     ? list.filter(r => r && typeof r === 'object').map(r => ({
         id: typeof r.id === 'string' ? r.id : newRowId(),
@@ -149,6 +191,10 @@
         // and then deleted, would quietly stand there calling its first
         // choice the truth, and mark the reader wrong for the rest
         right: Number.isFinite(Number(r.right)) ? Math.max(-1, Math.trunc(Number(r.right))) : -1,
+        // Where this row is in the books of its course. A list and not a
+        // pair of fields: one term can have its name in one place and
+        // its meaning in another, and a question can be answered in two
+        srcs: shapeLinks(r.srcs),
         // Which table this row sits in, where it sits, and whether it is
         // the row its table is built around
         cid: Math.max(1, Math.trunc(Number(r.cid)) || 1),
@@ -242,6 +288,27 @@
   const pickPlace = (mine, theirs) =>
     (theirs.movedAt && (!mine.movedAt || theirs.movedAt > mine.movedAt)) ? theirs : mine;
 
+  // ============================================================
+  // # 🔗 📖  WHERE A ROW IS IN THE BOOK
+  // # 🔤 JavaScript
+  // # 🎯 Folds two devices' lists of places into one, by the id of each
+  // #    place and its own stamp
+  // # 🔗 A PLACE REMOVED IS CROSSED OUT, NEVER LIFTED OUT — the rule
+  // #    this whole file is built on. Lifted out, it is a place the
+  // #    other device still has, so the next merge puts it back and the
+  // #    reader removes it twice, three times, for ever
+  // ============================================================
+  const foldLinks = (mine, theirs) => {
+    const byId = new Map((mine || []).map(l => [l.id, l]));
+    (theirs || []).forEach(t => {
+      const m = byId.get(t.id);
+      if (!m) { byId.set(t.id, t); return; }
+      const newer = t.at && (!m.at || t.at > m.at);
+      byId.set(t.id, { ...(newer ? t : m), deleted: m.deleted || t.deleted });
+    });
+    return [...byId.values()];
+  };
+
   const foldRow = (mine, theirs) => {
     const w = pickWords(mine, theirs), p = pickPlace(mine, theirs);
     return {
@@ -253,6 +320,11 @@
       term: w.term, text: w.text, termAr: w.termAr, textAr: w.textAr,
       outside: w.outside, ask: w.ask, pick: w.pick, right: w.right,
       cid: p.cid, order: p.order, lead: p.lead, movedAt: p.movedAt,
+      // EACH LINK BY ITS OWN CLOCK, not by the row's. A reader who adds
+      // one place in the book on the laptop and another on the phone
+      // must end with two: taken as one field under the words' clock,
+      // whichever device typed last would erase the other's work
+      srcs: foldLinks(mine.srcs, theirs.srcs),
       // A removal is never undone from here, so once either side has
       // buried a row it stays buried. The other reading is worse: a
       // device that had not yet heard of the removal would raise it
@@ -727,7 +799,7 @@
       const living = livingRows();
       const row = {
         id: newRowId(), no: '', term: '', text: '', termAr: '', textAr: '', outside: false,
-        ask: '', pick: [], right: -1,
+        ask: '', pick: [], right: -1, srcs: [],
         // It joins the table at the end rather than starting a new one:
         // a reader adding a row is carrying on, not opening a chapter
         cid: living.length ? living[living.length - 1].cid : 1,
@@ -775,6 +847,86 @@
         return true;
       }
       return false;
+    },
+
+    // ============================================================
+    // # 🔗 📖  LINKING A ROW TO ITS PLACE
+    // # 🔤 JavaScript
+    // # 🎯 Adding a place, taking one away, reading a row's places, and
+    // #    finding every place that falls on one page of one source
+    // # 🔗 The last of those is what the jump BACK is built on: a press
+    // #    on a lit passage has to find its row, and asking every row
+    // #    in the chapter for its links is the same question asked
+    // #    backwards — so it is answered here, once, where the rows are
+    // ============================================================
+    link: (rowId, where) => {
+      if (!open || !where || typeof where.src !== 'string') return null;
+      // Refused here and not at the edge of the screen, so no caller can
+      // put a place in the file that cannot be found again
+      if (!longEnough(where.anchor)) return null;
+
+      for (const section of open.content.sections) {
+        const row = section.rows.find(r => r.id === rowId);
+        if (!row) continue;
+        const made = {
+          id: 'k-' + Math.random().toString(36).slice(2, 8),
+          src: where.src,
+          page: Math.max(1, Math.trunc(Number(where.page)) || 1),
+          anchor: plainWords(where.anchor),
+          what: WHATS.includes(where.what) ? where.what : 'term',
+          at: now(), deleted: false
+        };
+        // The same spot twice is one spot. A reader marking a passage
+        // they already marked should end with what they already had,
+        // not with two lights on one line of the book
+        const same = row.srcs.find(l => !l.deleted && l.src === made.src
+          && l.page === made.page && l.what === made.what && l.anchor === made.anchor);
+        if (same) return { ...same };
+        row.srcs.push(made);
+        wrote();
+        return { ...made };
+      }
+      return null;
+    },
+
+    unlink: (rowId, linkId) => {
+      if (!open) return false;
+      for (const section of open.content.sections) {
+        const row = section.rows.find(r => r.id === rowId);
+        if (!row) continue;
+        const link = row.srcs.find(l => l.id === linkId);
+        if (!link || link.deleted) return false;
+        link.deleted = true;
+        link.at = now();
+        wrote();
+        return true;
+      }
+      return false;
+    },
+
+    linksOf: rowId => {
+      for (const section of open?.content.sections || []) {
+        const row = section.rows.find(r => r.id === rowId);
+        if (row) return row.srcs.filter(l => !l.deleted).map(l => ({ ...l }));
+      }
+      return [];
+    },
+
+    // Every place on one page of one source, with the row each belongs
+    // to — the whole of what a drawn page needs, in one pass
+    linksOn: (srcId, page) => {
+      const out = [];
+      const want = Math.max(1, Math.trunc(Number(page)) || 1);
+      (open?.content.sections || []).forEach(section => {
+        section.rows.forEach(row => {
+          if (row.deleted) return;
+          row.srcs.forEach(l => {
+            if (l.deleted || l.src !== srcId || l.page !== want) return;
+            out.push({ ...l, row: row.id, section: section.id, no: row.no });
+          });
+        });
+      });
+      return out;
     },
 
     outside: (rowId, on) => {

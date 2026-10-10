@@ -63,7 +63,7 @@
   };
 
   let host = null, stage = null, probe = null, folio = null, told = () => {};
-  let menu = null, bar = null, listening = false, lang = 'en';
+  let menu = null, bar = null, listening = false, lang = 'en', rowFlash = null;
 
   // ============================================================
   // # 🙈 🧠  COVERING A CELL, TO SEE IF YOU KNOW IT
@@ -146,8 +146,19 @@
     // of every row, it is the easiest to press by accident and the only
     // one that cannot be undone. The gear opens the list that removing
     // sits at the bottom of, along with everything else about this row
+    // A row that knows where it is in the book says so, on the other
+    // side of the number from the gear — in the margin, where nothing
+    // else is. It is NOT hidden like the gear: the gear is a way in to
+    // doing something, and this is a fact about the row, which a reader
+    // scanning a sheet wants to see without pressing anything
+    const places = store().linksOf ? store().linksOf(row.id) : [];
+    const mark = places.length
+      ? `<span class="crowsrc" data-places="${row.id}" title="${places.length === 1
+          ? 'Where this is in the book' : places.length + ' places in the book'}">◆</span>`
+      : '';
+
     return `<tr data-row="${row.id}"${cls ? ` class="${cls}"` : ''}>`
-      + `<td class="cno"><span class="crowgear" data-gear="${row.id}" title="This row">⚙</span>${n}</td>`
+      + `<td class="cno">${mark}<span class="crowgear" data-gear="${row.id}" title="This row">⚙</span>${n}</td>`
       + cellOf(row, 'term')
       + cellOf(row, 'text')
       + `<td class="cbox"><button class="cbx${on ? ' on' : ''}" type="button" data-tick="${row.id}"`
@@ -401,6 +412,37 @@
 
   const hideMenu = () => { if (menu) menu.remove(); menu = null; wake(null); };
 
+  // The places one row points at, as a list to choose from. It wears
+  // the menu's own frame, so a reader meets one kind of panel here and
+  // not two
+  const WORDS_FOR = { term: 'the term', text: 'its meaning', ask: 'the question' };
+
+  const showPlaces = (places, x, y) => {
+    hideMenu();
+    menu = document.createElement('div');
+    menu.className = 'cmenu';
+    menu.onmousedown = e => e.stopPropagation();
+
+    places.forEach(place => {
+      const one = document.createElement('button');
+      one.type = 'button';
+      one.className = 'cmenu-place';
+      const dot = document.createElement('i');
+      dot.className = 'cmenu-dot is-' + place.what;
+      const words = document.createElement('span');
+      // The page is said plainly, because it is the one thing a reader
+      // can check against the book in their hands
+      words.textContent = 'Page ' + place.page + ' · ' + (WORDS_FOR[place.what] || place.what);
+      one.append(dot, words);
+      one.onclick = () => { hideMenu(); window.MyTermSourcePane?.goTo?.(place); };
+      menu.append(one);
+    });
+
+    document.body.append(menu);
+    menu.style.left = Math.min(x, window.innerWidth - menu.offsetWidth - 8) + 'px';
+    menu.style.top = Math.min(y, window.innerHeight - menu.offsetHeight - 8) + 'px';
+  };
+
   // An Arabic keyboard writes ٥ and not 5, so both are taken. Otherwise
   // a right number typed by the owner of the keyboard is refused — and
   // refused with a message about numbers, which reads as nonsense
@@ -631,6 +673,27 @@
       // #    and a sleeping control cannot be opened by a hand that
       // #    missed the number cell
       // ============================================================
+      // ============================================================
+      // # 📍 📖  FROM A ROW TO ITS PLACE IN THE BOOK
+      // # 🔤 JavaScript
+      // # 🎯 One place goes straight there; several put the list beside
+      // #    the row and let the reader say which
+      // # 🔗 WITH SEVERAL, NOTHING IS CHOSEN FOR THEM. A term has its
+      // #    name in one spot and its meaning in another, and opening
+      // #    the first of the two is the wrong one half the time — and
+      // #    wrong silently, because the page it lands on looks like a
+      // #    page that was asked for
+      // ============================================================
+      const places = event.target.closest('[data-places]');
+      if (places) {
+        const mine = store().linksOf(places.dataset.places);
+        if (!mine.length) return;
+        if (mine.length === 1) { window.MyTermSourcePane?.goTo?.(mine[0]); return; }
+        const spot = places.getBoundingClientRect();
+        showPlaces(mine, Math.round(spot.right + 4), Math.round(spot.top));
+        return;
+      }
+
       const gear = event.target.closest('[data-gear]');
       if (gear) {
         if (!gear.classList.contains('on')) {
@@ -957,6 +1020,31 @@
     // same sheets with the same rows on them, drawn a little smaller or
     // a little larger
     fit,
+
+    // ============================================================
+    // # 📍 ↩️  FROM A PLACE IN THE BOOK BACK TO ITS ROW
+    // # 🔤 JavaScript
+    // # 🎯 Brings the row on screen and flashes it
+    // # 🔗 The flash is on the ROW and not on one cell: a reader coming
+    // #    back from the book is looking for the line they marked, and
+    // #    the line is the row. And it fades, because a row left lit is
+    // #    a row that still looks lit on the next jump, when it is no
+    // #    longer the answer
+    // ============================================================
+    goToRow: rowId => {
+      if (!stage) return false;
+      const tr = stage.querySelector(`tr[data-row="${rowId}"]`);
+      if (!tr) return false;
+      stage.querySelectorAll('tr.hit').forEach(r => r.classList.remove('hit'));
+      tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Forced to start over, so a second press on the same mark flashes
+      // again instead of doing nothing visible
+      void tr.offsetWidth;
+      tr.classList.add('hit');
+      clearTimeout(rowFlash);
+      rowFlash = setTimeout(() => tr.classList.remove('hit'), 2600);
+      return true;
+    },
 
     // ============================================================
     // # 📏 📃  HOW MANY PAGES A LIST OF ROWS COMES TO

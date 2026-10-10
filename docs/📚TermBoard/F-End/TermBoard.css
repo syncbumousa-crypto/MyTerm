@@ -1185,9 +1185,13 @@ body.reading .build { bottom: 46px; }
 /* #    The zone has to be a thing of its own: a bar that is off the */
 /* #    screen cannot be hovered, so it can never be its own trigger. */
 /* # */
-/* #    And none of it on a touch screen, where there is no hovering at */
-/* #    all — there the strip simply stays where it is. A control that */
-/* #    only appears on hover is a control a phone can never reach */
+/* #    And the zone answers a TOUCH as well as a pointer, rather than */
+/* #    the strip standing still on screens the browser says cannot */
+/* #    hover. That was tried and measured: this very browser answers */
+/* #    "(hover: none)" while being driven by a mouse, so the strip */
+/* #    never moved and the whole thing looked broken. Asking the */
+/* #    browser what kind of machine it is on is a guess; answering */
+/* #    both ways is not */
 /* ============================================================ */
 .cfoot-zone {
   position: fixed;
@@ -1231,11 +1235,6 @@ body.reading .build { bottom: 46px; }
   min-width: 0;
 }
 
-@media (hover: none) {
-  .cfoot { position: static; transform: none; box-shadow: none; }
-  .cfoot-zone { display: none; }
-  .cbody { padding-bottom: 40px; }
-}
 
 /* It stands at the very edge of the strip now, where the way back used
    to be, and keeps a little room of its own so it never touches the

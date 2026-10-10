@@ -455,11 +455,16 @@
       const rowsOf = live ? live.rows : ch.rows;
       const learntOf = live ? live.learnt : ch.learnt;
 
-      tab.append(head,
+      tab.append(head);
+
+      // A SHUT chapter says how far through it you are; an OPEN one
+      // hands that question to its parts and gets out of their way.
+      // Both at once would be the same thing said twice at two sizes,
+      // and the whole of it is only the sum of the parts underneath
+      if (open) tab.append(partsOf());
+      else tab.append(
         barOf('done', ch.doneMinutes, ch.minutes, hours ? hours.fmt(ch.minutes) : ''),
         barOf('learnt', learntOf, rowsOf, rowsOf ? learntOf + '/' + rowsOf : '—'));
-
-      if (open) tab.append(partsOf());
       tab.onclick = () => { if (!open) openOne(ch.id); };
       tabs.append(tab);
     });
@@ -502,11 +507,24 @@
     const here = window.MyTermChapterStore?.openSection();
 
     parts.forEach(part => {
-      const one = document.createElement('button');
+      const one = document.createElement('div');
       one.className = 'ctab-part' + (part.id === here ? ' on' : '');
-      one.type = 'button';
-      one.textContent = part.name;
-      one.title = part.rows ? part.learnt + ' of ' + part.rows + ' learnt' : 'Nothing written in it yet';
+
+      const name = document.createElement('span');
+      name.className = 'ctab-part-name';
+      name.textContent = part.name;
+
+      // The same two lines the chapter wore, now where they belong: one
+      // part at a time, at a size that can be read
+      one.append(name,
+        barOf('done', part.written, part.rows,
+              part.rows ? part.written + '/' + part.rows : '—'),
+        barOf('learnt', part.learnt, part.rows,
+              part.rows ? part.learnt + '/' + part.rows : '—'));
+
+      one.title = part.rows
+        ? part.written + ' of ' + part.rows + ' written, ' + part.learnt + ' learnt'
+        : 'Nothing written in it yet';
       one.onclick = event => {
         event.stopPropagation();
         window.MyTermChapterStore.useSection(part.id);

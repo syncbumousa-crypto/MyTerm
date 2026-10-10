@@ -1190,14 +1190,28 @@
     window.MyTermCoursePage?.fromAddress();
   };
 
+  const showBoard = () => {
+    board.hidden = false;
+    backBtn.hidden = false;
+    document.body.classList.add('board-on');
+  };
+
   const openBoard = async event => {
     const fileId = event?.detail?.fileId;
     if (fileId) keep.attach(fileId);
 
     session.hidden = true;
-    board.hidden = false;
-    backBtn.hidden = false;
-    document.body.classList.add('board-on');
+
+    // A TAB OPENED ON ONE COURSE IS THAT COURSE'S PAGE AND NOTHING ELSE.
+    // The board was being shown first and covered a moment later, once
+    // the courses had been read — and that is exactly what it looked
+    // like: a second copy of the board with another screen laid over it.
+    // So when the address names a course, the board is built but never
+    // shown. It is still built, because the course page reads the term
+    // out of the same place the board does, and a second way of loading
+    // one course alone would be a second thing to keep right
+    const wanted = window.MyTermCoursePage?.asked?.();
+    if (!wanted) showBoard();
 
     const fast = keep.cached();
     if (fast) { data = fast; paint(); }
@@ -1212,6 +1226,11 @@
       say('unread');
       renewBtn.hidden = false;
     }
+
+    // The course it was opened on is not there — removed on the other
+    // device, or a link kept from before. The board is then the only
+    // honest thing to show, rather than a blank screen that says nothing
+    if (wanted && !window.MyTermCoursePage?.openId()) showBoard();
   };
 
   renewBtn.onclick = async () => {

@@ -19,7 +19,7 @@
 
   const page = $('course'), board = $('board');
   const title = $('course-title'), tabs = $('course-tabs'), body = $('course-body');
-  const backBtn = $('course-back'), fullBtn = $('course-full'), syncDot = $('course-sync');
+  const fullBtn = $('course-full'), syncDot = $('course-sync');
   const fontDown = $('font-down'), fontUp = $('font-up'), fontNow = $('font-now');
   const widthDown = $('width-down'), widthUp = $('width-up'), widthNow = $('width-now');
   const langBtn = $('course-lang');
@@ -275,16 +275,13 @@
     drawBody();
   };
 
-  const leave = () => {
-    page.hidden = true;
-    board.hidden = false;
-    document.body.classList.remove('reading');
-    openId = null;
-    window.MyTermPaper.shut();
-    window.MyTermBoardRedraw?.();
-  };
-
-  backBtn.onclick = leave;
+  // There is no way back from here, and that is the point: this page is
+  // a tab of its own, opened on one course, and the board is still
+  // sitting in the tab it was opened from, exactly as it was left. A way
+  // back would have to go somewhere — and the only somewhere was a
+  // SECOND board, built in this tab and never meant to be seen. Closing
+  // the tab is the way back, and it is the way back the reader already
+  // knows without being told
 
   // A window that changed width changed how wide a sheet is, and a sheet
   // of another width runs out in another place. Waited out rather than
@@ -295,10 +292,6 @@
     if (!openId || !window.MyTermChapterStore?.openId()) return;
     clearTimeout(waiting);
     waiting = setTimeout(repaper, 180);
-  });
-
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && openId && !document.fullscreenElement) leave();
   });
 
   // The same tick the board's corner shows, said again here: this page can
@@ -324,19 +317,23 @@
   // ============================================================
   // # 🔗 🪟  ARRIVING HERE BY ADDRESS
   // # 🔤 JavaScript
-  // # 🎯 A tab opened on ?course=<id> lands on that course instead of
-  // #    the board
-  // # 🔗 This is what lets the board open a course in a tab of its own
-  // #    and stay where it was. It is tried only once a tab: the board
-  // #    paints twice, first from what was kept here and again when
-  // #    Drive answers, and opening on both would drag a reader who had
-  // #    pressed Back straight out of the board again
+  // # 🎯 A tab opened on ?course=<id> IS that course's page — the board
+  // #    is never shown in it at all
+  // # 🔗 asked() is read by the board screen before it shows anything, so
+  // #    this tab never flashes a board and then covers it. That is what
+  // #    it looked like before, and what it was: the whole board built
+  // #    and shown, with another screen laid over it a moment later.
+  // #
+  // #    The landing is tried only once a tab, because the board paints
+  // #    twice — first from what was kept here, then when Drive answers
   // ============================================================
   let cameByAddress = false;
 
   const askedFor = () => new URLSearchParams(location.search).get('course');
 
   window.MyTermCoursePage = {
+    asked: askedFor,
+
     open: id => {
       openId = id;
       board.hidden = true;

@@ -19,9 +19,9 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=89">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=89">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=89">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=90">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=90">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=90">
 </head>
 <body>
 
@@ -174,17 +174,21 @@
 <!-- ============================================================ -->
 <!-- # 📖 🚪  ONE COURSE ON A PAGE OF ITS OWN -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 The course opened from the board: for now its name and the -->
-<!-- #    way back, on a ground of its own. The rest is still being decided -->
-<!-- # 🔗 Hidden until a course is opened. The board is hidden while it -->
-<!-- #    shows, so they are never both on screen at once -->
+<!-- # 🎯 One course, its chapters across the top and its sheets between -->
+<!-- #    the two strips, in a tab that holds nothing else -->
+<!-- # 🔗 There is no way back on this page, on purpose. It is reached -->
+<!-- #    only by opening a course from the board, which opens it in a -->
+<!-- #    TAB OF ITS OWN — so the board is still sitting in the tab it -->
+<!-- #    was opened from, exactly as it was left, and closing this tab -->
+<!-- #    is the way back. A button here would have to go somewhere, and -->
+<!-- #    the only somewhere was a second board built in this tab and -->
+<!-- #    never meant to be seen -->
 <!-- ============================================================ -->
 <div class="course-page" id="course" hidden>
 
-  <!-- The top strip: the way back, whose course this is, and a tab for
-       every chapter in it carrying that chapter's own reading. -->
+  <!-- The top strip: whose course this is, and a tab for every chapter
+       in it carrying that chapter's own reading. -->
   <header class="cbar" id="course-bar">
-    <button class="cbtn cback" type="button" id="course-back" title="Back to the term">←</button>
     <h1 class="course-title" id="course-title"></h1>
     <div class="ctabs" id="course-tabs"></div>
   </header>
@@ -232,7 +236,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v89</p>
+<p class="build">v90</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -255,19 +259,19 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=89"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=89"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=89"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=89"></script>
-<script src="📚TermBoard/B-End/TermChapterStore.js?v=89"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=89"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=89"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=89"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=89"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=89"></script>
-<script src="📚TermBoard/F-End/TermChapterPaper.js?v=89"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=89"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=89"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=90"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=90"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=90"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=90"></script>
+<script src="📚TermBoard/B-End/TermChapterStore.js?v=90"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=90"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=90"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=90"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=90"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=90"></script>
+<script src="📚TermBoard/F-End/TermChapterPaper.js?v=90"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=90"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=90"></script>
 
 </body>
 </html>

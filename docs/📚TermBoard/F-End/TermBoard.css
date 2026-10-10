@@ -1134,6 +1134,12 @@ body.board-on {
   background: var(--bg);
 }
 
+/* The shell's floating corner and its build mark are the board's. This
+   page pins strips to both edges, so while it is open the corner stands
+   down — the page says the same thing in its own footer — and the mark
+   steps above the footer instead of under it */
+body.reading .hud { display: none; }
+body.reading .build { bottom: 46px; }
 .cbar, .cfoot {
   flex: none;
   display: flex;
@@ -1394,7 +1400,13 @@ body.board-on {
 
 @media (max-width: 560px) {
   .course-title { display: none; }
-  .cbar, .cfoot { padding: 7px 8px; gap: 6px; }
+  /* The shell's floating corner and its build mark are the board's. This
+   page pins strips to both edges, so while it is open the corner stands
+   down — the page says the same thing in its own footer — and the mark
+   steps above the footer instead of under it */
+body.reading .hud { display: none; }
+body.reading .build { bottom: 46px; }
+.cbar, .cfoot { padding: 7px 8px; gap: 6px; }
   .ctab { width: 124px; }
 }
 

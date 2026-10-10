@@ -393,6 +393,41 @@
 
   const snapshot = rows => new Map(rows.map(r => [r.id, { order: r.order, cid: r.cid, lead: r.lead }]));
 
+  const moveRowTo = (rowId, to) => {
+    if (!open) return false;
+    const rows = livingRows();
+    const from = indexOf(rows, rowId);
+    if (from < 0 || to < 0 || to >= rows.length || to === from) return false;
+
+    const before = snapshot(rows);
+    const cids = rows.map(r => r.cid);
+    rows.splice(to, 0, rows.splice(from, 1)[0]);
+    rows.forEach((r, i) => { r.cid = cids[i]; });
+    keepLeads(rows);
+    placed(rows, before);
+    return true;
+  };
+
+  const swapRowWith = (rowId, other) => {
+    if (!open) return false;
+    const rows = livingRows();
+    const here = indexOf(rows, rowId);
+    if (here < 0 || other < 0 || other >= rows.length || other === here) return false;
+
+    const before = snapshot(rows);
+    const a = rows[here], b = rows[other];
+    rows[here] = b;
+    rows[other] = a;
+    // And the two trade their table numbers straight back, because a cid
+    // is the table a POSITION is in and not a thing a row carries about
+    const kept = a.cid;
+    a.cid = b.cid;
+    b.cid = kept;
+    keepLeads(rows);
+    placed(rows, before);
+    return true;
+  };
+
   const sectionOf = () => open?.content.sections[0] ?? null;
 
   // Sorted every time, never trusted to the order of the array in the
@@ -498,24 +533,27 @@
       }
     },
 
-    // One step up or down. The cids are lifted off the positions first
-    // and laid back on them after, so no table is split by a row walking
-    // through it — and any primary row that ended up mid-table is made
-    // the head of its own again
-    move: (rowId, way) => {
-      if (!open) return false;
-      const rows = livingRows();
-      const from = indexOf(rows, rowId), to = from + (way < 0 ? -1 : 1);
-      if (from < 0 || to < 0 || to >= rows.length) return false;
+    // ============================================================
+    // # 🔀 ↔️  TWO WAYS TO SEND A ROW SOMEWHERE ELSE
+    // # 🔤 JavaScript
+    // # 🎯 Moving a row to a number, and trading two rows for each other
+    // # 🔗 THEY ARE NOT THE SAME THING AND THE DIFFERENCE IS WHAT
+    // #    HAPPENS TO EVERYTHING IN BETWEEN. Moving row 4 to 9 pulls it
+    // #    out and pushes it back in, so 5 to 9 each slide up one.
+    // #    Trading 4 with 9 leaves 5 to 8 exactly where they were.
+    // #    A reader who wanted one and got the other has had eight rows
+    // #    renumbered without asking, so the screen says which is which
+    // #    at the moment of choosing — the names alone do not carry it.
+    // #
+    // #    Both lift the table numbers off the POSITIONS and lay them
+    // #    back on afterwards, so no table is split by a row walking
+    // #    through it, and any primary row that ended up mid-table is
+    // #    made the head of its own again
+    // ============================================================
+    move: (rowId, way) => moveRowTo(rowId, indexOf(livingRows(), rowId) + (way < 0 ? -1 : 1)),
 
-      const before = snapshot(rows);
-      const cids = rows.map(r => r.cid);
-      rows.splice(to, 0, rows.splice(from, 1)[0]);
-      rows.forEach((r, i) => { r.cid = cids[i]; });
-      keepLeads(rows);
-      placed(rows, before);
-      return true;
-    },
+    moveTo: moveRowTo,
+    swap: swapRowWith,
 
     lead: (rowId, on) => {
       if (!open) return false;

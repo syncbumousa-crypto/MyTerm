@@ -367,12 +367,94 @@
   // ============================================================
   const hideMenu = () => { if (menu) menu.remove(); menu = null; };
 
+  // An Arabic keyboard writes ٥ and not 5, so both are taken. Otherwise
+  // a right number typed by the owner of the keyboard is refused — and
+  // refused with a message about numbers, which reads as nonsense
+  const plainDigits = s => String(s == null ? '' : s)
+    .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x06F0));
+
+  // ============================================================
+  // # 🔢 ⌨️  ASKING FOR A NUMBER, INSIDE THE MENU
+  // # 🔤 JavaScript
+  // # 🎯 Turns the menu into a small form: a box for a row number, a
+  // #    line saying what will happen, and a way out
+  // # 🔗 In the menu and not in one of the browser's own ask-boxes. One
+  // #    of those stops the whole page dead, cannot say in two lines
+  // #    what moving differs from trading in, and on a page kept open
+  // #    all evening it is the thing a reader learns to dismiss without
+  // #    reading. The range is written in the box itself, and a number
+  // #    outside it is answered with the range rather than refused in
+  // #    silence
+  // ============================================================
+  const askNumber = (title, note, total, run) => {
+    if (!menu) return;
+    menu.textContent = '';
+    menu.classList.add('asking');
+
+    const head = document.createElement('p');
+    head.className = 'cmenu-ask';
+    head.textContent = title;
+
+    const why = document.createElement('p');
+    why.className = 'cmenu-why';
+    why.textContent = note;
+
+    const line = document.createElement('div');
+    line.className = 'cmenu-line';
+
+    const box = document.createElement('input');
+    box.type = 'text';
+    box.inputMode = 'numeric';
+    box.className = 'cmenu-box';
+    box.placeholder = '1–' + total;
+
+    const go = document.createElement('button');
+    go.type = 'button';
+    go.className = 'cmenu-go';
+    go.textContent = 'OK';
+
+    const bad = document.createElement('p');
+    bad.className = 'cmenu-bad';
+
+    const send = () => {
+      const n = parseInt(plainDigits(box.value).trim(), 10);
+      if (!(n >= 1 && n <= total)) {
+        bad.textContent = 'The rows of this chapter are 1 to ' + total + '.';
+        box.focus();
+        box.select();
+        return;
+      }
+      hideMenu();
+      run(n - 1);
+      repaint();
+    };
+
+    go.onclick = send;
+    box.onkeydown = event => {
+      if (event.key === 'Enter') { event.preventDefault(); send(); }
+      if (event.key === 'Escape') { event.preventDefault(); hideMenu(); }
+    };
+
+    line.append(box, go);
+    menu.append(head, why, line, bad);
+    box.focus();
+  };
+
   const showMenu = (rowId, x, y, fromNumber) => {
     hideMenu();
     const rows = store().rows();
     const at = rows.findIndex(r => r.id === rowId);
     if (at < 0) return;
-    const row = rows[at];
+    const mine = at + 1, total = rows.length;
+
+    // Whether there is another table on either side to join this one to.
+    // Asked of the rows and not of the menu, so the two items grey
+    // themselves out the moment there is only one table left
+    const cid = rows[at].cid;
+    let head = at, tail = at;
+    while (head > 0 && rows[head - 1].cid === cid) head--;
+    while (tail < total - 1 && rows[tail + 1].cid === cid) tail++;
 
     menu = document.createElement('div');
     menu.className = 'cmenu';
@@ -382,18 +464,33 @@
       button.type = 'button';
       button.textContent = face;
       button.disabled = off;
-      button.onclick = () => { hideMenu(); if (!off) { run(); repaint(); } };
+      button.onclick = () => { if (off) return; hideMenu(); run(); repaint(); };
+      menu.append(button);
+    };
+
+    const asks = (face, off, title, note, run) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = face;
+      button.disabled = off;
+      // This one does NOT close the menu: the menu becomes the question
+      button.onclick = () => { if (!off) askNumber(title, note, total, run); };
       menu.append(button);
     };
 
     item('↑  Move up', !fromNumber || at === 0, () => store().move(rowId, -1));
-    item('↓  Move down', !fromNumber || at === rows.length - 1, () => store().move(rowId, 1));
+    item('↓  Move down', !fromNumber || at === total - 1, () => store().move(rowId, 1));
+    asks('⇄  Swap with another row…', total < 2,
+         'Swap row ' + mine + ' with',
+         'The two trade places. Everything between them stays exactly where it is.',
+         other => store().swap(rowId, other));
+    asks('⇲  Move to another number…', total < 2,
+         'Move row ' + mine + ' to',
+         'It is taken out and put back in, so every row between shifts one place.',
+         to => store().moveTo(rowId, to));
     menu.append(document.createElement('hr'));
-    item(row.lead ? '◆  Not the primary row' : '◆  Make this the primary row',
-         false, () => store().lead(rowId, !row.lead));
-    item('─  Start a new table here', at === 0, () => store().split(rowId));
-    item('↑  Join the table above', at === 0, () => store().join(rowId, -1));
-    item('↓  Join the table below', at === rows.length - 1, () => store().join(rowId, 1));
+    item('↑  Join the table above', head === 0, () => store().join(rowId, -1));
+    item('↓  Join the table below', tail === total - 1, () => store().join(rowId, 1));
     menu.append(document.createElement('hr'));
     item('✕  Remove this row', false, () => store().dropRow(rowId));
 

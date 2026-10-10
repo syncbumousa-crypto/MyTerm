@@ -19,9 +19,9 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=126">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=126">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=126">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=127">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=127">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=127">
 </head>
 <body>
 
@@ -318,6 +318,33 @@
       <div class="cep-body" id="ep-body"></div>
     </div>
   </div>
+
+  <!-- ============================================================ -->
+  <!-- # 🗒️ ✍️  THE READER'S OWN NOTE -->
+  <!-- # 🔤 HTML -->
+  <!-- # 🎯 A sheet of their own beside any row: words, a direction, a -->
+  <!-- #    size, and pictures pasted straight in -->
+  <!-- # 🔗 A SECOND WINDOW AND NOT THE SAME ONE. The explanation is the -->
+  <!-- #    chapter talking and is READ; this is the reader talking and -->
+  <!-- #    is WRITTEN IN. One window doing both would need a mode, and -->
+  <!-- #    a mode is a thing to be in the wrong one of -->
+  <!-- ============================================================ -->
+  <div class="cep cnote" id="course-note" hidden>
+    <div class="cep-card" role="dialog" aria-modal="true" aria-labelledby="note-title">
+      <div class="cep-head">
+        <h2 class="cep-title" id="note-title"></h2>
+        <span class="cnote-said" id="note-said"></span>
+        <div class="cep-tools">
+          <button class="cep-btn" type="button" id="note-smaller" title="Smaller writing"><span class="cep-az">A&#8722;</span></button>
+          <button class="cep-btn" type="button" id="note-bigger" title="Larger writing"><span class="cep-az">A+</span></button>
+          <button class="cep-btn cnote-dir" type="button" id="note-dir" title="Write right to left">&#8677;</button>
+          <button class="cep-btn" type="button" id="note-close" title="Close"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+        </div>
+      </div>
+      <div class="cep-body cnote-body" id="note-body" contenteditable="true" spellcheck="false"
+           data-empty="Write anything here — and paste pictures straight in."></div>
+    </div>
+  </div>
   </div>
 
   <!-- ============================================================ -->
@@ -435,7 +462,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v126</p>
+<p class="build">v127</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -458,24 +485,25 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=126"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=126"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=126"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=126"></script>
-<script src="📚TermBoard/B-End/TermChapterStore.js?v=126"></script>
-<script src="📚TermBoard/B-End/TermSourceStore.js?v=126"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=126"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=126"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=126"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=126"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=126"></script>
-<script src="📚TermBoard/F-End/TermChapterPaper.js?v=126"></script>
-<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=126"></script>
-<script src="📚TermBoard/F-End/TermSourceFind.js?v=126"></script>
-<script src="📚TermBoard/F-End/TermSourcePane.js?v=126"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=126"></script>
-<script src="📚TermBoard/F-End/TermExplain.js?v=126"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=126"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=127"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=127"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=127"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=127"></script>
+<script src="📚TermBoard/B-End/TermChapterStore.js?v=127"></script>
+<script src="📚TermBoard/B-End/TermSourceStore.js?v=127"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=127"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=127"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=127"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=127"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=127"></script>
+<script src="📚TermBoard/F-End/TermChapterPaper.js?v=127"></script>
+<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=127"></script>
+<script src="📚TermBoard/F-End/TermSourceFind.js?v=127"></script>
+<script src="📚TermBoard/F-End/TermSourcePane.js?v=127"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=127"></script>
+<script src="📚TermBoard/F-End/TermExplain.js?v=127"></script>
+<script src="📚TermBoard/F-End/TermNote.js?v=127"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=127"></script>
 
 </body>
 </html>

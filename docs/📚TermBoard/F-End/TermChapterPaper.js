@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // # 📄 🖨️  THE SHEETS, AND WHERE EACH ONE ENDS
 // # 🔤 JavaScript
 // # 🎯 Lays the rows of a chapter onto sheets of white paper: groups
@@ -64,6 +64,8 @@
 
   let host = null, stage = null, probe = null, folio = null, told = () => {};
   let menu = null, bar = null, listening = false, lang = 'en', rowFlash = null;
+  // A press that has not yet found out whether it is one press or two
+  let pressing = null;
 
   // ============================================================
   // # 🙈 🧠  COVERING A CELL, TO SEE IF YOU KNOW IT
@@ -80,6 +82,23 @@
   // ============================================================
   const covered = new Set();
   const coverKey = (rowId, col) => rowId + ':' + col;
+
+  // ============================================================
+  // # 🌐 🔳  ONE CELL IN THE OTHER LANGUAGE
+  // # 🔤 JavaScript
+  // # 🎯 Which cells have been turned over to the other language, one at
+  // #    a time, without touching the rest of the sheet
+  // # 🔗 KEPT BY CELL AND FOR THE SITTING ONLY, like the covers above and
+  // #    for the same reason: a reader checking what one term is called
+  // #    in Arabic has not changed anything about the course, and should
+  // #    not find the sheet that way tomorrow.
+  // #
+  // #    It is a TURN and not a setting: flipped means "the other one",
+  // #    whichever the sheet is in. So a cell turned over and then the
+  // #    whole sheet turned over comes back to the language it started
+  // #    in, which is what "the other one" has to mean
+  // ============================================================
+  const flipped = new Set();
 
   // ============================================================
   // # 🧾 🔤  ONE ROW, WRITTEN OUT
@@ -113,7 +132,9 @@
   // is only a hint drawn by the page; it is in no file, and the first
   // letter typed replaces it
   const cellOf = (row, which) => {
-    const here = LANGS[lang], there = LANGS[here.other];
+    const turned = flipped.has(coverKey(row.id, which));
+    const here = LANGS[turned ? LANGS[lang].other : lang];
+    const there = LANGS[here.other];
     const words = row[here[which]];
     let hint = plainWords(row[there[which]]);
     // The hint is the OTHER language, so it reads the other way round.
@@ -131,9 +152,56 @@
     // is the term — whether you are asked for it — and the meaning is
     // only the answer to it
     const away = which === 'term' && row.outside ? ' outside' : '';
+    // The mark that turns this one cell over, asleep in its far bottom
+    // corner. It is drawn INSIDE the cell because that is the box it
+    // belongs to — and so it is taken out again before a word of the
+    // cell is written to the file: see wordsOf
+    const flip = '<button class="ccelllang" type="button" contenteditable="false"'
+      + ` data-flip="${which}" title="${here.other === 'ar' ? 'Show this one in Arabic' : 'Show this one in English'}">`
+      + `${here.other === 'ar' ? 'ع' : 'En'}</button>`;
+
     return `<td class="c${which === 'term' ? 'term' : 'def'}${away}${hide}" dir="${here.dir}"`
       + ` data-col="${which}" data-field="${here[which]}"`
-      + ` data-hintdir="${hintDir}" data-empty="${asAttr(hint)}">${words}</td>`;
+      + ` data-hintdir="${hintDir}" data-empty="${asAttr(hint)}">${words}${flip}</td>`;
+  };
+
+  // ============================================================
+  // # ✂️ 💾  WHAT OF A CELL IS THE READER'S WORDS
+  // # 🔤 JavaScript
+  // # 🎯 The cell's own writing, with the page's own furniture taken out
+  // # 🔗 THE LANGUAGE MARK LIVES INSIDE THE CELL, and the cell is handed
+  // #    to the file whole on every keystroke. Saved as it stands, every
+  // #    row would carry a button in its text — in Drive, on the phone,
+  // #    and in every copy made from then on, growing by one more button
+  // #    each time the page drew itself. So the words are taken from a
+  // #    COPY of the cell with the furniture removed, and the cell on
+  // #    screen is never touched
+  // ============================================================
+  const wordsOf = cell => {
+    const copy = cell.cloneNode(true);
+    copy.querySelectorAll('.ccelllang').forEach(node => node.remove());
+    return copy.innerHTML;
+  };
+
+  // Only ever one language mark awake, like the gear
+  const wakeFlip = mark => {
+    stage?.querySelectorAll('.ccelllang.on').forEach(m => { if (m !== mark) m.classList.remove('on'); });
+    mark?.classList.add('on');
+  };
+
+  // One cell drawn again where it stands. The row is read from the store
+  // rather than kept: the words may have been typed into since the sheet
+  // was cut, and a cell redrawn from the old copy would quietly put the
+  // reader's own typing back as it was
+  const redrawCell = (cell, rowId) => {
+    const row = (store().rows() || []).find(r => r.id === rowId)
+      || (store().sections() || []).reduce((found, part) =>
+           found || (store().rowsOf(part.id) || []).find(r => r.id === rowId), null);
+    if (!row) return;
+    const box = document.createElement('tbody');
+    box.innerHTML = '<tr>' + cellOf(row, cell.dataset.col) + '</tr>';
+    const made = box.querySelector('td');
+    if (made) cell.replaceWith(made);
   };
 
   const headHtml = () => '<tr>' + LANGS[lang].head.map(w => `<th>${w}</th>`).join('') + '</tr>';
@@ -170,7 +238,13 @@
     return `<tr data-row="${row.id}"${cls ? ` class="${cls}"` : ''}>`
       + `<td class="cno">${mark}<span class="crowgear" data-gear="${row.id}" title="This row">⚙</span>${n}`
       + `<button class="crowmore" type="button" data-more="${row.id}"`
-      + ' title="The long explanation">⋯</button></td>'
+      + ' title="The long explanation">⋯</button>'
+      // And under it, the reader's own sheet on this row. Two marks and
+      // not one with a choice behind it: one is the chapter talking and
+      // the other is the reader, and a reader reaching for their own
+      // note should not have to pass through a list to get to it
+      + `<button class="crownote${plainWords(row.note) || /<img/i.test(row.note || '') ? ' has' : ''}"`
+      + ` type="button" data-note="${row.id}" title="Your own note on this row">✎</button></td>`
       + cellOf(row, 'term')
       + cellOf(row, 'text')
       + `<td class="cbox"><button class="cbx${on ? ' on' : ''}" type="button" data-tick="${row.id}"`
@@ -311,7 +385,7 @@
 
   const saveCell = cell => {
     const row = cell && cell.closest('tr[data-row]');
-    if (row) store().editRow(row.dataset.row, cell.dataset.field, cell.innerHTML);
+    if (row) store().editRow(row.dataset.row, cell.dataset.field, wordsOf(cell));
   };
 
   // Is the selection already inside a mark of this kind? Then pressing it
@@ -911,10 +985,47 @@
         told();
         return;
       }
+      // ============================================================
+      // # 🌐 💤  THE LANGUAGE MARK SLEEPS IN THE CORNER
+      // # 🔤 JavaScript
+      // # 🎯 One press in its place wakes it; the next turns that cell
+      // #    over to the other language and puts it back to sleep
+      // # 🔗 The same two-press rule the gear has, and for the same
+      // #    reason: there is one of these in every cell of every row,
+      // #    and a sheet showing them all is a sheet of buttons with a
+      // #    summary somewhere behind it. Asleep they are invisible but
+      // #    still there to be pressed, so the hand that knows where
+      // #    they are never waits
+      // ============================================================
+      const flip = event.target.closest('[data-flip]');
+      if (flip) {
+        event.stopPropagation();
+        const cell = flip.closest(CELLS);
+        const tr = cell && cell.closest('tr[data-row]');
+        if (!tr) return;
+        if (!flip.classList.contains('on')) { wakeFlip(flip); return; }
+        const key = coverKey(tr.dataset.row, cell.dataset.col);
+        if (flipped.has(key)) flipped.delete(key); else flipped.add(key);
+        wakeFlip(null);
+        // The cell is redrawn where it stands rather than the sheet
+        // recut: the two languages of one cell are rarely the same
+        // length, and recutting would move the row out from under the
+        // finger that just pressed it
+        redrawCell(cell, tr.dataset.row);
+        return;
+      }
+
       const more = event.target.closest('[data-more]');
       if (more) {
         event.stopPropagation();
         window.MyTermExplain?.open(more.dataset.more);
+        return;
+      }
+
+      const own = event.target.closest('[data-note]');
+      if (own) {
+        event.stopPropagation();
+        window.MyTermNote?.open(own.dataset.note);
         return;
       }
 
@@ -979,7 +1090,10 @@
       // left standing on a row the reader has walked away from is the
       // very clutter it was hidden to avoid
       wake(null);
+      wakeFlip(null);
 
+      // A cell already open for writing answers to nothing here: the
+      // press is the reader putting the caret where they want it
       const cell = event.target.closest(CELLS);
       if (!cell || cell.isContentEditable) return;
       // A press that ended a selection is not a tap. The reader was
@@ -1012,20 +1126,41 @@
         if (tr) { toSources(tr.dataset.row, cell.dataset.col, event); return; }
       }
 
-      turnOver(cell, !cell.classList.contains('covered'));
+      // ============================================================
+      // # 1️⃣ 2️⃣  ONE PRESS WRITES, TWO PRESSES COVER
+      // # 🔤 JavaScript
+      // # 🎯 A press on a cell opens it for writing; two quick presses
+      // #    turn it face down instead
+      // # 🔗 THE WAITING IS NOT A DELAY, IT IS THE QUESTION. A press that
+      // #    acts at once cannot be the first half of a double press —
+      // #    the cell would be open for writing and then turned face
+      // #    down under the reader's hand, which is two things happening
+      // #    for one gesture. So the press waits long enough to find out
+      // #    which gesture it is, and nothing shows until it knows.
+      // #
+      // #    A cell ALREADY open for writing is left alone by both: there
+      // #    a double press is the browser's own way of choosing a word,
+      // #    and taking it to mean "cover" would make it impossible to
+      // #    pick a word to colour — which is the whole of the bar above
+      // ============================================================
+      clearTimeout(pressing);
+      pressing = setTimeout(() => { pressing = null; startTyping(cell); }, 220);
     });
 
     desk.addEventListener('dblclick', event => {
       const cell = event.target.closest(CELLS);
       if (!cell) return;
+      // The first of the two presses set a cell going; it never ran
+      if (pressing) { clearTimeout(pressing); pressing = null; }
+      if (cell.isContentEditable) return;   // picking out a word, not covering
       event.preventDefault();
-      startTyping(cell);
+      turnOver(cell, !cell.classList.contains('covered'));
     });
 
     desk.addEventListener('input', event => {
       const cell = event.target.closest(CELLS);
       const row = cell && cell.closest('tr[data-row]');
-      if (row) store().editRow(row.dataset.row, cell.dataset.field, cell.innerHTML);
+      if (row) store().editRow(row.dataset.row, cell.dataset.field, wordsOf(cell));
     });
 
     // The paper is recut when the reader leaves it, not when they step

@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // # 📚 🗄️  THE TWO FILES OF A CHAPTER
 // # 🔤 JavaScript
 // # 🎯 Nothing here shows on screen. It gives every chapter a folder of
@@ -45,7 +45,24 @@
   // #    one, so nothing in it is ever fetched or run on the way
   // ============================================================
   const KEEP = { B: 'b', STRONG: 'b', I: 'i', EM: 'i', U: 'u', BR: 'br', SPAN: 'span' };
-  const MARKS = new Set(['hl', 'pa', 'pb', 'bx']);
+  // ============================================================
+  // EVERY COLOUR THE BAR OFFERS MUST BE NAMED HERE
+  //
+  // This list is the gate the words pass through on their way INTO the
+  // file, and a class not on it is quietly unwrapped — the words kept,
+  // the colour gone. So a colour added to the bar and not added here is
+  // a colour that works perfectly on screen and is lost the moment the
+  // row is saved, with nothing anywhere saying why. It happened: the
+  // five grounds and five inks were given to the bar while this list
+  // still named four classes, and every one of the new seven was thrown
+  // away on the way out.
+  //
+  // `bx` is kept though no button offers it any more: summaries already
+  // written carry it, and this gate decides what SURVIVES, not what can
+  // still be made
+  // ============================================================
+  const MARKS = new Set(['hl', 'hlg', 'hlb', 'hlp', 'hlo',
+                         'pa', 'pb', 'tcb', 'tco', 'tcp', 'bx']);
   // These few are thrown away WITH what is inside them. Everywhere else
   // the rule is the opposite — lose the wrapper, keep the words — but
   // what is inside these is not words: it is a stylesheet, or a program,
@@ -58,6 +75,17 @@
     from.childNodes.forEach(node => {
       if (node.nodeType === 3) { into.append(doc.createTextNode(node.nodeValue)); return; }
       if (node.nodeType !== 1 || DROP.has(node.tagName)) return;
+
+      // A picture is let through only while a note is being cleaned, and
+      // only ever as the name of a file in the reader's own Drive
+      if (node.tagName === 'IMG') {
+        const file = node.getAttribute('data-file');
+        if (!keepPictures || !file || !/^[\w-]{6,80}$/.test(file)) return;
+        const made = doc.createElement('img');
+        made.setAttribute('data-file', file);
+        into.append(made);
+        return;
+      }
 
       const tag = KEEP[node.tagName];
       // An unknown wrapper loses the wrapper and keeps the words. Dropping
@@ -81,6 +109,21 @@
     });
   };
 
+  // ============================================================
+  // # 🖼️ 🗒️  A NOTE MAY HOLD PICTURES; A CELL MAY NOT
+  // # 🔤 JavaScript
+  // # 🎯 The same gate as a cell's, with one thing more let through: a
+  // #    picture, named by its file in Drive and by nothing else
+  // # 🔗 NO `src` SURVIVES. A pasted picture arrives either as letters
+  // #    (a quarter of a megabyte on a file read whole on every open)
+  // #    or as an address on somebody else's server (fetched every time
+  // #    the note is opened, and gone the day that server is). Neither
+  // #    is kept. The picture goes up to Drive and what is written here
+  // #    is its NAME there — so the file stays the size of writing, and
+  // #    the picture is the reader's own, in their own Drive
+  // ============================================================
+  let keepPictures = false;
+
   const clean = html => {
     if (typeof html !== 'string' || !html) return '';
     const doc = document.implementation.createHTMLDocument('');
@@ -93,6 +136,11 @@
     // it needs to be — and the sheet is cut by measured height
     while (into.lastChild && into.lastChild.nodeName === 'BR') into.lastChild.remove();
     return into.innerHTML;
+  };
+
+  const cleanNote = html => {
+    keepPictures = true;
+    try { return clean(html); } finally { keepPictures = false; }
   };
 
   // ============================================================
@@ -208,6 +256,22 @@
         // without anything being converted
         ask: clean(r.ask),
         pick: Array.isArray(r.pick) ? r.pick.map(clean) : [],
+        // ============================================================
+        // THE READER'S OWN NOTE ON THIS ROW
+        //
+        // Their writing and not the course's: a reminder, a worked
+        // example, a picture of a page. It travels with the row because
+        // it is ABOUT the row — moved with it, removed with it, merged
+        // with it, and carried to the phone like everything else here.
+        //
+        // Pictures pasted into it are NOT kept in this file. A single
+        // screen shot written in as letters is a quarter of a megabyte
+        // on a file that is read whole on every open; the picture goes
+        // to Drive and the note keeps its name. So this field stays the
+        // size of writing, however many pictures are in it
+        // ============================================================
+        note: cleanNote(r.note),
+        noteDir: r.noteDir === 'rtl' || r.noteDir === 'ltr' ? r.noteDir : '',
         // MINUS ONE MEANS NOTHING IS MARKED, and that is why it is not
         // simply zero. Zero is a real answer — the first one — so a
         // question whose right answer was never chosen, or was chosen
@@ -908,7 +972,7 @@
       const living = livingRows();
       const row = {
         id: newRowId(), no: '', term: '', text: '', termAr: '', textAr: '', outside: false,
-        ask: '', pick: [], right: -1, srcs: [], about: [],
+        ask: '', pick: [], right: -1, srcs: [], about: [], note: '', noteDir: '',
         // It joins the table at the end rather than starting a new one:
         // a reader adding a row is carrying on, not opening a chapter
         cid: living.length ? living[living.length - 1].cid : 1,
@@ -926,7 +990,7 @@
       for (const section of open.content.sections) {
         const row = section.rows.find(r => r.id === rowId);
         if (!row) continue;
-        const next = WORDS.has(field) ? clean(value) : value;
+        const next = field === 'note' ? cleanNote(value) : WORDS.has(field) ? clean(value) : value;
         if (row[field] === next) return;
         row[field] = next;
         row.updatedAt = now();

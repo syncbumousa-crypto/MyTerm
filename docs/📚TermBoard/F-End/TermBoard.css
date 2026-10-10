@@ -3558,3 +3558,119 @@ body.darkpaper .cep-note { color: #9a9ca4; }
 
 tr:hover .crowmore { opacity: 1; }
 .crowmore:hover { background: rgba(127, 127, 127, .18); color: var(--ink); }
+
+/* ============================================================ */
+/* # 🌐 💤  THE LANGUAGE MARK IN A CELL'S CORNER */
+/* # 🔤 CSS */
+/* # 🎯 Invisible until it is pressed for, in the far bottom corner of */
+/* #    every cell */
+/* # 🔗 Transparent and NOT hidden, so it is still there to be pressed: */
+/* #    there is one of these in every cell of every row, and a sheet */
+/* #    that showed them all would be a page of buttons with a summary */
+/* #    somewhere behind it. The hand that knows where it is never */
+/* #    waits, and the eye that does not is never bothered */
+/* ============================================================ */
+.ccelllang {
+  position: absolute;
+  inset-inline-end: 2px;
+  bottom: 1px;
+  width: 16px;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: transparent;
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ctbl td:hover .ccelllang { color: #c0c0c0; }
+.ccelllang.on, .ccelllang.on:hover { color: #111111; background: rgba(127, 127, 127, .16); }
+
+/* The cells must be a frame for it to sit in the corner of */
+.ctbl td.cterm, .ctbl td.cdef { position: relative; }
+
+/* A covered cell shows nothing at all, its furniture included: the
+   whole point of covering is that there is nothing to read there */
+.ctbl td.covered .ccelllang { display: none; }
+
+/* ============================================================ */
+/* # ✎ 🗒️  THE WAY INTO THE READER'S OWN NOTE */
+/* # 🔤 CSS */
+/* # 🎯 Under the explanation mark, in the number column */
+/* # 🔗 It wears a dot when there is something written in it. A mark */
+/* #    that looks the same whether the note is empty or full is a mark */
+/* #    that has to be pressed to find out — on every row of the sheet */
+/* ============================================================ */
+.crownote {
+  display: block;
+  position: relative;
+  margin: 1px auto 0;
+  padding: 0;
+  width: 15px;
+  height: 11px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--dim2);
+  font-size: 9px;
+  line-height: 10px;
+  cursor: pointer;
+  opacity: .35;
+}
+
+tr:hover .crownote { opacity: 1; }
+.crownote:hover { background: rgba(127, 127, 127, .18); color: var(--ink); }
+.crownote.has { opacity: 1; color: var(--blue); }
+
+/* ============================================================ */
+/* # 🗒️ ✍️  THE NOTE'S OWN WINDOW */
+/* # 🔤 CSS */
+/* # 🎯 The same card as the explanation, but written in: a caret, a */
+/* #    line of its own, and room for pictures */
+/* # 🔗 It wears the explanation's card on purpose — one window shape */
+/* #    learned once — and differs only where it must: this one is */
+/* #    typed in, so it says so with a caret and an empty line */
+/* ============================================================ */
+.cnote-body {
+  font-size: calc(14px * var(--note-scale, 1));
+  outline: none;
+  min-height: 9em;
+}
+
+.cnote-body:empty::before {
+  content: attr(data-empty);
+  color: var(--dim2);
+  pointer-events: none;
+}
+
+.cnote-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: .6em 0;
+  border-radius: .4em;
+}
+
+.cnote-coming {
+  display: inline-block;
+  padding: .2em .5em;
+  border-radius: .4em;
+  font-size: .85em;
+  color: var(--dim2);
+  background: rgba(127, 127, 127, .12);
+}
+
+.cnote-said {
+  flex: none;
+  align-self: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--dim2);
+}
+
+.cnote-dir { font-size: 15px; font-weight: 700; }

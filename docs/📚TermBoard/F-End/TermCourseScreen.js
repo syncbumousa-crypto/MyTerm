@@ -1249,6 +1249,12 @@
   window.MyTermCoursePage = {
     asked: askedFor,
 
+    // Go to any row of the chapter, wherever it lives. Said here and
+    // not in the paper because only this page can change which part is
+    // on the desk — and a question in the bank is in another part than
+    // the term it is about, always
+    toRow,
+
     open: id => {
       openId = id;
       window.MyTermCurtain?.down();

@@ -163,6 +163,29 @@
       }))
     : [];
 
+  // ============================================================
+  // # 🎯 🔗  A QUESTION AND WHAT IT IS ABOUT
+  // # 🔤 JavaScript
+  // # 🎯 The rows of this chapter that a bank question tests
+  // # 🔗 KEPT ON THE QUESTION AND NOT ON THE ROW, because that is the
+  // #    direction the knowledge runs: whoever writes a question knows
+  // #    what it is testing, and nobody looking at a term can say which
+  // #    of a hundred questions will reach for it. The other direction
+  // #    is worked out by reading, which is what a computer is for.
+  // #
+  // #    One place for the fact, and a second place would be two lists
+  // #    to keep in step — and they would part on the first question
+  // #    written on the other device
+  // ============================================================
+  const shapeAbout = list => Array.isArray(list)
+    ? list.filter(a => a && typeof a === 'object' && typeof a.row === 'string').map(a => ({
+        id: typeof a.id === 'string' ? a.id : 'a-' + Math.random().toString(36).slice(2, 8),
+        row: a.row,
+        at: typeof a.at === 'string' ? a.at : null,
+        deleted: a.deleted === true
+      }))
+    : [];
+
   const shapeRows = list => settleOrder(Array.isArray(list)
     ? list.filter(r => r && typeof r === 'object').map(r => ({
         id: typeof r.id === 'string' ? r.id : newRowId(),
@@ -195,6 +218,11 @@
         // pair of fields: one term can have its name in one place and
         // its meaning in another, and a question can be answered in two
         srcs: shapeLinks(r.srcs),
+        // Which rows of this chapter a question is ABOUT. A bank
+        // question is not a source and has no page: it is another row,
+        // and what joins them is that answering one proves you know the
+        // other. So it is its own list and not a link into a file
+        about: shapeAbout(r.about),
         // Which table this row sits in, where it sits, and whether it is
         // the row its table is built around
         cid: Math.max(1, Math.trunc(Number(r.cid)) || 1),
@@ -325,6 +353,7 @@
       // must end with two: taken as one field under the words' clock,
       // whichever device typed last would erase the other's work
       srcs: foldLinks(mine.srcs, theirs.srcs),
+      about: foldLinks(mine.about, theirs.about),
       // A removal is never undone from here, so once either side has
       // buried a row it stays buried. The other reading is worse: a
       // device that had not yet heard of the removal would raise it
@@ -799,7 +828,7 @@
       const living = livingRows();
       const row = {
         id: newRowId(), no: '', term: '', text: '', termAr: '', textAr: '', outside: false,
-        ask: '', pick: [], right: -1, srcs: [],
+        ask: '', pick: [], right: -1, srcs: [], about: [],
         // It joins the table at the end rather than starting a new one:
         // a reader adding a row is carrying on, not opening a chapter
         cid: living.length ? living[living.length - 1].cid : 1,
@@ -902,6 +931,79 @@
         return true;
       }
       return false;
+    },
+
+    // ============================================================
+    // # 🎯 🔗  WHICH QUESTION IS ABOUT WHICH ROW
+    // # 🔤 JavaScript
+    // # 🎯 Naming what a question tests, and reading it back from
+    // #    either end
+    // # 🔗 Written on the question only. Read from the other end by
+    // #    walking the rows — which costs nothing a reader can feel and
+    // #    saves the one thing nothing can fix: two lists of the same
+    // #    fact drifting apart
+    // ============================================================
+    about: (questionId, rowId) => {
+      if (!open || !rowId || questionId === rowId) return null;
+      for (const section of open.content.sections) {
+        const q = section.rows.find(r => r.id === questionId);
+        if (!q) continue;
+        const same = q.about.find(a => !a.deleted && a.row === rowId);
+        if (same) return { ...same };
+        const made = { id: 'a-' + Math.random().toString(36).slice(2, 8),
+                       row: rowId, at: now(), deleted: false };
+        q.about.push(made);
+        wrote();
+        return { ...made };
+      }
+      return null;
+    },
+
+    unabout: (questionId, aboutId) => {
+      if (!open) return false;
+      for (const section of open.content.sections) {
+        const q = section.rows.find(r => r.id === questionId);
+        if (!q) continue;
+        const one = q.about.find(a => a.id === aboutId);
+        if (!one || one.deleted) return false;
+        one.deleted = true;
+        one.at = now();
+        wrote();
+        return true;
+      }
+      return false;
+    },
+
+    // What this question is about — the rows themselves, not just ids,
+    // because every caller wants their words
+    aboutOf: questionId => {
+      const out = [];
+      const all = new Map();
+      (open?.content.sections || []).forEach(s => s.rows.forEach(r => all.set(r.id, { row: r, section: s })));
+      const q = all.get(questionId)?.row;
+      if (!q) return out;
+      q.about.filter(a => !a.deleted).forEach(a => {
+        const found = all.get(a.row);
+        if (!found || found.row.deleted) return;
+        out.push({ id: a.id, row: a.row, section: found.section.id,
+                   no: found.row.no, term: found.row.term, termAr: found.row.termAr });
+      });
+      return out;
+    },
+
+    // And the other way: every question that names this row
+    testedBy: rowId => {
+      const out = [];
+      (open?.content.sections || []).forEach(section => {
+        if (section.kind !== 'tb' || section.deleted) return;
+        section.rows.forEach(q => {
+          if (q.deleted) return;
+          const hit = q.about.find(a => !a.deleted && a.row === rowId);
+          if (hit) out.push({ id: q.id, section: section.id, no: q.no, ask: q.ask,
+                              pick: q.pick, right: q.right, link: hit.id });
+        });
+      });
+      return out;
     },
 
     linksOf: rowId => {

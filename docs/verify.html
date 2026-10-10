@@ -211,7 +211,16 @@
 
     // Comments and text are not code. Without taking them out, a colour
     // written in a style string and a name mentioned in a sentence both
-    // look exactly like calls to something that is not there
+    // look exactly like calls to something that is not there.
+    //
+    // It does not know a regular expression from a quote, and it is not
+    // taught to: telling a regular expression from a division needs the
+    // whole grammar, and half of that is worse than none. So a LONE
+    // QUOTE INSIDE A REGULAR EXPRESSION — /"/g — reads here as the start
+    // of a string and swallows everything up to the next one. That is
+    // what this check reports when it names live functions as missing,
+    // and the cure is in the file it names: write that replacement with
+    // split and join instead
     const onlyCode = src => src
       .replace(/\/\*[\s\S]*?\*\//g, ' ')
       .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ')

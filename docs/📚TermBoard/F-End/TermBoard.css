@@ -1145,25 +1145,96 @@ body.board-on {
    steps above the footer instead of under it */
 body.reading .hud { display: none; }
 body.reading .build { bottom: 46px; }
-.cbar, .cfoot {
+.cbar {
   flex: none;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
   background: var(--panel2);
+  border-bottom: 1px solid var(--line);
   box-sizing: border-box;
 }
-
-.cbar { border-bottom: 1px solid var(--line); }
-.cfoot { border-top: 1px solid var(--line); }
 
 .cbody {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 26px 16px 40px;
+  padding: 26px 16px 56px;
   font-size: var(--read-font);
+  /* Thin and dark, the colour of the desk. The browser's own is wide and
+     pale and pulls the eye off the paper, and it stands beside the one
+     thing on this page that is meant to be looked at */
+  scrollbar-width: thin;
+  scrollbar-color: #35363c transparent;
+}
+
+.cbody::-webkit-scrollbar { width: 10px; }
+.cbody::-webkit-scrollbar-track { background: transparent; }
+.cbody::-webkit-scrollbar-thumb { background: #35363c; border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
+.cbody::-webkit-scrollbar-thumb:hover { background: #4a4c53; background-clip: content-box; }
+
+/* ============================================================ */
+/* # 🎚️ 🫥  THE STRIP THAT PEEKS UP */
+/* # 🔤 CSS */
+/* # 🎯 Off the bottom of the screen until the pointer comes near, then */
+/* #    it slides up; and a sixteen pixel strip at the very edge is what */
+/* #    calls it */
+/* # 🔗 It floats OVER the sheets rather than sitting under them, so */
+/* #    what is being read has the whole window while it is being read. */
+/* #    The zone has to be a thing of its own: a bar that is off the */
+/* #    screen cannot be hovered, so it can never be its own trigger. */
+/* # */
+/* #    And none of it on a touch screen, where there is no hovering at */
+/* #    all — there the strip simply stays where it is. A control that */
+/* #    only appears on hover is a control a phone can never reach */
+/* ============================================================ */
+.cfoot-zone {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 16px;
+  z-index: 40;
+}
+
+.cfoot {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 16px;
+  background: #24252a;
+  border-top: 1px solid #3a3b40;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, .4);
+  box-sizing: border-box;
+  transform: translateY(100%);
+  transition: transform .2s ease;
+}
+
+.cfoot.show { transform: translateY(0); }
+
+.cfoot-side { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+
+.cfoot-middle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (hover: none) {
+  .cfoot { position: static; transform: none; box-shadow: none; }
+  .cfoot-zone { display: none; }
+  .cbody { padding-bottom: 40px; }
 }
 
 /* It stands at the very edge of the strip now, where the way back used
@@ -1180,26 +1251,70 @@ body.reading .build { bottom: 46px; }
   white-space: nowrap;
 }
 
-.cbtn {
-  flex: none;
-  font: inherit;
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 1;
-  padding: 6px 9px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #2e2f36;
-  color: var(--dim);
-  cursor: pointer;
+/* ============================================================ */
+/* # 🎛️ 🔘  THE BUTTONS, AND THE TROUGHS THEY SIT IN */
+/* # 🔤 CSS */
+/* # 🎯 A sunken group holding square buttons with no frames of their */
+/* #    own, lit by the ground under them when the pointer finds one */
+/* # 🔗 Taken whole from the reader's own pages, down to the numbers. */
+/* #    Each button used to carry its own border and its own fill, so */
+/* #    eight buttons in a strip were eight boxes shouting at once; here */
+/* #    the GROUP is the box and what is inside it is quiet until it is */
+/* #    reached for. Things that belong together sit in one trough, and */
+/* #    the trough is what says they belong together */
+/* ============================================================ */
+.cgroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #1b1c20;
+  border: 1px solid #33343a;
+  border-radius: 10px;
+  padding: 3px;
 }
 
-.cbtn:hover:not(:disabled) { background: #3a3b44; color: #ffffff; }
-.cbtn:disabled { opacity: .35; cursor: default; }
+.cbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font: inherit;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: #c8cad0;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+
+.cbtn:hover:not(:disabled) { background: #34353c; color: #ffffff; }
+.cbtn:active:not(:disabled) { background: #3f4048; }
+
+/* A button with no possible effect is disabled AND SEEN to be disabled.
+   A press that does nothing is worse than a faded button */
+.cbtn:disabled { opacity: .34; cursor: default; background: transparent; color: #c8cad0; }
+.cbtn:disabled:hover { background: transparent; color: #c8cad0; }
 
 /* A button that is not doing a thing but IS a state — the eye while the
-   sheet is covered over — wears the colour instead of saying so */
-.cbtn.on { color: var(--ready); border-color: var(--ready); }
+   sheet is covered over — wears the ground instead of saying so */
+.cbtn.on { background: #3a6bb0; color: #ffffff; }
+.cbtn.on:hover { background: #4176c0; color: #ffffff; }
+
+.cbtn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ctxt { font-size: 12.5px; font-weight: 700; line-height: 1; letter-spacing: -.3px; }
 
 /* ============================================================ */
 /* # 🗂️ 📊  THE TAB OF A CHAPTER */
@@ -1755,22 +1870,14 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
   color: var(--dim2);
 }
 
-.cgroup {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
 .cnum {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--dim);
-  min-width: 42px;
+  font-size: 11px;
+  color: #8b8d94;
+  min-width: 40px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  user-select: none;
 }
-
-.cfoot-right { margin-inline-start: auto; display: inline-flex; align-items: center; gap: 10px; }
 
 .csync {
   font-size: 12px;
@@ -1791,16 +1898,22 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
 
 @keyframes csync-turn { to { transform: rotate(360deg); } }
 
-@media (max-width: 560px) {
-  .course-title { display: none; }
-  /* The shell's floating corner and its build mark are the board's. This
-   page pins strips to both edges, so while it is open the corner stands
-   down — the page says the same thing in its own footer — and the mark
-   steps above the footer instead of under it */
+/* The shell's floating corner and its build mark are the board's. This
+   page pins a strip to the top and floats one over the bottom, so while
+   it is open the corner stands down — the page says the same thing in
+   its own footer — and the mark steps above the footer instead of
+   under it */
 body.reading .hud { display: none; }
 body.reading .build { bottom: 46px; }
-.cbar, .cfoot { padding: 7px 8px; gap: 6px; }
+
+@media (max-width: 560px) {
+  .course-title { display: none; }
+  .cbar { padding: 7px 8px; gap: 6px; }
+  .cfoot { padding: 7px 8px; gap: 8px; }
   .ctab { width: 124px; }
+  /* The middle group gives its room away first: the three on the left
+     and the three on the right are what the hand reaches for */
+  .cfoot-middle { flex: 0 1 auto; }
 }
 
 /* ============================================================ */

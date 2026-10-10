@@ -2968,19 +2968,30 @@ body.cdragging { cursor: col-resize; user-select: none; }
 .csrc-chip {
   width: 10px;
   height: 10px;
+  /* Said three ways, which one ought not to need. The swatch came out a
+     46px bar because a min-height from another rule in this very file
+     outranked a plain height — so the size is pinned here where the
+     shape is decided, and no rule reaching in can stretch it again */
+  min-height: 10px;
+  max-height: 10px;
   border-radius: 2px;
   display: inline-block;
   flex: none;
 }
 
-.csrc-chip.term { background: rgba(255, 230, 0, .55); outline: 1px solid #cbb600; }
-.csrc-chip.def  { background: rgba(90, 143, 216, .45); outline: 1px solid #3a6bb0; }
-.csrc-chip.ask  { background: rgba(193, 77, 110, .45); outline: 1px solid #96355a; }
+/* Prefixed, and not for tidiness. Written bare, the first of these was
+   ".term" — a name this file already gives to a box on the board that is
+   46 pixels tall — so the yellow swatch grew and the other three stayed
+   square. A modifier word with no prefix is not this block's name at
+   all: it is a name shared with the whole stylesheet */
+.csrc-chip.is-term { background: rgba(255, 230, 0, .55); outline: 1px solid #cbb600; }
+.csrc-chip.is-def  { background: rgba(90, 143, 216, .45); outline: 1px solid #3a6bb0; }
+.csrc-chip.is-ask  { background: rgba(193, 77, 110, .45); outline: 1px solid #96355a; }
 
 /* Not required: a grey hatch and not a flat colour. It has to be read
    from across the page as "this is outside the syllabus" without
    covering the words under it or competing with the three real colours */
-.csrc-chip.out {
+.csrc-chip.is-out {
   background: repeating-linear-gradient(135deg,
     rgba(130, 130, 140, .55) 0 3px, rgba(130, 130, 140, .12) 3px 6px);
   outline: 1px dotted rgba(120, 120, 130, .6);

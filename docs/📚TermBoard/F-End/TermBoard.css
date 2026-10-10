@@ -1432,12 +1432,17 @@ body.reading .build { bottom: 46px; }
   flex: none;
   box-sizing: border-box;
   width: 140px;
-  height: 102px;
+  height: 110px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: space-between;
-  gap: 5px;
+  /* FOLDED, THE CONTENT IS CENTRED AS ONE BLOCK. Held apart top and
+     bottom it left a hole in the middle of every folded tab: the name
+     floating at the ceiling, the two lines on the floor, and nothing
+     between them. The leftover room is split evenly above and below
+     instead, where it reads as margin and not as a gap */
+  justify-content: center;
+  gap: 7px;
   padding: 8px 11px 9px;
   border: 1px solid #444;
   border-radius: 8px;
@@ -1459,10 +1464,18 @@ body.reading .build { bottom: 46px; }
 /* Unfolded, it is a frame round its parts: a little darker than the
    folded ones and as wide as what it holds, so the eye reads it as the
    thing those boxes are inside rather than as another box beside them */
+/* Unfolded it wears a BLUE FRAME — the one accent this site already
+   uses for the thing in hand. The darker ground alone said "a frame
+   round something" but not "and this is the one you are in", and that
+   is the thing a reader looks for first when they glance up.
+   Its head sits at the top and its parts under it, so the room left
+   over falls BELOW them as a margin rather than being shared out */
 .ctab.wide {
   width: auto;
+  justify-content: flex-start;
   background: #212226;
-  border-color: #55565e;
+  border-color: #5a8fd8;
+  box-shadow: 0 0 0 1px rgba(90, 143, 216, .35);
 }
 
 .ctab.wide:hover { background: #26272c; }
@@ -1588,11 +1601,12 @@ body.reading .build { bottom: 46px; }
 /* #    a part after the last part — so the shape is learnt once and */
 /* #    used twice */
 /* ============================================================ */
+/* The parts keep their own height and do not stretch to the frame, so
+   the room left over in the tab shows as a margin under them */
 .ctab-parts {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 6px;
-  margin-top: 1px;
 }
 
 .ctab-part {
@@ -1601,9 +1615,8 @@ body.reading .build { bottom: 46px; }
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: space-between;
-  gap: 5px;
-  padding: 8px 10px 9px;
+  gap: 6px;
+  padding: 6px 9px 7px;
   border: 1px solid #444;
   border-radius: 7px;
   background: #2c2d31;
@@ -1710,7 +1723,7 @@ body.reading .build { bottom: 46px; }
 .ctab-new {
   flex: none;
   align-self: flex-start;
-  height: 102px;
+  height: 110px;
   width: 34px;
   padding: 0;
   font: inherit;

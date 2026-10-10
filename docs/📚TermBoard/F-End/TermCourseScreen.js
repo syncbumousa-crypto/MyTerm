@@ -24,6 +24,7 @@
   const colDown = $('col-down'), colUp = $('col-up'), colNow = $('col-now');
   const langBtn = $('course-lang');
   const eyeBtn = $('course-eye'), darkBtn = $('course-dark'), bookBtn = $('course-book');
+  const allBtn = $('course-all');
   const barPull = $('course-bar-pull'), footPull = $('course-foot-pull');
   const zoomNow = $('zoom-now');
 
@@ -49,6 +50,12 @@
     // an icon belonged, with nothing anywhere saying why
     bookOpen: '<svg viewBox="0 0 24 24"><path d="M2.5 4.5h5A3.5 3.5 0 0 1 11 8v11.5a3 3 0 0 0-3-2.5H2.5z"/>'
       + '<path d="M21.5 4.5h-5A3.5 3.5 0 0 0 13 8v11.5a3 3 0 0 1 3-2.5h5.5z"/></svg>',
+    // The tick for a whole part, and the same tick struck through for
+    // taking it back off. Two drawings and not one, because the button
+    // can undo an evening's work and must say so before it is pressed
+    tick: '<svg viewBox="0 0 24 24"><path d="M3.5 12.5l5.5 5.5 11.5-12"/></svg>',
+    tickOff: '<svg viewBox="0 0 24 24"><path d="M3.5 12.5l5.5 5.5 11.5-12"/>'
+      + '<line x1="3" y1="21" x2="21" y2="3"/></svg>',
     moon: '<svg viewBox="0 0 24 24"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.6 6.6 0 0 0 9.7 9.7z"/></svg>',
     sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><line x1="12" y1="1.8" x2="12" y2="4"/>'
       + '<line x1="12" y1="20" x2="12" y2="22.2"/><line x1="4.2" y1="4.2" x2="5.8" y2="5.8"/>'
@@ -389,6 +396,52 @@
     paintEye();
   };
 
+  // ============================================================
+  // # ✅ 🧰  TICKING A WHOLE PART FROM THE STRIP
+  // # 🔤 JavaScript
+  // # 🎯 One press puts a tick on every row of the part on the desk, and
+  // #    the next press takes them all off again
+  // # 🔗 IT SAYS WHICH WAY IT WILL GO BEFORE IT IS PRESSED, like the eye
+  // #    beside it: when the part is already all ticked the button wears
+  // #    the struck-through mark and offers to clear it. A button that
+  // #    looked the same either way would be a button a reader has to
+  // #    press to find out what it does — and this one can undo an
+  // #    evening's work in a single press.
+  // #
+  // #    Whatever it does lands everywhere the single tick lands: the
+  // #    boxes on the paper, the count under it, the two lines on the
+  // #    strip, and the hours on the board. It is the same event, made
+  // #    a hundred times at once, and nothing may learn of it late
+  // ============================================================
+  const partNow = () => {
+    const store = window.MyTermChapterStore;
+    const here = store?.openSection?.();
+    if (!here) return null;
+    const part = (store.sections() || []).find(s => s.id === here);
+    return part || null;
+  };
+
+  const paintAll = () => {
+    if (!allBtn) return;
+    const part = partNow();
+    const full = !!part && part.rows > 0 && part.learnt === part.rows;
+    allBtn.disabled = !part || part.rows === 0;
+    allBtn.classList.toggle('on', full);
+    allBtn.innerHTML = full ? ICONS.tickOff : ICONS.tick;
+    allBtn.title = !part || part.rows === 0 ? 'Nothing in this part yet'
+      : full ? 'Take the tick off all ' + part.rows + ' of them'
+             : 'Tick off all ' + part.rows + ' of them';
+  };
+
+  if (allBtn) allBtn.onclick = () => {
+    const part = partNow();
+    if (!part || !part.rows) return;
+    window.MyTermChapterStore.markAll(part.id, part.learnt !== part.rows);
+    drawRows();
+    afterPaper();
+    paintAll();
+  };
+
   // The button says which language is ON the paper, not which one it
   // would turn to — the same way the one beside it says what size the
   // type is now, and not what size pressing it would make it
@@ -515,7 +568,7 @@
 
   // What the paper calls when it has been cut again: the readings on the
   // strip are all counted off the rows, so they are all out of date
-  const afterPaper = () => { retime(); drawTabs(); };
+  const afterPaper = () => { retime(); drawTabs(); paintAll(); };
 
   // ============================================================
   // # 📊 📏  THE TWO LINES
@@ -1247,6 +1300,7 @@
       window.MyTermQuiz.shut();
       repaper();
     }
+    paintAll();
   };
 
   const drawBody = () => {

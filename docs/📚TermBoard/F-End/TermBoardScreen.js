@@ -373,41 +373,34 @@
   // #    hundred weight: what was earned, what was lost, and what has
   // #    not been graded — the third is silence, not a failure
   // ============================================================
+  // ============================================================
+  // # ⭕ 📚  A COURSE IN THREE SHAPES
+  // # 🔤 JavaScript
+  // # 🎯 Its chapters added up: how many are named, how many of their
+  // #    hours are done, and what the bank made of them
+  // # 🔗 THE DISC MEANS ONE THING ON THIS BOARD AND ONLY ONE. It used to
+  // #    be the marks — what was earned and lost of the course's graded
+  // #    work — while the chapter's disc beside it was the bank. Two
+  // #    discs, same drawing, different question, one screen apart.
+  // #
+  // #    So the disc is the bank everywhere, and the course's marks keep
+  // #    the places that were always theirs: the grade chip on the card,
+  // #    the letter, and the table behind it. Nothing about grades is
+  // #    lost; it simply stops borrowing a shape that answers something
+  // #    else at every other size
+  // ============================================================
   const readingOf = (course, size) => {
     const list = alive(course);
     const named = list.filter(h => h.name.trim() !== '').length;
-
-    // HOW FAR THROUGH A COURSE IS, IN HOURS. It was a count of chapters
-    // marked finished by hand, and that button is gone: a chapter was
-    // being declared done beside parts that said otherwise. Hours answer
-    // the same question and are counted, not declared — and a course
-    // nobody has paced yet still has the old count to fall back on, so
-    // the reading is never simply blank
-    const hours = list.reduce((s, h) => s + (h.minutes || 0), 0);
-    const did = list.reduce((s, h) => s + (h.doneMinutes || 0), 0);
-    const marked = list.filter(h => h.done).length;
-    const through = hours > 0
-      ? Math.min(100, Math.round((did / hours) * 100))
-      : (list.length ? Math.round((marked / list.length) * 100) : 0);
-
-    // The disc is about what has been judged, so an item with no score is
-    // its grey third — not the full marks the standing assumes for it.
-    // The two readings answer different questions and must not be mixed
-    const weighted = marksOf(course).filter(i => (Number(i.weight) || 0) > 0);
-    const weight = weighted.reduce((s, i) => s + i.weight, 0) || 100;
-    const graded = weighted.filter(i => isGraded(i) && !isOdd(i) && Number(i.outOf) > 0);
-    const ok = graded.reduce((s, i) => s + (i.got / i.outOf) * i.weight, 0);
-    const bad = graded.reduce((s, i) => s + (1 - i.got / i.outOf) * i.weight, 0);
+    const sum = sumOf(list);
 
     return window.MyTermShapes.draw(size, {
       ready: list.length ? Math.round((named / list.length) * 100) : 0,
       readyTip: list.length ? `${named} of ${list.length} chapters named` : 'No chapters yet',
-      done: through,
-      doneTip: hours > 0
-        ? `${fmtHours(did)} done of ${fmtHours(hours)}`
-        : (list.length ? `${marked} of ${list.length} finished` : 'No chapters yet'),
-      marks: { ok, bad, unknown: Math.max(0, weight - ok - bad) },
-      marksTip: graded.length ? `${Math.round(ok)} earned · ${Math.round(bad)} lost · ${Math.round(Math.max(0, weight - ok - bad))} not graded` : 'No marks recorded yet'
+      done: sum.through,
+      doneTip: hoursTip(sum, list),
+      marks: { ok: sum.good, bad: sum.bad, unknown: sum.unknown },
+      marksTip: bankTip(sum, 'this course')
     });
   };
 
@@ -785,48 +778,62 @@
   // #    never typed. What the shapes mean in words is in their tips,
   // #    so the reading is the shapes and nothing crowds them
   // ============================================================
+  // ============================================================
+  // # ➕ 🧮  EVERY LEVEL IS THE SUM OF THE ONE BELOW IT
+  // # 🔤 JavaScript
+  // # 🎯 Hours done of hours there are, and the bank's green and red,
+  // #    added up over whatever list of chapters is handed in
+  // # 🔗 ONE COUNTING, USED THREE TIMES: a chapter's own, a course's
+  // #    chapters, the whole term's. Three separate counts would be
+  // #    three chances for the term to disagree with the courses it is
+  // #    made of — and it is exactly the kind of disagreement nobody
+  // #    notices, because each number looks reasonable on its own.
+  // #
+  // #    Hours and not chapters: a chapter counted as one whole thing
+  // #    makes a forty row chapter and a three row one worth the same,
+  // #    and a term of one long course and four short ones then reads
+  // #    as four fifths done when the work left is most of it
+  // ============================================================
+  const sumOf = list => {
+    let hours = 0, did = 0, rows = 0, good = 0, bad = 0, marked = 0;
+    list.forEach(h => {
+      hours += h.minutes || 0;
+      // A chapter nobody has paced still counts what was ticked on it,
+      // the only way it ever could: all of it, or none
+      did += h.minutes > 0 ? Math.min(h.minutes, h.doneMinutes || 0) : 0;
+      rows += h.rows || 0;
+      good += h.good || 0;
+      bad += h.bad || 0;
+      if (h.done) marked++;
+    });
+    const asked = good + bad;
+    return {
+      hours, did, rows, good, bad, asked,
+      unknown: Math.max(0, rows - asked),
+      through: hours > 0
+        ? Math.min(100, Math.round((did / hours) * 100))
+        : (list.length ? Math.round((marked / list.length) * 100) : 0),
+      marked
+    };
+  };
+
+  const bankTip = (sum, what) => (sum.asked
+    ? `The bank asked ${sum.asked} of ${sum.rows} ${what} — ${sum.good} right, ${sum.bad} wrong`
+    : `The bank has not asked you anything in ${what} yet`);
+
+  const hoursTip = (sum, list) => (sum.hours > 0
+    ? `${fmtHours(sum.did)} done of ${fmtHours(sum.hours)}`
+    : (list.length ? `${sum.marked} of ${list.length} finished` : 'No chapters yet'));
+
   const termReading = () => {
     const courses = living();
     const chapters = courses.flatMap(c => alive(c));
-    const named = chapters.filter(h => h.name.trim() !== '').length;
-
-    // How far through a chapter is, in the one currency this board keeps
-    // — the hours its parts are paced at, and the hours its ticked rows
-    // come to. A chapter nobody has paced falls back to the old mark,
-    // which is all there ever was for it
-    const partOfIt = h => (h.minutes > 0
-      ? Math.min(1, (h.doneMinutes || 0) / h.minutes)
-      : (h.done ? 1 : 0));
-    const done = chapters.reduce((s, h) => s + partOfIt(h), 0);
-
-    let ok = 0, bad = 0, weight = 0;
-    courses.forEach(c => {
-      (c.items || []).filter(i => !i.deleted && i.weight > 0).forEach(i => {
-        weight += i.weight;
-        if (i.got !== null && i.outOf > 0) {
-          ok += (i.got / i.outOf) * i.weight;
-          bad += (1 - i.got / i.outOf) * i.weight;
-        }
-      });
-    });
-
-    // The hours of the term come from the courses and nowhere else: each
-    // course brings its own credit hours, and how much of it is finished
-    // says how many of those hours are finished. Half of a three hour
-    // course is an hour and a half. A course with no chapters yet still
-    // brings its hours to the total — they are hours you owe, not hours
-    // you have done — so the number never flatters by shrinking
-    let hours = 0, hoursDone = 0;
-    courses.forEach(c => {
-      const credits = Number(c.credits) || 0;
-      const list = alive(c);
-      hours += credits;
-      if (list.length) hoursDone += credits * (list.reduce((s, h) => s + partOfIt(h), 0) / list.length);
-    });
-
     return {
-      courses: courses.length, chapters: chapters.length, named, done,
-      ok, bad, unknown: Math.max(0, weight - ok - bad), weight
+      courses: courses.length,
+      chapters: chapters.length,
+      named: chapters.filter(h => h.name.trim() !== '').length,
+      list: chapters,
+      sum: sumOf(chapters)
     };
   };
 
@@ -836,12 +843,10 @@
     termShape.append(window.MyTermShapes.draw('lg', {
       ready: r.chapters ? Math.round((r.named / r.chapters) * 100) : 0,
       readyTip: `Set up — ${r.named} of ${r.chapters} chapters named`,
-      done: r.chapters ? Math.round((r.done / r.chapters) * 100) : 0,
-      doneTip: `Done — ${Math.round(r.done * 10) / 10} of ${r.chapters} chapters' worth`,
-      marks: { ok: r.ok, bad: r.bad, unknown: r.unknown },
-      marksTip: r.weight
-        ? `Marks — ${Math.round(r.ok)} earned, ${Math.round(r.bad)} lost, ${Math.round(r.unknown)} not graded yet`
-        : 'Marks — nothing recorded yet'
+      done: r.sum.through,
+      doneTip: hoursTip(r.sum, r.list),
+      marks: { ok: r.sum.good, bad: r.sum.bad, unknown: r.sum.unknown },
+      marksTip: bankTip(r.sum, 'the whole term')
     }));
   };
 
@@ -1070,14 +1075,6 @@
     return box;
   };
 
-  // How full the bar is. While no hours are set anywhere the tick is all
-  // there is to go on, so it answers; once a length is given the time
-  // answers instead. Without the fallback the bar would sit empty for
-  // everybody who has not yet decided how long anything takes
-  const coverOf = ch => ch.minutes > 0
-    ? Math.min(100, Math.round((ch.doneMinutes / ch.minutes) * 100))
-    : (ch.done ? 100 : 0);
-
   // ============================================================
   // # 🟢 🔴  WHAT THE BANK SAYS, ON THE BOARD
   // # 🔤 JavaScript
@@ -1085,26 +1082,23 @@
   // #    asked and you got, red for the ones you missed, grey for the
   // #    rest of the chapter the bank has not asked about
   // # 🔗 It is the one reading on this board the reader does not give
-  // #    themselves. The hours are typed, the tick is pressed, the name
-  // #    is written — all of them say what the reader believes. This
-  // #    says what actually happened when they were asked, and it
-  // #    arrives here on its own, counted off the chapter's own two
-  // #    files the moment an answer is given
+  // #    themselves. The name is written, the tick is pressed — both of
+  // #    them say what the reader believes. This says what actually
+  // #    happened when they were asked, and it arrives here on its own,
+  // #    counted off the chapter's own two files the moment an answer
+  // #    is given
   // ============================================================
   const chapterReading = ch => {
-    const asked = (ch.good || 0) + (ch.bad || 0);
+    // Counted by the same hand that counts the course above it and the
+    // term above that, over a list of one
+    const sum = sumOf([ch]);
     return window.MyTermShapes.draw('sm', {
       ready: ch.name.trim() !== '' ? 100 : 0,
       readyTip: ch.name.trim() !== '' ? 'Named and ready' : 'Not named yet',
-      done: coverOf(ch),
-      doneTip: ch.minutes > 0
-        ? `${fmtHours(ch.doneMinutes)} of ${fmtHours(ch.minutes)}`
-        : (ch.done ? 'Finished' : 'Not finished yet'),
-      marks: { ok: ch.good || 0, bad: ch.bad || 0,
-               unknown: Math.max(0, (ch.rows || 0) - asked) },
-      marksTip: asked
-        ? `The bank asked ${asked} of ${ch.rows} — ${ch.good} right, ${ch.bad} wrong`
-        : 'The bank has not asked you anything in this chapter yet'
+      done: sum.through,
+      doneTip: hoursTip(sum, [ch]),
+      marks: { ok: sum.good, bad: sum.bad, unknown: sum.unknown },
+      marksTip: bankTip(sum, 'this chapter')
     });
   };
 
@@ -1339,7 +1333,7 @@
   // counting, handed over, so the two can never put different numbers on
   // the same chapter
   window.MyTermChapterReading = chapterReading;
-  window.MyTermHours = { fmt: fmtHours, pair: hoursPair, cover: coverOf };
+  window.MyTermHours = { fmt: fmtHours, pair: hoursPair };
   window.MyTermBoardRedraw = () => { data = keep.board() || data; paint(); };
 
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') keep.flush(); });

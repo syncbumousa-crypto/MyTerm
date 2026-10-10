@@ -92,6 +92,24 @@
   // #    small. A course's chapters are read once beside it and written
   // #    only when that course changed — not on every save of anything
   // ============================================================
+  // A part as the BOARD needs it: what it is called, how much of it
+  // there is, how much is done, and what the bank made of it. Not the
+  // rows themselves — those stay in the chapter's own file, where they
+  // belong and where they are heavy
+  const shapeParts = list => Array.isArray(list)
+    ? list.filter(p => p && typeof p === 'object' && typeof p.id === 'string').map(p => ({
+        id: p.id,
+        name: typeof p.name === 'string' ? p.name : '',
+        kind: p.kind === 'tb' ? 'tb' : 'part',
+        rows: Math.max(0, Number(p.rows) || 0),
+        learnt: Math.max(0, Number(p.learnt) || 0),
+        good: Math.max(0, Number(p.good) || 0),
+        bad: Math.max(0, Number(p.bad) || 0),
+        minutes: Math.max(0, Number(p.minutes) || 0),
+        done: Math.max(0, Number(p.done) || 0)
+      }))
+    : [];
+
   // Every field a chapter is allowed to carry is named here, and a field
   // that is not named is dropped on the next read — so a new one must be
   // added here first or it is written once and gone by the next open
@@ -124,6 +142,9 @@
         // show an empty second line for every chapter but the open one
         good: Math.max(0, Number(c.good) || 0),
         bad: Math.max(0, Number(c.bad) || 0),
+        // And the parts themselves, copied out of the chapter's own file
+        // so the board can open a chapter's card without reading it
+        parts: shapeParts(c.parts),
         updatedAt: c.updatedAt ?? null,
         deleted: c.deleted === true
       }))

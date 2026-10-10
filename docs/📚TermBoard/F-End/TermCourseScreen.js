@@ -455,17 +455,63 @@
     return part.rows * part.each;
   };
 
+  // ============================================================
+  // # ⏱️ ✅  THE TICK IS THE HOUR
+  // # 🔤 JavaScript
+  // # 🎯 What the chapter comes to, what of it is done, and the same two
+  // #    for each part — written beside the chapter in the course paper
+  // # 🔗 HOW LONG IS DONE IS NOT A NUMBER ANYBODY TYPES. It was: a box
+  // #    on the board where the reader wrote how many hours they had
+  // #    put in, beside a tick on every row saying the same thing in
+  // #    another language — two places for one truth, and they parted
+  // #    on the first row ticked. Now the ticks ARE the hours: a part
+  // #    paced at two minutes a row with twelve rows ticked is
+  // #    twenty-four minutes done, and it lands on the board the moment
+  // #    the box is pressed.
+  // #
+  // #    The parts are copied out whole because the board cannot see
+  // #    them: they live in the chapter's own content file, and a board
+  // #    that opened every chapter to draw a strip would read the whole
+  // #    term to show one card
+  // ============================================================
   const retime = () => {
     const c = course();
     const ch = c && alive(c).find(h => h.id === openChapter);
     if (!ch || window.MyTermChapterStore?.openId() !== ch.id) return;
-    const total = (window.MyTermChapterStore.sections() || [])
-      .reduce((sum, part) => sum + minutesOf(part), 0);
-    if (ch.minutes === total) return;
+
+    const parts = (window.MyTermChapterStore.sections() || []).map(part => {
+      const minutes = minutesOf(part);
+      return {
+        id: part.id, name: part.name, kind: part.kind,
+        rows: part.rows, learnt: part.learnt, good: part.good, bad: part.bad,
+        minutes,
+        // What is done of a part is the share of it that is ticked. For a
+        // part paced by the row that is exactly the ticked rows times
+        // their price; for one paced by the page it is the same share of
+        // the pages, which is the only honest reading — a page is not
+        // ticked, its rows are
+        done: part.rows ? minutes * (part.learnt / part.rows) : 0
+      };
+    });
+
+    const total = parts.reduce((sum, p) => sum + p.minutes, 0);
+    // Kept to the second and not rounded to the minute: a part paced at
+    // half a minute a row would move the board by nothing for the first
+    // tick and by a whole minute on the second
+    const did = parts.reduce((sum, p) => sum + p.done, 0);
+    if (ch.minutes === total && ch.doneMinutes === did && same(ch.parts, parts)) return;
+
     ch.minutes = total;
+    ch.doneMinutes = did;
+    ch.parts = parts;
     ch.updatedAt = now();
     touch();
   };
+
+  // Written out and compared, rather than field by field: the shape of a
+  // part is going to grow, and a comparison that names its fields is a
+  // comparison that quietly stops noticing the new ones
+  const same = (a, b) => JSON.stringify(a || []) === JSON.stringify(b || []);
 
   // What the paper calls when it has been cut again: the readings on the
   // strip are all counted off the rows, so they are all out of date
@@ -476,18 +522,17 @@
   // # 🔤 JavaScript
   // # 🎯 The first is how much of it you have ticked off; the second is
   // #    what the bank says about the same rows, green and red together
-  // # 🔗 NO NUMBER BESIDE EITHER OF THEM. A bar and its number say the
-  // #    same thing twice, and the number is the half that cannot be
-  // #    read at a glance: a strip of six parts was six bars and six
-  // #    fractions, and the fractions were what made it a table rather
-  // #    than a strip. The reading is still there for whoever wants it,
-  // #    in what the box says when you rest on it.
+  // # 🔗 THE NUMBER BELONGS TO THE PART AND NOT TO THE CHAPTER. A part
+  // #    is a thing you work through row by row, and there the exact
+  // #    count is the reading — four left is a different evening from
+  // #    forty. A folded chapter is a glance and nothing more, and the
+  // #    fractions on it were what made the strip read as a table.
   // #
   // #    And the two lines are two different questions, which is why
   // #    they are not one line: HOW MUCH HAVE I GONE THROUGH is yours
   // #    to say, and HOW MUCH DO I ACTUALLY HAVE is the bank's
   // ============================================================
-  const barOf = (kind, done, total) => {
+  const barOf = (kind, done, total, words) => {
     const line = document.createElement('span');
     line.className = 'ctab-line';
 
@@ -498,6 +543,12 @@
     rail.append(fill);
 
     line.append(rail);
+    if (words) {
+      const count = document.createElement('span');
+      count.className = 'ctab-count';
+      count.textContent = words;
+      line.append(count);
+    }
     return line;
   };
 
@@ -506,7 +557,7 @@
   // red for what it asked and you missed, and the rail's own grey for
   // everything it has not asked you yet — so one glance says how much
   // of the part has been tested at all, and how that went, at once
-  const mixOf = (good, bad, total) => {
+  const mixOf = (good, bad, total, words) => {
     const line = document.createElement('span');
     line.className = 'ctab-line';
 
@@ -524,6 +575,12 @@
 
     rail.append(got, missed);
     line.append(rail);
+    if (words) {
+      const count = document.createElement('span');
+      count.className = 'ctab-count';
+      count.textContent = words;
+      line.append(count);
+    }
     return line;
   };
 
@@ -755,9 +812,16 @@
       // part at a time, at a size that can be read
       const lines = document.createElement('span');
       lines.className = 'ctab-lines';
+      // The first reading is of the whole part; the second is of what
+      // the bank has actually asked, and not of the part — "2 of 9
+      // right" out of forty rows is a true thing said plainly, where
+      // 2 of 40 would read as a part you have barely begun
+      const asked = part.good + part.bad;
       lines.append(
-        barOf('learnt', part.learnt, part.rows),
-        mixOf(part.good, part.bad, part.rows));
+        barOf('learnt', part.learnt, part.rows,
+              part.rows ? part.learnt + '/' + part.rows : '—'),
+        mixOf(part.good, part.bad, part.rows,
+              asked ? part.good + '/' + asked : '—'));
       one.append(line, lines);
 
       one.title = readingOf(part.name, part.rows, part.learnt, part.good, part.bad);
@@ -964,18 +1028,43 @@
     const sum = document.createElement('p');
     sum.className = 'cmenu-why';
 
+    // ============================================================
+    // # ⏲️ 🔢  MINUTES AND SECONDS, IN TWO BOXES
+    // # 🔤 JavaScript
+    // # 🎯 What one row of this part costs — and a row can cost less
+    // #    than a minute
+    // # 🔗 TWO BOXES AND NOT A DECIMAL. A term you read off a card takes
+    // #    forty seconds, not 0.67 minutes, and nobody types the second
+    // #    thing. The pair is kept as minutes underneath, so everything
+    // #    already written stays exactly what it was: a part set at two
+    // #    is still two minutes and shows as 2 and 0
+    // ============================================================
     const box = document.createElement('input');
     box.type = 'text';
     box.inputMode = 'numeric';
     box.className = 'cmenu-box';
-    box.value = each ? String(each) : '';
+    box.value = each ? String(Math.floor(each)) : '';
     box.placeholder = '0';
+
+    const secs = document.createElement('input');
+    secs.type = 'text';
+    secs.inputMode = 'numeric';
+    secs.className = 'cmenu-box';
+    const over = each ? Math.round((each - Math.floor(each)) * 60) : 0;
+    secs.value = over ? String(over) : '';
+    secs.placeholder = '0';
+
+    // Seconds beyond a minute belong in the minutes box, and the reader
+    // who types 90 means a minute and a half — so it is taken, not
+    // refused, and simply counted
+    const priced = () => (Number(plainDigits(box.value)) || 0)
+                       + (Number(plainDigits(secs.value)) || 0) / 60;
 
     const howMany = () => (per === 'page' ? pages : part.rows);
     const named = () => (per === 'page' ? ' pages' : per === 'ask' ? ' questions' : ' rows');
 
     const retell = () => {
-      const minutes = (Number(plainDigits(box.value)) || 0) * howMany();
+      const minutes = priced() * howMany();
       sum.textContent = howMany() + named() + ' → '
         + (minutes ? (window.MyTermHours ? window.MyTermHours.fmt(minutes) : minutes + 'm') : 'nothing yet');
     };
@@ -1001,26 +1090,31 @@
     line.className = 'cmenu-line';
     const unit = document.createElement('span');
     unit.className = 'cpace-unit';
-    unit.textContent = 'min each';
+    unit.textContent = 'min';
+    const unit2 = document.createElement('span');
+    unit2.className = 'cpace-unit';
+    unit2.textContent = 'sec each';
 
     const go = document.createElement('button');
     go.type = 'button';
     go.className = 'cmenu-go';
     go.textContent = 'OK';
     go.onclick = () => {
-      window.MyTermChapterStore.setPace(part.id, per, Number(plainDigits(box.value)) || 0);
+      window.MyTermChapterStore.setPace(part.id, per, priced());
       shutPace();
       retime();
       drawTabs();
     };
 
-    box.oninput = retell;
-    box.onkeydown = event => {
-      if (event.key === 'Enter') { event.preventDefault(); go.click(); }
-      if (event.key === 'Escape') { event.preventDefault(); shutPace(); }
-    };
+    [box, secs].forEach(field => {
+      field.oninput = retell;
+      field.onkeydown = event => {
+        if (event.key === 'Enter') { event.preventDefault(); go.click(); }
+        if (event.key === 'Escape') { event.preventDefault(); shutPace(); }
+      };
+    });
 
-    line.append(box, unit, go);
+    line.append(box, unit, secs, unit2, go);
     paceBox.append(title, pick, line, sum, deleteRow(part, bank, near));
     retell();
 

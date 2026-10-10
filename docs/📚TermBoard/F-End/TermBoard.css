@@ -527,6 +527,73 @@ body.board-on {
 
 .dunit { font-size: 9px; color: var(--dim2); }
 
+/* What is DONE of a chapter is said, not asked: it is counted from the
+   boxes ticked inside it. A box here to type a different number would
+   be a second place for one truth, and the two would part on the first
+   row ticked */
+.dsaid {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================ */
+/* # 📑 ⏱️  THE PARTS OF A CHAPTER, UNDER ITS CARD */
+/* # 🔤 CSS */
+/* # 🎯 One line per part: its name, what it comes to, and how much of */
+/* #    it is ticked off */
+/* # 🔗 The name is the only part of the line allowed to grow, and it */
+/* #    is the only part allowed to be cut short. The time and the */
+/* #    count are three or four characters that mean nothing when */
+/* #    clipped, so they are never the thing that gives way */
+/* ============================================================ */
+.dparts { margin: 0 0 6px; display: flex; flex-direction: column; gap: 3px; }
+
+.dpart { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+.dpname {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 9.5px;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dptime {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--dim2);
+  font-variant-numeric: tabular-nums;
+}
+
+.dprail {
+  flex: none;
+  width: 34px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--well);
+  overflow: hidden;
+}
+
+.dprail i { display: block; height: 100%; background: var(--blue); }
+
+.dpcount {
+  flex: none;
+  min-width: 30px;
+  text-align: end;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--dim2);
+  font-variant-numeric: tabular-nums;
+}
+
+.dnone { margin: 0 0 6px; font-size: 9.5px; color: var(--dim2); }
+
 .dbar {
   height: 3px;
   margin: 2px 0 6px;
@@ -1557,10 +1624,14 @@ body.reading .build { bottom: 46px; }
    unrelated rows stacked up */
 .ctab-lines { display: flex; flex-direction: column; gap: 3px; }
 
-.ctab-line { display: flex; align-items: center; }
+.ctab-line { display: flex; align-items: center; gap: 6px; }
 
+/* Half the line and no more. Run the full width of the box, a four
+   pixel rail becomes a rule across the strip — six of them stacked read
+   as ruled paper rather than as six readings. Half is still long enough
+   to show a tenth, and it leaves the room the number needs */
 .ctab-bar {
-  flex: 1 1 auto;
+  flex: 0 0 50%;
   display: block;
   height: 4px;
   border-radius: 2px;
@@ -1590,6 +1661,18 @@ body.reading .build { bottom: 46px; }
 .ctab-bar.mix i { flex: none; border-radius: 0; }
 .ctab-bar.mix i.good { background: var(--mOk); }
 .ctab-bar.mix i.bad { background: var(--mBad); }
+
+/* The reading beside a part's line. The first says how much of the part
+   you have ticked off; the second how much of what the bank ASKED you
+   got right — a different denominator on purpose, and the box says
+   which in words when you rest on it */
+.ctab-count {
+  flex: none;
+  font-size: 9px;
+  color: #999999;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 /* ============================================================ */
 /* # 📑 ➕  THE PARTS INSIDE A CHAPTER, AND THE TWO WAYS TO ADD */
@@ -1633,6 +1716,7 @@ body.reading .build { bottom: 46px; }
 .ctab-part:hover { background: #34353b; }
 .ctab-part.on { background: #ffffff; color: #111111; border-color: #ffffff; cursor: default; }
 .ctab-part.on .ctab-bar { background: rgba(0, 0, 0, .15); }
+.ctab-part.on .ctab-count { color: #666666; }
 
 .ctab-part-head { display: flex; align-items: center; gap: 5px; min-width: 0; }
 
@@ -1744,6 +1828,11 @@ body.reading .build { bottom: 46px; }
   color: var(--dim2);
   white-space: nowrap;
 }
+
+/* Two boxes on this line now — minutes and seconds — so neither is left
+   to take whatever room is going: side by side and flexible, the longer
+   word beside one of them would make it the narrower box */
+.cpace .cmenu-box { flex: 0 0 54px; }
 
 .cpace .cmenu-why { margin: 8px 0 0; }
 

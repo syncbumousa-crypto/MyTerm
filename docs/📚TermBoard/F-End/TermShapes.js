@@ -16,24 +16,23 @@
   const NS = 'http://www.w3.org/2000/svg';
   const SIZES = { lg: 44, md: 16, sm: 10 };
 
-  // A ring, built the way the term's ring above it is built: a track all
-  // the way round for what has not been judged, and arcs laid on it for
-  // what was earned and what was lost, starting from the top.
+  // A FILLED disc, not a ring: a whole pie of three slices — green for
+  // what was got, red for what was missed, grey for what has not been
+  // judged. At ten pixels across a ring is a hairline with a hole in it,
+  // and the hole is most of the shape; filled, the same ten pixels carry
+  // a reading that can be seen without leaning in.
   //
-  // It was a solid disc, and a solid disc is a different kind of object
-  // from the ring at the head of the page — two shapes saying "how much
-  // of a whole", each in its own language, on one screen. One language
-  // costs nothing and is learned once
+  // It is drawn as one circle with a stroke half the width of the shape,
+  // so the band closes over the middle and the arc arithmetic stays the
+  // arithmetic of a ring — one way of cutting a circle, at every size
   const disc = (px, ok, bad, unknown) => {
     const svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('width', px);
     svg.setAttribute('height', px);
     svg.setAttribute('viewBox', `0 0 ${px} ${px}`);
 
-    // The ring of the term is 96 across with a 9 wide band; the same
-    // proportion at every size here, so they read as the same thing
-    const width = Math.max(2, Math.round(px * 9 / 96 * 1.6));
-    const r = (px - width) / 2, round = 2 * Math.PI * r;
+    const width = px / 2;
+    const r = px / 4, round = 2 * Math.PI * r;
     const total = ok + bad + unknown;
 
     const arc = (colour, from, part) => {
@@ -79,11 +78,11 @@
       run.style.width = (reading.done ?? 0) + '%';
       bar.appendChild(run);
 
-      // The ring is always drawn, even with nothing judged: then it is
-      // the bare track, which says "nothing judged" in the same language
-      // as a half green ring says "half right". It used to be a dashed
-      // outline in that case — a third shape for a third state, where
-      // the same shape empty would have done
+      // The disc is always drawn, even with nothing judged: then it is
+      // grey all through, which says "nothing judged" in the same
+      // language as a half green disc says "half right". It used to be a
+      // dashed outline in that case — a third shape for a third state,
+      // where the same shape in one colour would have done
       const marks = reading.marks || { ok: 0, bad: 0, unknown: 0 };
       const dot = document.createElement('span');
       dot.className = 'dot';

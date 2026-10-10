@@ -154,7 +154,10 @@
     js.concat(Object.entries(files).filter(([p]) => p.endsWith('.css'))).forEach(([p, src]) => {
       src.split('\n').forEach(l => {
         if (!/^\s*(\/\/|\/\*|#|\*)/.test(l)) return;
-        [...l.matchAll(/([A-Za-z][\w.-]*\.(?:js|css|html|sql))/g)].forEach(m => {
+        // The name must END at the extension. Without the lookahead, every
+        // mention of a .json file was read as a .js file that had vanished:
+        // "content.json" contains "content.js", letter for letter
+        [...l.matchAll(/([A-Za-z][\w.-]*\.(?:js|css|html|sql))(?![\w-])/g)].forEach(m => {
           if (!names.has(m[1])) ghosts.push(p.split('/').pop() + ' → ' + m[1]);
         });
       });

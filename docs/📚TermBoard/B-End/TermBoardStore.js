@@ -95,6 +95,16 @@
         done: c.done === true,
         minutes: Math.max(0, Number(c.minutes) || 0),
         doneMinutes: Math.max(0, Number(c.doneMinutes) || 0),
+        // Where the chapter's own two files live, and which version of its
+        // content this paper knows about. The version is written here on
+        // purpose: this paper is read on every open anyway, so a device
+        // whose cached copy is already at that number never downloads the
+        // content at all
+        folderId: typeof c.folderId === 'string' ? c.folderId : null,
+        folderName: typeof c.folderName === 'string' ? c.folderName : null,
+        contentId: typeof c.contentId === 'string' ? c.contentId : null,
+        stateId: typeof c.stateId === 'string' ? c.stateId : null,
+        contentVersion: Math.max(1, Number(c.contentVersion) || 1),
         updatedAt: c.updatedAt ?? null,
         deleted: c.deleted === true
       }))

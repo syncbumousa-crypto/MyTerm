@@ -520,6 +520,8 @@
       const tally = window.MyTermChapterStore.counts();
       open.chapter.rows = tally.rows;
       open.chapter.learnt = tally.learnt;
+      open.chapter.good = tally.good;
+      open.chapter.bad = tally.bad;
       window.MyTermBoardStore?.touchCourse?.(open.course.id);
       window.MyTermBoardStore?.change?.(board);
 
@@ -630,6 +632,42 @@
   const livingRows = () => (sectionOf()?.rows || []).filter(r => !r.deleted).sort((a, b) => a.order - b.order);
   const indexOf = (rows, rowId) => rows.findIndex(r => r.id === rowId);
 
+  // ============================================================
+  // # 🟩 🟥  WHAT THE BANK SAYS ABOUT EACH ROW
+  // # 🔤 JavaScript
+  // # 🎯 One word per row — 'ok', 'no', or nothing: whether the bank has
+  // #    asked you about it and how you did
+  // # 🔗 A TICK IS YOUR OWN OPINION OF YOURSELF; THIS IS NOT. A row is
+  // #    ticked by the reader and nobody checks it, so a strip made of
+  // #    ticks alone says exactly what the reader believes and nothing
+  // #    about whether it is true. The bank is the other half: it asked,
+  // #    and the answer was right or it was wrong.
+  // #
+  // #    AND WRONG OUTRANKS RIGHT. Two questions on one term, one missed
+  // #    and one got, is a term you do not have yet — reading it the
+  // #    other way would let a term be painted green by its easy
+  // #    question while its hard one is still being failed.
+  // #
+  // #    The answer is carried from the question to every row it is
+  // #    about, because that is where the reader looks: nobody opens a
+  // #    bank to ask how the bank is going
+  // ============================================================
+  const bankSaid = () => {
+    const said = new Map();
+    const say = (id, was) => { if (said.get(id) !== 'no') said.set(id, was); };
+    (open?.content.sections || []).forEach(section => {
+      if (section.kind !== 'tb' || section.deleted) return;
+      section.rows.forEach(q => {
+        if (q.deleted) return;
+        const was = open.state.marks[q.id]?.was;
+        if (was !== 'ok' && was !== 'no') return;
+        say(q.id, was);
+        q.about.forEach(a => { if (!a.deleted) say(a.row, was); });
+      });
+    });
+    return said;
+  };
+
   window.MyTermChapterStore = {
     watch: fn => { tellStatus = fn || (() => {}); },
 
@@ -691,20 +729,24 @@
     // rows themselves every time: a part that kept its own tally would
     // be a second place for the truth, and the two would part on the
     // first row added anywhere else
-    // Two readings per part, and they answer two different questions.
+    // Three readings per part, and they answer three different questions.
     // WRITTEN is how much of it has been set down — a row with a term
     // and a meaning in it, in either language. LEARNT is how much of it
-    // you know. A part can be fully written and not known at all, and
-    // the other way round is possible too: a row you ticked before you
-    // ever filled its meaning in
-    sections: () => livingSections().map(s => {
-      const living = s.rows.filter(r => !r.deleted);
-      return {
-        id: s.id, name: s.name, kind: s.kind, per: s.per, each: s.each, rows: living.length,
-        written: living.filter(r => hasWords(r.term || r.termAr) && hasWords(r.text || r.textAr)).length,
-        learnt: living.filter(r => open.state.marks[r.id]?.on === true).length
-      };
-    }),
+    // you have ticked off. GOOD and BAD are what the bank says about it,
+    // which is the one reading you do not give yourself
+    sections: () => {
+      const said = bankSaid();
+      return livingSections().map(s => {
+        const living = s.rows.filter(r => !r.deleted);
+        return {
+          id: s.id, name: s.name, kind: s.kind, per: s.per, each: s.each, rows: living.length,
+          written: living.filter(r => hasWords(r.term || r.termAr) && hasWords(r.text || r.textAr)).length,
+          learnt: living.filter(r => open.state.marks[r.id]?.on === true).length,
+          good: living.filter(r => said.get(r.id) === 'ok').length,
+          bad: living.filter(r => said.get(r.id) === 'no').length
+        };
+      });
+    },
 
     // The rows of one part, for whoever needs to measure them. Handed
     // out as the living ones in order, the same list the paper draws
@@ -812,13 +854,16 @@
     // own tab on the strip shows, and what is written beside the chapter
     // so the other chapters' tabs can show it without being opened
     counts: () => {
-      let rows = 0, learnt = 0;
+      const said = bankSaid();
+      let rows = 0, learnt = 0, good = 0, bad = 0;
       livingSections().forEach(s => s.rows.forEach(r => {
         if (r.deleted) return;
         rows++;
         if (open.state.marks[r.id]?.on === true) learnt++;
+        if (said.get(r.id) === 'ok') good++;
+        else if (said.get(r.id) === 'no') bad++;
       }));
-      return { rows, learnt };
+      return { rows, learnt, good, bad };
     },
 
     addRow: () => {

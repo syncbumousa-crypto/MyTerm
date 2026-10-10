@@ -119,6 +119,11 @@
         // far every chapter has got, not only the one in hand
         rows: Math.max(0, Number(c.rows) || 0),
         learnt: Math.max(0, Number(c.learnt) || 0),
+        // And what the bank said about those rows, by the same rule and
+        // for the same reason: a tab that cannot say it would have to
+        // show an empty second line for every chapter but the open one
+        good: Math.max(0, Number(c.good) || 0),
+        bad: Math.max(0, Number(c.bad) || 0),
         updatedAt: c.updatedAt ?? null,
         deleted: c.deleted === true
       }))

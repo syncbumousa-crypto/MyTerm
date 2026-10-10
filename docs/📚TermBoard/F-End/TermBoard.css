@@ -139,10 +139,10 @@ body.board-on {
 /* # 🎯 One strip holding everything that is true of the whole course: */
 /* #    the fold arrow, the grade, the name with its count, the three */
 /* #    shapes, and the gear for what is asked once a term */
-/* # 🔗 The whole strip folds the card, not the arrow alone: an arrow is */
-/* #    a twenty pixel target, and whoever misses it believes the card */
-/* #    is broken. Anything that can be typed in or pressed keeps its */
-/* #    own press, so the name is still edited where it is read */
+/* # 🔗 The whole strip is the door to the course page, not a small */
+/* #    icon on it: an icon is a twenty pixel target, and whoever misses */
+/* #    it believes the card is broken. The three things that do their */
+/* #    own work — the arrow, the grade, the gear — keep their press */
 /* ============================================================ */
 .col-top {
   position: relative;
@@ -234,17 +234,14 @@ body.board-on {
   font-weight: 700;
   letter-spacing: .5px;
   line-height: 1.25;
-  padding: 0;
-  border: 0;
-  background: transparent;
   color: #ffffff;
   min-width: 0;
-  width: 100%;
+  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.col-name::placeholder { color: var(--dim2); }
-.col-name:focus { outline: none; color: #ffffff; box-shadow: 0 1px 0 0 var(--blue); }
+.col-name.unnamed { color: var(--dim2); font-weight: 400; }
 
 .col-count {
   font-size: 9.5px;
@@ -308,6 +305,22 @@ body.board-on {
   margin-bottom: 7px;
 }
 
+.col-menu-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 20px;
+  box-sizing: border-box;
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--well);
+  color: var(--ink);
+}
+
+.col-menu-name::placeholder { color: var(--dim2); }
+.col-menu-name:focus { outline: 2px solid var(--blue); outline-offset: 0; }
 .col-menu-num {
   width: 44px;
   height: 20px;
@@ -956,40 +969,34 @@ body.board-on {
 /* # 🔗 It borrows the board's own frame, so opening a course does not */
 /* #    feel like landing in a different site */
 /* ============================================================ */
-.course-shape { display: flex; justify-content: center; }
-
-.crows {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  max-width: 420px;
+/* # 📖 🌑  THE PAGE OF ONE COURSE */
+/* # 🔤 CSS */
+/* # 🎯 Its ground, its name, and the way back. Nothing else yet */
+/* # 🔗 It is bare on purpose while what belongs on it is decided. It */
+/* #    used to repeat the card — the same chapters, the same shapes — */
+/* #    and a page that says what the board already said teaches the */
+/* #    reader not to open it. The way back keeps the top corner, where */
+/* #    a way back is looked for, and the same shape as the tile that */
+/* #    adds a course, because both are one small square that acts */
+/* ============================================================ */
+.course-page {
+  align-items: flex-start;
+  gap: 24px;
 }
 
-.crow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
+.course-back {
+  font-size: 15px;
 }
 
-.crow-name {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  font-size: 0.95rem;
-  padding: 4px;
-  border: 0;
-  background: transparent;
-  color: #f4f4f4;
+.course-title {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: #ffffff;
+  word-break: break-word;
 }
-
-.crow-name::placeholder { color: rgba(255, 255, 255, 0.4); }
-.crow-name:focus { outline: none; background: rgba(255, 255, 255, 0.08); border-radius: 5px; }
-
 /* ============================================================ */
 /* # 🕰️ ⭕  THE RING OF THE TERM */
 /* # 🔤 CSS */

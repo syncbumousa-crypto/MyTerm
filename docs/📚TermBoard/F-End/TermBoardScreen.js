@@ -148,15 +148,14 @@
     grade.type = 'button';
     grade.onclick = () => column.classList.toggle('marks-on');
 
-    const head = document.createElement('input');
+    // Written, not typed into. The strip is the way into the course now,
+    // and a box in the middle of it would swallow the press that takes
+    // you there — so the name is changed from the gear, where the other
+    // things about the course as a whole are changed
+    const head = document.createElement('span');
     head.className = 'col-name';
-    head.value = course.name;
-    head.placeholder = 'Course name';
-    head.oninput = () => {
-      course.name = head.value;
-      course.updatedAt = now();
-      touched();
-    };
+    head.textContent = course.name || 'Course name';
+    head.classList.toggle('unnamed', !course.name);
 
     const count = document.createElement('span');
     count.className = 'col-count';
@@ -179,6 +178,23 @@
     const menu = document.createElement('div');
     menu.className = 'col-menu';
     menu.hidden = true;
+
+    const nameLine = document.createElement('label');
+    nameLine.className = 'col-menu-line';
+    const nameWord = document.createElement('span');
+    nameWord.textContent = 'Name';
+    const nameBox = document.createElement('input');
+    nameBox.className = 'col-menu-name';
+    nameBox.value = course.name;
+    nameBox.placeholder = 'Course name';
+    nameBox.oninput = () => {
+      course.name = nameBox.value;
+      course.updatedAt = now();
+      head.textContent = course.name || 'Course name';
+      head.classList.toggle('unnamed', !course.name);
+      touched();
+    };
+    nameLine.append(nameWord, nameBox);
 
     const hoursLine = document.createElement('label');
     hoursLine.className = 'col-menu-line';
@@ -216,7 +232,7 @@
       drawColumns();
     };
 
-    menu.append(hoursLine, drop);
+    menu.append(nameLine, hoursLine, drop);
 
     const gear = document.createElement('button');
     gear.className = 'col-gear';
@@ -230,10 +246,19 @@
       gear.classList.toggle('on', opening);
     };
 
+    // The strip is the door to the course. Three things on it do their own
+    // work instead and must not open it: the arrow that folds the card, the
+    // grade that opens the marks, and the gear. Everything else on the
+    // strip — the name, the count, the shapes, the space between them —
+    // takes you in, so the target is the whole width and not a small icon
     const top = document.createElement('div');
     top.className = 'col-top';
     top.append(twist, grade, title, readingOf(course, 'md'), gear, menu);
-    top.onclick = event => { if (!event.target.closest('input, button, .col-menu')) fold(); };
+    top.onclick = event => {
+      if (event.target.closest('button, input, .col-menu')) return;
+      shutMenus();
+      window.MyTermCoursePage?.open(course.id);
+    };
 
     const body = document.createElement('div');
     body.className = 'col-body';

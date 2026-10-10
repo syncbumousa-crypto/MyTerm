@@ -19,9 +19,9 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=71">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=71">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=71">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=72">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=72">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=72">
 </head>
 <body>
 
@@ -174,18 +174,14 @@
 <!-- ============================================================ -->
 <!-- # 📖 🚪  ONE COURSE ON A PAGE OF ITS OWN -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 The course opened from the board: its name, its three shapes -->
-<!-- #    read large, and its chapters in full rows -->
+<!-- # 🎯 The course opened from the board: for now its name and the -->
+<!-- #    way back, on a ground of its own. The rest is still being decided -->
 <!-- # 🔗 Hidden until a course is opened. The board is hidden while it -->
 <!-- #    shows, so they are never both on screen at once -->
 <!-- ============================================================ -->
-<div class="board" id="course" hidden>
-  <button class="btn btn-flat" type="button" id="course-back">← Back to the term</button>
-  <input class="field term-input" id="course-name" placeholder="Course name">
-  <div class="course-shape" id="course-shape"></div>
-  <p class="lede" id="course-line"></p>
-  <div class="crows" id="course-chapters"></div>
-  <button class="btn" type="button" id="course-add">Add a chapter</button>
+<div class="board course-page" id="course" hidden>
+  <button class="col-new course-back" type="button" id="course-back" title="Back to the term">←</button>
+  <h1 class="course-title" id="course-title"></h1>
 </div>
 <!-- ============================================================ -->
 <!-- # 🔖 👁️  VERSION MARK -->
@@ -196,7 +192,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v71</p>
+<p class="build">v72</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -219,17 +215,17 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=71"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=71"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=71"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=71"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=71"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=71"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=71"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=71"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=71"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=71"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=71"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=72"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=72"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=72"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=72"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=72"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=72"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=72"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=72"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=72"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=72"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=72"></script>
 
 </body>
 </html>

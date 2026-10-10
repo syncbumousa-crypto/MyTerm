@@ -1107,6 +1107,8 @@ body.board-on {
 /* # 🔗 It borrows the board's own frame, so opening a course does not */
 /* #    feel like landing in a different site */
 /* ============================================================ */
+
+/* ============================================================ */
 /* # 📖 🌑  THE PAGE OF ONE COURSE: TWO STRIPS AND WHAT IS BETWEEN */
 /* # 🔤 CSS */
 /* # 🎯 A strip of chapters pinned to the top, a strip of reading */
@@ -1356,119 +1358,298 @@ body.reading .build { bottom: 46px; }
 .csheet-done.on { color: var(--ready); border-color: var(--ready); }
 
 /* ============================================================ */
-/* # 📋 ✍️  THE TABLE OF A CHAPTER */
+/* # 📄 🗒️  WHITE PAPER ON A DARK DESK */
 /* # 🔤 CSS */
-/* # 🎯 A row per term: its number, the term, what it means, and a tick */
-/* # 🔗 The two text cells are written in directly — there is no edit */
-/* #    mode to enter and leave, because a summary is written over */
-/* #    weeks and a mode that must be turned on is a mode left off. An */
-/* #    empty cell shows what belongs in it rather than sitting blank, */
-/* #    since a row of two empty boxes says nothing about which is */
-/* #    which. And a ticked row dims instead of vanishing: what is done */
-/* #    is still part of the chapter */
+/* # 🎯 The chapter is written on sheets of white paper of real page */
+/* #    proportions, each carrying black-ruled tables, and the dark */
+/* #    ground behind them is the desk they lie on */
+/* # 🔗 Rows laid straight on the dark ground read as a list of */
+/* #    settings. On paper they read as a summary. And the paper is not */
+/* #    decoration: a sheet has an END, and an end is the only thing */
+/* #    that lets a row be told to begin a page. */
+/* # */
+/* #    Every colour inside a sheet is written here as a plain hex and */
+/* #    never as a theme token. The desk may be re-themed; the paper */
+/* #    may not — the day the theme turns light, a token-coloured */
+/* #    highlight stops being the yellow of a highlighter and the red */
+/* #    of a warning stops being red */
 /* ============================================================ */
-.ctable {
+.cstage {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  margin-bottom: 10px;
+  align-items: center;
+  gap: 20px;
 }
 
-.crow {
-  display: grid;
-  grid-template-columns: 30px minmax(90px, 1fr) minmax(0, 2fr) 46px;
-  gap: 8px;
-  align-items: start;
-  padding: 7px 6px;
-  border-radius: 6px;
-  border-bottom: 1px solid var(--line);
+.cpaper-slot { width: var(--read-width); max-width: 100%; }
+
+/* The height is a floor and nothing is ever hidden. The division into
+   sheets is MEASURED, and a measurement taken before a font has
+   finished loading can be a line out; a sheet that clipped what did
+   not fit would swallow a row of the reader's own writing without a
+   word. So a sheet that was mis-measured grows a few millimetres and
+   is merely ugly. --page-h is written by the code from the sheet's
+   real width, because a width in per cent cannot be read back in CSS
+   and a page of the wrong proportions on a phone is a page of empty
+   white */
+.cpaper {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--page-h, 900px);
+  padding: 34px 26px 46px;
+  background: #ffffff;
+  color: #141414;
+  border: 1px solid #3c3d44;
+  box-shadow: 0 3px 16px rgba(0, 0, 0, .55);
 }
 
-.crow:hover { background: #25262c; }
-
-.clegend {
-  font-size: .62em;
-  letter-spacing: .3px;
-  text-transform: uppercase;
-  color: var(--dim2);
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 4px;
-}
-
-.clegend:hover { background: transparent; }
-
-.crow-no {
+.cpaper-no {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16px;
+  text-align: center;
   font-family: var(--mono);
-  font-size: .72em;
-  color: var(--dim2);
-  padding-top: 2px;
+  font-size: 10px;
+  color: #8a8a8a;
 }
 
-.crow-term, .crow-text {
-  min-width: 0;
-  font-size: .82em;
-  line-height: 1.6;
-  color: var(--ink);
-  outline: none;
-  word-break: break-word;
+/* The measurer stands at the true width of a sheet and is never seen.
+   It is out of the flow entirely, not merely invisible: hidden alone,
+   it still reserved its own height and pushed the end of the page
+   below everything the reader could scroll to */
+.cprobe {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  z-index: -1;
+  visibility: hidden;
+  pointer-events: none;
 }
 
-.crow-term { font-weight: 700; color: #ffffff; }
-.crow-text { color: var(--ink); }
+/* ============================================================ */
+/* # 📋 ⬛  THE TABLES ON THE SHEET */
+/* # 🔤 CSS */
+/* # 🎯 A row per term — its number, the term, what it means, and the */
+/* #    box that says it is learnt — ruled in black like a printed page */
+/* # 🔗 Consecutive rows that share a table are ONE table, and a sheet */
+/* #    that fills up in the middle of one is a fact about the paper, */
+/* #    not about the summary. So the part that carries on over the fold */
+/* #    wears no header and no top rule: a break made by the page must */
+/* #    never be told apart from a break the reader asked for */
+/* ============================================================ */
+.ctbl {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  border: 1px solid #000000;
+  margin-bottom: 14px;
+  font-size: .84em;
+  line-height: 1.55;
+}
 
-.crow-term:empty::before, .crow-text:empty::before {
+.ctbl.cont { border-top: none; }
+.ctbl.cont tr:first-child td { border-top: none; }
+
+.ctbl td, .ctbl th {
+  border: 1px solid #000000;
+  padding: 7px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ctbl th {
+  background: #c9c9c9;
+  color: #333333;
+  font-size: .76em;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+
+.ctbl td.cno {
+  position: relative;
+  text-align: center;
+  font-weight: 700;
+  background: #c9c9c9;
+  cursor: context-menu;
+}
+
+.ctbl td.cterm { background: #e2e2e2; font-weight: 700; }
+.ctbl td.cbox { text-align: center; vertical-align: middle; }
+
+.ctbl td.cterm:empty::before,
+.ctbl td.cdef:empty::before {
   content: attr(data-empty);
-  color: var(--dim2);
+  color: #9a9a9a;
   font-weight: 400;
 }
 
-.crow-term:focus, .crow-text:focus { box-shadow: 0 1px 0 0 var(--blue); }
-.crow.done .crow-term, .crow.done .crow-text { color: var(--dim); }
+.ctbl td[contenteditable]:focus { outline: 2px solid #4b7bd4; outline-offset: -2px; }
+.ctbl tr.done td.cterm, .ctbl tr.done td.cdef { color: #6f6f6f; }
 
-.crow-end { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+/* The primary row is the row a table is built around. Two things
+   follow from naming one, and they are the whole point of it: it opens
+   its own table, so it wears the header; and the sheet is cut before
+   it, so it is read from the top of clean paper. Its mark sits on the
+   number cell because that is the column a reader already reaches for
+   to move a row */
+.ctbl tr.clead td.cno { background: #2d2d2d; color: #ffffff; }
 
-.crow-tick {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  font: inherit;
-  font-size: 10px;
-  line-height: 1;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--well);
-  color: var(--well);
-  cursor: pointer;
+.ctbl tr.clead td.cno::after {
+  content: '\25C6';
+  position: absolute;
+  top: 0;
+  right: 2px;
+  font-size: 7px;
+  color: #e8b64c;
 }
 
-.crow-tick:hover { border-color: var(--ready); }
-.crow-tick.on { background: var(--ready); border-color: var(--ready); color: #14151a; }
+.ctbl tr.clead td.cterm { background: #d4d4d4; }
 
-.crow-off {
-  flex: none;
-  font: inherit;
-  font-size: 11px;
+.cdel {
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  font-size: 9px;
   line-height: 1;
-  padding: 0 2px;
-  border: 0;
-  background: transparent;
   color: transparent;
   cursor: pointer;
 }
 
-.crow:hover .crow-off { color: var(--dim2); }
-.crow-off:hover { color: var(--mBad); }
+.ctbl tr:hover .cdel { color: #8a3030; }
+
+/* Two signals live on one box and neither is allowed to overwrite the
+   other: the tick is what the reader said, and later the border will
+   be what a test said. Their disagreement — "I know this" against
+   "I was asked and got it wrong" — is the most useful thing on the
+   page, so it is drawn as two marks and not reduced to one */
+.cbx {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  position: relative;
+  border: 2px solid #999999;
+  border-radius: 3px;
+  background: #ffffff;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.cbx.on { background: #cccccc; border-color: #888888; }
+
+.cbx.on::after {
+  content: '\2713';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777777;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ============================================================ */
+/* # 🖍️ 🎨  THE MARKS MADE ON THE PAPER */
+/* # 🔤 CSS */
+/* # 🎯 Highlighter, red, green, a blue box, and the three plain marks */
+/* # 🔗 One meaning, one colour, everywhere it appears — so a colour */
+/* #    here is a word, not an ornament, and the set is kept small */
+/* #    enough to stay remembered. These are the same five the reader */
+/* #    already uses on their own sheets */
+/* ============================================================ */
+.cpaper b { font-weight: 700; }
+.cpaper i { font-style: italic; }
+.cpaper u { text-decoration: underline; }
+.cpaper .hl { background-color: #ffff00; }
+.cpaper .pa { color: #cc0000; font-weight: 700; }
+.cpaper .pb { color: #38761d; font-weight: 700; }
+.cpaper .bx { background: #9fc5e8; padding: 0 2px; border-radius: 2px; }
+
+.cmark {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #23242a;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .6);
+}
+
+.cmark button {
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.cmark button:hover { background: #34353d; }
+.cmark .m-hl { background: #ffff00; color: #141414; }
+.cmark .m-pa { color: #ff8585; }
+.cmark .m-pb { color: #7bc49a; }
+.cmark .m-bx { background: #9fc5e8; color: #141414; }
+
+/* ============================================================ */
+/* # 🖱️ 📜  THE MENU OF A ROW */
+/* # 🔤 CSS */
+/* # 🎯 Where a row is moved, made primary, split off, or taken away */
+/* # 🔗 Its ends are DISABLED and not hidden. A menu whose items come */
+/* #    and go is a menu read again every time; a button that is there */
+/* #    and grey says "not from here" in one glance, and the next item */
+/* #    stays where the hand remembers it */
+/* ============================================================ */
+.cmenu {
+  position: fixed;
+  z-index: 60;
+  min-width: 196px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #23242a;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .6);
+}
+
+.cmenu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.cmenu button:hover:not(:disabled) { background: #34353d; }
+.cmenu button:disabled { color: var(--dim2); cursor: default; }
+.cmenu hr { margin: 4px 2px; border: 0; border-top: 1px solid var(--line); }
 
 .ctable-none {
   margin: 0;
-  padding: 10px 6px;
-  font-size: .78em;
-  color: var(--dim2);
+  padding: 10px 2px;
+  font-size: .8em;
+  color: #8a8a8a;
 }
 
 .ctable-count {
-  margin: 0 0 8px;
+  margin: 8px 0 0;
   font-family: var(--mono);
   font-size: .68em;
   color: var(--dim2);
@@ -1476,9 +1657,10 @@ body.reading .build { bottom: 46px; }
 }
 
 @media (max-width: 620px) {
-  .crow { grid-template-columns: 24px minmax(0, 1fr) 40px; }
-  .crow-text { grid-column: 2 / 4; }
+  .cpaper { padding: 20px 12px 38px; }
+  .ctbl td, .ctbl th { padding: 6px 5px; }
 }
+
 .cempty {
   margin: 0;
   text-align: center;

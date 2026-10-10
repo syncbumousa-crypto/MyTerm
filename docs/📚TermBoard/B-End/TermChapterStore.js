@@ -119,7 +119,7 @@
   // day a reader reorders the English half, the Arabic half stays where
   // it was. The plain names are the English ones so that every chapter
   // written before this day keeps every word it had
-  const WORDS = new Set(['term', 'termAr', 'text', 'textAr']);
+  const WORDS = new Set(['term', 'termAr', 'text', 'textAr', 'ask']);
 
   const shapeRows = list => settleOrder(Array.isArray(list)
     ? list.filter(r => r && typeof r === 'object').map(r => ({
@@ -134,6 +134,21 @@
         // it is as true on the phone as on the laptop — so it lives in
         // the chapter's own file beside the words, not with the ticks
         outside: r.outside === true,
+        // A ROW IN A TEST BANK IS STILL A ROW. It carries a question, a
+        // list of answers to choose from, and which of them is right —
+        // three more fields on the same shape, empty on every other
+        // row. One shape means moving, swapping, removing, the two
+        // clocks and the merge all work on questions without a line of
+        // their own, and a bank can be turned into a list or back
+        // without anything being converted
+        ask: clean(r.ask),
+        pick: Array.isArray(r.pick) ? r.pick.map(clean) : [],
+        // MINUS ONE MEANS NOTHING IS MARKED, and that is why it is not
+        // simply zero. Zero is a real answer — the first one — so a
+        // question whose right answer was never chosen, or was chosen
+        // and then deleted, would quietly stand there calling its first
+        // choice the truth, and mark the reader wrong for the rest
+        right: Number.isFinite(Number(r.right)) ? Math.max(-1, Math.trunc(Number(r.right))) : -1,
         // Which table this row sits in, where it sits, and whether it is
         // the row its table is built around
         cid: Math.max(1, Math.trunc(Number(r.cid)) || 1),
@@ -154,15 +169,23 @@
   // know how much is left
   const PACES = ['row', 'page'];
 
+  // A part is read and a bank is answered. It is the one field that
+  // decides which of the two is drawn under the strip, and it is on the
+  // SECTION and not on the rows — because a bank is a bank whether it
+  // has three questions in it or none, and a part with no rows is still
+  // a part waiting to be written
+  const KINDS = ['part', 'tb'];
+
   const shapeSections = list => Array.isArray(list)
     ? list.filter(s => s && typeof s === 'object').map(s => ({
         id: typeof s.id === 'string' ? s.id : 'terms',
         name: typeof s.name === 'string' ? s.name : 'Terms',
+        kind: KINDS.includes(s.kind) ? s.kind : 'part',
         per: PACES.includes(s.per) ? s.per : 'row',
         each: Math.max(0, Number(s.each) || 0),
         rows: shapeRows(s.rows)
       }))
-    : [{ id: 'terms', name: 'Terms', per: 'row', each: 0, rows: [] }];
+    : [{ id: 'terms', name: 'Terms', kind: 'part', per: 'row', each: 0, rows: [] }];
 
   const shapeContent = doc => ({
     app: 'MyTerm',
@@ -176,7 +199,9 @@
       Object.keys(marks).forEach(id => {
         const m = marks[id];
         if (!m || typeof m !== 'object') return;
-        out[id] = { on: m.on === true, at: typeof m.at === 'string' ? m.at : null };
+        out[id] = { on: m.on === true, at: typeof m.at === 'string' ? m.at : null,
+                    was: m.was === 'ok' || m.was === 'no' ? m.was : null,
+                    when: typeof m.when === 'string' ? m.when : null };
       });
     }
     return out;
@@ -214,7 +239,7 @@
       // language by its own clock would let a device that only ever
       // reads English drag the Arabic back with it
       term: w.term, text: w.text, termAr: w.termAr, textAr: w.textAr,
-      outside: w.outside,
+      outside: w.outside, ask: w.ask, pick: w.pick, right: w.right,
       cid: p.cid, order: p.order, lead: p.lead, movedAt: p.movedAt,
       // A removal is never undone from here, so once either side has
       // buried a row it stays buried. The other reading is worse: a
@@ -535,7 +560,12 @@
 
     mark: (rowId, on) => {
       if (!open) return;
-      open.state.marks[rowId] = { on: Boolean(on), at: now() };
+      // The tick and the last answer live in the same little object, and
+      // each of the two writes only its own half. Written whole, ticking
+      // a row off would quietly throw away how it went in the last exam
+      const was = open.state.marks[rowId] || {};
+      open.state.marks[rowId] = { on: Boolean(on), at: now(),
+                                  was: was.was ?? null, when: was.when ?? null };
       stateDirty = true;
       tellStatus('waiting');
       later();
@@ -555,7 +585,7 @@
     sections: () => (open?.content.sections || []).map(s => {
       const living = s.rows.filter(r => !r.deleted);
       return {
-        id: s.id, name: s.name, per: s.per, each: s.each, rows: living.length,
+        id: s.id, name: s.name, kind: s.kind, per: s.per, each: s.each, rows: living.length,
         written: living.filter(r => hasWords(r.term || r.termAr) && hasWords(r.text || r.textAr)).length,
         learnt: living.filter(r => open.state.marks[r.id]?.on === true).length
       };
@@ -582,14 +612,43 @@
 
     useSection: id => { chosen = id; },
 
-    addSection: name => {
+    addSection: (name, kind) => {
       if (!open) return null;
-      const title = String(name || '').trim() || 'Part ' + (open.content.sections.length + 1);
-      const section = { id: 'p-' + Math.random().toString(36).slice(2, 8), name: title, rows: [] };
+      const sort = KINDS.includes(kind) ? kind : 'part';
+      const count = open.content.sections.filter(s => s.kind === sort).length + 1;
+      const title = String(name || '').trim() || (sort === 'tb' ? 'TB ' + count : 'Part ' + count);
+      const section = { id: 'p-' + Math.random().toString(36).slice(2, 8), name: title,
+                        kind: sort, per: 'row', each: 0, rows: [] };
       open.content.sections.push(section);
       chosen = section.id;
       wrote();
       return section;
+    },
+
+    renameSection: (id, name) => {
+      if (!open) return false;
+      const section = open.content.sections.find(s => s.id === id);
+      const want = String(name || '').trim();
+      // An empty name is refused by keeping the old one: a part called
+      // nothing is a box on the strip that cannot be told from the next
+      if (!section || !want || section.name === want) return false;
+      section.name = want;
+      wrote();
+      return true;
+    },
+
+    // What was answered last time this question was asked. It belongs
+    // with the ticks and not with the words: it is a thing about the
+    // reader, it changes every few seconds while an exam is running,
+    // and it has no business rewriting the questions to say so
+    answered: (rowId, ok) => {
+      if (!open) return;
+      const was = open.state.marks[rowId] || {};
+      open.state.marks[rowId] = { on: was.on === true, at: was.at ?? null,
+                                  was: ok ? 'ok' : 'no', when: now() };
+      stateDirty = true;
+      tellStatus('waiting');
+      later();
     },
 
     // The whole chapter, every part of it — this is what the chapter's
@@ -612,6 +671,7 @@
       const living = livingRows();
       const row = {
         id: newRowId(), no: '', term: '', text: '', termAr: '', textAr: '', outside: false,
+        ask: '', pick: [], right: -1,
         // It joins the table at the end rather than starting a new one:
         // a reader adding a row is carrying on, not opening a chapter
         cid: living.length ? living[living.length - 1].cid : 1,
@@ -642,6 +702,25 @@
     // same clock as the words because it is one of them: it says what
     // this term IS to the course, which is as true on the other device
     // as on this one — unlike a tick, which says what you have done
+    // The answers a question offers, and which of them is right. They
+    // are written together because they only mean anything together:
+    // an index into a list that has changed under it points at the
+    // wrong answer, and nothing on screen would say so
+    setChoices: (rowId, pick, right) => {
+      if (!open) return false;
+      for (const section of open.content.sections) {
+        const row = section.rows.find(r => r.id === rowId);
+        if (!row) continue;
+        row.pick = (Array.isArray(pick) ? pick : []).map(clean);
+        row.right = Math.max(-1, Math.min(row.pick.length - 1, Math.trunc(Number(right))));
+        if (!Number.isFinite(row.right)) row.right = -1;
+        row.updatedAt = now();
+        wrote();
+        return true;
+      }
+      return false;
+    },
+
     outside: (rowId, on) => {
       if (!open) return false;
       for (const section of open.content.sections) {

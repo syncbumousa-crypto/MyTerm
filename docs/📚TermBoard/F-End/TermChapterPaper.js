@@ -209,29 +209,62 @@
   // #    nothing anywhere said why. The range is ours to cut and wrap,
   // #    and what is wrapped is exactly what is then in the file
   // ============================================================
+  const unwrap = node => {
+    const parent = node.parentNode;
+    while (node.firstChild) parent.insertBefore(node.firstChild, node);
+    parent.removeChild(node);
+  };
+
+  // Two marks that do the same job to the same words: one colours the
+  // letters, one colours the ground behind them. Only one of each can be
+  // seen, so putting the second on takes the first off. Letting them
+  // nest left a wrapper doing nothing, invisible, and impossible to take
+  // off again except by chance — found in a row the reader had been
+  // trying the buttons on
+  const KIN = { pa: 'pb', pb: 'pa', hl: 'bx', bx: 'hl' };
+
   const applyMark = kind => {
     const cell = editing();
     const sel = window.getSelection();
     if (!cell || !sel || !sel.rangeCount || sel.isCollapsed) return;
-    const range = sel.getRangeAt(0);
 
     if (kind === 'off') {
+      const range = sel.getRangeAt(0);
       const words = range.toString();
       range.deleteContents();
       range.insertNode(document.createTextNode(words));
     } else {
       const plain = kind === 'b' || kind === 'i' || kind === 'u';
       const name = plain ? kind.toUpperCase() : 'SPAN';
-      const worn = wearing(range, name, plain ? '' : kind, cell);
+      const worn = wearing(sel.getRangeAt(0), name, plain ? '' : kind, cell);
       if (worn) {
-        const parent = worn.parentNode;
-        while (worn.firstChild) parent.insertBefore(worn.firstChild, worn);
-        parent.removeChild(worn);
+        unwrap(worn);
       } else {
+        const range = sel.getRangeAt(0);
         const made = document.createElement(plain ? kind : 'span');
         if (!plain) made.className = kind;
         made.append(range.extractContents());
         range.insertNode(made);
+
+        // THE NEW MARK GOES ON FIRST, AND THE ONE IT REPLACES COMES OFF
+        // AFTER. The other way round was tried and measured: taking the
+        // old one off moves the words out of it and throws the element
+        // away, and a selection made by its edges was pointing AT that
+        // element — so what came back was an empty mark around nothing
+        // and the words sitting plain beside it. The new mark is an
+        // element we hold, which no amount of surgery can lose.
+        //
+        // Above: only when it wraps this and nothing else — that is the
+        // case that leaves a wrapper doing nothing. One that covers more
+        // than this is still colouring its other words and is left alone.
+        // Inside: all of them, because the reader asked for this colour
+        // over the whole of what they picked
+        if (!plain && KIN[kind]) {
+          const over = made.parentNode;
+          if (over && over.nodeName === 'SPAN'
+              && over.classList.contains(KIN[kind]) && over.childNodes.length === 1) unwrap(over);
+          made.querySelectorAll('span.' + KIN[kind]).forEach(node => unwrap(node));
+        }
       }
     }
 
@@ -448,8 +481,22 @@
     stage.append(slot);
   };
 
+  // ONE CUT AT A TIME. Clearing the desk takes the focus off whatever
+  // cell had it, which fires focusout, whose whole job is to cut the
+  // paper — so a cut made while a cell was being typed in started a
+  // second cut inside itself, and the two of them filled the same desk:
+  // the sheets that came back were a mixture of both, and the cell the
+  // reader had been in belonged to neither, so the next thing they
+  // pressed did nothing at all and said nothing
+  let cutting = false;
+
   const repaint = () => {
-    if (!host || !stage) return;
+    if (!host || !stage || cutting) return;
+    cutting = true;
+    try { layOut(); } finally { cutting = false; }
+  };
+
+  const layOut = () => {
     const keptTop = host.scrollTop;
     stage.textContent = '';
 

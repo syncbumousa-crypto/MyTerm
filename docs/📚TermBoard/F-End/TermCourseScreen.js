@@ -260,7 +260,11 @@
   // ============================================================
   const PREF = { font: 'myterm.read.font', col: 'myterm.read.termcol',
                  lang: 'myterm.read.lang', dark: 'myterm.read.darkpaper' };
-  const FONTS = [85, 100, 115, 130, 150];
+  // Down to 60, because the sheet is a FIXED A4 and smaller type is the
+  // only way to get more of a chapter onto one of them. The steps below
+  // 100 are tighter than the ones above: a reader shrinking the type is
+  // hunting the last line that will fit, and wants to creep up on it
+  const FONTS = [60, 70, 78, 85, 92, 100, 115, 130, 150];
 
   // How wide the Term column is drawn, in the sheet's own units. What it
   // loses the meaning column gains, because that one is given no width

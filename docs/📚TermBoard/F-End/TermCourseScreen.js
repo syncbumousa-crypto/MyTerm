@@ -263,7 +263,7 @@
   let darkPaper = false;
   try { darkPaper = localStorage.getItem(PREF.dark) === 'yes'; } catch {}
 
-  const repaper = () => window.MyTermPaper.paint(body, drawTabs, readLang);
+  const repaper = () => window.MyTermPaper.paint(body, afterPaper, readLang);
 
   const applyRead = () => {
     page.style.setProperty('--read-font', fontPct + '%');
@@ -372,6 +372,46 @@
   // #    would be a second place for the truth to live, and the two
   // #    would part on the first edit made anywhere else
   // ============================================================
+  // ============================================================
+  // # ⏱️ 🧮  HOW LONG A CHAPTER TAKES
+  // # 🔤 JavaScript
+  // # 🎯 Works out each part's minutes from the rule set on it, adds
+  // #    them up, and writes the total beside the chapter
+  // # 🔗 THE RULE IS STORED, THE MINUTES ARE WORKED OUT. A number typed
+  // #    once stops being true the next time a row is added — and the
+  // #    whole reason for asking is to know how much is left. So the
+  // #    reader says what one row costs them, or what one page costs
+  // #    them, and the total follows whatever is actually in the part.
+  // #
+  // #    It is written into the chapter's own minutes, which is where
+  // #    the board already reads its hours from — so the card on the
+  // #    board, the bar on the tab and this all say the one number
+  // ============================================================
+  const minutesOf = part => {
+    if (!part.each) return 0;
+    if (part.per === 'page') {
+      const rows = window.MyTermChapterStore?.rowsOf(part.id) || [];
+      return (window.MyTermPaper?.pagesOf(rows) || 0) * part.each;
+    }
+    return part.rows * part.each;
+  };
+
+  const retime = () => {
+    const c = course();
+    const ch = c && alive(c).find(h => h.id === openChapter);
+    if (!ch || window.MyTermChapterStore?.openId() !== ch.id) return;
+    const total = (window.MyTermChapterStore.sections() || [])
+      .reduce((sum, part) => sum + minutesOf(part), 0);
+    if (ch.minutes === total) return;
+    ch.minutes = total;
+    ch.updatedAt = now();
+    touch();
+  };
+
+  // What the paper calls when it has been cut again: the readings on the
+  // strip are all counted off the rows, so they are all out of date
+  const afterPaper = () => { retime(); drawTabs(); };
+
   // One line of the two under a chapter's name: a rail with a filled
   // part and a reading beside it. Both are drawn the same way because
   // they are the same KIND of thing — how far through something you are
@@ -451,6 +491,17 @@
       };
 
       head.append(no, name);
+
+      // How long the chapter takes, to the right of its name. It is not
+      // typed and not stored as a number: it is the sum of what its
+      // parts come to under the rules set on them, so it follows every
+      // row added and every row taken away without anybody going back
+      // to correct it
+      const span = document.createElement('span');
+      span.className = 'ctab-time';
+      span.textContent = ch.minutes ? (hours ? hours.fmt(ch.minutes) : ch.minutes + 'm') : '—';
+      span.title = ch.minutes ? 'What this chapter comes to' : 'No pace set on its parts yet';
+      head.append(span);
 
       // The way to add a part sits beside the chapter's own name, small,
       // and only while the chapter is unfolded. It belongs to the
@@ -544,13 +595,31 @@
       const one = document.createElement('div');
       one.className = 'ctab-part' + (part.id === here ? ' on' : '');
 
+      const line = document.createElement('span');
+      line.className = 'ctab-part-head';
+
+      // The gear stands to the LEFT of the part's name, where nothing
+      // else on this strip stands — so it is never confused with the
+      // plus on the chapter above it, which is on the right and adds
+      // rather than sets
+      const gear = document.createElement('button');
+      gear.className = 'ctab-gear';
+      gear.type = 'button';
+      gear.textContent = '⚙';
+      gear.title = 'How long this part takes';
+      gear.onclick = event => {
+        event.stopPropagation();
+        askPace(part, gear);
+      };
+
       const name = document.createElement('span');
       name.className = 'ctab-part-name';
       name.textContent = part.name;
+      line.append(gear, name);
 
       // The same two lines the chapter wore, now where they belong: one
       // part at a time, at a size that can be read
-      one.append(name,
+      one.append(line,
         barOf('done', part.written, part.rows,
               part.rows ? part.written + '/' + part.rows : '—'),
         barOf('learnt', part.learnt, part.rows,
@@ -570,6 +639,116 @@
 
     return box;
   };
+
+  // ============================================================
+  // # ⏱️ ⚙️  SAYING WHAT A PART COSTS
+  // # 🔤 JavaScript
+  // # 🎯 Two ways of reckoning — by the row or by the page — and how
+  // #    many minutes each one costs
+  // # 🔗 BY THE PAGE IS NOT THE SAME AS BY THE ROW and neither is
+  // #    always right. A list of terms is read a row at a time and
+  // #    costs by the row; a part written as prose is read a page at a
+  // #    time and a row of it means nothing. So the reader says which,
+  // #    and what it comes to is shown while they are choosing — a
+  // #    number of minutes per row tells nobody how long the part is
+  // ============================================================
+  let paceBox = null;
+
+  const shutPace = () => { if (paceBox) paceBox.remove(); paceBox = null; };
+
+  const askPace = (part, near) => {
+    shutPace();
+
+    let per = part.per, each = part.each;
+    const pages = window.MyTermPaper?.pagesOf(window.MyTermChapterStore?.rowsOf(part.id) || []) || 0;
+
+    paceBox = document.createElement('div');
+    paceBox.className = 'cmenu asking cpace';
+    paceBox.onclick = event => event.stopPropagation();
+
+    const title = document.createElement('p');
+    title.className = 'cmenu-ask';
+    title.textContent = part.name;
+
+    const pick = document.createElement('div');
+    pick.className = 'cpace-pick';
+
+    const sum = document.createElement('p');
+    sum.className = 'cmenu-why';
+
+    const box = document.createElement('input');
+    box.type = 'text';
+    box.inputMode = 'numeric';
+    box.className = 'cmenu-box';
+    box.value = each ? String(each) : '';
+    box.placeholder = '0';
+
+    const howMany = () => (per === 'page' ? pages : part.rows);
+
+    const retell = () => {
+      const minutes = (Number(plainDigits(box.value)) || 0) * howMany();
+      sum.textContent = howMany() + (per === 'page' ? ' pages' : ' rows') + ' → '
+        + (minutes ? (window.MyTermHours ? window.MyTermHours.fmt(minutes) : minutes + 'm') : 'nothing yet');
+    };
+
+    [['row', 'By the row'], ['page', 'By the page']].forEach(([which, words]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'cpace-one' + (per === which ? ' on' : '');
+      button.textContent = words;
+      button.onclick = () => {
+        per = which;
+        [...pick.children].forEach(b => b.classList.toggle('on', b === button));
+        retell();
+      };
+      pick.append(button);
+    });
+
+    const line = document.createElement('div');
+    line.className = 'cmenu-line';
+    const unit = document.createElement('span');
+    unit.className = 'cpace-unit';
+    unit.textContent = 'min each';
+
+    const go = document.createElement('button');
+    go.type = 'button';
+    go.className = 'cmenu-go';
+    go.textContent = 'OK';
+    go.onclick = () => {
+      window.MyTermChapterStore.setPace(part.id, per, Number(plainDigits(box.value)) || 0);
+      shutPace();
+      retime();
+      drawTabs();
+    };
+
+    box.oninput = retell;
+    box.onkeydown = event => {
+      if (event.key === 'Enter') { event.preventDefault(); go.click(); }
+      if (event.key === 'Escape') { event.preventDefault(); shutPace(); }
+    };
+
+    line.append(box, unit, go);
+    paceBox.append(title, pick, line, sum);
+    retell();
+
+    document.body.append(paceBox);
+    const spot = near.getBoundingClientRect();
+    const wide = paceBox.offsetWidth, tall = paceBox.offsetHeight;
+    paceBox.style.left = Math.min(Math.round(spot.left), window.innerWidth - wide - 8) + 'px';
+    paceBox.style.top = Math.min(Math.round(spot.bottom + 6), window.innerHeight - tall - 8) + 'px';
+    box.focus();
+    box.select();
+  };
+
+  // An Arabic keyboard writes ٥ and not 5, and both are taken — the same
+  // rule the row menu was given, for the same reason
+  const plainDigits = s => String(s == null ? '' : s)
+    .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x06F0));
+
+  document.addEventListener('mousedown', event => {
+    if (paceBox && !paceBox.contains(event.target)) shutPace();
+  });
 
   // ============================================================
   // # ✏️ 🏷️  RENAMING A CHAPTER WHERE IT STANDS

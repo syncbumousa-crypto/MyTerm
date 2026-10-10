@@ -1607,12 +1607,86 @@ body.reading .build { bottom: 46px; }
 .ctab-part.on .ctab-bar { background: rgba(0, 0, 0, .15); }
 .ctab-part.on .ctab-count { color: #666666; }
 
+.ctab-part-head { display: flex; align-items: center; gap: 5px; min-width: 0; }
+
 .ctab-part-name {
-  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* To the LEFT of the part's name, where nothing else on this strip
+   stands — so it is never taken for the plus on the chapter above it,
+   which is on the right and adds rather than sets */
+.ctab-gear {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #8a8b93;
+  cursor: pointer;
+}
+
+.ctab-gear:hover { background: rgba(255, 255, 255, .14); color: #ffffff; }
+.ctab-part.on .ctab-gear { color: #777777; }
+.ctab-part.on .ctab-gear:hover { background: rgba(0, 0, 0, .12); color: #111111; }
+
+/* What the chapter comes to, beside its name. A dash while no part has
+   a pace set on it: nothing is a truer answer than a confident nought */
+.ctab-time {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: #9a9ba3;
+  font-variant-numeric: tabular-nums;
+}
+
+.ctab.on .ctab-time { color: #c8cad0; }
+
+/* ============================================================ */
+/* # ⏱️ ⚙️  THE PANEL THAT SETS A PART'S PACE */
+/* # 🔤 CSS */
+/* # 🎯 Two ways of reckoning, a box of minutes, and what the part */
+/* #    comes to while the reader is still choosing */
+/* # 🔗 It wears the row menu's own frame, because it is the same kind */
+/* #    of thing: a small panel that opens beside what it is about and */
+/* #    closes when the hand goes elsewhere. One shape learnt once */
+/* ============================================================ */
+.cpace { width: 236px; }
+
+.cpace-pick { display: flex; gap: 4px; margin-bottom: 8px; }
+
+.cmenu .cpace-one {
+  flex: 1 1 0;
+  width: auto;
+  text-align: center;
+  font-size: 11px;
+  padding: 6px 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--well);
+  color: var(--dim);
+}
+
+.cmenu .cpace-one:hover { background: #2e2f36; color: #ffffff; }
+.cmenu .cpace-one.on { background: #3a6bb0; border-color: #3a6bb0; color: #ffffff; }
+
+.cpace-unit {
+  flex: none;
+  font-size: 11px;
+  color: var(--dim2);
+  white-space: nowrap;
+}
+
+.cpace .cmenu-why { margin: 8px 0 0; }
 
 /* It keeps the height of a shut tab and does not stretch to the open
    one. Stretched, it grew every time a chapter was opened — a door that

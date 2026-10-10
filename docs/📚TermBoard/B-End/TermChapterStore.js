@@ -146,13 +146,23 @@
       }))
     : []);
 
+  // HOW LONG A PART TAKES IS A RULE, NOT A NUMBER. The reader says what
+  // one row costs them, or what one page costs them, and the minutes
+  // are worked out from that and from what is actually in the part. A
+  // number typed once would be a number that stopped being true the
+  // next time a row was added — and the whole point of asking is to
+  // know how much is left
+  const PACES = ['row', 'page'];
+
   const shapeSections = list => Array.isArray(list)
     ? list.filter(s => s && typeof s === 'object').map(s => ({
         id: typeof s.id === 'string' ? s.id : 'terms',
         name: typeof s.name === 'string' ? s.name : 'Terms',
+        per: PACES.includes(s.per) ? s.per : 'row',
+        each: Math.max(0, Number(s.each) || 0),
         rows: shapeRows(s.rows)
       }))
-    : [{ id: 'terms', name: 'Terms', rows: [] }];
+    : [{ id: 'terms', name: 'Terms', per: 'row', each: 0, rows: [] }];
 
   const shapeContent = doc => ({
     app: 'MyTerm',
@@ -545,11 +555,28 @@
     sections: () => (open?.content.sections || []).map(s => {
       const living = s.rows.filter(r => !r.deleted);
       return {
-        id: s.id, name: s.name, rows: living.length,
+        id: s.id, name: s.name, per: s.per, each: s.each, rows: living.length,
         written: living.filter(r => hasWords(r.term || r.termAr) && hasWords(r.text || r.textAr)).length,
         learnt: living.filter(r => open.state.marks[r.id]?.on === true).length
       };
     }),
+
+    // The rows of one part, for whoever needs to measure them. Handed
+    // out as the living ones in order, the same list the paper draws
+    rowsOf: id => {
+      const section = (open?.content.sections || []).find(s => s.id === id);
+      return section ? section.rows.filter(r => !r.deleted).sort((a, b) => a.order - b.order) : [];
+    },
+
+    setPace: (id, per, each) => {
+      if (!open) return false;
+      const section = open.content.sections.find(s => s.id === id);
+      if (!section) return false;
+      section.per = PACES.includes(per) ? per : 'row';
+      section.each = Math.max(0, Number(each) || 0);
+      wrote();
+      return true;
+    },
 
     openSection: () => sectionOf()?.id ?? null,
 

@@ -121,14 +121,20 @@
     }));
     check('No name leaks out of its wrapper', leaks.length === 0, leaks.join(' · '));
 
-    // 5 - every id the code asks for is drawn in the page
-    const wanted = new Set();
+    // 5 - every id the code asks for exists: written in the page, or given
+    // by the code to something it makes itself. The second half was missing,
+    // and the first thing built on the page at run time was reported as a
+    // hole in the page — a true count of the wrong thing
+    const wanted = new Set(), given = new Set();
     js.forEach(([, src]) => {
       [...src.matchAll(/getElementById\('([^']+)'\)/g)].forEach(m => wanted.add(m[1]));
       [...src.matchAll(/[^A-Za-z_$]\$\('([^']+)'\)/g)].forEach(m => wanted.add(m[1]));
+      [...src.matchAll(/\.id\s*=\s*'([^']+)'/g)].forEach(m => given.add(m[1]));
     });
-    const noSuchId = [...wanted].filter(id => !ids.includes(id));
-    check('Every id the code asks for is in the page', noSuchId.length === 0, noSuchId.join(' · '));
+    const noSuchId = [...wanted].filter(id => !ids.includes(id) && !given.has(id));
+    check('Every id the code asks for exists', noSuchId.length === 0,
+          noSuchId.length ? noSuchId.join(' · ')
+                          : ids.length + ' in the page, ' + given.size + ' made as the page runs');
 
     // 6 - every shared name used is defined by some file
     const made = new Set(), used = new Set();

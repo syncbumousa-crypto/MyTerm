@@ -19,9 +19,9 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=93">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=93">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=93">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=94">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=94">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=94">
 </head>
 <body>
 
@@ -213,57 +213,80 @@
 
   <main class="cbody" id="course-body"></main>
 
-  <!-- The bottom strip: how the page is read, not what it says. These are
-       one reader's preferences, so they are kept in this browser and never
-       written to Drive — and they are the same in every course, because the
-       size of type is a preference of the eye and not a fact of a course. -->
+  <!-- ============================================================ -->
+<!-- # 🎚️ 🫥  THE STRIP THAT PEEKS UP -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 How the page is read, in three groups: what it is drawn like on -->
+<!-- #    the left, how it is studied in the middle, and what the page -->
+<!-- #    itself does on the right -->
+<!-- # 🔗 It is OFF THE SCREEN until the pointer comes near the bottom -->
+<!-- #    edge, so the sheets have the whole window while they are being -->
+<!-- #    read, and the controls are there the moment they are wanted. -->
+<!-- #    The arrangement, the icons and the theme are the reader's own, -->
+<!-- #    taken from their pages: the same hand reaches to the same side -->
+<!-- #    for the same kind of thing in both. -->
+<!-- # -->
+<!-- #    The zone above it is a sixteen pixel strip and nothing else — -->
+<!-- #    the bar cannot be its own trigger while it is out of sight. -->
+<!-- #    None of this holds on a touch screen, where there is no -->
+<!-- #    hovering at all: there the strip simply stays put -->
+<!-- ============================================================ -->
+  <div class="cfoot-zone" id="course-foot-zone"></div>
+
   <footer class="cfoot" id="course-foot">
-    <span class="cgroup">
-      <button class="cbtn" type="button" id="font-down" title="Smaller type">A−</button>
-      <span class="cnum" id="font-now"></span>
-      <button class="cbtn" type="button" id="font-up" title="Larger type">A+</button>
-    </span>
-    <!-- These two set how wide the TERM column is drawn on the sheet, and
-         whatever it loses the meaning column gains. The sheet itself is
-         an A4 and never changes size: what fits on a page is measured
-         against it, so a sheet that moved with the window would break the
-         same chapter at different rows on the laptop and on the phone. -->
-    <span class="cgroup">
-      <button class="cbtn" type="button" id="col-down" title="Narrower Term column">−</button>
-      <span class="cnum" id="col-now"></span>
-      <button class="cbtn" type="button" id="col-up" title="Wider Term column">+</button>
-    </span>
-    <!-- A row carries both languages at once, in four fields on the one
-         row, and this is the switch between the two that are on the
-         paper. It sits beside the type size because it is the same kind
-         of thing — how the page is read, not what the term says — and it
-         is kept in this browser like the others. It is also how the
-         second language gets written: whatever is typed while this says
-         ع goes into the Arabic fields and never over the English. -->
-    <span class="cgroup">
-      <button class="cbtn" type="button" id="course-lang" title="Arabic / English">EN</button>
+
+    <!-- LEFT: what the sheet is drawn like -->
+    <span class="cfoot-side">
+      <!-- The sources of the course — the book a summary is written from.
+           There is no sources pane yet, so the button is here and plainly
+           DISABLED rather than here and silent: a press that does nothing
+           is worse than a control that says it is not ready. It is the
+           reader's own rule, from the same strip this one is copied from -->
+      <span class="cgroup">
+        <button class="cbtn" type="button" id="course-book" title="Sources — not built yet" disabled></button>
+      </span>
+
+      <span class="cgroup">
+        <button class="cbtn" type="button" id="font-down" title="Smaller type"><span class="ctxt">A−</span></button>
+        <span class="cnum" id="font-now"></span>
+        <button class="cbtn" type="button" id="font-up" title="Larger type"><span class="ctxt">A+</span></button>
+      </span>
+
+      <!-- These two set how wide the TERM column is drawn on the sheet, and
+           whatever it loses the meaning column gains. The sheet itself is
+           an A4 and never changes size: what fits on a page is measured
+           against it, so a sheet that moved with the window would break the
+           same chapter at different rows on the laptop and on the phone. -->
+      <span class="cgroup">
+        <button class="cbtn" type="button" id="col-down" title="Narrower Term column"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+        <span class="cnum" id="col-now"></span>
+        <button class="cbtn" type="button" id="col-up" title="Wider Term column"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      </span>
     </span>
 
-    <!-- The whole sheet at once. Covering covers the MEANINGS and leaves
-         the terms, because that is what turns a summary into a test;
-         showing shows everything there is, terms included. A single
-         press on any one cell turns that cell over by itself. None of it
-         is written to any file: what you covered up this evening is not
-         a fact about the course. -->
-    <span class="cgroup">
-      <button class="cbtn" type="button" id="course-eye" title="Hide the meanings">👁</button>
+    <!-- MIDDLE: how it is studied. The whole sheet at once — covering
+         covers the MEANINGS and leaves the terms, because that is what
+         turns a summary into a test; showing shows everything there is.
+         A single press on any one cell turns that cell over by itself.
+         None of it is written to any file. -->
+    <span class="cfoot-middle">
+      <span class="cgroup">
+        <button class="cbtn" type="button" id="course-eye" title="Hide the meanings"></button>
+      </span>
     </span>
 
-    <!-- Dark paper, for reading at night. The desk behind the sheets was
-         always dark; this is the sheets themselves. One rule turns them
-         over and every colour on them keeps its own hue, so there is no
-         second palette to keep in step with the first. -->
-    <span class="cgroup">
-      <button class="cbtn" type="button" id="course-dark" title="Dark paper">◐</button>
-    </span>
-    <span class="cfoot-right">
+    <!-- RIGHT: what the page itself does. The language is here and not
+         with the type size, because it changes WHICH WORDS are on the
+         paper and not how they are drawn — and whatever is typed while it
+         says Arabic goes into the Arabic fields, never over the English. -->
+    <span class="cfoot-side">
       <span class="csync" id="course-sync" title="Saved to your Drive">✓</span>
-      <button class="cbtn" type="button" id="course-full" title="Fullscreen">⛶</button>
+      <span class="cgroup">
+        <button class="cbtn" type="button" id="course-lang" title="Arabic / English"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><line x1="2.5" y1="12" x2="21.5" y2="12"/><path d="M12 2.5a14 14 0 0 1 3.8 9.5 14 14 0 0 1-3.8 9.5 14 14 0 0 1-3.8-9.5A14 14 0 0 1 12 2.5z"/></svg></button>
+        <span class="cnum" id="lang-now"></span>
+        <button class="cbtn" type="button" id="course-dark" title="Dark paper"></button>
+        <button class="cbtn" type="button" id="course-full" title="Fullscreen"></button>
+      </span>
     </span>
   </footer>
 
@@ -277,7 +300,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v93</p>
+<p class="build">v94</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -300,19 +323,19 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=93"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=93"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=93"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=93"></script>
-<script src="📚TermBoard/B-End/TermChapterStore.js?v=93"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=93"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=93"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=93"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=93"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=93"></script>
-<script src="📚TermBoard/F-End/TermChapterPaper.js?v=93"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=93"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=93"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=94"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=94"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=94"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=94"></script>
+<script src="📚TermBoard/B-End/TermChapterStore.js?v=94"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=94"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=94"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=94"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=94"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=94"></script>
+<script src="📚TermBoard/F-End/TermChapterPaper.js?v=94"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=94"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=94"></script>
 
 </body>
 </html>

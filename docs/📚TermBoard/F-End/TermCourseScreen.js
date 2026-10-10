@@ -22,7 +22,67 @@
   const fullBtn = $('course-full'), syncDot = $('course-sync');
   const fontDown = $('font-down'), fontUp = $('font-up'), fontNow = $('font-now');
   const colDown = $('col-down'), colUp = $('col-up'), colNow = $('col-now');
-  const langBtn = $('course-lang'), eyeBtn = $('course-eye'), darkBtn = $('course-dark');
+  const langBtn = $('course-lang'), langNow = $('lang-now');
+  const eyeBtn = $('course-eye'), darkBtn = $('course-dark'), bookBtn = $('course-book');
+  const foot = $('course-foot'), footZone = $('course-foot-zone');
+
+  // ============================================================
+  // # 🖼️ ✒️  THE ICONS OF THE STRIP
+  // # 🔤 JavaScript
+  // # 🎯 The drawings on the four buttons whose picture changes with
+  // #    what they are showing
+  // # 🔗 Drawn as lines rather than set as letters or little pictures,
+  // #    so they take the colour of the button they sit on and come out
+  // #    the same weight at any size — and so a button that is a STATE
+  // #    can say which state by changing its drawing: an open eye or a
+  // #    struck-through one, a moon or a sun. These are the reader's
+  // #    own, traced from their pages so the same picture means the same
+  // #    thing in both
+  // ============================================================
+  const ICONS = {
+    book: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>'
+      + '<path d="M6.5 2.5H20v19H6.5A2.5 2.5 0 0 1 4 19V5a2.5 2.5 0 0 1 2.5-2.5z"/></svg>',
+    moon: '<svg viewBox="0 0 24 24"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.6 6.6 0 0 0 9.7 9.7z"/></svg>',
+    sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><line x1="12" y1="1.8" x2="12" y2="4"/>'
+      + '<line x1="12" y1="20" x2="12" y2="22.2"/><line x1="4.2" y1="4.2" x2="5.8" y2="5.8"/>'
+      + '<line x1="18.2" y1="18.2" x2="19.8" y2="19.8"/><line x1="1.8" y1="12" x2="4" y2="12"/>'
+      + '<line x1="20" y1="12" x2="22.2" y2="12"/><line x1="4.2" y1="19.8" x2="5.8" y2="18.2"/>'
+      + '<line x1="18.2" y1="5.8" x2="19.8" y2="4.2"/></svg>',
+    expand: '<svg viewBox="0 0 24 24"><path d="M8.5 3H5a2 2 0 0 0-2 2v3.5"/><path d="M15.5 3H19a2 2 0 0 1 2 2v3.5"/>'
+      + '<path d="M21 15.5V19a2 2 0 0 1-2 2h-3.5"/><path d="M3 15.5V19a2 2 0 0 0 2 2h3.5"/></svg>',
+    collapse: '<svg viewBox="0 0 24 24"><path d="M8.5 3v3.5a2 2 0 0 1-2 2H3"/><path d="M21 8.5h-3.5a2 2 0 0 1-2-2V3"/>'
+      + '<path d="M15.5 21v-3.5a2 2 0 0 1 2-2H21"/><path d="M3 15.5h3.5a2 2 0 0 1 2 2V21"/></svg>',
+    eye: '<svg viewBox="0 0 24 24"><path d="M1.8 12S5.5 5 12 5s10.2 7 10.2 7-3.7 7-10.2 7S1.8 12 1.8 12z"/>'
+      + '<circle cx="12" cy="12" r="3.2"/></svg>',
+    eyeOff: '<svg viewBox="0 0 24 24"><path d="M9.6 5.3A9.8 9.8 0 0 1 12 5c6.5 0 10.2 7 10.2 7a17 17 0 0 1-3 3.9"/>'
+      + '<path d="M6.5 6.8A17 17 0 0 0 1.8 12S5.5 19 12 19a9.9 9.9 0 0 0 4-.8"/>'
+      + '<path d="M10 10a3.2 3.2 0 0 0 4.3 4.3"/><line x1="3" y1="3" x2="21" y2="21"/></svg>'
+  };
+
+  bookBtn.innerHTML = ICONS.book;
+
+  // ============================================================
+  // # 👋 🫥  CALLING THE STRIP UP
+  // # 🔤 JavaScript
+  // # 🎯 Slides the bottom strip into view when the pointer comes near
+  // #    the bottom edge, and lets it go again a moment after it leaves
+  // # 🔗 The moment is deliberate: leaving the strip to cross a gap of
+  // #    two pixels on the way to a button at the other end of it would
+  // #    otherwise drop it out from under the hand. And the zone is a
+  // #    thing of its own because a strip that is off the screen cannot
+  // #    be hovered and so can never call itself up
+  // ============================================================
+  let footTimer = null;
+
+  const showFoot = () => { clearTimeout(footTimer); foot.classList.add('show'); };
+  const hideFoot = () => {
+    clearTimeout(footTimer);
+    footTimer = setTimeout(() => foot.classList.remove('show'), 350);
+  };
+
+  footZone.addEventListener('mouseenter', showFoot);
+  foot.addEventListener('mouseenter', showFoot);
+  foot.addEventListener('mouseleave', hideFoot);
 
   const now = () => new Date().toISOString();
   const alive = course => (course.chapters || []).filter(h => !h.deleted);
@@ -90,10 +150,11 @@
     fontUp.disabled = fontPct >= FONTS[FONTS.length - 1];
     colDown.disabled = termPx <= COLS[0];
     colUp.disabled = termPx >= COLS[COLS.length - 1];
-    langBtn.textContent = readLang === 'ar' ? 'ع' : 'EN';
+    langNow.textContent = readLang === 'ar' ? 'ع' : 'EN';
     document.body.classList.toggle('darkpaper', darkPaper);
-    darkBtn.classList.toggle('on', darkPaper);
+    darkBtn.innerHTML = darkPaper ? ICONS.sun : ICONS.moon;
     darkBtn.title = darkPaper ? 'White paper' : 'Dark paper';
+    fullBtn.innerHTML = document.fullscreenElement ? ICONS.collapse : ICONS.expand;
     // Every one of these moves where a sheet runs out — bigger type holds
     // fewer rows, a narrower Term column makes its words wrap over more
     // lines, and the other language is not the same length — so the paper
@@ -129,6 +190,7 @@
   const paintEye = () => {
     const hidden = window.MyTermPaper?.covers.any() === true;
     eyeBtn.classList.toggle('on', hidden);
+    eyeBtn.innerHTML = hidden ? ICONS.eyeOff : ICONS.eye;
     eyeBtn.title = hidden ? 'Show everything' : 'Hide the meanings';
   };
 
@@ -156,7 +218,7 @@
     darkPaper = !darkPaper;
     writePref(PREF.dark, darkPaper ? 'yes' : 'no');
     document.body.classList.toggle('darkpaper', darkPaper);
-    darkBtn.classList.toggle('on', darkPaper);
+    darkBtn.innerHTML = darkPaper ? ICONS.sun : ICONS.moon;
     darkBtn.title = darkPaper ? 'White paper' : 'Dark paper';
   };
 
@@ -164,6 +226,14 @@
     if (document.fullscreenElement) document.exitFullscreen?.();
     else page.requestFullscreen?.().catch(() => {});
   };
+
+  // The drawing follows what actually happened, not what was asked for:
+  // a window can leave fullscreen by the Escape key, which never comes
+  // past the button
+  document.addEventListener('fullscreenchange', () => {
+    fullBtn.innerHTML = document.fullscreenElement ? ICONS.collapse : ICONS.expand;
+    fullBtn.title = document.fullscreenElement ? 'Leave fullscreen' : 'Fullscreen';
+  });
 
   // ============================================================
   // # 🗂️ 📊  THE STRIP OF CHAPTERS

@@ -285,13 +285,17 @@
     // stayed square, and nothing anywhere said why. A modifier written
     // bare is not a name of its own block: it is a name shared with the
     // whole file, and the other owner wins whenever it says more
-    const sheets = [...document.styleSheets].filter(s => (s.href || '').endsWith('.css'));
+    // Read from the FETCHED TEXT of the site's stylesheets, not from
+    // document.styleSheets. This page loads its own small style and not
+    // the site's, so the first try scanned the wrong sheets, found no
+    // modifiers at all, and passed — a green light for having measured
+    // nothing. So the count is checked too: a scan that finds nothing
+    // has not proved anything, and says so
     const alone = new Set(), mods = new Map();
-    sheets.forEach(s => {
-      let rules; try { rules = s.cssRules; } catch { return; }
-      [...rules].forEach(r => {
-        if (!r.selectorText) return;
-        r.selectorText.split(',').forEach(one => {
+    Object.entries(files).filter(([p]) => p.endsWith('.css')).forEach(([, src]) => {
+      const text = src.replace(/\/\*[\s\S]*?\*\//g, ' ');
+      [...text.matchAll(/(^|[}\s])([.#][^{};]*?)\{/g)].forEach(m => {
+        m[2].split(',').forEach(one => {
           const bit = one.trim();
           const bare = bit.match(/^\.([A-Za-z][\w-]*)$/);
           if (bare) alone.add(bare[1]);
@@ -301,9 +305,11 @@
       });
     });
     const shared = [...mods.keys()].filter(m => alone.has(m)).map(m => mods.get(m) + ' vs .' + m);
-    check('No modifier word is also a class of its own', shared.length === 0,
+    const looked = mods.size >= 5 && alone.size >= 5;
+    check('No modifier word is also a class of its own', shared.length === 0 && looked,
           shared.length ? shared.join(' · ')
-                        : mods.size + ' modifiers, none of them a name somebody else styles');
+            : looked ? mods.size + ' modifiers against ' + alone.size + ' plain classes, none shared'
+                     : 'NOTHING WAS SCANNED — ' + mods.size + ' modifiers, ' + alone.size + ' plain classes');
 
     draw();
   };

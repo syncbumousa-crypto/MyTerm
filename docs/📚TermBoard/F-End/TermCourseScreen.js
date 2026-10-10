@@ -471,11 +471,23 @@
   // strip are all counted off the rows, so they are all out of date
   const afterPaper = () => { retime(); drawTabs(); };
 
-  // One line of the two under a chapter's name: a rail with a filled
-  // part and a reading beside it. Both are drawn the same way because
-  // they are the same KIND of thing — how far through something you are
-  // — and a reader should not have to learn two shapes for that
-  const barOf = (kind, done, total, words) => {
+  // ============================================================
+  // # 📊 📏  THE TWO LINES
+  // # 🔤 JavaScript
+  // # 🎯 The first is how much of it you have ticked off; the second is
+  // #    what the bank says about the same rows, green and red together
+  // # 🔗 NO NUMBER BESIDE EITHER OF THEM. A bar and its number say the
+  // #    same thing twice, and the number is the half that cannot be
+  // #    read at a glance: a strip of six parts was six bars and six
+  // #    fractions, and the fractions were what made it a table rather
+  // #    than a strip. The reading is still there for whoever wants it,
+  // #    in what the box says when you rest on it.
+  // #
+  // #    And the two lines are two different questions, which is why
+  // #    they are not one line: HOW MUCH HAVE I GONE THROUGH is yours
+  // #    to say, and HOW MUCH DO I ACTUALLY HAVE is the bank's
+  // ============================================================
+  const barOf = (kind, done, total) => {
     const line = document.createElement('span');
     line.className = 'ctab-line';
 
@@ -485,12 +497,43 @@
     fill.style.width = (total > 0 ? Math.round(Math.min(1, done / total) * 100) : 0) + '%';
     rail.append(fill);
 
-    const count = document.createElement('span');
-    count.className = 'ctab-count';
-    count.textContent = words;
-
-    line.append(rail, count);
+    line.append(rail);
     return line;
+  };
+
+  // The second line, and it is not a bar with one fill: it is TWO, side
+  // by side on the same rail. Green for what the bank asked and you got,
+  // red for what it asked and you missed, and the rail's own grey for
+  // everything it has not asked you yet — so one glance says how much
+  // of the part has been tested at all, and how that went, at once
+  const mixOf = (good, bad, total) => {
+    const line = document.createElement('span');
+    line.className = 'ctab-line';
+
+    const rail = document.createElement('span');
+    rail.className = 'ctab-bar mix';
+    const share = n => (total > 0 ? Math.min(100, (n / total) * 100) : 0);
+
+    const got = document.createElement('i');
+    got.className = 'good';
+    got.style.width = share(good) + '%';
+
+    const missed = document.createElement('i');
+    missed.className = 'bad';
+    missed.style.width = share(bad) + '%';
+
+    rail.append(got, missed);
+    line.append(rail);
+    return line;
+  };
+
+  // What the two lines come to, said in words for whoever rests on them
+  const readingOf = (name, rows, learnt, good, bad) => {
+    if (!rows) return name + ' · nothing in it yet';
+    const asked = good + bad;
+    return name + ' · ' + learnt + ' of ' + rows + ' ticked off · '
+      + (asked ? good + ' right and ' + bad + ' wrong of ' + asked + ' the bank has asked'
+               : 'the bank has not asked you any of it yet');
   };
 
   // ============================================================
@@ -593,6 +636,8 @@
         ? window.MyTermChapterStore.counts() : null;
       const rowsOf = live ? live.rows : ch.rows;
       const learntOf = live ? live.learnt : ch.learnt;
+      const goodOf = live ? live.good : ch.good;
+      const badOf = live ? live.bad : ch.bad;
 
       tab.append(head);
 
@@ -605,9 +650,15 @@
       } else {
         const lines = document.createElement('span');
         lines.className = 'ctab-lines';
+        // THE CHAPTER'S TWO LINES ARE ITS PARTS' TWO LINES ADDED UP, and
+        // nothing else. They were the hours and the ticks, which made the
+        // top line and the lines under it answer different questions —
+        // so a chapter could sit at half on the strip and at nothing in
+        // every part it holds, and both were true
         lines.append(
-          barOf('done', ch.doneMinutes, ch.minutes, hours ? hours.fmt(ch.minutes) : ''),
-          barOf('learnt', learntOf, rowsOf, rowsOf ? learntOf + '/' + rowsOf : '—'));
+          barOf('learnt', learntOf, rowsOf),
+          mixOf(goodOf, badOf, rowsOf));
+        lines.title = readingOf(ch.name || 'This chapter', rowsOf, learntOf, goodOf, badOf);
         tab.append(lines);
       }
 
@@ -633,7 +684,7 @@
       const made = { id: 'h-' + Math.random().toString(36).slice(2, 8),
                      name: 'Chapter ' + (alive(c).length + 1),
                      done: false, minutes: 0, doneMinutes: 0, rows: 0, learnt: 0,
-                     updatedAt: now(), deleted: false };
+                     good: 0, bad: 0, updatedAt: now(), deleted: false };
       c.chapters = c.chapters || [];
       c.chapters.push(made);
       touch();
@@ -705,15 +756,11 @@
       const lines = document.createElement('span');
       lines.className = 'ctab-lines';
       lines.append(
-        barOf('done', part.written, part.rows,
-              part.rows ? part.written + '/' + part.rows : '—'),
-        barOf('learnt', part.learnt, part.rows,
-              part.rows ? part.learnt + '/' + part.rows : '—'));
+        barOf('learnt', part.learnt, part.rows),
+        mixOf(part.good, part.bad, part.rows));
       one.append(line, lines);
 
-      one.title = part.rows
-        ? part.written + ' of ' + part.rows + ' written, ' + part.learnt + ' learnt'
-        : 'Nothing written in it yet';
+      one.title = readingOf(part.name, part.rows, part.learnt, part.good, part.bad);
       one.onclick = event => {
         event.stopPropagation();
         window.MyTermChapterStore.useSection(part.id);

@@ -1557,7 +1557,7 @@ body.reading .build { bottom: 46px; }
    unrelated rows stacked up */
 .ctab-lines { display: flex; flex-direction: column; gap: 3px; }
 
-.ctab-line { display: flex; align-items: center; gap: 6px; }
+.ctab-line { display: flex; align-items: center; }
 
 .ctab-bar {
   flex: 1 1 auto;
@@ -1576,16 +1576,20 @@ body.reading .build { bottom: 46px; }
   transition: width .25s ease;
 }
 
-.ctab-bar.done i { background: #5a8fd8; }
-.ctab-bar.learnt i { background: #4caf7d; }
+/* The first line is BLUE and not green, though it is the line that
+   fills as you tick rows off. Green on both lines would be one colour
+   meaning two things a row apart: how much you have gone through, and
+   how much of it you got right. Blue is distance and green is truth */
+.ctab-bar.learnt i { background: #5a8fd8; }
 
-.ctab-count {
-  flex: none;
-  font-size: 9px;
-  color: #999999;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
+/* The second line carries two fills on one rail, so they lie side by
+   side rather than one over the other — and the corners are left square
+   where they meet, because a rounded join puts a seam of grey between
+   green and red that reads as a third thing */
+.ctab-bar.mix { display: flex; }
+.ctab-bar.mix i { flex: none; border-radius: 0; }
+.ctab-bar.mix i.good { background: var(--mOk); }
+.ctab-bar.mix i.bad { background: var(--mBad); }
 
 /* ============================================================ */
 /* # 📑 ➕  THE PARTS INSIDE A CHAPTER, AND THE TWO WAYS TO ADD */
@@ -1629,7 +1633,6 @@ body.reading .build { bottom: 46px; }
 .ctab-part:hover { background: #34353b; }
 .ctab-part.on { background: #ffffff; color: #111111; border-color: #ffffff; cursor: default; }
 .ctab-part.on .ctab-bar { background: rgba(0, 0, 0, .15); }
-.ctab-part.on .ctab-count { color: #666666; }
 
 .ctab-part-head { display: flex; align-items: center; gap: 5px; min-width: 0; }
 

@@ -336,6 +336,7 @@
 
     open: id => {
       openId = id;
+      window.MyTermCurtain?.down();
       board.hidden = true;
       page.hidden = false;
       // The shell's floating corner and its build mark belong to the board.

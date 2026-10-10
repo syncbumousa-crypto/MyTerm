@@ -15,7 +15,7 @@
 (() => {
   const $ = id => document.getElementById(id);
   const hud = $('hud'), dot = $('hud-sync'), face = $('hud-face');
-  const board = $('board'), course = $('course'), session = $('session');
+  const board = $('board'), course = $('course');
 
   // Picked to sit well on a dark page and to be told apart at a glance
   const SHADES = ['#6b8f71', '#7b6ea8', '#8a6a5e', '#5f7f99', '#947a4e', '#8a5f73'];
@@ -59,9 +59,13 @@
     }
   };
 
+  // The account panel is not opened by hand here. One file owns the
+  // panels and the curtain in front of them, and it is asked — or this
+  // one would be the second place that decides what is on screen, and
+  // the two would disagree the first time one of them changed
   face.onclick = () => {
     board.hidden = true;
     course.hidden = true;
-    session.hidden = false;
+    window.MyTermAccount?.show();
   };
 })();

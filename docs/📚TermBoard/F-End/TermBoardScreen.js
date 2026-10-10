@@ -1191,6 +1191,7 @@
   };
 
   const showBoard = () => {
+    window.MyTermCurtain?.down();
     board.hidden = false;
     backBtn.hidden = false;
     document.body.classList.add('board-on');

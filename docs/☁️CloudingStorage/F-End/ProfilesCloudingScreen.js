@@ -23,9 +23,15 @@
 
   let place = null, busy = false;
 
+  // A step the visitor must ACT on is the one thing that brings the
+  // account panel out from behind the curtain. 'done' is not one of
+  // those: it is how the board is told the place is ready, and the board
+  // is about to take the screen — showing the panel for that one tick is
+  // the flash this was built to stop
   const show = name => {
     Object.entries(steps).forEach(([key, box]) => (box.hidden = key !== name));
     spin.hidden = Boolean(name);
+    if (name === 'link' || name === 'place') window.MyTermAccount?.show();
   };
 
   const allowPick = ok => {
@@ -128,6 +134,9 @@
       // all over again". So the circle keeps turning and says why
       if (!answer.known) {
         note.textContent = 'Could not reach your account just now. Nothing is lost — open the page again in a moment.';
+        // Said where it can be read. A reason written on a panel nobody
+        // is shown is a turning circle that never stops
+        window.MyTermAccount?.show();
         return;
       }
       place = answer.row;
@@ -140,6 +149,13 @@
       if (linked) return await toPlace();
       tell('place-needed');
       show('link');
+    } catch (e) {
+      // Nothing may end with the curtain still turning. Before it was
+      // put there, a throw on this path left the account panel standing
+      // with its own circle going round and said as little; now it would
+      // leave a bare screen, so the reason is shown and the way out with it
+      note.textContent = 'Could not get your Drive ready: ' + e.message;
+      window.MyTermAccount?.show();
     } finally {
       busy = false;
     }

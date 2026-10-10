@@ -19,9 +19,9 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=125">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=125">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=125">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=126">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=126">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=126">
 </head>
 <body>
 
@@ -287,6 +287,37 @@
             title="Drag to give the sources more or less room"></button>
 
     <main class="cbody" id="course-body"></main>
+
+  <!-- ============================================================ -->
+  <!-- # 🗔 📖  THE LONG EXPLANATION -->
+  <!-- # 🔤 HTML -->
+  <!-- # 🎯 A window over the sheet for one row's full explanation: its -->
+  <!-- #    name, a way out, two pairs of handles, and a language -->
+  <!-- # 🔗 ONE WINDOW REUSED, not one per row: a term holds hundreds of -->
+  <!-- #    rows, and a window apiece is hundreds of things on the page -->
+  <!-- #    that nobody is looking at. It is hidden until it is asked -->
+  <!-- #    for, and the dark ground around it is a way out of it. -->
+  <!-- # -->
+  <!-- #    The body is EMPTY here on purpose. What goes in it belongs -->
+  <!-- #    to the chapter being explained, and is written in by hand -->
+  <!-- #    when the window is opened — never left lying in the page -->
+  <!-- ============================================================ -->
+  <div class="cep" id="course-explain" hidden>
+    <div class="cep-card" id="ep-card" role="dialog" aria-modal="true" aria-labelledby="ep-title">
+      <div class="cep-head">
+        <h2 class="cep-title" id="ep-title"></h2>
+        <div class="cep-tools">
+          <button class="cep-btn" type="button" id="ep-smaller" title="Smaller words in this window"><span class="cep-az">A&#8722;</span></button>
+          <button class="cep-btn" type="button" id="ep-bigger" title="Larger words in this window"><span class="cep-az">A+</span></button>
+          <button class="cep-btn" type="button" id="ep-fig-smaller" title="Smaller pictures in this window"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="9.6" r="1.5"/><path d="M3.6 17.2l4.9-4.9 3.9 3.9 2.9-2.4 5.1 4.4"/></svg><span class="cep-sign">&#8722;</span></button>
+          <button class="cep-btn" type="button" id="ep-fig-bigger" title="Larger pictures in this window"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.6" cy="9.6" r="1.5"/><path d="M3.6 17.2l4.9-4.9 3.9 3.9 2.9-2.4 5.1 4.4"/></svg><span class="cep-sign">+</span></button>
+          <button class="cep-btn" type="button" id="ep-lang" title="Switch language"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><line x1="2.5" y1="12" x2="21.5" y2="12"/><path d="M12 2.5a14 14 0 0 1 3.8 9.5 14 14 0 0 1-3.8 9.5 14 14 0 0 1-3.8-9.5A14 14 0 0 1 12 2.5z"/></svg></button>
+          <button class="cep-btn" type="button" id="ep-close" title="Close"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+        </div>
+      </div>
+      <div class="cep-body" id="ep-body"></div>
+    </div>
+  </div>
   </div>
 
   <!-- ============================================================ -->
@@ -404,7 +435,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v125</p>
+<p class="build">v126</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -427,23 +458,24 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=125"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=125"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=125"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=125"></script>
-<script src="📚TermBoard/B-End/TermChapterStore.js?v=125"></script>
-<script src="📚TermBoard/B-End/TermSourceStore.js?v=125"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=125"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=125"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=125"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=125"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=125"></script>
-<script src="📚TermBoard/F-End/TermChapterPaper.js?v=125"></script>
-<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=125"></script>
-<script src="📚TermBoard/F-End/TermSourceFind.js?v=125"></script>
-<script src="📚TermBoard/F-End/TermSourcePane.js?v=125"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=125"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=125"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=126"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=126"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=126"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=126"></script>
+<script src="📚TermBoard/B-End/TermChapterStore.js?v=126"></script>
+<script src="📚TermBoard/B-End/TermSourceStore.js?v=126"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=126"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=126"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=126"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=126"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=126"></script>
+<script src="📚TermBoard/F-End/TermChapterPaper.js?v=126"></script>
+<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=126"></script>
+<script src="📚TermBoard/F-End/TermSourceFind.js?v=126"></script>
+<script src="📚TermBoard/F-End/TermSourcePane.js?v=126"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=126"></script>
+<script src="📚TermBoard/F-End/TermExplain.js?v=126"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=126"></script>
 
 </body>
 </html>

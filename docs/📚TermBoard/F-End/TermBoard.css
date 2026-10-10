@@ -1145,8 +1145,24 @@ body.board-on {
    steps above the footer instead of under it */
 body.reading .hud { display: none; }
 body.reading .build { bottom: 46px; }
+/* ============================================================ */
+/* # 🎚️ 🪝  THE TWO STRIPS, AND THE TABS THAT PULL THEM */
+/* # 🔤 CSS */
+/* # 🎯 A strip at each edge that can be shut away, and a small tab */
+/* #    hanging off each one that opens it again */
+/* # 🔗 THE TAB IS OUTSIDE THE STRIP, in a wrapper that holds both. */
+/* #    Put inside, it would go away with the thing it is there to */
+/* #    bring back — and the way to undo an action must never be inside */
+/* #    what that action removes. */
+/* # */
+/* #    And the arrow on it points THE WAY THE STRIP WILL GO: up on an */
+/* #    open top strip, down on a shut one. An arrow that named the */
+/* #    state instead would be read as the direction half the time */
+/* #    anyway, and then it would be read wrongly half the time */
+/* ============================================================ */
+.ctop { position: relative; flex: none; }
+
 .cbar {
-  flex: none;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1156,11 +1172,66 @@ body.reading .build { bottom: 46px; }
   box-sizing: border-box;
 }
 
+.cpull {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 17px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-top: none;
+  background: var(--panel2);
+  color: var(--dim);
+  cursor: pointer;
+  transition: color .12s ease, background .12s ease;
+}
+
+.cpull:hover { background: #2c2d34; color: #ffffff; }
+
+.cpull svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cpull-top {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 0 0 8px 8px;
+}
+
+.cpull-bottom {
+  bottom: 100%;
+  right: 16px;
+  border: 1px solid #3a3b40;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: #24252a;
+}
+
+.cpull-bottom:hover { background: #2e2f36; color: #ffffff; }
+
+.course-page.bar-shut .cbar { display: none; }
+.course-page.foot-shut .cfoot { display: none; }
+.course-page.foot-shut .cbody { padding-bottom: 34px; }
+
 .cbody {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 26px 16px 56px;
+  /* Room at the foot for the strip that floats over it, so the last
+     sheet is never sat on — and less of it when the strip is shut away,
+     because then only its tab is down there */
+  padding: 26px 16px 76px;
   font-size: var(--read-font);
   /* Thin and dark, the colour of the desk. The browser's own is wide and
      pale and pulls the eye off the paper, and it stands beside the one
@@ -1182,32 +1253,24 @@ body.reading .build { bottom: 46px; }
 /* #    calls it */
 /* # 🔗 It floats OVER the sheets rather than sitting under them, so */
 /* #    what is being read has the whole window while it is being read. */
-/* #    The zone has to be a thing of its own: a bar that is off the */
-/* #    screen cannot be hovered, so it can never be its own trigger. */
+/* #    Its tab is the way it is called up and sent away, and the tab */
+/* #    is always there to be seen. */
 /* # */
-/* #    And the zone answers a TOUCH as well as a pointer, rather than */
-/* #    the strip standing still on screens the browser says cannot */
-/* #    hover. That was tried and measured: this very browser answers */
-/* #    "(hover: none)" while being driven by a mouse, so the strip */
-/* #    never moved and the whole thing looked broken. Asking the */
-/* #    browser what kind of machine it is on is a guess; answering */
-/* #    both ways is not */
+/* #    It replaced a sixteen pixel strip of nothing at the very edge */
+/* #    that brought the bar up when a pointer crossed it. That worked, */
+/* #    and could be found by somebody who already knew it was there — */
+/* #    and it fought the tab: a strip shut by hand came straight back */
+/* #    because the hand that shut it was still at the bottom edge */
 /* ============================================================ */
-.cfoot-zone {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 16px;
-  z-index: 40;
-}
-
-.cfoot {
+.cbottom {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 41;
+}
+
+.cfoot {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1217,11 +1280,7 @@ body.reading .build { bottom: 46px; }
   border-top: 1px solid #3a3b40;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, .4);
   box-sizing: border-box;
-  transform: translateY(100%);
-  transition: transform .2s ease;
 }
-
-.cfoot.show { transform: translateY(0); }
 
 .cfoot-side { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
 
@@ -1236,19 +1295,6 @@ body.reading .build { bottom: 46px; }
 }
 
 
-/* It stands at the very edge of the strip now, where the way back used
-   to be, and keeps a little room of its own so it never touches the
-   first chapter tab */
-.course-title {
-  flex: none;
-  margin: 0 4px 0 0;
-  font-family: var(--mono);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: .5px;
-  color: #ffffff;
-  white-space: nowrap;
-}
 
 /* ============================================================ */
 /* # 🎛️ 🔘  THE BUTTONS, AND THE TROUGHS THEY SIT IN */
@@ -1976,7 +2022,6 @@ body.reading .hud { display: none; }
 body.reading .build { bottom: 46px; }
 
 @media (max-width: 560px) {
-  .course-title { display: none; }
   .cbar { padding: 7px 8px; gap: 6px; }
   .cfoot { padding: 7px 8px; gap: 8px; }
   .ctab { width: 124px; }

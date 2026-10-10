@@ -171,16 +171,30 @@
     title.className = 'col-title';
     title.append(head, count, hours);
 
+    // The two parts under the strip are built before the gear, because
+    // the gear's panel is how things are added to them and it must have
+    // them to hand
+    const body = document.createElement('div');
+    body.className = 'col-body';
+    drawChapters(course, body);
+
+    const marks = marksPart(course);
+
     // ============================================================
-    // # ⚙️ 🗃️  THE ONE BUTTON FOR THE RARE THINGS
+    // # ⚙️ 🗃️  THE ONE BUTTON FOR EVERYTHING DONE TO A COURSE
     // # 🔤 JavaScript
-    // # 🎯 A small gear at the end of the strip. It opens a panel beside
-    // #    itself holding what is asked of a course once a term: how many
-    // #    hours it is worth, and taking it off the board
-    // # 🔗 These two were a button each on the strip and a line inside
-    // #    the marks table, three places for things done once. One place,
-    // #    and it stays shut. Removing still takes two presses, because
-    // #    a menu that opens by accident must not delete by accident
+    // # 🎯 A small gear at the end of the strip, opening a panel beside
+    // #    itself: the course's name, the hours it is worth, adding a
+    // #    chapter, adding something it is graded on, and taking it off
+    // #    the board
+    // # 🔗 These were five things in five places — two buttons on the
+    // #    strip, a dashed button under the chapters, another under the
+    // #    marks table, and a line inside the table. Every one of them
+    // #    was on screen at all times for something done a few times a
+    // #    term, and between them they left the course name four letters
+    // #    and an ellipsis. One place, and it stays shut. Removing still
+    // #    takes two presses: a panel that opens by accident must not
+    // #    delete by accident
     // ============================================================
     const menu = document.createElement('div');
     menu.className = 'col-menu';
@@ -239,7 +253,37 @@
       drawColumns();
     };
 
-    menu.append(nameLine, hoursLine, drop);
+    // Both of these open what they add to before adding, so the new row
+    // is never written somewhere the reader cannot see it
+    const addChapterBtn = document.createElement('button');
+    addChapterBtn.className = 'col-menu-do';
+    addChapterBtn.type = 'button';
+    addChapterBtn.textContent = 'Add a chapter';
+    addChapterBtn.onclick = () => {
+      course.chapters = course.chapters || [];
+      course.chapters.push({ id: newChapterId(), name: 'Chapter ' + arabic(alive(course).length + 1),
+                             done: false, minutes: 0, doneMinutes: 0, updatedAt: now(), deleted: false });
+      changed(course);
+      if (!column.classList.contains('open')) { column.classList.add('open'); rememberFold(course.id, false); }
+      drawChapters(course, body);
+      refreshScores();
+      shutMenus();
+      const fresh = body.querySelector('.ch:last-of-type .ch-name');
+      fresh?.focus();
+      fresh?.select();
+    };
+
+    const addMarkBtn = document.createElement('button');
+    addMarkBtn.className = 'col-menu-do';
+    addMarkBtn.type = 'button';
+    addMarkBtn.textContent = 'Add something graded';
+    addMarkBtn.onclick = () => {
+      column.classList.add('marks-on');
+      shutMenus();
+      marks.addMark();
+    };
+
+    menu.append(nameLine, hoursLine, addChapterBtn, addMarkBtn, drop);
 
     const gear = document.createElement('button');
     gear.className = 'col-gear';
@@ -267,11 +311,7 @@
       window.MyTermCoursePage?.open(course.id);
     };
 
-    const body = document.createElement('div');
-    body.className = 'col-body';
-    drawChapters(course, body);
-
-    column.append(top, body, marksPart(course));
+    column.append(top, body, marks);
     paintHead(column, course);
     return column;
   };
@@ -603,11 +643,10 @@
       });
     };
 
-    const more = document.createElement('button');
-    more.className = 'col-add';
-    more.type = 'button';
-    more.textContent = '+ item';
-    more.onclick = () => {
+    // Adding is asked for from the gear, like everything else done to a
+    // course as a whole, so the panel hands out the way to do it rather
+    // than carrying a button of its own
+    panel.addMark = () => {
       course.items = course.items || [];
       course.items.push({ id: 'i-' + Math.random().toString(36).slice(2, 8), name: '', weight: 0,
                           got: null, outOf: 0, due: '', material: '', updatedAt: now(), deleted: false });
@@ -618,7 +657,7 @@
     };
 
     drawItems();
-    panel.append(table, foot, more);
+    panel.append(table, foot);
     // The foot cannot be filled until the panel knows which card it is in,
     // and it is not in one yet, so the first filling waits a turn
     setTimeout(tellTheHead, 0);
@@ -904,21 +943,6 @@
       body.append(row);
     });
 
-    const add = document.createElement('button');
-    add.className = 'col-add';
-    add.type = 'button';
-    add.textContent = '+ chapter';
-    add.onclick = () => {
-      course.chapters = course.chapters || [];
-      course.chapters.push({ id: newChapterId(), name: 'Chapter ' + arabic(alive(course).length + 1), done: false, minutes: 0, doneMinutes: 0, updatedAt: now(), deleted: false });
-      changed(course);
-      drawChapters(course, body);
-      refreshScores();
-      const fresh = body.querySelector('.ch:last-of-type .ch-name');
-      fresh?.focus();
-      fresh?.select();
-    };
-    body.append(add);
   };
 
   const refreshScores = () => {

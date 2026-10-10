@@ -143,7 +143,7 @@
   const LEAST_WORDS = 5;
 
   // Plain words, never markup. An anchor is matched against the text
-  // pdf.js reads out of the page, and that text has no tags in it
+  // the PDF reader gets out of the page, and that text has no tags in it
   const plainWords = s => String(s == null ? '' : s)
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')

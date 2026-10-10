@@ -82,13 +82,37 @@
   // ============================================================
   const afterRoom = () => { window.MyTermPaper?.fit?.(); };
 
+  // ============================================================
+  // # ↩️ 📍  A PASSAGE WAS PRESSED IN THE BOOK
+  // # 🔤 JavaScript
+  // # 🎯 Brings its row on screen, opening its part first if the row is
+  // #    not in the part on the desk
+  // # 🔗 THE PART IS OPENED FIRST, and that is the whole reason this
+  // #    lives here and not in the paper. The paper only ever holds one
+  // #    part; a row of another part is simply not on it, so the paper
+  // #    asked for it would answer "no such row" — truthfully, and
+  // #    uselessly. Which part is on the desk is this page's business
+  // ============================================================
+  const toRow = ({ row, section }) => {
+    const store = window.MyTermChapterStore;
+    if (!store?.openId()) return;
+    if (section && store.openSection() !== section) {
+      store.useSection(section);
+      drawRows();
+      // Drawn again from nothing, so the row exists only after the cut
+      setTimeout(() => window.MyTermPaper?.goToRow?.(row), 60);
+      return;
+    }
+    window.MyTermPaper?.goToRow?.(row);
+  };
+
   bookBtn.disabled = false;
   bookBtn.title = 'Sources';
   bookBtn.onclick = async () => {
     const c = course();
     if (!c) return;
     const pane = window.MyTermSourcePane;
-    if (!pane?.arm(afterRoom)) return;
+    if (!pane?.arm(afterRoom, toRow)) return;
 
     if (pane.isOpen()) { pane.shut(); bookBtn.innerHTML = ICONS.book; bookBtn.title = 'Sources'; }
     else { await pane.open(keep.live(), c); bookBtn.innerHTML = ICONS.bookOpen; bookBtn.title = 'Hide the sources'; }

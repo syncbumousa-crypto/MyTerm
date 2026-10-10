@@ -31,7 +31,7 @@
   const DRAW_EDGE = 0.6, KEEP_EDGE = 1.6;
 
   let page = null, split = null, pane = null, cols = null;
-  let onResize = () => {};
+  let onResize = () => {}, told = () => {};
   let shown = { book: null, tb: null };   // which source is in each column
   const books = new Map();                // sourceId -> the opened pdf
 
@@ -190,12 +190,57 @@
       slot.textContent = '';
       slot.append(canvas);
       slot.dataset.drawn = '1';
+      markUp(book, slot);
     } catch {
       slot.dataset.drawn = '1';   // a page that cannot be drawn is not retried on every scroll
       slot.classList.add('bad');
     } finally {
       delete slot.dataset.drawing;
     }
+  };
+
+  // ============================================================
+  // # 🖍️ 📄  LIGHTING THE PASSAGES ON A DRAWN PAGE
+  // # 🔤 JavaScript
+  // # 🎯 Every place a row of this chapter points at, drawn over the
+  // #    page it points at
+  // # 🔗 Drawn WITH the page and never before it: the marks are per cent
+  // #    of a box that has no size until the page inside it does. And
+  // #    the ones that cannot be found are passed over in silence here
+  // #    — a mark drawn at a guessed spot is worse than no mark, and
+  // #    the place to complain about an anchor that no longer matches
+  // #    is the row that owns it, not the page it is lost on
+  // ============================================================
+  const markUp = async (book, slot) => {
+    const which = slot.closest('.csrc-col')?.id === 'src-col-tb' ? 'tb' : 'book';
+    const source = shown[which];
+    const store = window.MyTermChapterStore;
+    const finder = window.MyTermFind;
+    if (!source || !store?.linksOn || !finder) return;
+
+    const n = Number(slot.dataset.page);
+    const links = store.linksOn(source.id, n);
+    if (!links.length) return;
+
+    const page = await finder.page(book.doc, source.id, n).catch(() => null);
+    // The reader may have scrolled away while the page was being read
+    if (!page || !slot.dataset.drawn || shown[which]?.id !== source.id) return;
+
+    links.forEach(link => {
+      const hit = finder.find(page, link.anchor);
+      if (!hit) return;
+      hit.boxes.forEach(box => {
+        const mark = document.createElement('i');
+        mark.className = 'bw is-' + link.what;
+        mark.dataset.row = link.row;
+        mark.dataset.section = link.section;
+        mark.dataset.link = link.id;
+        mark.title = link.no ? 'Row ' + link.no : 'Go to the row';
+        mark.style.cssText =
+          `left:${box.x}%; top:${box.y}%; width:${box.w}%; height:${box.h}%`;
+        slot.append(mark);
+      });
+    });
   };
 
   const clearPage = slot => {
@@ -470,9 +515,14 @@
   // yellow swatch came out a tall bar while the other three were square.
   // A modifier word with no prefix is not a name of mine: it is a name
   // shared with every rule in the file
+  // ONE WORD FOR ONE THING. The colours are named after the fields they
+  // belong to — term, text, ask — the same words the row uses and the
+  // same the store writes. A swatch called "def" for what everything
+  // else calls "text" is a translation nobody asked for, and it is got
+  // wrong the first time somebody adds a fourth
   const KEYS = [
     ['is-term', 'where the term is'],
-    ['is-def', 'where its meaning is'],
+    ['is-text', 'where its meaning is'],
     ['is-ask', 'where a question is'],
     ['is-out', 'not required']
   ];
@@ -575,16 +625,79 @@
     onResize();
   };
 
+  // ============================================================
+  // # ↔️ 🎯  GOING TO A PLACE, AND COMING BACK FROM ONE
+  // # 🔤 JavaScript
+  // # 🎯 Scrolls a column to a page and flashes the passage; and tells
+  // #    whoever is listening when a passage on the page is pressed
+  // # 🔗 THE PAGE IS DRAWN BEFORE IT IS SCROLLED TO. Pages far from the
+  // #    screen are emptied to keep the tab alive, and an empty one has
+  // #    the right height but nothing in it — so a jump measured
+  // #    against it lands in the right place on a blank sheet, and the
+  // #    reader sees nothing and thinks the jump failed. The reader's
+  // #    own site learned this; it is the same lesson here.
+  // #
+  // #    AND THE FLASH FADES. A mark left lit becomes part of the page
+  // #    within a minute, and the next jump to the same page says
+  // #    nothing new
+  // ============================================================
+  let flashing = null;
+
+  const goTo = async link => {
+    if (!link || !pane || pane.hidden) return false;
+    const which = shown.book?.id === link.src ? 'book' : shown.tb?.id === link.src ? 'tb' : null;
+    if (!which) return false;
+
+    const stack = $('src-stack-' + which);
+    const slot = stack?.querySelector(`.csrc-page[data-page="${link.page}"]`);
+    if (!slot) return false;
+
+    // Drawn first, then scrolled to — see above
+    const book = stack._book;
+    if (book) await drawPage(book, slot);
+
+    stack.scrollTop = slot.offsetTop - stack.offsetTop - 12;
+    liveAll();
+
+    // The marks for this page may only have just been added
+    for (let i = 0; i < 20; i++) {
+      const mine = [...slot.querySelectorAll(`.bw[data-link="${link.id}"]`)];
+      if (mine.length) {
+        clearTimeout(flashing);
+        stack.querySelectorAll('.bw.hit').forEach(m => m.classList.remove('hit'));
+        mine.forEach(m => m.classList.add('hit'));
+        flashing = setTimeout(
+          () => mine.forEach(m => m.classList.remove('hit')), 2600);
+        return true;
+      }
+      await new Promise(r => setTimeout(r, 60));
+    }
+    return false;
+  };
+
   window.MyTermSourcePane = {
     // Told where it lives and what to call when the room changes, so
     // this file never has to know the course page's own names
-    arm: (onRoomChange) => {
+    arm: (onRoomChange, onMarkPressed) => {
       page = $('course');
       split = $('course-split');
       pane = $('course-sources');
       cols = $('course-src-cols');
       onResize = onRoomChange || (() => {});
+      told = onMarkPressed || (() => {});
       if (!pane) return false;
+
+      // One listener for the whole pane, not one per mark. There are a
+      // couple of hundred marks on a chapter's worth of pages, and they
+      // are made and thrown away on every scroll
+      if (!pane.dataset.listening) {
+        pane.dataset.listening = '1';
+        pane.addEventListener('click', e => {
+          const mark = e.target.closest('.bw[data-row]');
+          if (!mark) return;
+          told({ row: mark.dataset.row, section: mark.dataset.section, link: mark.dataset.link });
+        });
+      }
 
       $('course-src-add').onclick = e => { e.stopPropagation(); askKind(e.currentTarget); };
 
@@ -605,6 +718,8 @@
 
     open: show,
     shut: hide,
+    // Take the reader to one stored place, and light it
+    goTo,
     isOpen: () => !!pane && !pane.hidden,
     redraw: draw,
     // The bell rang on another device: the list may have a book this one

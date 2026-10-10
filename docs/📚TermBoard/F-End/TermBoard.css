@@ -2985,7 +2985,7 @@ body.cdragging { cursor: col-resize; user-select: none; }
    square. A modifier word with no prefix is not this block's name at
    all: it is a name shared with the whole stylesheet */
 .csrc-chip.is-term { background: rgba(255, 230, 0, .55); outline: 1px solid #cbb600; }
-.csrc-chip.is-def  { background: rgba(90, 143, 216, .45); outline: 1px solid #3a6bb0; }
+.csrc-chip.is-text { background: rgba(90, 143, 216, .45); outline: 1px solid #3a6bb0; }
 .csrc-chip.is-ask  { background: rgba(193, 77, 110, .45); outline: 1px solid #96355a; }
 
 /* Not required: a grey hatch and not a flat colour. It has to be read
@@ -3158,3 +3158,96 @@ body.cdragging { cursor: col-resize; user-select: none; }
   .course-page.sourcing .cbody { order: -1; min-height: 55vh; }
   .course-page.sourcing .csrc { min-height: 70vh; padding-inline: 14px; }
 }
+
+/* ============================================================ */
+/* # 🖍️ 📄  THE PASSAGES LIT ON A PAGE */
+/* # 🔤 CSS */
+/* # 🎯 A mark over the words a row points at, in the colour of the */
+/* #    field that points at them */
+/* # 🔗 THE SAME THREE COLOURS AS THE KEY ABOVE, and named after the */
+/* #    same three fields — term, text, ask. A legend that says one */
+/* #    thing and a page that says another is a legend nobody reads */
+/* #    twice. */
+/* # */
+/* #    They are see-through, because the words under them are the */
+/* #    point: a mark that covers what it marks has marked nothing */
+/* ============================================================ */
+.bw {
+  position: absolute;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: box-shadow .15s ease;
+}
+
+.bw.is-term { background: rgba(255, 230, 0, .45); outline: 1px solid #cbb600; }
+.bw.is-text { background: rgba(90, 143, 216, .40); outline: 1px solid #3a6bb0; }
+.bw.is-ask  { background: rgba(193, 77, 110, .40); outline: 1px solid #96355a; }
+
+.bw:hover { box-shadow: 0 0 0 2px rgba(255, 255, 255, .8); }
+
+/* Where the reader was just sent. It beats the three colours because it
+   answers a question they asked a second ago — and it goes out again,
+   because a mark left lit is part of the page by the next jump */
+.bw.hit {
+  background: rgba(255, 59, 48, .55) !important;
+  outline: 2px solid #ff3b30 !important;
+  z-index: 2;
+}
+
+/* ============================================================ */
+/* # 📍 📖  THE ROW THAT KNOWS WHERE IT IS */
+/* # 🔤 CSS */
+/* # 🎯 A small diamond in the margin on the other side of the number */
+/* #    from the gear */
+/* # 🔗 NOT hidden the way the gear is, and the difference is the point: */
+/* #    the gear is a way in to doing something, this is a FACT about */
+/* #    the row — that it has a place in the book — and a reader running */
+/* #    an eye down a sheet wants to see which rows have one without */
+/* #    pressing anything */
+/* ============================================================ */
+.crowsrc {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: -16px;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  line-height: 1;
+  color: #b9962a;
+  cursor: pointer;
+  user-select: none;
+}
+
+.crowsrc:hover { color: #141414; }
+
+/* The row a passage sent the reader back to. On the ROW and not on one
+   cell: they are looking for the line they marked, and the line is the
+   row. It fades for the same reason the mark on the page does */
+.ctbl tr.hit td { background: #fff59d; }
+.ctbl tr.hit td.cterm, .ctbl tr.hit td.cdef { transition: background .4s ease; }
+
+/* The dot beside each place in the little list of them, so the colour
+   says which field without a word for it */
+.cmenu-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  min-height: 9px;
+  max-height: 9px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-inline-end: 7px;
+}
+
+.cmenu-dot.is-term { background: rgba(255, 230, 0, .75); outline: 1px solid #cbb600; }
+.cmenu-dot.is-text { background: rgba(90, 143, 216, .75); outline: 1px solid #3a6bb0; }
+.cmenu-dot.is-ask  { background: rgba(193, 77, 110, .75); outline: 1px solid #96355a; }
+
+/* Scoped to the places list alone. Written as ".cmenu button" it would
+   have re-laid every item of the row menu too — a global change made to
+   serve one local need, which is how a stylesheet stops being readable */
+.cmenu .cmenu-place { display: flex; align-items: center; }

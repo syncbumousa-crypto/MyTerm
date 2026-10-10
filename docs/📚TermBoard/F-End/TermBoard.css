@@ -41,10 +41,15 @@ body.board-on {
   min-height: 46px;
 }
 
+/* The name of the term is the largest thing on the page, because it is
+   what the page is about. It is held to one line where there is room
+   and allowed to shrink where there is not, rather than running off the
+   side of a phone */
 .term-title {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: clamp(28px, 7vw, 46px);
+  font-weight: 700;
+  line-height: 1.1;
   color: #ffffff;
   text-align: center;
   cursor: text;
@@ -844,13 +849,60 @@ body.board-on {
 
 
 
+/* ============================================================ */
+/* # 🎓 🟩  THE TERM AVERAGE, UNDER THE NAME */
+/* # 🔤 CSS */
+/* # 🎯 A large number and four blocks beside it, each block one whole */
+/* #    point of the four */
+/* # 🔗 The blocks are what say "out of four", so the number does not */
+/* #    have to: the measure is seen before it is read. The words under */
+/* #    them say it once in letters, small, for whoever wants it said. */
+/* #    No frame around any of it — this is the head of the page, not */
+/* #    one of its cards */
+/* ============================================================ */
 .term-gpa {
-  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin: -4px 0 0;
+  line-height: 1;
+  min-height: 34px;
+}
+
+.term-gpa .gpaVal {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--g, var(--ink));
+}
+
+.term-gpa .gpaSide { display: flex; flex-direction: column; gap: 5px; }
+.term-gpa .gpaBars { display: flex; gap: 4px; }
+
+.term-gpa .gpaSeg {
+  width: 26px;
+  height: 13px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #2a2b31;
+  border: 1px solid #33343b;
+  box-sizing: border-box;
+}
+
+.term-gpa .gpaSeg i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--g, var(--dim));
+  transition: width .18s;
+}
+
+.term-gpa .gpaOf {
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--dim);
-  text-align: center;
-  min-height: 1.2em;
+  letter-spacing: .5px;
+  color: var(--dim2);
 }
 /* ============================================================ */
 /* # 🔲 📊  THE THREE SHAPES */

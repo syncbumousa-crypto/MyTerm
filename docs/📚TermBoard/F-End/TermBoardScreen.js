@@ -818,16 +818,72 @@
     }));
   };
 
-  // A course with no items of its own is out of the sum, not a four in it:
-  // its A+ is an assumption on the card, and an assumption must not be
-  // averaged with marks somebody actually earned
+  // ============================================================
+  // # 🎓 🟩  THE TERM AVERAGE, UNDER ITS NAME
+  // # 🔤 JavaScript
+  // # 🎯 One number out of four, and four blocks beside it. Each block is
+  // #    one whole point, filled by as much of that point as was earned —
+  // #    at 2.40 two are full, the third is four tenths full, the fourth
+  // #    is empty
+  // # 🔗 No new arithmetic lives here. The number is each course's own
+  // #    standing — the very thing its grade shows — turned into points
+  // #    and averaged by credit hours, so the card and the average can
+  // #    never say different things about the same course. A course with
+  // #    nothing graded is out of the sum and not a zero in it: there is
+  // #    no judgement without something to judge, which is the same rule
+  // #    that leaves the mastery disc empty until a mark is entered.
+  // #    And the blocks mean the number needs no "out of 4" beside it —
+  // #    the shape says it, so the words under them are said small, once
+  // ============================================================
+  const creditsOf = course => {
+    const hours = Number(course.credits);
+    return hours > 0 ? hours : 3;        // nothing said reads as three
+  };
+
   const refreshTermGpa = () => {
-    const graded = living().map(c => ({ s: standingOf(c), credits: Number(c.credits) || 0 }))
-      .filter(x => x.s && !x.s.assumed && x.credits > 0);
-    if (!graded.length) { termGpa.textContent = ''; return; }
-    const hours = graded.reduce((s, x) => s + x.credits, 0);
-    const points = graded.reduce((s, x) => s + x.s.points * x.credits, 0);
-    termGpa.textContent = `Term GPA ${(points / hours).toFixed(2)} / 4 · ${hours} hours`;
+    const rows = living().map(c => ({ course: c, s: standingOf(c), credits: creditsOf(c) }))
+      .filter(x => x.s && !x.s.assumed);
+
+    termGpa.textContent = '';
+    if (!rows.length) { drawTermShape(); return; }
+
+    const hours = rows.reduce((sum, x) => sum + x.credits, 0);
+    const gpa = rows.reduce((sum, x) => sum + x.s.points * x.credits, 0) / hours;
+
+    // The colour of the band the average falls in, from the one scale the
+    // whole site reads, so the number is the same colour as the grade it
+    // would be if the term were one course
+    const band = CUTS.find(c => gpa >= c[2] - 0.0001) || CUTS[CUTS.length - 1];
+
+    const value = document.createElement('b');
+    value.className = 'gpaVal';
+    value.textContent = gpa.toFixed(2);
+
+    const bars = document.createElement('span');
+    bars.className = 'gpaBars';
+    for (let point = 0; point < 4; point++) {
+      const block = document.createElement('span');
+      block.className = 'gpaSeg';
+      const fill = document.createElement('i');
+      fill.style.width = Math.max(0, Math.min(1, gpa - point)) * 100 + '%';
+      block.append(fill);
+      bars.append(block);
+    }
+
+    const scale = document.createElement('span');
+    scale.className = 'gpaOf';
+    scale.textContent = 'GPA · OUT OF 4.00';
+
+    const side = document.createElement('span');
+    side.className = 'gpaSide';
+    side.append(bars, scale);
+
+    termGpa.style.setProperty('--g', gradeColour(band[2]));
+    termGpa.append(value, side);
+    termGpa.title = `Term GPA — ${rows.length} course${rows.length === 1 ? '' : 's'} · ${hours} credit hours\n`
+      + rows.map(x => `${x.course.name || 'Untitled'}  ${x.s.letter}  ${Math.round(x.s.pct * 10) / 10}%  ·  ${x.s.points.toFixed(2)} × ${x.credits}h`).join('\n')
+      + '\nUngraded items count as full marks, and a course with no items stays out.';
+
     drawTermShape();
   };
 

@@ -718,7 +718,99 @@ body.board-on {
 .asDue { color-scheme: dark; font-size: 8.5px; padding: 0 1px; }
 .asDue::-webkit-calendar-picker-indicator { margin: 0; padding: 0; opacity: .55; }
 
-.asMat { font-size: 9px; padding: 0 4px; }
+/* What an item needs is chosen, not typed, so this is a button that
+   says the choice and opens the list. Faint when nothing is chosen —
+   an empty thing should not look like a filled one */
+.asMat {
+  width: 100%;
+  height: 21px;
+  box-sizing: border-box;
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--well);
+  color: var(--ink);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asMat:hover { border-color: var(--dim2); color: #ffffff; }
+.asMat.matNone { color: var(--dim2); }
+
+/* ============================================================ */
+/* # 📚 ☑️  THE LIST OF WHAT AN ITEM NEEDS */
+/* # 🔤 CSS */
+/* # 🎯 The course's own chapters, each one tickable, floating over the */
+/* #    page beside the cell that opened it */
+/* # 🔗 Fixed to the page and placed by measured coordinates, because */
+/* #    the table it belongs to slides sideways inside the card: drawn */
+/* #    inside it, this list would be cut off at the card's edge */
+/* ============================================================ */
+.matPop {
+  position: fixed;
+  z-index: 20;
+  width: 212px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .5);
+  scrollbar-width: thin;
+  scrollbar-color: #4a4d57 transparent;
+}
+
+.matRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.matRow:hover { background: #31323a; }
+
+.matTick {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+.matNo {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--dim2);
+  width: 20px;
+}
+
+.matName {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matNoneYet {
+  margin: 0;
+  padding: 4px;
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: var(--dim2);
+}
 
 /* A due date gone by with no score entered. The row says it, not a
    note somewhere else, because this is a thing about this row */
@@ -749,14 +841,7 @@ body.board-on {
   padding: 6px 4px;
 }
 
-.asFoot {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--ink);
-  text-align: center;
-  padding: 4px 0 2px;
-  font-variant-numeric: tabular-nums;
-}
+
 
 
 .term-gpa {

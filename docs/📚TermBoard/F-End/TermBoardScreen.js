@@ -482,6 +482,87 @@
 
   const today = () => new Date().toISOString().slice(0, 10);
 
+  // ============================================================
+  // # 📚 ☑️  CHOOSING WHAT AN ITEM NEEDS
+  // # 🔤 JavaScript
+  // # 🎯 A list of this course's own chapters, each one tickable, opened
+  // #    from the cell that shows what the item needs
+  // # 🔗 It is put on the page itself and placed by measured coordinates,
+  // #    not inside the cell. The table of marks slides sideways inside
+  // #    the card, and anything drawn within something that slides is cut
+  // #    off at its edge — which is how the gear's panel came to be open
+  // #    and invisible. Only one is ever open, and it closes on the next
+  // #    press anywhere else
+  // ============================================================
+  const shutMaterial = () => document.getElementById('matPop')?.remove();
+
+  const openMaterial = (button, course, item, afterChange) => {
+    const already = document.getElementById('matPop');
+    const mine = already?.dataset.item;
+    shutMaterial();
+    if (mine === item.id) return;          // pressing it again closes it
+
+    const chapters = alive(course);
+    const pop = document.createElement('div');
+    pop.className = 'matPop';
+    pop.id = 'matPop';
+    pop.dataset.item = item.id;
+
+    if (!chapters.length) {
+      const none = document.createElement('p');
+      none.className = 'matNoneYet';
+      none.textContent = 'This course has no chapters yet. Add one from the gear, then it can be chosen here.';
+      pop.append(none);
+    }
+
+    chapters.forEach((ch, index) => {
+      const line = document.createElement('label');
+      line.className = 'matRow';
+
+      const tick = document.createElement('input');
+      tick.type = 'checkbox';
+      tick.className = 'matTick';
+      tick.checked = (item.material || []).includes(ch.id);
+      tick.onchange = () => {
+        const row = (course.items || []).find(x => x.id === item.id);
+        if (!row) return;
+        const have = new Set(row.material || []);
+        tick.checked ? have.add(ch.id) : have.delete(ch.id);
+        row.material = [...have];
+        row.updatedAt = now();
+        changed(course);
+        afterChange();
+      };
+
+      const no = document.createElement('span');
+      no.className = 'matNo';
+      no.textContent = 'C' + (index + 1);
+
+      const name = document.createElement('span');
+      name.className = 'matName';
+      name.textContent = ch.name || 'Unnamed chapter';
+
+      line.append(tick, no, name);
+      pop.append(line);
+    });
+
+    document.body.append(pop);
+    const at = button.getBoundingClientRect();
+    const width = pop.offsetWidth, height = pop.offsetHeight;
+    // It must stay on the screen: against the right edge or near the
+    // bottom it is pulled back rather than drawn where it cannot be read
+    pop.style.left = Math.max(8, Math.min(at.left, window.innerWidth - width - 8)) + 'px';
+    pop.style.top = (at.bottom + height + 8 > window.innerHeight ? at.top - height - 4 : at.bottom + 4) + 'px';
+  };
+
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.matPop, .asMat')) shutMaterial();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') shutMaterial();
+  });
+
   const marksPart = course => {
     const panel = document.createElement('div');
     panel.className = 'marks';
@@ -489,23 +570,13 @@
     const table = document.createElement('div');
     table.className = 'asTable';
 
-    const foot = document.createElement('div');
-    foot.className = 'asFoot';
-
-    // The grade in the head is the only place the standing is said, so
-    // every change here goes back up to it, and to the term above that
+    // The grade in the head of the card is the ONE place the standing is
+    // said. There was a line under this table saying it a second time, in
+    // other words, two inches away — and two sayings of one number only
+    // make a reader stop to work out which of them to believe
     const tellTheHead = () => {
       const column = panel.closest('.col');
       if (column) paintHead(column, course);
-      // With nothing to add up there is nothing to say. An empty table
-      // already says it is empty, and saying it twice is one time too many
-      const standing = standingOf(course);
-      foot.textContent = standing
-        ? `${Math.round(standing.earned * 10) / 10} of ${standing.weight} · ${standing.pct}% · ${standing.letter}`
-        : '';
-      foot.title = standing
-        ? `${standing.marked} of ${standing.of} items have a score. The rest are counted as full marks.`
-        : '';
       refreshTermGpa();
     };
 
@@ -591,7 +662,19 @@
         row.append(letter);
 
         row.append(field('asDue', 'date', item.due, 'due', ''));
-        row.append(field('asMat', 'text', item.material, 'material', '—'));
+
+        // What has to be read for this item is not typed: it is chosen
+        // from the chapters this course already has. Typing it would let
+        // the two drift — a chapter renamed, and a sentence still naming
+        // the old one with nothing to notice it
+        const mat = document.createElement('button');
+        mat.className = 'asMat';
+        mat.type = 'button';
+        mat.onclick = event => {
+          event.stopPropagation();
+          openMaterial(mat, course, item, paintRow);
+        };
+        row.append(mat);
 
         const off = document.createElement('button');
         off.className = 'asDel';
@@ -636,6 +719,17 @@
           }
 
           row.classList.toggle('asLate', Boolean(mine.due && mine.due < today() && !graded));
+
+          const chapters = alive(course);
+          const chosen = (mine.material || []).filter(id => chapters.some(h => h.id === id));
+          mat.classList.toggle('matNone', chosen.length === 0);
+          mat.textContent = !chapters.length ? 'no chapters'
+            : !chosen.length ? '—'
+            : chosen.length === 1 ? (chapters.find(h => h.id === chosen[0]).name || 'one chapter')
+            : chosen.length + ' of ' + chapters.length;
+          mat.title = chosen.length
+            ? 'Needs: ' + chosen.map(id => chapters.find(h => h.id === id).name || 'a chapter').join(' · ')
+            : 'Nothing chosen yet — press to pick the chapters this needs';
         };
 
         paintRow();
@@ -657,9 +751,7 @@
     };
 
     drawItems();
-    panel.append(table, foot);
-    // The foot cannot be filled until the panel knows which card it is in,
-    // and it is not in one yet, so the first filling waits a turn
+    panel.append(table);
     setTimeout(tellTheHead, 0);
     return panel;
   };

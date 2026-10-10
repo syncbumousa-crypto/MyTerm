@@ -111,7 +111,9 @@
         got: i.got === null || i.got === undefined || i.got === '' ? null : Number(i.got),
         outOf: Number(i.outOf) || 0,
         due: typeof i.due === 'string' ? i.due : '',
-        material: typeof i.material === 'string' ? i.material : '',
+        // Which of the course's own chapters this item needs: their ids,
+        // not their names, so renaming a chapter does not lose the link
+        material: Array.isArray(i.material) ? i.material.filter(x => typeof x === 'string') : [],
         updatedAt: i.updatedAt ?? null,
         deleted: i.deleted === true
       }))

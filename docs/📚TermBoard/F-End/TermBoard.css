@@ -1392,17 +1392,18 @@ body.reading .build { bottom: 46px; }
 /* ============================================================ */
 /* # 🗂️ 📊  THE TAB OF A CHAPTER */
 /* # 🔤 CSS */
-/* # 🎯 Its number and name, the hours it holds, how much of it is */
-/* #    done and how much of it is known — and, while it is open, the */
-/* #    parts inside it */
-/* # 🔗 The theme is the reader's own, from the strip of their own */
-/* #    pages: a quiet box that turns WHITE when it is the one open, so */
-/* #    which chapter is in hand is answered from across the room and */
-/* #    not by looking for a thin coloured edge. */
+/* # 🎯 Shut, it is a small box saying how far through the chapter you */
+/* #    are. Open, it is a container: its name, and the parts it holds */
+/* # 🔗 THE CHAPTER NEVER TURNS WHITE — the part being read does. The */
+/* #    white is for the one thing on the strip that is actually on the */
+/* #    paper, and a chapter is not on the paper: one of its parts is. */
+/* #    Lighting the chapter as well would be two things claiming to be */
+/* #    the same one thing. */
 /* # */
-/* #    Two lines and not one, because they are two questions and not */
-/* #    the same one: how much of it have I sat with, and how much of */
-/* #    it do I know. A chapter can be all hours and no knowing */
+/* #    And an open chapter drops its own two lines. It hands that */
+/* #    question to its parts and gets out of their way — both at once */
+/* #    is the same thing said twice at two sizes, and the whole of it */
+/* #    is only the sum of what is underneath */
 /* ============================================================ */
 .ctabs {
   flex: 1 1 auto;
@@ -1440,7 +1441,18 @@ body.reading .build { bottom: 46px; }
 }
 
 .ctab:hover { background: #34353b; }
-.ctab.on { background: #ffffff; color: #111111; border-color: #ffffff; cursor: default; }
+
+/* Open, it is a frame round its parts: a little darker than the shut
+   ones and as wide as what it holds, so the eye reads it as the thing
+   those boxes are inside rather than as another box beside them */
+.ctab.on {
+  width: auto;
+  background: #212226;
+  border-color: #55565e;
+  cursor: default;
+}
+
+.ctab.on:hover { background: #212226; }
 
 .ctab-head { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
 
@@ -1460,6 +1472,7 @@ body.reading .build { bottom: 46px; }
   cursor: pointer;
 }
 
+.ctab.on .ctab-name { color: #ffffff; }
 .ctab.on .ctab-name:hover { text-decoration: underline; }
 
 /* The name turns into the box that changes it, in its own place and at
@@ -1478,6 +1491,16 @@ body.reading .build { bottom: 46px; }
   color: #111111;
 }
 
+/* ============================================================ */
+/* # 📈 📉  THE TWO LINES */
+/* # 🔤 CSS */
+/* # 🎯 A rail with a filled part and a reading beside it, drawn the */
+/* #    same way wherever it appears */
+/* # 🔗 Two questions and not one: how much of it is DONE, and how much */
+/* #    of it is KNOWN. On a shut chapter that is its hours and its */
+/* #    ticks; on a part it is rows written and rows learnt. The same */
+/* #    two colours mean the same two things at both sizes */
+/* ============================================================ */
 .ctab-line { display: flex; align-items: center; gap: 6px; }
 
 .ctab-bar {
@@ -1489,8 +1512,6 @@ body.reading .build { bottom: 46px; }
   overflow: hidden;
 }
 
-.ctab.on .ctab-bar { background: rgba(0, 0, 0, .15); }
-
 .ctab-bar i {
   display: block;
   height: 100%;
@@ -1499,8 +1520,6 @@ body.reading .build { bottom: 46px; }
   transition: width .25s ease;
 }
 
-/* Blue for the hours sat with, green for the rows known. The green is
-   the ready colour this whole site uses for a thing that is finished */
 .ctab-bar.done i { background: #5a8fd8; }
 .ctab-bar.learnt i { background: #4caf7d; }
 
@@ -1512,49 +1531,69 @@ body.reading .build { bottom: 46px; }
   white-space: nowrap;
 }
 
-.ctab.on .ctab-count { color: #666666; }
-
 /* ============================================================ */
 /* # 📑 ➕  THE PARTS INSIDE A CHAPTER, AND THE TWO WAYS TO ADD */
 /* # 🔤 CSS */
-/* # 🎯 Small squares under the open chapter's lines, and a plus at the */
-/* #    end of each row of them */
-/* # 🔗 Both pluses are drawn the same way and stand in the same place: */
+/* # 🎯 A box per part, the size of a chapter's own, each with its two */
+/* #    lines — and a plus at the end of the row */
+/* # 🔗 The part being read is the WHITE one. It is the only thing on */
+/* #    this strip that is on the paper, so it is the only thing lit. */
+/* # */
+/* #    Both pluses are drawn the same way and stand in the same place: */
 /* #    at the end of the row of the thing they add. The one that adds */
 /* #    a chapter stands after the last chapter, and the one that adds */
-/* #    a part stands after the last part — so the shape of the gesture */
-/* #    is learnt once and used twice */
+/* #    a part after the last part — so the shape is learnt once and */
+/* #    used twice */
 /* ============================================================ */
 .ctab-parts {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 2px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(0, 0, 0, .12);
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 1px;
 }
 
 .ctab-part {
   flex: none;
-  max-width: 100%;
-  font: inherit;
-  font-size: 10px;
+  width: 148px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  padding: 7px 9px 8px;
+  border: 1px solid #444;
+  border-radius: 7px;
+  background: #2c2d31;
+  color: #aaa;
+  font-size: 11px;
   font-weight: 600;
-  line-height: 1;
-  padding: 4px 7px;
-  border: 1px solid rgba(0, 0, 0, .18);
-  border-radius: 5px;
-  background: rgba(0, 0, 0, .05);
-  color: #555555;
   cursor: pointer;
+}
+
+.ctab-part:hover { background: #34353b; }
+.ctab-part.on { background: #ffffff; color: #111111; border-color: #ffffff; cursor: default; }
+.ctab-part.on .ctab-bar { background: rgba(0, 0, 0, .15); }
+.ctab-part.on .ctab-count { color: #666666; }
+
+.ctab-part-name {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.ctab-part:hover { background: rgba(0, 0, 0, .12); color: #111111; }
-.ctab-part.on { background: #3a6bb0; border-color: #3a6bb0; color: #ffffff; }
-.ctab-part-new { font-size: 12px; padding: 3px 8px; color: #777777; }
+.ctab-part-new {
+  width: 34px;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1;
+  border-style: dashed;
+  background: transparent;
+  color: #888888;
+}
+
+.ctab-part-new:hover { background: rgba(255, 255, 255, .06); color: #ffffff; }
 
 /* It keeps the height of a shut tab and does not stretch to the open
    one. Stretched, it grew every time a chapter was opened — a door that
@@ -1584,6 +1623,7 @@ body.reading .build { bottom: 46px; }
   color: var(--dim2);
   align-self: center;
 }
+
 
 
 /* ============================================================ */

@@ -460,6 +460,12 @@
   // ============================================================
   let chosen = null;
 
+  // Words, not markup. A cell holding nothing but an empty mark left by
+  // a highlight that was taken off again is a cell with nothing in it,
+  // and counting it as written would make a part look finished because
+  // somebody had once dragged over it
+  const hasWords = html => /[^\s]/.test(String(html || '').replace(/<[^>]*>/g, ''));
+
   const sectionOf = () => {
     const all = open?.content.sections;
     if (!all || !all.length) return null;
@@ -530,10 +536,19 @@
     // rows themselves every time: a part that kept its own tally would
     // be a second place for the truth, and the two would part on the
     // first row added anywhere else
+    // Two readings per part, and they answer two different questions.
+    // WRITTEN is how much of it has been set down — a row with a term
+    // and a meaning in it, in either language. LEARNT is how much of it
+    // you know. A part can be fully written and not known at all, and
+    // the other way round is possible too: a row you ticked before you
+    // ever filled its meaning in
     sections: () => (open?.content.sections || []).map(s => {
       const living = s.rows.filter(r => !r.deleted);
-      return { id: s.id, name: s.name, rows: living.length,
-               learnt: living.filter(r => open.state.marks[r.id]?.on === true).length };
+      return {
+        id: s.id, name: s.name, rows: living.length,
+        written: living.filter(r => hasWords(r.term || r.termAr) && hasWords(r.text || r.textAr)).length,
+        learnt: living.filter(r => open.state.marks[r.id]?.on === true).length
+      };
     }),
 
     openSection: () => sectionOf()?.id ?? null,

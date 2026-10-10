@@ -1972,16 +1972,50 @@ body.reading .build { bottom: 46px; }
 /* ============================================================ */
 body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
 
-.cpaper-no {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 16px;
-  text-align: center;
+/* ============================================================ */
+/* # 🔢 🪧  WHICH SHEET THE EYE IS ON */
+/* # 🔤 CSS */
+/* # 🎯 A small box floating at the top of the desk: this sheet, of how */
+/* #    many */
+/* # 🔗 Sticky, and NOT printed on the paper. A number on the sheet */
+/* #    scrolls away with the sheet it belongs to — so the one moment a */
+/* #    reader asks "where am I", mid-page and mid-scroll, is the one */
+/* #    moment there is nothing to read. */
+/* # */
+/* #    And it is kept BEHIND the top strip: the strip is what the */
+/* #    reader presses to get anywhere, and a reading must never stand */
+/* #    in front of a control. That is what the two z-indexes below are */
+/* #    for, and neither of them means anything without the other */
+/* ============================================================ */
+.cfolio {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: fit-content;
+  margin-inline: auto;
+  /* It hangs over the first sheet instead of pushing it down: a box
+     that took a line of its own would move the whole desk by its own
+     height the moment a second sheet appeared */
+  margin-bottom: -22px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(27, 28, 31, .88);
+  backdrop-filter: blur(3px);
   font-family: var(--mono);
   font-size: 10px;
-  color: #8a8a8a;
+  line-height: 1.5;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  /* It is a reading, not a control: a press meant for the sheet under
+     it must go to the sheet */
+  pointer-events: none;
+  user-select: none;
 }
+
+/* The strip wins. With no number of its own it is merely an earlier
+   sibling, and an earlier sibling loses to anything positioned later */
+.ctop { z-index: 5; }
 
 /* The measurer stands at the sheet's one REAL size and is never shrunk:
    it is what the division into sheets is counted against, and counting

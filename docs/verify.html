@@ -278,6 +278,33 @@
     check('Every icon asked for is drawn', noSuchIcon.length === 0,
           noSuchIcon.length ? noSuchIcon.join(' · ') : 'no button is left asking for a picture nobody drew');
 
+    // 13 - no modifier word is also a class styled on its own. Born from
+    // a real one: a legend swatch was given the modifier ".term", and
+    // this stylesheet already styles ".term" as a box 46 pixels tall —
+    // so the yellow swatch came out a long bar while the other three
+    // stayed square, and nothing anywhere said why. A modifier written
+    // bare is not a name of its own block: it is a name shared with the
+    // whole file, and the other owner wins whenever it says more
+    const sheets = [...document.styleSheets].filter(s => (s.href || '').endsWith('.css'));
+    const alone = new Set(), mods = new Map();
+    sheets.forEach(s => {
+      let rules; try { rules = s.cssRules; } catch { return; }
+      [...rules].forEach(r => {
+        if (!r.selectorText) return;
+        r.selectorText.split(',').forEach(one => {
+          const bit = one.trim();
+          const bare = bit.match(/^\.([A-Za-z][\w-]*)$/);
+          if (bare) alone.add(bare[1]);
+          const pair = bit.match(/^\.([A-Za-z][\w-]*)\.([A-Za-z][\w-]*)$/);
+          if (pair) mods.set(pair[2], '.' + pair[1] + '.' + pair[2]);
+        });
+      });
+    });
+    const shared = [...mods.keys()].filter(m => alone.has(m)).map(m => mods.get(m) + ' vs .' + m);
+    check('No modifier word is also a class of its own', shared.length === 0,
+          shared.length ? shared.join(' · ')
+                        : mods.size + ' modifiers, none of them a name somebody else styles');
+
     draw();
   };
 

@@ -464,11 +464,17 @@
   // #    once, at the start, and never again — a thing read once belongs
   // #    where the eye first lands, not where it has to be hunted for
   // ============================================================
+  // The names carry a prefix, and that is not tidiness. Written bare,
+  // the first of them was simply ".term" — a name this stylesheet
+  // already uses for a box on the board that is 46 pixels tall, and the
+  // yellow swatch came out a tall bar while the other three were square.
+  // A modifier word with no prefix is not a name of mine: it is a name
+  // shared with every rule in the file
   const KEYS = [
-    ['term', 'where the term is'],
-    ['def', 'where its meaning is'],
-    ['ask', 'where a question is'],
-    ['out', 'not required']
+    ['is-term', 'where the term is'],
+    ['is-def', 'where its meaning is'],
+    ['is-ask', 'where a question is'],
+    ['is-out', 'not required']
   ];
 
   const drawKeys = () => {

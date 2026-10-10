@@ -1687,6 +1687,15 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
 .ctbl td.cterm { background: #e2e2e2; font-weight: 700; }
 .ctbl td.cbox { text-align: center; vertical-align: middle; }
 
+/* Ruled across, the way a term outside the syllabus is ruled on the
+   reader's own sheets: there for the interest of it, not asked of you.
+   It is a stripe and not a colour because the colours on this paper all
+   mean something already, and because a stripe still reads as a stripe
+   when the sheet is turned over into the dark */
+.ctbl td.cterm.outside {
+  background-image: repeating-linear-gradient(45deg, #e2e2e2, #e2e2e2 9px, #cfcfcf 9px, #cfcfcf 11px);
+}
+
 /* ============================================================ */
 /* # 🙈 🧪  A CELL TURNED FACE DOWN */
 /* # 🔤 CSS */
@@ -1713,7 +1722,11 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
    already learnt could not be covered at all. The alternative is to
    keep this block last in the file for ever and trust that nobody adds
    a rule under it — which is a rule nobody can see */
-.ctbl td.covered { color: transparent !important; }
+/* The stripes go too while a cell is face down. The panel is laid two
+   pixels in, so anything drawn on the cell itself shows as a ruled
+   border round the cover — which reads as a mark on the cover rather
+   than as the thing it is hiding */
+.ctbl td.covered { color: transparent !important; background-image: none !important; }
 
 .ctbl td.covered * {
   color: transparent !important;

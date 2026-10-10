@@ -127,7 +127,11 @@
     // and the single press is the one a reader makes a hundred times an
     // evening: cover this, uncover that, do I know it
     const hide = covered.has(coverKey(row.id, which)) ? ' covered' : '';
-    return `<td class="c${which === 'term' ? 'term' : 'def'}${hide}" dir="${here.dir}"`
+    // The stripes go on the TERM and not on its meaning: what is marked
+    // is the term — whether you are asked for it — and the meaning is
+    // only the answer to it
+    const away = which === 'term' && row.outside ? ' outside' : '';
+    return `<td class="c${which === 'term' ? 'term' : 'def'}${away}${hide}" dir="${here.dir}"`
       + ` data-col="${which}" data-field="${here[which]}"`
       + ` data-hintdir="${hintDir}" data-empty="${asAttr(hint)}">${words}</td>`;
   };
@@ -500,6 +504,9 @@
     menu.append(document.createElement('hr'));
     item('↑  Join the table above', head === 0, () => store().join(rowId, -1));
     item('↓  Join the table below', tail === total - 1, () => store().join(rowId, 1));
+    menu.append(document.createElement('hr'));
+    item(rows[at].outside ? '▨  Mark as required' : '▨  Mark as not required',
+         false, () => store().outside(rowId, !rows[at].outside));
     menu.append(document.createElement('hr'));
     item('✕  Remove this row', false, () => store().dropRow(rowId));
 

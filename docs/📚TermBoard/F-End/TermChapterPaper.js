@@ -240,15 +240,47 @@
   // #    would have taken the focus away first, and there would be
   // #    nothing selected left to mark by the time it ran
   // ============================================================
-  const MARKS = [
-    ['hl', 'H', 'Highlight'],
-    ['pa', 'A', 'Red'],
-    ['pb', 'A', 'Green'],
-    ['bx', '▭', 'Blue box'],
-    ['b', 'B', 'Bold'],
-    ['i', 'I', 'Italic'],
-    ['u', 'U', 'Underline'],
-    ['off', '⌫', 'Plain again']
+  // ============================================================
+  // # 🎨 👨‍👩‍👧  TWO FAMILIES OF COLOUR, AND THREE PLAIN MARKS
+  // # 🔤 JavaScript
+  // # 🎯 The colours behind the words and the colours of the words, and
+  // #    bold, slanted and underlined
+  // # 🔗 A FAMILY IS WHAT CANNOT BE WORN TWICE AT ONCE. Only one colour
+  // #    can be behind a word and only one can be in it, so putting a
+  // #    second on takes the first off. Left to nest, the one underneath
+  // #    is a wrapper doing nothing, invisible, and impossible to take
+  // #    off again except by chance — found in a row the reader had been
+  // #    trying the buttons on.
+  // #
+  // #    The first colour of each family is the one their own pages have
+  // #    always used, under the same name, so every summary already
+  // #    written keeps its yellow and its red without being touched. The
+  // #    old blue box joins the highlights as one of them: it is a
+  // #    colour behind words, whatever it was called
+  // ============================================================
+  // A highlighter pen, drawn in lines like every other picture on this
+  // site, so it takes the colour of the button it sits on
+  const PEN = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"'
+    + ' stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M15.5 3.5l5 5-8.5 8.5H7v-5z"/><line x1="3" y1="21" x2="21" y2="21"/></svg>';
+
+  const PAINTS = {
+    hl: [['hl', 'Yellow'], ['hlg', 'Green'], ['hlb', 'Blue'], ['hlp', 'Pink'], ['hlo', 'Orange']],
+    ink: [['pa', 'Red'], ['pb', 'Green'], ['tcb', 'Blue'], ['tco', 'Orange'], ['tcp', 'Purple']]
+  };
+
+  const FAMILY = { bx: 'hl' };
+  Object.entries(PAINTS).forEach(([family, list]) =>
+    list.forEach(([cls]) => { FAMILY[cls] = family; }));
+
+  // The bar, in the order a hand reaches for them: the two that open a
+  // choice of colour first, then the three that are only ever themselves
+  const TOOLS = [
+    ['hl', 'Highlight'],
+    ['ink', 'Text colour'],
+    ['b', 'Bold'],
+    ['i', 'Italic'],
+    ['u', 'Underline']
   ];
 
   // Which cell the SELECTION is in, not which one has the focus. A cell
@@ -300,56 +332,57 @@
     parent.removeChild(node);
   };
 
-  // Two marks that do the same job to the same words: one colours the
-  // letters, one colours the ground behind them. Only one of each can be
-  // seen, so putting the second on takes the first off. Letting them
-  // nest left a wrapper doing nothing, invisible, and impossible to take
-  // off again except by chance — found in a row the reader had been
-  // trying the buttons on
-  const KIN = { pa: 'pb', pb: 'pa', hl: 'bx', bx: 'hl' };
+  const kinOf = node => (node && node.nodeType === 1 && node.nodeName === 'SPAN'
+    ? [...node.classList].map(c => FAMILY[c]).find(Boolean) || null : null);
+
+  // Does this mark wrap THIS and nothing else? Cutting words out of a
+  // run leaves empty text nodes on either side of what was taken, and
+  // counting children straight found three where there was one — so the
+  // old colour was never recognised as spent and stayed on, wrapped
+  // around the new one, invisible and impossible to take off again. A
+  // node with no text at all is not a child anybody meant
+  const wrapsOnly = (over, kid) => [...over.childNodes]
+    .every(node => node === kid || (node.nodeType === 3 && node.textContent === ''));
 
   const applyMark = kind => {
     const cell = editing();
     const sel = window.getSelection();
     if (!cell || !sel || !sel.rangeCount || sel.isCollapsed) return;
 
-    if (kind === 'off') {
-      const range = sel.getRangeAt(0);
-      const words = range.toString();
-      range.deleteContents();
-      range.insertNode(document.createTextNode(words));
+    const plain = kind === 'b' || kind === 'i' || kind === 'u';
+    const name = plain ? kind.toUpperCase() : 'SPAN';
+    const worn = wearing(sel.getRangeAt(0), name, plain ? '' : kind, cell);
+    if (worn) {
+      // The same colour twice means take it off. It is the only way back
+      // to plain words now that the bar is five tools and no more
+      unwrap(worn);
     } else {
-      const plain = kind === 'b' || kind === 'i' || kind === 'u';
-      const name = plain ? kind.toUpperCase() : 'SPAN';
-      const worn = wearing(sel.getRangeAt(0), name, plain ? '' : kind, cell);
-      if (worn) {
-        unwrap(worn);
-      } else {
-        const range = sel.getRangeAt(0);
-        const made = document.createElement(plain ? kind : 'span');
-        if (!plain) made.className = kind;
-        made.append(range.extractContents());
-        range.insertNode(made);
+      const range = sel.getRangeAt(0);
+      const made = document.createElement(plain ? kind : 'span');
+      if (!plain) made.className = kind;
+      made.append(range.extractContents());
+      range.insertNode(made);
 
-        // THE NEW MARK GOES ON FIRST, AND THE ONE IT REPLACES COMES OFF
-        // AFTER. The other way round was tried and measured: taking the
-        // old one off moves the words out of it and throws the element
-        // away, and a selection made by its edges was pointing AT that
-        // element — so what came back was an empty mark around nothing
-        // and the words sitting plain beside it. The new mark is an
-        // element we hold, which no amount of surgery can lose.
-        //
-        // Above: only when it wraps this and nothing else — that is the
-        // case that leaves a wrapper doing nothing. One that covers more
-        // than this is still colouring its other words and is left alone.
-        // Inside: all of them, because the reader asked for this colour
-        // over the whole of what they picked
-        if (!plain && KIN[kind]) {
-          const over = made.parentNode;
-          if (over && over.nodeName === 'SPAN'
-              && over.classList.contains(KIN[kind]) && over.childNodes.length === 1) unwrap(over);
-          made.querySelectorAll('span.' + KIN[kind]).forEach(node => unwrap(node));
-        }
+      // THE NEW MARK GOES ON FIRST, AND THE ONE IT REPLACES COMES OFF
+      // AFTER. The other way round was tried and measured: taking the
+      // old one off moves the words out of it and throws the element
+      // away, and a selection made by its edges was pointing AT that
+      // element — so what came back was an empty mark around nothing
+      // and the words sitting plain beside it. The new mark is an
+      // element we hold, which no amount of surgery can lose.
+      //
+      // Above: only when it wraps this and nothing else — that is the
+      // case that leaves a wrapper doing nothing. One that covers more
+      // than this is still colouring its other words and is left alone.
+      // Inside: all of them, because the reader asked for this colour
+      // over the whole of what they picked
+      const family = FAMILY[kind];
+      if (family) {
+        const over = made.parentNode;
+        if (kinOf(over) === family && wrapsOnly(over, made)) unwrap(over);
+        made.querySelectorAll('span').forEach(node => {
+          if (node !== made && kinOf(node) === family) unwrap(node);
+        });
       }
     }
 
@@ -364,6 +397,76 @@
 
   const hideBar = () => { if (bar) bar.remove(); bar = null; };
 
+  // ============================================================
+  // # 🖍️ 🎨  FIVE TOOLS, AND TWO OF THEM OPEN A CHOICE
+  // # 🔤 JavaScript
+  // # 🎯 Highlight, text colour, bold, slanted, underlined — and the
+  // #    first two open a row of colours to pick from
+  // # 🔗 EVERY PRESS ON THIS BAR IS A MOUSEDOWN THAT REFUSES THE EVENT,
+  // #    the swatches included. A button that waited for the click would
+  // #    have taken the focus off the cell first, and there would be
+  // #    nothing selected left to colour by the time it ran.
+  // #
+  // #    The colours are behind a press and not spread across the bar
+  // #    because the bar stands over the reader's own words: ten
+  // #    swatches in a row is a panel wide enough to hide the line being
+  // #    worked on, to say nothing of a reader who wants bold
+  // ============================================================
+  const buildBar = () => {
+    bar = document.createElement('div');
+    bar.className = 'cmark';
+
+    const row = document.createElement('div');
+    row.className = 'cmark-row';
+
+    const palette = document.createElement('div');
+    palette.className = 'cmark-pal';
+    palette.hidden = true;
+
+    let open = null;
+    const fill = family => {
+      palette.textContent = '';
+      PAINTS[family].forEach(([cls, words]) => {
+        const swatch = document.createElement('button');
+        swatch.type = 'button';
+        swatch.className = 'cmark-dab ' + (family === 'hl' ? 'on-' + cls : 'in-' + cls);
+        swatch.title = words;
+        swatch.addEventListener('mousedown', event => { event.preventDefault(); applyMark(cls); });
+        palette.append(swatch);
+      });
+    };
+
+    TOOLS.forEach(([kind, words]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'm-' + kind;
+      button.title = words;
+      button.textContent = kind === 'hl' ? '' : kind === 'ink' ? 'T' : kind.toUpperCase();
+      if (kind === 'hl') button.innerHTML = PEN;
+
+      button.addEventListener('mousedown', event => {
+        event.preventDefault();
+        if (kind !== 'hl' && kind !== 'ink') { applyMark(kind); return; }
+        // The same one twice shuts it again, so a reader who opened the
+        // colours and changed their mind is one press from the words
+        open = open === kind ? null : kind;
+        row.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+        if (open) { button.classList.add('on'); fill(open); }
+        palette.hidden = !open;
+        place();
+      });
+      row.append(button);
+    });
+
+    bar.append(row, palette);
+    document.body.append(bar);
+  };
+
+  // Put where it stands: above the words if there is room over them, and
+  // under them if there is not — a bar that opens a second row near the
+  // top of the window would otherwise be pushed off the screen
+  let place = () => {};
+
   const showBar = () => {
     const sel = window.getSelection();
     if (!editing() || !sel || sel.isCollapsed || !sel.rangeCount) return hideBar();
@@ -371,24 +474,16 @@
     const box = sel.getRangeAt(0).getBoundingClientRect();
     if (!box.width && !box.height) return hideBar();
 
-    if (!bar) {
-      bar = document.createElement('div');
-      bar.className = 'cmark';
-      MARKS.forEach(([kind, face, words]) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'm-' + kind;
-        button.textContent = face;
-        button.title = words;
-        button.addEventListener('mousedown', event => { event.preventDefault(); applyMark(kind); });
-        bar.append(button);
-      });
-      document.body.append(bar);
-    }
+    if (!bar) buildBar();
 
-    const wide = bar.offsetWidth || 210;
-    bar.style.top = Math.max(6, box.top - bar.offsetHeight - 8) + 'px';
-    bar.style.left = Math.min(window.innerWidth - wide - 8, Math.max(8, box.left + box.width / 2 - wide / 2)) + 'px';
+    place = () => {
+      const wide = bar.offsetWidth || 160, tall = bar.offsetHeight || 32;
+      const over = box.top - tall - 8;
+      bar.style.top = (over >= 6 ? over : Math.min(window.innerHeight - tall - 8, box.bottom + 8)) + 'px';
+      bar.style.left = Math.min(window.innerWidth - wide - 8,
+                                Math.max(8, box.left + box.width / 2 - wide / 2)) + 'px';
+    };
+    place();
   };
 
   // ============================================================
@@ -740,19 +835,50 @@
     window.MyTermCourseEye?.();
   };
 
+  // ============================================================
+  // # ✌️ 🔤  A DOUBLE PRESS PICKS A WORD AND KEEPS IT
+  // # 🔤 JavaScript
+  // # 🎯 Opens the cell to typing, and leaves the word the double press
+  // #    picked out exactly where it is
+  // # 🔗 IT USED TO THROW THE WORD AWAY. A double press is the browser's
+  // #    own way of choosing a word, and this ran straight after it and
+  // #    put the caret at the end of the cell — so the reader watched
+  // #    their word light up and go out in the same breath, and the bar
+  // #    of colours never had anything to colour.
+  // #
+  // #    The caret at the end is still right for the OTHER double press:
+  // #    the one that lands on a covered cell, where the second press is
+  // #    on a grey panel and picks out nothing. So what the press found
+  // #    decides: a word, and it is kept; nothing, and the caret goes
+  // #    where a reader about to type would want it.
+  // #
+  // #    Remembered BEFORE the cell is focused, because focusing a cell
+  // #    can collapse what is selected inside it
+  // ============================================================
   const startTyping = cell => {
     turnOver(cell, false);
+
+    const sel = window.getSelection();
+    const picked = sel && sel.rangeCount && !sel.isCollapsed
+      && cell.contains(sel.getRangeAt(0).commonAncestorContainer)
+      ? sel.getRangeAt(0).cloneRange() : null;
+
     cell.contentEditable = 'true';
     cell.focus();
-    // The caret at the end of what is there. Left to itself the browser
-    // puts it wherever the second press landed, which after an uncover
-    // is wherever the grey panel happened to be
-    const range = document.createRange();
-    range.selectNodeContents(cell);
-    range.collapse(false);
-    const sel = window.getSelection();
+
+    let range = picked;
+    if (!range) {
+      range = document.createRange();
+      range.selectNodeContents(cell);
+      range.collapse(false);
+    }
     sel.removeAllRanges();
     sel.addRange(range);
+
+    // The bar comes up for a word that is already picked: the press that
+    // picked it was a double one, and the single mouseup that normally
+    // calls the bar up has long since been and gone
+    if (picked) setTimeout(showBar, 0);
   };
 
   const listenDesk = desk => {

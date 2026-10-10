@@ -43,12 +43,36 @@
     if (event.key === 'Escape' && openId) leave();
   });
 
+  // ============================================================
+  // # 🔗 🪟  ARRIVING HERE BY ADDRESS
+  // # 🔤 JavaScript
+  // # 🎯 A tab opened on ?course=<id> lands on that course instead of
+  // #    the board
+  // # 🔗 This is what lets the board open a course in a tab of its own
+  // #    and stay where it was. It is tried only once a tab: the board
+  // #    paints twice, first from what was kept here and again when
+  // #    Drive answers, and opening on both would drag a reader who had
+  // #    pressed Back straight out of the board again
+  // ============================================================
+  let cameByAddress = false;
+
+  const askedFor = () => new URLSearchParams(location.search).get('course');
+
   window.MyTermCoursePage = {
     open: id => {
       openId = id;
       board.hidden = true;
       page.hidden = false;
       draw();
+    },
+    fromAddress: () => {
+      if (cameByAddress) return;
+      const id = askedFor();
+      if (!id) return;
+      const known = (keep.live()?.courses || []).some(c => c.id === id && !c.deleted);
+      if (!known) return;
+      cameByAddress = true;
+      window.MyTermCoursePage.open(id);
     },
     openId: () => openId,
     redraw: () => { if (openId) draw(); }

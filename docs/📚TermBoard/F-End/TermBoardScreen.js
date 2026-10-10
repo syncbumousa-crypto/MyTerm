@@ -302,13 +302,18 @@
     // grade that opens the marks, and the gear. Everything else on the
     // strip — the name, the count, the shapes, the space between them —
     // takes you in, so the target is the whole width and not a small icon
+    // The course opens in a tab of its own, so the board stays where it
+    // was: what you were reading is not replaced by what you went to
+    // look at, and closing the one brings you back to the other exactly
+    // as you left it. The address carries the course, so the new tab
+    // knows which one to show
     const top = document.createElement('div');
     top.className = 'col-top';
-    top.append(twist, grade, title, readingOf(course, 'md'), gear, menu);
+    top.append(gear, menu, twist, grade, title, readingOf(course, 'md'));
     top.onclick = event => {
       if (event.target.closest('button, input, .col-menu')) return;
       shutMenus();
-      window.MyTermCoursePage?.open(course.id);
+      window.open(location.pathname + '?course=' + encodeURIComponent(course.id), '_blank', 'noopener');
     };
 
     column.append(top, body, marks);
@@ -1178,6 +1183,8 @@
     drawColumns();
     window.MyTermDays?.show(data);
     drawTermShape();
+    // A tab opened on one course lands on it, once the courses are here
+    window.MyTermCoursePage?.fromAddress();
   };
 
   const openBoard = async event => {

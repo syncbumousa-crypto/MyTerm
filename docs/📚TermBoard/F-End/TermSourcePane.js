@@ -220,11 +220,28 @@
 
     const n = Number(slot.dataset.page);
     const links = store.linksOn(source.id, n);
-    if (!links.length) return;
+    const skips = window.MyTermSources?.skipsOn?.(source.id, n) || [];
+    if (!links.length && !skips.length) return;
 
     const page = await finder.page(book.doc, source.id, n).catch(() => null);
     // The reader may have scrolled away while the page was being read
     if (!page || !slot.dataset.drawn || shown[which]?.id !== source.id) return;
+
+    // The not-required stretches go down FIRST, so a term that happens
+    // to sit inside one is still drawn in its own colour on top of the
+    // hatch. The other way round the hatch would hide the very thing
+    // the reader pressed to find
+    skips.forEach(skip => {
+      const hit = skip.all ? finder.whole(page) : finder.band(page, skip.from, skip.to);
+      if (!hit) return;
+      hit.boxes.forEach(box => {
+        const grey = document.createElement('i');
+        grey.className = 'bw is-out';
+        grey.title = skip.why ? 'Not required · ' + skip.why : 'Not required';
+        grey.style.cssText = `left:${box.x}%; top:${box.y}%; width:${box.w}%; height:${box.h}%`;
+        slot.append(grey);
+      });
+    });
 
     links.forEach(link => {
       const hit = finder.find(page, link.anchor);
@@ -720,6 +737,35 @@
     shut: hide,
     // Take the reader to one stored place, and light it
     goTo,
+
+    // ============================================================
+    // # 🚫 📖  A ROW WITH NOWHERE TO GO
+    // # 🔤 JavaScript
+    // # 🎯 Says so on the column it would have gone to
+    // # 🔗 SILENCE IS THE WRONG ANSWER HERE. A press that does nothing
+    // #    reads as a press that did not register, so the reader
+    // #    presses again, and again — and ends up believing the whole
+    // #    feature is broken rather than that this one row was never
+    // #    anchored. One beat of the column saying "not here" costs
+    // #    nothing and answers the question that was actually asked
+    // ============================================================
+    sayNowhere: () => {
+      ['book', 'tb'].forEach(which => {
+        const col = $('src-col-' + which);
+        if (!col || col.hidden) return;
+        col.classList.remove('nowhere');
+        void col.offsetWidth;   // so a second press beats again
+        col.classList.add('nowhere');
+        setTimeout(() => col.classList.remove('nowhere'), 700);
+      });
+      const says = $('course-src-says'), bar = $('course-src-bar');
+      if (!says || !bar) return;
+      bar.hidden = false;
+      bar.classList.add('saying');
+      says.textContent = 'This row has no place in a source yet.';
+      clearTimeout(says._goes);
+      says._goes = setTimeout(() => { bar.hidden = true; bar.classList.remove('saying'); }, 2600);
+    },
     isOpen: () => !!pane && !pane.hidden,
     redraw: draw,
     // The bell rang on another device: the list may have a book this one

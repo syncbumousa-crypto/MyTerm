@@ -187,6 +187,47 @@
       const at = page.text.indexOf(want);
       if (at < 0) return null;
       return { from: at, to: at + want.length, boxes: boxesFor(page, at, at + want.length) };
-    }
+    },
+
+    // ============================================================
+    // # 🚧 📏  A STRETCH OF A PAGE, FOUND BY WHERE IT SITS
+    // # 🔤 JavaScript
+    // # 🎯 Everything lying between two phrases — a sidebar, an opening
+    // #    story, a closing case
+    // # 🔗 MEASURED DOWN THE PAGE, NOT ALONG THE TEXT. A PDF hands its
+    // #    text over in the order it was written into the file, which
+    // #    is not the order it is read in: on page 35 of this very book
+    // #    the first words of the closing case come out at position
+    // #    4710 and its last words at 2295 — the box was written last.
+    // #    So "everything from here to there in the text" shaded
+    // #    nothing at all, while "everything between these two heights
+    // #    on the page" is exactly what a reader means by a box.
+    // #
+    // #    Both ends must still be found. One end found and the other
+    // #    not would shade from a real place to a made-up one, and the
+    // #    reader would take the made-up edge for a fact about the book
+    // ============================================================
+    band: (page, from, to) => {
+      if (!page?.runs) return null;
+      const a = window.MyTermFind.find(page, from);
+      const b = window.MyTermFind.find(page, to);
+      if (!a || !b || !a.boxes.length || !b.boxes.length) return null;
+
+      const ends = a.boxes.concat(b.boxes);
+      const top = Math.min(...ends.map(x => x.y));
+      const foot = Math.max(...ends.map(x => x.y + x.h));
+
+      // A run belongs to the band if its MIDDLE is inside it, so a line
+      // half over the edge is not shaded for the sake of one pixel
+      const boxes = page.runs
+        .filter(r => { const mid = r.y + r.h / 2; return mid >= top - 0.2 && mid <= foot + 0.2; })
+        .map(r => ({ x: r.x, y: r.y, w: r.w, h: r.h }));
+      return boxes.length ? { top, foot, boxes } : null;
+    },
+
+    // The whole page, every box on it
+    whole: page => (page?.text
+      ? { from: 0, to: page.text.length, boxes: boxesFor(page, 0, page.text.length) }
+      : null)
   };
 })();

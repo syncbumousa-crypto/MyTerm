@@ -417,6 +417,48 @@
   // not two
   const WORDS_FOR = { term: 'the term', text: 'its meaning', ask: 'the question' };
 
+  // ============================================================
+  // # 📖 🎯  THE PLACES A CELL CAME FROM
+  // # 🔤 JavaScript
+  // # 🎯 Lights what the pressed cell points at, and only asks when
+  // #    there is a real choice to make
+  // # 🔗 PLACES IN DIFFERENT BOOKS ARE ALL LIT AT ONCE and nothing is
+  // #    asked: they are not alternatives. A thing explained in the
+  // #    book and tested in the bank has two sources, both true, and
+  // #    both columns are on screen — so showing one and hiding the
+  // #    other behind a question is hiding half the answer.
+  // #
+  // #    The question is only worth asking when two places are in the
+  // #    SAME book, because then one column can show only one of them.
+  // #    And even then the first is lit straight away, so the list is
+  // #    an offer and never a toll gate.
+  // #
+  // #    A row with nowhere to go says so on the column it would have
+  // #    gone to. Silence reads as a press that did not register, and
+  // #    the reader presses again
+  // ============================================================
+  const toSources = (rowId, col, event) => {
+    hideMenu();
+    const want = col === 'term' ? 'term' : col === 'text' ? 'text' : col;
+    const all = store().linksOf(rowId);
+    // The cell's own field first; if it has none of its own, the row's
+    // other places are better than nothing — a reader pressing a meaning
+    // that was never anchored still wants to see where the term is
+    const mine = all.filter(l => l.what === want);
+    const places = mine.length ? mine : all;
+
+    if (!places.length) { window.MyTermSourcePane?.sayNowhere?.(); return; }
+
+    const books = new Set(places.map(l => l.src));
+    if (places.length === books.size) {
+      places.forEach(l => window.MyTermSourcePane?.goTo?.(l));
+      return;
+    }
+
+    window.MyTermSourcePane?.goTo?.(places[0]);
+    showPlaces(places, Math.round(event.clientX), Math.round(event.clientY + 8));
+  };
+
   const showPlaces = (places, x, y) => {
     hideMenu();
     menu = document.createElement('div');
@@ -430,9 +472,12 @@
       const dot = document.createElement('i');
       dot.className = 'cmenu-dot is-' + place.what;
       const words = document.createElement('span');
-      // The page is said plainly, because it is the one thing a reader
-      // can check against the book in their hands
-      words.textContent = 'Page ' + place.page + ' · ' + (WORDS_FOR[place.what] || place.what);
+      // The book is named as well as the page, because a row can point
+      // into two of them — and "page 20" means nothing until you know
+      // which book it is page 20 of
+      const from = window.MyTermSources?.one?.(place.src)?.name;
+      words.textContent = (from ? from + ' · ' : '') + 'p. ' + place.page
+        + ' · ' + (WORDS_FOR[place.what] || place.what);
       one.append(dot, words);
       one.onclick = () => { hideMenu(); window.MyTermSourcePane?.goTo?.(place); };
       menu.append(one);
@@ -720,6 +765,31 @@
       // hand would throw away what they had just selected
       const sel = window.getSelection();
       if (sel && !sel.isCollapsed) return;
+
+      // ============================================================
+      // # 👆 📖  WHAT ONE PRESS MEANS DEPENDS ON THE BOOKS
+      // # 🔤 JavaScript
+      // # 🎯 With the sources open, a press on a cell goes to where that
+      // #    cell came from; with them away, it turns the cell over
+      // # 🔗 ONE GESTURE CANNOT MEAN TWO THINGS AT ONCE, so it means the
+      // #    one the reader is plainly there for. Books open on the left
+      // #    is somebody checking a summary against its source; books
+      // #    away is somebody testing themselves, and covering is the
+      // #    whole of that. This is the reader's own arrangement from
+      // #    their own pages, and the conflict it resolves is real: in
+      // #    this site a single press was already covering.
+      // #
+      // #    And WHICH cell was pressed says which place is wanted. The
+      // #    term and its meaning sit in different spots in the book,
+      // #    and the reader pressing the meaning is asking about the
+      // #    meaning — a single mark for the whole row would have to
+      // #    guess between them
+      // ============================================================
+      if (window.MyTermSourcePane?.isOpen?.()) {
+        const tr = cell.closest('tr[data-row]');
+        if (tr) { toSources(tr.dataset.row, cell.dataset.col, event); return; }
+      }
+
       turnOver(cell, !cell.classList.contains('covered'));
     });
 

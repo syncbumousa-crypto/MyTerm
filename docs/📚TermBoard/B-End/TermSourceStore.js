@@ -36,8 +36,45 @@
     // Crossed out, not torn out, for the reason everything here is: the
     // other device still has it, and a merge would walk it back in
     deleted: s.deleted === true,
-    updatedAt: typeof s.updatedAt === 'string' ? s.updatedAt : null
+    updatedAt: typeof s.updatedAt === 'string' ? s.updatedAt : null,
+    skip: shapeSkips(s.skip)
   });
+
+  // ============================================================
+  // # 🚧 📄  THE PARTS OF A BOOK THAT ARE NOT ASKED OF YOU
+  // # 🔤 JavaScript
+  // # 🎯 Stretches of a page — an opening story, a sidebar, a closing
+  // #    case — marked so they are seen and not studied
+  // # 🔗 IT IS A STRETCH OF WORDS, NOT A PAGE. A sidebar takes most of
+  // #    a page and a closing case runs across three, ending partway
+  // #    down the last — and greying whole pages would either cover
+  // #    what is required or leave what is not.
+  // #
+  // #    AND IT IS MARKED ON THE PAGE, not written in a rule somewhere.
+  // #    The reader's own words for why: a written rule is forgotten,
+  // #    and a shading on the page is not. It is there to be seen while
+  // #    reading, so none of it is studied, and seen again while
+  // #    summarising, so nothing is taken from it.
+  // #
+  // #    Two anchors and not an index: the first words of the stretch
+  // #    and its last. Their own file holds word NUMBERS into a list of
+  // #    words that only their file has — ours are read out of the PDF
+  // #    and numbered differently, so an index would point nowhere.
+  // #    Words find their place in any copy of the book
+  // ============================================================
+  const shapeSkips = list => Array.isArray(list)
+    ? list.filter(k => k && typeof k === 'object').map(k => ({
+        id: typeof k.id === 'string' ? k.id : 'x-' + Math.random().toString(36).slice(2, 8),
+        page: Math.max(1, Math.trunc(Number(k.page)) || 1),
+        // A whole page, for the front matter that is all of it
+        all: k.all === true,
+        from: typeof k.from === 'string' ? k.from : '',
+        to: typeof k.to === 'string' ? k.to : '',
+        why: typeof k.why === 'string' ? k.why : '',
+        at: typeof k.at === 'string' ? k.at : null,
+        deleted: k.deleted === true
+      }))
+    : [];
 
   const shapeList = doc => ({
     app: 'MyTerm',
@@ -188,6 +225,27 @@
       } finally {
         sending = false;
       }
+    },
+
+    // What is not asked of you in this source, on one page or on all
+    skipsOn: (id, page) => {
+      const source = living().find(s => s.id === id);
+      const want = Math.max(1, Math.trunc(Number(page)) || 1);
+      return (source?.skip || []).filter(k => !k.deleted && k.page === want).map(k => ({ ...k }));
+    },
+
+    addSkip: (id, where) => {
+      if (!open || !where) return null;
+      const source = open.list.sources.find(s => s.id === id);
+      if (!source) return null;
+      const made = shapeSkips([{ ...where, id: 'x-' + Math.random().toString(36).slice(2, 8), at: now() }])[0];
+      // Nothing to find and not a whole page is a mark that can never
+      // be drawn — refused here rather than left to puzzle somebody
+      if (!made.all && !(made.from && made.to)) return null;
+      source.skip.push(made);
+      source.updatedAt = now();
+      wrote();
+      return { ...made };
     },
 
     rename: (id, name) => {

@@ -105,6 +105,13 @@
         contentId: typeof c.contentId === 'string' ? c.contentId : null,
         stateId: typeof c.stateId === 'string' ? c.stateId : null,
         contentVersion: Math.max(1, Number(c.contentVersion) || 1),
+        // How many rows the chapter holds and how many are learnt,
+        // written here by the chapter itself when it is open. It is a
+        // COPY of what the chapter's own two files say, kept where it
+        // can be read without opening them — so the strip can show how
+        // far every chapter has got, not only the one in hand
+        rows: Math.max(0, Number(c.rows) || 0),
+        learnt: Math.max(0, Number(c.learnt) || 0),
         updatedAt: c.updatedAt ?? null,
         deleted: c.deleted === true
       }))

@@ -355,16 +355,25 @@
         await cloud().writeFile(open.chapter.contentId, open.content);
         open.chapter.contentVersion = open.content.version;
         cacheWrite(open.chapter.id, open.content);
-        // The version beside the chapter is what lets every other device
-        // skip the download, so the course paper must hear about it
-        window.MyTermBoardStore?.touchCourse?.(open.course.id);
-        window.MyTermBoardStore?.change?.(board);
       }
 
       if (wantedState && open.chapter.stateId) {
         open.state.updatedAt = now();
         await cloud().writeFile(open.chapter.stateId, open.state);
       }
+
+      // How many rows this chapter has and how many are learnt, written
+      // BESIDE the chapter in the course paper. The paper is read on
+      // every open anyway, so every chapter's tab can show how far it
+      // has got — including the ones nobody has opened on this device.
+      // Without it the only honest bar would be the open chapter's, and
+      // a strip of tabs where one says something and the rest say
+      // nothing is a strip that looks broken
+      const tally = window.MyTermChapterStore.counts();
+      open.chapter.rows = tally.rows;
+      open.chapter.learnt = tally.learnt;
+      window.MyTermBoardStore?.touchCourse?.(open.course.id);
+      window.MyTermBoardStore?.change?.(board);
 
       tellStatus('saved');
       window.MyTermBell?.ring(Date.now());
@@ -434,7 +443,28 @@
     return true;
   };
 
-  const sectionOf = () => open?.content.sections[0] ?? null;
+  // ============================================================
+  // # 🗂️ 📑  THE PARTS OF A CHAPTER
+  // # 🔤 JavaScript
+  // # 🎯 A chapter holds more than one list — its terms, and whatever
+  // #    else is written for it — and one of them is on the paper
+  // # 🔗 The shape has carried sections since the day it was written;
+  // #    only the first was ever drawn. Nothing about the file changes
+  // #    here, and every chapter written before today opens with its one
+  // #    section exactly as it was.
+  // #
+  // #    WHICH section is open is not kept in the file. It is a thing
+  // #    about this reader at this moment, like which chapter is open,
+  // #    and writing it to Drive would mean the laptop reaching over to
+  // #    change what the phone is looking at
+  // ============================================================
+  let chosen = null;
+
+  const sectionOf = () => {
+    const all = open?.content.sections;
+    if (!all || !all.length) return null;
+    return all.find(s => s.id === chosen) || all[0];
+  };
 
   // Sorted every time, never trusted to the order of the array in the
   // file. The position is the order field and nothing else: a move
@@ -456,6 +486,7 @@
     open: async (wholeBoard, course, chapter) => {
       board = wholeBoard;
       open = null;
+      chosen = null;
       clearTimeout(timer);
       contentDirty = stateDirty = false;
 
@@ -494,9 +525,47 @@
       later();
     },
 
-    addRow: sectionId => {
+    // Which part of the chapter is on the paper, what parts there are,
+    // and the way to start another one. The counts are read from the
+    // rows themselves every time: a part that kept its own tally would
+    // be a second place for the truth, and the two would part on the
+    // first row added anywhere else
+    sections: () => (open?.content.sections || []).map(s => {
+      const living = s.rows.filter(r => !r.deleted);
+      return { id: s.id, name: s.name, rows: living.length,
+               learnt: living.filter(r => open.state.marks[r.id]?.on === true).length };
+    }),
+
+    openSection: () => sectionOf()?.id ?? null,
+
+    useSection: id => { chosen = id; },
+
+    addSection: name => {
       if (!open) return null;
-      const section = open.content.sections.find(s => s.id === sectionId) || sectionOf();
+      const title = String(name || '').trim() || 'Part ' + (open.content.sections.length + 1);
+      const section = { id: 'p-' + Math.random().toString(36).slice(2, 8), name: title, rows: [] };
+      open.content.sections.push(section);
+      chosen = section.id;
+      wrote();
+      return section;
+    },
+
+    // The whole chapter, every part of it — this is what the chapter's
+    // own tab on the strip shows, and what is written beside the chapter
+    // so the other chapters' tabs can show it without being opened
+    counts: () => {
+      let rows = 0, learnt = 0;
+      (open?.content.sections || []).forEach(s => s.rows.forEach(r => {
+        if (r.deleted) return;
+        rows++;
+        if (open.state.marks[r.id]?.on === true) learnt++;
+      }));
+      return { rows, learnt };
+    },
+
+    addRow: () => {
+      if (!open) return null;
+      const section = sectionOf();
       if (!section) return null;
       const living = livingRows();
       const row = {

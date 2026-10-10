@@ -797,9 +797,10 @@
     add.type = 'button';
     add.textContent = '+ row';
     add.onclick = () => {
-      const section = store().content()?.sections[0];
-      if (!section) return;
-      store().addRow(section.id);
+      // Into whichever part of the chapter is on the paper. The store
+      // knows which that is; naming it here was a second place to get it
+      // wrong, and it always named the first
+      if (!store().addRow()) return;
       repaint();
       // Straight into typing. A row added and then left shut would need
       // a double press before a word could go in it, which is a strange

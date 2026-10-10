@@ -372,16 +372,55 @@
   // #    would be a second place for the truth to live, and the two
   // #    would part on the first edit made anywhere else
   // ============================================================
+  // One line of the two under a chapter's name: a rail with a filled
+  // part and a reading beside it. Both are drawn the same way because
+  // they are the same KIND of thing — how far through something you are
+  // — and a reader should not have to learn two shapes for that
+  const barOf = (kind, done, total, words) => {
+    const line = document.createElement('span');
+    line.className = 'ctab-line';
+
+    const rail = document.createElement('span');
+    rail.className = 'ctab-bar ' + kind;
+    const fill = document.createElement('i');
+    fill.style.width = (total > 0 ? Math.round(Math.min(1, done / total) * 100) : 0) + '%';
+    rail.append(fill);
+
+    const count = document.createElement('span');
+    count.className = 'ctab-count';
+    count.textContent = words;
+
+    line.append(rail, count);
+    return line;
+  };
+
+  // ============================================================
+  // # 🗂️ ➕  THE STRIP OF CHAPTERS
+  // # 🔤 JavaScript
+  // # 🎯 One tab per chapter — its name, how much of its hours are done
+  // #    and how much of it is learnt — the parts inside the open one,
+  // #    and the two ways to add
+  // # 🔗 The two lines are the two questions a reader asks of a chapter
+  // #    and they are not the same question: HOW MUCH OF IT HAVE I SAT
+  // #    WITH is hours, and HOW MUCH OF IT DO I KNOW is ticks. A chapter
+  // #    can be all hours and no knowing, and that is worth seeing.
+  // #
+  // #    The hours are the chapter's own; the learnt count is a copy the
+  // #    chapter writes into the course paper when it is open, so every
+  // #    tab can show it and not only the one in hand
+  // ============================================================
   const drawTabs = () => {
     const c = course();
     tabs.textContent = '';
     if (!c) return;
 
+    const hours = window.MyTermHours;
     const list = alive(c);
+
     list.forEach((ch, index) => {
-      const tab = document.createElement('button');
-      tab.className = 'ctab' + (ch.id === openChapter ? ' on' : '');
-      tab.type = 'button';
+      const open = ch.id === openChapter;
+      const tab = document.createElement('div');
+      tab.className = 'ctab' + (open ? ' on' : '');
       tab.dataset.chapter = ch.id;
 
       const head = document.createElement('span');
@@ -389,33 +428,135 @@
       const no = document.createElement('span');
       no.className = 'ctab-no';
       no.textContent = 'C' + (index + 1);
+
+      // The name is the way in AND the way to change it: one press opens
+      // the chapter, and a press on a chapter already open opens its
+      // name for writing. A pencil beside every tab would be five more
+      // things on a strip whose whole job is to be small
       const name = document.createElement('span');
       name.className = 'ctab-name';
       name.textContent = ch.name || 'Unnamed chapter';
+      name.title = open ? 'Press to rename' : ch.name || 'Unnamed chapter';
+      name.onclick = event => {
+        event.stopPropagation();
+        if (open) renameChapter(ch, name);
+        else openOne(ch.id);
+      };
+
       head.append(no, name);
 
-      const hours = window.MyTermHours;
-      const line = document.createElement('span');
-      line.className = 'ctab-hours';
-      if (hours) line.append(hours.pair(ch.doneMinutes, ch.minutes));
+      tab.append(head,
+        barOf('done', ch.doneMinutes, ch.minutes, hours ? hours.fmt(ch.minutes) : ''),
+        barOf('learnt', ch.learnt, ch.rows, ch.rows ? ch.learnt + '/' + ch.rows : '—'));
 
-      const bar = document.createElement('span');
-      bar.className = 'ctab-bar';
-      const fill = document.createElement('i');
-      fill.style.width = (hours ? hours.cover(ch) : 0) + '%';
-      bar.append(fill);
-
-      tab.append(head, line, bar);
-      tab.onclick = () => openOne(ch.id);
+      if (open) tab.append(partsOf());
+      tab.onclick = () => { if (!open) openOne(ch.id); };
       tabs.append(tab);
     });
 
-    if (!list.length) {
-      const none = document.createElement('p');
-      none.className = 'ctab-none';
-      none.textContent = 'No chapters yet — add one from the gear on the board.';
-      tabs.append(none);
-    }
+    // After the last chapter, the way to another one. It stands in the
+    // strip where the chapter it adds will stand
+    const more = document.createElement('button');
+    more.className = 'ctab-new';
+    more.type = 'button';
+    more.textContent = '+';
+    more.title = 'Add a chapter';
+    more.onclick = () => {
+      const made = { id: 'h-' + Math.random().toString(36).slice(2, 8),
+                     name: 'Chapter ' + (alive(c).length + 1),
+                     done: false, minutes: 0, doneMinutes: 0, rows: 0, learnt: 0,
+                     updatedAt: now(), deleted: false };
+      c.chapters = c.chapters || [];
+      c.chapters.push(made);
+      touch();
+      openOne(made.id);
+    };
+    tabs.append(more);
+  };
+
+  // ============================================================
+  // # 📑 ➕  THE PARTS INSIDE THE OPEN CHAPTER
+  // # 🔤 JavaScript
+  // # 🎯 A small square for every part of the chapter, and one more to
+  // #    start another
+  // # 🔗 Only the open chapter shows them. A strip where every chapter
+  // #    unfolded everything it holds is a strip taller than the page it
+  // #    sits over — and the parts of a chapter nobody is reading are
+  // #    not a thing anybody is looking for
+  // ============================================================
+  const partsOf = () => {
+    const box = document.createElement('span');
+    box.className = 'ctab-parts';
+
+    const parts = window.MyTermChapterStore?.sections() || [];
+    const here = window.MyTermChapterStore?.openSection();
+
+    parts.forEach(part => {
+      const one = document.createElement('button');
+      one.className = 'ctab-part' + (part.id === here ? ' on' : '');
+      one.type = 'button';
+      one.textContent = part.name;
+      one.title = part.rows ? part.learnt + ' of ' + part.rows + ' learnt' : 'Nothing written in it yet';
+      one.onclick = event => {
+        event.stopPropagation();
+        window.MyTermChapterStore.useSection(part.id);
+        drawTabs();
+        drawRows();
+      };
+      box.append(one);
+    });
+
+    const more = document.createElement('button');
+    more.className = 'ctab-part ctab-part-new';
+    more.type = 'button';
+    more.textContent = '+';
+    more.title = 'Add a part to this chapter';
+    more.onclick = event => {
+      event.stopPropagation();
+      if (!window.MyTermChapterStore?.addSection()) return;
+      drawTabs();
+      drawRows();
+    };
+    box.append(more);
+
+    return box;
+  };
+
+  // ============================================================
+  // # ✏️ 🏷️  RENAMING A CHAPTER WHERE IT STANDS
+  // # 🔤 JavaScript
+  // # 🎯 Turns the name on the tab into a box to type in, and puts back
+  // #    whatever is left in it
+  // # 🔗 In the tab itself, not in a box in the middle of the screen: a
+  // #    name is read in its place and should be changed in its place.
+  // #    An empty name is refused by keeping the old one — a chapter
+  // #    called nothing is a tab that cannot be pressed
+  // ============================================================
+  const renameChapter = (ch, slot) => {
+    const box = document.createElement('input');
+    box.className = 'ctab-rename';
+    box.value = ch.name || '';
+    box.onclick = event => event.stopPropagation();
+
+    const done = keep2 => {
+      const want = box.value.trim();
+      if (keep2 && want && want !== ch.name) {
+        ch.name = want;
+        ch.updatedAt = now();
+        touch();
+      }
+      drawTabs();
+    };
+
+    box.onkeydown = event => {
+      if (event.key === 'Enter') { event.preventDefault(); done(true); }
+      if (event.key === 'Escape') { event.preventDefault(); done(false); }
+    };
+    box.onblur = () => done(true);
+
+    slot.replaceWith(box);
+    box.focus();
+    box.select();
   };
 
   // ============================================================

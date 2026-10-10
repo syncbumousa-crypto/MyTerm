@@ -1171,7 +1171,10 @@
   };
 
   // The corner says it now: a tick when it is in Drive, a turning circle while it is not
-  const say = name => window.MyTermHud?.sync(name);
+  // Both corners hear it: the board's and the course page's. A reader who
+  // spends an hour inside one chapter must not have to go back to the board
+  // to find out whether what they wrote was kept
+  const say = name => { window.MyTermHud?.sync(name); window.MyTermCourseSync?.(name); };
   keep.onStatus(name => {
     say(name);
     if (name === 'failed') renewBtn.hidden = false;
@@ -1251,6 +1254,9 @@
     const typing = document.activeElement;
     data = fresh;
     paint();
+    // The course page is drawn from the same data, so news from the other
+    // device must reach it too — it may well be the screen being looked at
+    window.MyTermCoursePage?.redraw();
     say('arrived');
     setTimeout(() => say('saved'), 2500);
     if (typing && typing.id === 'term-input') editName();
@@ -1264,6 +1270,11 @@
 
   // What the course page needs from here: the shapes, and a redraw on return
   window.MyTermBoardReading = readingOf;
+  // The course page reads a chapter exactly as its card does: one way of
+  // counting, handed over, so the two can never put different numbers on
+  // the same chapter
+  window.MyTermChapterReading = chapterReading;
+  window.MyTermHours = { fmt: fmtHours, pair: hoursPair, cover: coverOf };
   window.MyTermBoardRedraw = () => { data = keep.board() || data; paint(); };
 
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') keep.flush(); });

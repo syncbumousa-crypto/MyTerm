@@ -19,9 +19,9 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=80">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=80">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=80">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=81">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=81">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=81">
 </head>
 <body>
 
@@ -179,9 +179,39 @@
 <!-- # 🔗 Hidden until a course is opened. The board is hidden while it -->
 <!-- #    shows, so they are never both on screen at once -->
 <!-- ============================================================ -->
-<div class="board course-page" id="course" hidden>
-  <button class="col-new course-back" type="button" id="course-back" title="Back to the term">←</button>
-  <h1 class="course-title" id="course-title"></h1>
+<div class="course-page" id="course" hidden>
+
+  <!-- The top strip: the way back, whose course this is, and a tab for
+       every chapter in it carrying that chapter's own reading. -->
+  <header class="cbar" id="course-bar">
+    <button class="cbtn cback" type="button" id="course-back" title="Back to the term">←</button>
+    <h1 class="course-title" id="course-title"></h1>
+    <div class="ctabs" id="course-tabs"></div>
+  </header>
+
+  <main class="cbody" id="course-body"></main>
+
+  <!-- The bottom strip: how the page is read, not what it says. These are
+       one reader's preferences, so they are kept in this browser and never
+       written to Drive — and they are the same in every course, because the
+       size of type is a preference of the eye and not a fact of a course. -->
+  <footer class="cfoot" id="course-foot">
+    <span class="cgroup">
+      <button class="cbtn" type="button" id="font-down" title="Smaller type">A−</button>
+      <span class="cnum" id="font-now"></span>
+      <button class="cbtn" type="button" id="font-up" title="Larger type">A+</button>
+    </span>
+    <span class="cgroup">
+      <button class="cbtn" type="button" id="width-down" title="Narrower column">−</button>
+      <span class="cnum" id="width-now"></span>
+      <button class="cbtn" type="button" id="width-up" title="Wider column">+</button>
+    </span>
+    <span class="cfoot-right">
+      <span class="csync" id="course-sync" title="Saved to your Drive">✓</span>
+      <button class="cbtn" type="button" id="course-full" title="Fullscreen">⛶</button>
+    </span>
+  </footer>
+
 </div>
 <!-- ============================================================ -->
 <!-- # 🔖 👁️  VERSION MARK -->
@@ -192,7 +222,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v80</p>
+<p class="build">v81</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -215,17 +245,17 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=80"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=80"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=80"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=80"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=80"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=80"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=80"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=80"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=80"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=80"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=80"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=81"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=81"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=81"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=81"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=81"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=81"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=81"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=81"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=81"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=81"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=81"></script>
 
 </body>
 </html>

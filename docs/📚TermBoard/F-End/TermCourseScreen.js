@@ -18,13 +18,13 @@
   const $ = id => document.getElementById(id);
 
   const page = $('course'), board = $('board');
-  const title = $('course-title'), tabs = $('course-tabs'), body = $('course-body');
+  const tabs = $('course-tabs'), body = $('course-body');
   const fullBtn = $('course-full'), syncDot = $('course-sync');
   const fontDown = $('font-down'), fontUp = $('font-up'), fontNow = $('font-now');
   const colDown = $('col-down'), colUp = $('col-up'), colNow = $('col-now');
-  const langBtn = $('course-lang'), langNow = $('lang-now');
+  const langBtn = $('course-lang');
   const eyeBtn = $('course-eye'), darkBtn = $('course-dark'), bookBtn = $('course-book');
-  const foot = $('course-foot'), footZone = $('course-foot-zone');
+  const barPull = $('course-bar-pull'), footPull = $('course-foot-pull');
 
   // ============================================================
   // # 🖼️ ✒️  THE ICONS OF THE STRIP
@@ -56,47 +56,66 @@
       + '<circle cx="12" cy="12" r="3.2"/></svg>',
     eyeOff: '<svg viewBox="0 0 24 24"><path d="M9.6 5.3A9.8 9.8 0 0 1 12 5c6.5 0 10.2 7 10.2 7a17 17 0 0 1-3 3.9"/>'
       + '<path d="M6.5 6.8A17 17 0 0 0 1.8 12S5.5 19 12 19a9.9 9.9 0 0 0 4-.8"/>'
-      + '<path d="M10 10a3.2 3.2 0 0 0 4.3 4.3"/><line x1="3" y1="3" x2="21" y2="21"/></svg>'
+      + '<path d="M10 10a3.2 3.2 0 0 0 4.3 4.3"/><line x1="3" y1="3" x2="21" y2="21"/></svg>',
+    down: '<svg viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg>',
+    up: '<svg viewBox="0 0 24 24"><path d="M19 15l-7-7-7 7"/></svg>'
   };
 
   bookBtn.innerHTML = ICONS.book;
 
   // ============================================================
-  // # 👋 🫥  CALLING THE STRIP UP
+  // # 🪝 🎚️  PULLING A STRIP OPEN, AND SHUTTING IT
   // # 🔤 JavaScript
-  // # 🎯 Slides the bottom strip into view when the pointer comes near
-  // #    the bottom edge, and lets it go again a moment after it leaves
-  // # 🔗 The moment is deliberate: leaving the strip to cross a gap of
-  // #    two pixels on the way to a button at the other end of it would
-  // #    otherwise drop it out from under the hand. And the zone is a
-  // #    thing of its own because a strip that is off the screen cannot
-  // #    be hovered and so can never call itself up.
+  // # 🎯 The two tabs, their arrows, and remembering which strips this
+  // #    reader left open
+  // # 🔗 The arrow points THE WAY THE STRIP WILL GO when it is pressed,
+  // #    not at the state it is in. Both readings exist and a reader
+  // #    will take one of them — so it had better be the one that is
+  // #    true of what happens next, because that is the half they are
+  // #    about to act on.
   // #
-  // #    It answers a TOUCH as well as a pointer. The first version
-  // #    asked the browser whether it could hover and left the strip
-  // #    standing still when it said no — and this very browser, driven
-  // #    by a mouse, answers no: the strip never moved once. Asking a
-  // #    browser what kind of machine it is on is a guess; answering
-  // #    both ways is not
+  // #    Which strips are open is the reader's, like the size of type:
+  // #    somebody who reads with both of them away should not have to
+  // #    put them away again every time they open a chapter
   // ============================================================
-  let footTimer = null;
+  const STRIPS = { bar: 'myterm.read.bar', foot: 'myterm.read.foot' };
 
-  const showFoot = () => { clearTimeout(footTimer); foot.classList.add('show'); };
-  const hideFoot = () => {
-    clearTimeout(footTimer);
-    footTimer = setTimeout(() => foot.classList.remove('show'), 350);
+  const readShut = (key, fallback) => {
+    try {
+      const kept = localStorage.getItem(key);
+      return kept === null ? fallback : kept === 'shut';
+    } catch { return fallback; }
   };
 
-  footZone.addEventListener('mouseenter', showFoot);
-  footZone.addEventListener('pointerdown', showFoot);
-  foot.addEventListener('mouseenter', showFoot);
-  foot.addEventListener('mouseleave', hideFoot);
+  // The chapters are what the page is for, so they start open. The
+  // controls are reached for now and then, so they start away — and the
+  // tab that brings them back is sitting right where they went
+  let barShut = readShut(STRIPS.bar, false);
+  let footShut = readShut(STRIPS.foot, true);
 
-  // A finger has no "away", so the strip is let go when the reader
-  // touches the paper again rather than when a pointer leaves the strip
-  body.addEventListener('pointerdown', () => {
-    if (foot.classList.contains('show')) hideFoot();
-  });
+  const paintStrips = () => {
+    page.classList.toggle('bar-shut', barShut);
+    page.classList.toggle('foot-shut', footShut);
+    barPull.innerHTML = barShut ? ICONS.down : ICONS.up;
+    barPull.title = barShut ? 'Show the chapters' : 'Hide the chapters';
+    footPull.innerHTML = footShut ? ICONS.up : ICONS.down;
+    footPull.title = footShut ? 'Show the controls' : 'Hide the controls';
+  };
+
+  barPull.onclick = () => {
+    barShut = !barShut;
+    writePref(STRIPS.bar, barShut ? 'shut' : 'open');
+    paintStrips();
+  };
+
+  footPull.onclick = () => {
+    footShut = !footShut;
+    writePref(STRIPS.foot, footShut ? 'shut' : 'open');
+    paintStrips();
+    // The paper has more or less room under it now, and a sheet is only
+    // ever as wide as the desk — so it is refitted, never recut
+    window.MyTermPaper?.fit();
+  };
 
   const now = () => new Date().toISOString();
   const alive = course => (course.chapters || []).filter(h => !h.deleted);
@@ -164,7 +183,10 @@
     fontUp.disabled = fontPct >= FONTS[FONTS.length - 1];
     colDown.disabled = termPx <= COLS[0];
     colUp.disabled = termPx >= COLS[COLS.length - 1];
-    langNow.textContent = readLang === 'ar' ? 'ع' : 'EN';
+    // The globe says it by itself. A label beside it said the same thing
+    // twice, and the only thing the second one added was the question of
+    // whether it meant the language now or the one it would turn to
+    langBtn.title = readLang === 'ar' ? 'Arabic — press for English' : 'English — press for Arabic';
     document.body.classList.toggle('darkpaper', darkPaper);
     darkBtn.innerHTML = darkPaper ? ICONS.sun : ICONS.moon;
     darkBtn.title = darkPaper ? 'White paper' : 'Dark paper';
@@ -401,7 +423,12 @@
   const draw = () => {
     const c = course();
     if (!c) return;
-    title.textContent = c.name || 'Untitled course';
+    // The course's name is the window's name now. It is not on the page
+    // any more — it was the same word over the same page for an hour, in
+    // the one strip a reader wants out of the way — and a tab is where a
+    // name is actually wanted: it is how this window is told from the
+    // board's, and from the other course open beside it
+    document.title = (c.name || 'Untitled course') + ' — MyTerm';
 
     const list = alive(c);
     if (!list.some(h => h.id === openChapter)) {
@@ -483,6 +510,7 @@
       // landed on top of it — the avatar over the chapter tabs, the build
       // mark over the first button. A page that fills the window says so
       document.body.classList.add('reading');
+      paintStrips();
       applyRead();
       draw();
     },

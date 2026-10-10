@@ -1,4 +1,4 @@
-/* ============================================================ */
+﻿/* ============================================================ */
 /* # 🌑 🖥️  THE DARK BOARD */
 /* # 🔤 CSS */
 /* # 🎯 Moves the content to the top instead of the middle while the */
@@ -491,53 +491,10 @@ body.board-on {
 
 .ch.open .ch-detail { display: block; }
 
-.dline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.dk {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 9.5px;
-  color: var(--dim);
-}
-
-.dnum {
-  flex: none;
-  width: 44px;
-  font-family: var(--mono);
-  font-size: 10px;
-  text-align: center;
-  padding: 2px 1px;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  -moz-appearance: textfield;
-}
-
-.dnum::-webkit-outer-spin-button,
-.dnum::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.dnum::placeholder { color: var(--dim2); }
-.dnum:focus { outline: none; border-bottom-color: var(--blue); }
-
-.dunit { font-size: 9px; color: var(--dim2); }
-
 /* What is DONE of a chapter is said, not asked: it is counted from the
    boxes ticked inside it. A box here to type a different number would
    be a second place for one truth, and the two would part on the first
    row ticked */
-.dsaid {
-  flex: none;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
 
 /* ============================================================ */
 /* # 📑 ⏱️  THE PARTS OF A CHAPTER, UNDER ITS CARD */
@@ -549,9 +506,15 @@ body.board-on {
 /* #    count are three or four characters that mean nothing when */
 /* #    clipped, so they are never the thing that gives way */
 /* ============================================================ */
-.dparts { margin: 0 0 6px; display: flex; flex-direction: column; gap: 3px; }
+.dparts { margin: 0 0 7px; display: flex; flex-direction: column; gap: 7px; }
 
-.dpart { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* The name and its clock on one line, the bar on the line under it and
+   the full width of the card. Beside the name, a bar is as long as the
+   name is short — and a reading whose length depends on the length of a
+   word is not a reading */
+.dpart { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+.dphead { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 
 .dpname {
   flex: 1 1 auto;
@@ -563,67 +526,19 @@ body.board-on {
   text-overflow: ellipsis;
 }
 
-.dptime {
-  flex: none;
-  font-family: var(--mono);
-  font-size: 9px;
-  color: var(--dim2);
-  font-variant-numeric: tabular-nums;
-}
+.dphead .ch-hours { flex: none; font-size: 9px; }
 
 .dprail {
-  flex: none;
-  width: 34px;
+  display: block;
   height: 3px;
   border-radius: 2px;
   background: var(--well);
   overflow: hidden;
 }
 
-.dprail i { display: block; height: 100%; background: var(--blue); }
-
-.dpcount {
-  flex: none;
-  min-width: 30px;
-  text-align: end;
-  font-family: var(--mono);
-  font-size: 9px;
-  color: var(--dim2);
-  font-variant-numeric: tabular-nums;
-}
+.dprail i { display: block; height: 100%; background: var(--green); }
 
 .dnone { margin: 0 0 6px; font-size: 9.5px; color: var(--dim2); }
-
-.dbar {
-  height: 3px;
-  margin: 2px 0 6px;
-  background: var(--well);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.dbar i {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, var(--blue-dk), var(--blue));
-}
-
-.dtog {
-  display: block;
-  width: 100%;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  padding: 4px;
-  margin-bottom: 4px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  background: transparent;
-  color: var(--dim);
-  cursor: pointer;
-}
-
-.dtog:hover { color: #ffffff; border-color: var(--dim2); background: #25262c; }
-.dtog.on { color: var(--ready); border-color: var(--ready); }
 
 /* The one thing here that cannot be undone, so it is the quietest and
    it is last — and it is behind an arrow nobody opens by accident */
@@ -637,8 +552,6 @@ body.board-on {
 }
 
 .ch-off:hover { color: var(--mBad); text-decoration: underline; }
-
-
 
 /* ============================================================ */
 /* # 🗒️ 🤫  THE QUIET SAVING LINE */
@@ -913,9 +826,6 @@ body.board-on {
   padding: 6px 4px;
 }
 
-
-
-
 /* ============================================================ */
 /* # 🎓 🟩  THE TERM AVERAGE, UNDER THE NAME */
 /* # 🔤 CSS */
@@ -1043,8 +953,6 @@ body.board-on {
   display: inline-flex;
   border-radius: 50%;
 }
-
-
 
 .trio.md { gap: 6px; }
 .trio.md .sq { width: 14px; height: 14px; }
@@ -1364,8 +1272,6 @@ body.reading .build { bottom: 46px; }
   min-width: 0;
 }
 
-
-
 /* ============================================================ */
 /* # 🎛️ 🔘  THE BUTTONS, AND THE TROUGHS THEY SIT IN */
 /* # 🔤 CSS */
@@ -1624,7 +1530,12 @@ body.reading .build { bottom: 46px; }
    unrelated rows stacked up */
 .ctab-lines { display: flex; flex-direction: column; gap: 3px; }
 
-.ctab-line { display: flex; align-items: center; gap: 6px; }
+/* Centred in the box, not pushed against its near edge. The rail and
+   the reading are one group of a fixed size, and whatever room is left
+   over is split evenly either side of it — a group laid against the
+   start leaves the whole of the slack as a blank margin at the end,
+   which reads as a box drawn too wide rather than as a reading */
+.ctab-line { display: flex; align-items: center; justify-content: center; gap: 6px; }
 
 /* Half the line and no more. Run the full width of the box, a four
    pixel rail becomes a rule across the strip — six of them stacked read
@@ -1666,8 +1577,10 @@ body.reading .build { bottom: 46px; }
    you have ticked off; the second how much of what the bank ASKED you
    got right — a different denominator on purpose, and the box says
    which in words when you rest on it */
+/* A fixed slot, so the line with a reading and the line without one
+   hold their rails in exactly the same place */
 .ctab-count {
-  flex: none;
+  flex: 0 0 30px;
   font-size: 9px;
   color: #999999;
   font-variant-numeric: tabular-nums;
@@ -1929,8 +1842,6 @@ body.reading .build { bottom: 46px; }
   color: var(--dim2);
   align-self: center;
 }
-
-
 
 /* ============================================================ */
 /* # 🔘 ⌨️  THE BUTTON THAT RUNS THE WHOLE WIDTH OF THE DESK */

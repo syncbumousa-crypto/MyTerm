@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // # 🏷️ ✏️  THE TERM NAME
 // # 🔤 JavaScript
 // # 🎯 One spot at the top of the board that is three things in turn:
@@ -376,7 +376,19 @@
   const readingOf = (course, size) => {
     const list = alive(course);
     const named = list.filter(h => h.name.trim() !== '').length;
-    const done = list.filter(h => h.done).length;
+
+    // HOW FAR THROUGH A COURSE IS, IN HOURS. It was a count of chapters
+    // marked finished by hand, and that button is gone: a chapter was
+    // being declared done beside parts that said otherwise. Hours answer
+    // the same question and are counted, not declared — and a course
+    // nobody has paced yet still has the old count to fall back on, so
+    // the reading is never simply blank
+    const hours = list.reduce((s, h) => s + (h.minutes || 0), 0);
+    const did = list.reduce((s, h) => s + (h.doneMinutes || 0), 0);
+    const marked = list.filter(h => h.done).length;
+    const through = hours > 0
+      ? Math.min(100, Math.round((did / hours) * 100))
+      : (list.length ? Math.round((marked / list.length) * 100) : 0);
 
     // The disc is about what has been judged, so an item with no score is
     // its grey third — not the full marks the standing assumes for it.
@@ -390,8 +402,10 @@
     return window.MyTermShapes.draw(size, {
       ready: list.length ? Math.round((named / list.length) * 100) : 0,
       readyTip: list.length ? `${named} of ${list.length} chapters named` : 'No chapters yet',
-      done: list.length ? Math.round((done / list.length) * 100) : 0,
-      doneTip: list.length ? `${done} of ${list.length} finished` : 'No chapters yet',
+      done: through,
+      doneTip: hours > 0
+        ? `${fmtHours(did)} done of ${fmtHours(hours)}`
+        : (list.length ? `${marked} of ${list.length} finished` : 'No chapters yet'),
       marks: { ok, bad, unknown: Math.max(0, weight - ok - bad) },
       marksTip: graded.length ? `${Math.round(ok)} earned · ${Math.round(bad)} lost · ${Math.round(Math.max(0, weight - ok - bad))} not graded` : 'No marks recorded yet'
     });
@@ -775,7 +789,15 @@
     const courses = living();
     const chapters = courses.flatMap(c => alive(c));
     const named = chapters.filter(h => h.name.trim() !== '').length;
-    const done = chapters.filter(h => h.done).length;
+
+    // How far through a chapter is, in the one currency this board keeps
+    // — the hours its parts are paced at, and the hours its ticked rows
+    // come to. A chapter nobody has paced falls back to the old mark,
+    // which is all there ever was for it
+    const partOfIt = h => (h.minutes > 0
+      ? Math.min(1, (h.doneMinutes || 0) / h.minutes)
+      : (h.done ? 1 : 0));
+    const done = chapters.reduce((s, h) => s + partOfIt(h), 0);
 
     let ok = 0, bad = 0, weight = 0;
     courses.forEach(c => {
@@ -799,7 +821,7 @@
       const credits = Number(c.credits) || 0;
       const list = alive(c);
       hours += credits;
-      if (list.length) hoursDone += credits * (list.filter(h => h.done).length / list.length);
+      if (list.length) hoursDone += credits * (list.reduce((s, h) => s + partOfIt(h), 0) / list.length);
     });
 
     return {
@@ -815,7 +837,7 @@
       ready: r.chapters ? Math.round((r.named / r.chapters) * 100) : 0,
       readyTip: `Set up — ${r.named} of ${r.chapters} chapters named`,
       done: r.chapters ? Math.round((r.done / r.chapters) * 100) : 0,
-      doneTip: `Finished — ${r.done} of ${r.chapters} chapters`,
+      doneTip: `Done — ${Math.round(r.done * 10) / 10} of ${r.chapters} chapters' worth`,
       marks: { ok: r.ok, bad: r.bad, unknown: r.unknown },
       marksTip: r.weight
         ? `Marks — ${Math.round(r.ok)} earned, ${Math.round(r.bad)} lost, ${Math.round(r.unknown)} not graded yet`
@@ -929,64 +951,12 @@
     const box = document.createElement('div');
     box.className = 'ch-detail';
 
-    const numberLine = (label, minutes, write) => {
-      const line = document.createElement('div');
-      line.className = 'dline';
-      const key = document.createElement('span');
-      key.className = 'dk';
-      key.textContent = label;
-      const field = document.createElement('input');
-      field.className = 'dnum';
-      field.type = 'number';
-      field.min = '0';
-      field.step = '0.5';
-      field.value = minutes ? Math.round((minutes / 60) * 100) / 100 : '';
-      field.placeholder = '0';
-      field.title = label + ', in hours';
-      field.oninput = () => {
-        write(Math.max(0, Math.round((Number(field.value) || 0) * 60)));
-        ch.updatedAt = now();
-        changed(course);
-        paintRow();
-      };
-      const unit = document.createElement('span');
-      unit.className = 'dunit';
-      unit.textContent = 'h';
-      line.append(key, field, unit);
-      return line;
-    };
-
-    const bar = document.createElement('div');
-    bar.className = 'dbar';
-    const fill = document.createElement('i');
-    bar.append(fill);
-
-    const mark = document.createElement('button');
-    mark.className = 'dtog';
-    mark.type = 'button';
-
-    // Redrawing the whole card on every keystroke would take the cursor
-    // out of the box being typed in, so what changed is painted in place
-    // and the full redraw is kept for what adds or removes a row
-    const paintRow = () => {
-      const row = box.parentElement;
-      fill.style.width = coverOf(ch) + '%';
-      mark.textContent = ch.done ? '✓ finished' : 'mark finished';
-      mark.classList.toggle('on', ch.done);
-      if (!row) return;
-      row.classList.toggle('done', ch.done);
-      row.querySelector('.ch-hours')?.replaceWith(hoursPair(ch.doneMinutes, ch.minutes));
-      row.querySelector('.trio')?.replaceWith(chapterReading(ch));
-      refreshScores();
-    };
-
-    mark.onclick = () => {
-      ch.done = !ch.done;
-      ch.updatedAt = now();
-      changed(course);
-      paintRow();
-    };
-
+    // Nothing on this card is typed any more. How long a chapter takes
+    // is the sum of what its parts are paced at; how much of it is done
+    // is the rows ticked off inside it; and "finished" was a third
+    // opinion beside those two -- a chapter can hardly be marked done
+    // while its own parts say otherwise. All three were boxes a reader
+    // could set against the truth, and every one of them did
     const off = document.createElement('button');
     off.className = 'ch-off';
     off.type = 'button';
@@ -998,23 +968,15 @@
       redraw();
     };
 
-    box.append(
-      numberLine('How long it takes', ch.minutes, v => { ch.minutes = v; }),
-      doneLine(ch),
-      bar,
-      partsOf(ch),
-      mark,
-      off
-    );
-    paintRow();
+    box.append(partsOf(ch), off);
     return box;
   };
 
   // ============================================================
   // # 📑 ⏱️  THE PARTS OF A CHAPTER, ON THE BOARD
   // # 🔤 JavaScript
-  // # 🎯 Under an opened chapter: every part of it, what it comes to,
-  // #    and how much of it is ticked off
+  // # 🎯 Under an opened chapter: every part of it, how many hours of it
+  // #    are done of how many there are, and a bar of the same
   // # 🔗 Read from the copy the chapter writes beside itself, never by
   // #    opening the chapter. A board that opened every chapter to draw
   // #    its card would read the whole term to show one course.
@@ -1023,23 +985,6 @@
   // #    yet, and says so rather than showing an empty list — which
   // #    would read as a chapter with nothing in it
   // ============================================================
-  const doneLine = ch => {
-    const line = document.createElement('div');
-    line.className = 'dline';
-    const key = document.createElement('span');
-    key.className = 'dk';
-    key.textContent = 'Done of it';
-    const said = document.createElement('span');
-    said.className = 'dsaid';
-    said.textContent = fmtHours(ch.doneMinutes);
-    // Said and not asked: it is counted from the boxes ticked inside the
-    // chapter, and a box here to type a different number would be a
-    // second place for one truth
-    said.title = 'Counted from the rows you have ticked off inside the chapter';
-    line.append(key, said);
-    return line;
-  };
-
   const partsOf = ch => {
     const box = document.createElement('div');
     box.className = 'dparts';
@@ -1056,29 +1001,29 @@
       const row = document.createElement('div');
       row.className = 'dpart';
 
+      // The name and the clock on one line, the part's own bar under it.
+      // HOURS AND NOT A COUNT OF ROWS: this board is kept in hours from
+      // the course's total down, and a part that answered "11 of 44"
+      // here would be the one reading on the card in another currency
+      const head = document.createElement('div');
+      head.className = 'dphead';
+
       const name = document.createElement('span');
       name.className = 'dpname';
       name.textContent = part.name;
 
-      const time = document.createElement('span');
-      time.className = 'dptime';
-      time.textContent = part.minutes ? fmtHours(part.minutes) : '—';
-      time.title = part.minutes
-        ? `${fmtHours(part.done)} done of ${fmtHours(part.minutes)}`
-        : 'No pace set on this part yet';
+      head.append(name, hoursPair(part.done, part.minutes));
 
       const rail = document.createElement('span');
       rail.className = 'dprail';
       const fill = document.createElement('i');
-      fill.style.width = (part.rows ? Math.round((part.learnt / part.rows) * 100) : 0) + '%';
+      fill.style.width = (part.minutes ? Math.min(100, (part.done / part.minutes) * 100) : 0) + '%';
       rail.append(fill);
 
-      const count = document.createElement('span');
-      count.className = 'dpcount';
-      count.textContent = part.rows ? part.learnt + '/' + part.rows : '—';
-
-      row.append(name, time, rail, count);
-      row.title = part.name + ' · ' + (part.rows ? part.learnt + ' of ' + part.rows + ' ticked off' : 'nothing in it yet');
+      row.append(head, rail);
+      row.title = part.name + ' · ' + (part.minutes
+        ? `${fmtHours(part.done)} done of ${fmtHours(part.minutes)}`
+        : 'no pace set on it yet');
       box.append(row);
     });
     return box;

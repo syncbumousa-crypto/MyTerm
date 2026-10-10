@@ -294,7 +294,7 @@ body.board-on {
   position: absolute;
   z-index: 5;
   top: calc(100% - 4px);
-  inset-inline-end: 8px;
+  inset-inline-start: 8px;
   width: 168px;
   padding: 7px 8px 8px;
   background: var(--panel2);
@@ -968,35 +968,31 @@ body.board-on {
   background: linear-gradient(90deg, var(--blue-dk), var(--blue));
 }
 
+/* A ring, like the one at the head of the page: a grey track all the
+   way round for what has not been judged, with what was earned and what
+   was lost laid on it. One language for "how much of a whole", learned
+   once and read everywhere */
 .trio .dot {
   display: inline-flex;
   border-radius: 50%;
 }
 
-/* Nothing judged yet is an outline with no body — and dashed, so it is
-   never mistaken for a full grey disc, which means something else:
-   sat, and not yet marked */
-.trio .dot.none {
-  background: transparent;
-  border: 1px dashed var(--dim2);
-  box-sizing: border-box;
-}
+
 
 .trio.md { gap: 6px; }
 .trio.md .sq { width: 14px; height: 14px; }
 .trio.md .tbar { flex: 1 1 auto; min-width: 0; height: 9px; }
-.trio.md .dot, .trio.md .dot.none { width: 14px; height: 14px; }
+.trio.md .dot { width: 14px; height: 14px; }
 
 .trio.sm { gap: 5px; }
 .trio.sm .sq { width: 9px; height: 9px; border-radius: 2px; }
 .trio.sm .tbar { flex: 1 1 auto; min-width: 0; height: 5px; }
-.trio.sm .dot, .trio.sm .dot.none { width: 9px; height: 9px; }
+.trio.sm .dot { width: 9px; height: 9px; }
 
 .trio.lg { gap: 20px; }
 .trio.lg .sq { width: 46px; height: 46px; border-width: 2px; border-radius: 7px; }
 .trio.lg .tbar { width: 150px; height: 30px; }
-.trio.lg .dot, .trio.lg .dot.none { width: 46px; height: 46px; }
-.trio.lg .dot.none { border-width: 2px; }
+.trio.lg .dot { width: 46px; height: 46px; }
 /* ============================================================ */
 /* # 🗓️ 🟩  THE GRID OF DAYS */
 /* # 🔤 CSS */

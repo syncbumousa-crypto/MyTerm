@@ -828,12 +828,18 @@
   // # 🔗 No new arithmetic lives here. The number is each course's own
   // #    standing — the very thing its grade shows — turned into points
   // #    and averaged by credit hours, so the card and the average can
-  // #    never say different things about the same course. A course with
-  // #    nothing graded is out of the sum and not a zero in it: there is
-  // #    no judgement without something to judge, which is the same rule
-  // #    that leaves the mastery disc empty until a mark is entered.
-  // #    And the blocks mean the number needs no "out of 4" beside it —
-  // #    the shape says it, so the words under them are said small, once
+  // #    never say different things about the same course.
+  // #
+  // #    Every course counts, including one with nothing graded yet: its
+  // #    card already reads A+ because full marks are assumed until a
+  // #    real score says otherwise, and the average is the sum of what
+  // #    the cards say. So a new term begins at 4.00 and comes down as
+  // #    marks arrive. Leaving such a course out instead would mean the
+  // #    cards and the number under the term were adding up different
+  // #    courses, and the reader would have no way to tell which.
+  // #
+  // #    The blocks mean the number needs no "out of 4" beside it — the
+  // #    shape says it, so the words under them are said small, once
   // ============================================================
   const creditsOf = course => {
     const hours = Number(course.credits);
@@ -842,7 +848,7 @@
 
   const refreshTermGpa = () => {
     const rows = living().map(c => ({ course: c, s: standingOf(c), credits: creditsOf(c) }))
-      .filter(x => x.s && !x.s.assumed);
+      .filter(x => x.s);
 
     termGpa.textContent = '';
     if (!rows.length) { drawTermShape(); return; }
@@ -880,9 +886,12 @@
 
     termGpa.style.setProperty('--g', gradeColour(band[2]));
     termGpa.append(value, side);
+    // Which of these are measured and which are still assumed is the one
+    // thing the number itself cannot say, so the tip says it per course
     termGpa.title = `Term GPA — ${rows.length} course${rows.length === 1 ? '' : 's'} · ${hours} credit hours\n`
-      + rows.map(x => `${x.course.name || 'Untitled'}  ${x.s.letter}  ${Math.round(x.s.pct * 10) / 10}%  ·  ${x.s.points.toFixed(2)} × ${x.credits}h`).join('\n')
-      + '\nUngraded items count as full marks, and a course with no items stays out.';
+      + rows.map(x => `${x.course.name || 'Untitled'}  ${x.s.letter}  ${Math.round(x.s.pct * 10) / 10}%  ·  ${x.s.points.toFixed(2)} × ${x.credits}h`
+                      + (x.s.assumed ? '  (nothing graded yet)' : '')).join('\n')
+      + '\nFull marks are assumed until a score says otherwise, so a new term starts at 4.00.';
 
     drawTermShape();
   };

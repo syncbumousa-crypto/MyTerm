@@ -129,6 +129,11 @@
         text: clean(r.text),
         termAr: clean(r.termAr),
         textAr: clean(r.textAr),
+        // Whether this term is asked of you at all. A term outside the
+        // syllabus is a fact about the COURSE, not about this reader —
+        // it is as true on the phone as on the laptop — so it lives in
+        // the chapter's own file beside the words, not with the ticks
+        outside: r.outside === true,
         // Which table this row sits in, where it sits, and whether it is
         // the row its table is built around
         cid: Math.max(1, Math.trunc(Number(r.cid)) || 1),
@@ -199,6 +204,7 @@
       // language by its own clock would let a device that only ever
       // reads English drag the Arabic back with it
       term: w.term, text: w.text, termAr: w.termAr, textAr: w.textAr,
+      outside: w.outside,
       cid: p.cid, order: p.order, lead: p.lead, movedAt: p.movedAt,
       // A removal is never undone from here, so once either side has
       // buried a row it stays buried. The other reading is worse: a
@@ -494,7 +500,7 @@
       if (!section) return null;
       const living = livingRows();
       const row = {
-        id: newRowId(), no: '', term: '', text: '', termAr: '', textAr: '',
+        id: newRowId(), no: '', term: '', text: '', termAr: '', textAr: '', outside: false,
         // It joins the table at the end rather than starting a new one:
         // a reader adding a row is carrying on, not opening a chapter
         cid: living.length ? living[living.length - 1].cid : 1,
@@ -519,6 +525,24 @@
         wrote();
         return;
       }
+    },
+
+    // Asked of you, or there for the interest of it. It goes by the
+    // same clock as the words because it is one of them: it says what
+    // this term IS to the course, which is as true on the other device
+    // as on this one — unlike a tick, which says what you have done
+    outside: (rowId, on) => {
+      if (!open) return false;
+      for (const section of open.content.sections) {
+        const row = section.rows.find(r => r.id === rowId);
+        if (!row) continue;
+        if (row.outside === Boolean(on)) return true;
+        row.outside = Boolean(on);
+        row.updatedAt = now();
+        wrote();
+        return true;
+      }
+      return false;
     },
 
     dropRow: rowId => {

@@ -157,8 +157,20 @@
           ? 'Where this is in the book' : places.length + ' places in the book'}">◆</span>`
       : '';
 
+    // ============================================================
+    // THE WAY INTO THE LONG EXPLANATION, UNDER THE NUMBER
+    //
+    // Small, and under the number rather than beside it, because it is
+    // the third thing in a column one character wide. The reader's own
+    // pages open this by pressing the row itself — but a press on a row
+    // here already means two other things (turning a cell over, and
+    // going to where it is in the book), and a gesture that means three
+    // things means none of them
+    // ============================================================
     return `<tr data-row="${row.id}"${cls ? ` class="${cls}"` : ''}>`
-      + `<td class="cno">${mark}<span class="crowgear" data-gear="${row.id}" title="This row">⚙</span>${n}</td>`
+      + `<td class="cno">${mark}<span class="crowgear" data-gear="${row.id}" title="This row">⚙</span>${n}`
+      + `<button class="crowmore" type="button" data-more="${row.id}"`
+      + ' title="The long explanation">⋯</button></td>'
       + cellOf(row, 'term')
       + cellOf(row, 'text')
       + `<td class="cbox"><button class="cbx${on ? ' on' : ''}" type="button" data-tick="${row.id}"`
@@ -899,6 +911,13 @@
         told();
         return;
       }
+      const more = event.target.closest('[data-more]');
+      if (more) {
+        event.stopPropagation();
+        window.MyTermExplain?.open(more.dataset.more);
+        return;
+      }
+
       // The menu opens BESIDE the gear, not under the pointer: the gear
       // is a place on the page and the reader's eye is already on it
       // ============================================================

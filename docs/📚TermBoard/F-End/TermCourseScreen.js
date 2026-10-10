@@ -513,11 +513,14 @@
         addPart.type = 'button';
         addPart.textContent = '+';
         addPart.title = 'Add a part to this chapter';
+        // TWO THINGS CAN BE ADDED AND THEY ARE NOT THE SAME THING, so
+        // the press asks which rather than guessing. A part is read; a
+        // bank is answered — and what appears underneath is different
+        // for each, which is far too large a difference to decide for
+        // somebody from a single press
         addPart.onclick = event => {
           event.stopPropagation();
-          if (!window.MyTermChapterStore?.addSection()) return;
-          drawTabs();
-          drawRows();
+          askKind(addPart);
         };
         head.append(addPart);
       }
@@ -621,6 +624,21 @@
       const name = document.createElement('span');
       name.className = 'ctab-part-name';
       name.textContent = part.name;
+      // Pressing the part you are in opens its name for writing, the
+      // same gesture the chapter above it answers to. One rule for both
+      // sizes: press what you are not in to go there, press what you
+      // are in to rename it
+      name.title = part.id === here ? 'Press to rename' : part.name;
+      name.onclick = event => {
+        event.stopPropagation();
+        if (part.id !== here) {
+          window.MyTermChapterStore.useSection(part.id);
+          drawTabs();
+          drawRows();
+          return;
+        }
+        renamePart(part, name);
+      };
       line.append(gear, name);
 
       // The same two lines the chapter wore, now where they belong: one
@@ -647,6 +665,81 @@
     });
 
     return box;
+  };
+
+  // ============================================================
+  // # ➕ 🍴  A PART OR A BANK
+  // # 🔤 JavaScript
+  // # 🎯 Asks which of the two is being added, beside the plus that
+  // #    was pressed
+  // # 🔗 Each says what it IS and not only what it is called, because
+  // #    the names alone do not carry the difference and the
+  // #    difference is the whole of it: one is read down the page, the
+  // #    other asks you questions and marks you
+  // ============================================================
+  const askKind = near => {
+    shutPace();
+
+    paceBox = document.createElement('div');
+    paceBox.className = 'cmenu cpick';
+    paceBox.onclick = event => event.stopPropagation();
+
+    [['part', 'Part', 'Written down and read'],
+     ['tb', 'TB', 'Questions that ask you back']].forEach(([kind, title, says]) => {
+      const one = document.createElement('button');
+      one.type = 'button';
+      one.className = 'cpick-one';
+
+      const name = document.createElement('b');
+      name.textContent = title;
+      const why = document.createElement('span');
+      why.textContent = says;
+      one.append(name, why);
+
+      one.onclick = () => {
+        shutPace();
+        if (!window.MyTermChapterStore?.addSection('', kind)) return;
+        drawTabs();
+        drawRows();
+      };
+      paceBox.append(one);
+    });
+
+    document.body.append(paceBox);
+    const spot = near.getBoundingClientRect();
+    const wide = paceBox.offsetWidth, tall = paceBox.offsetHeight;
+    paceBox.style.left = Math.min(Math.round(spot.left), window.innerWidth - wide - 8) + 'px';
+    paceBox.style.top = Math.min(Math.round(spot.bottom + 6), window.innerHeight - tall - 8) + 'px';
+  };
+
+  // ============================================================
+  // # ✏️ 📑  RENAMING A PART WHERE IT STANDS
+  // # 🔤 JavaScript
+  // # 🎯 Turns the name on a part into a box to type in
+  // # 🔗 The same shape as renaming a chapter, one size down — and the
+  // #    same refusal: an empty name keeps the old one, because a part
+  // #    called nothing is a box that cannot be told from the next
+  // ============================================================
+  const renamePart = (part, slot) => {
+    const box = document.createElement('input');
+    box.className = 'ctab-rename ctab-rename-part';
+    box.value = part.name || '';
+    box.onclick = event => event.stopPropagation();
+
+    const done = keep2 => {
+      if (keep2) window.MyTermChapterStore?.renameSection(part.id, box.value);
+      drawTabs();
+    };
+
+    box.onkeydown = event => {
+      if (event.key === 'Enter') { event.preventDefault(); done(true); }
+      if (event.key === 'Escape') { event.preventDefault(); done(false); }
+    };
+    box.onblur = () => done(true);
+
+    slot.replaceWith(box);
+    box.focus();
+    box.select();
   };
 
   // ============================================================
@@ -833,14 +926,39 @@
   // knows nothing about courses or chapters. All that is handed over is
   // the box to draw in, and what to call when a tick changes — the strip
   // of chapters above shows the same count and would otherwise go stale
+  // A part is read and a bank is answered, and the two are drawn by two
+  // different files. The one thing they share is the box they draw in,
+  // so whichever is not wanted is cleared out of it first — two of them
+  // holding the same box at once was never going to end well
   const drawRows = () => {
     if (!window.MyTermChapterStore?.content()) return;
-    repaper();
+    const parts = window.MyTermChapterStore.sections();
+    const here = window.MyTermChapterStore.openSection();
+    const bank = parts.find(p => p.id === here)?.kind === 'tb';
+
+    // The strip is told first, so the controls that act on a sheet are
+    // gone before the thing they act on is. The other way round there
+    // is a frame in which a zoom button stands over a bank
+    page.classList.toggle('banking', bank);
+
+    if (bank) {
+      window.MyTermPaper.shut();
+      window.MyTermQuiz.paint(body, afterPaper);
+    } else {
+      window.MyTermQuiz.shut();
+      repaper();
+    }
   };
 
   const drawBody = () => {
     const c = course();
     if (!c) return;
+
+    // Off while there is nothing on the desk, and drawRows puts it back
+    // on in the same frame if what lands there is a bank. Otherwise a
+    // reader leaving a bank for a chapter still opening would watch the
+    // sheet's controls stay missing over an empty desk
+    page.classList.remove('banking');
 
     const ch = alive(c).find(h => h.id === openChapter);
     if (!ch) {

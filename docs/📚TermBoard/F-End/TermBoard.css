@@ -1633,6 +1633,33 @@ body.reading .build { bottom: 46px; }
 
 .ctab-part-head { display: flex; align-items: center; gap: 5px; min-width: 0; }
 
+.ctab-rename-part { height: 17px; font-size: 11px; }
+
+/* ============================================================ */
+/* # ➕ 🍴  CHOOSING WHAT TO ADD */
+/* # 🔤 CSS */
+/* # 🎯 Two choices, each saying what it IS under what it is called */
+/* # 🔗 The names alone do not carry the difference and the difference */
+/* #    is the whole of it: one is read down the page, the other asks */
+/* #    you questions and marks you. A reader who picks the wrong one */
+/* #    finds out by getting a screen they did not expect */
+/* ============================================================ */
+.cpick { width: 210px; }
+
+.cmenu .cpick-one {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 9px;
+  border-radius: 6px;
+}
+
+.cmenu .cpick-one b { font-size: 12px; color: #ffffff; }
+.cmenu .cpick-one span { font-size: 10.5px; color: var(--dim2); line-height: 1.4; }
+.cmenu .cpick-one:hover span { color: var(--dim); }
+
 .ctab-part-name {
   flex: 1 1 auto;
   min-width: 0;
@@ -2415,3 +2442,275 @@ body.reading .build { bottom: 46px; }
   justify-content: center;
 }
 
+/* ============================================================ */
+/* # 🚫 🎛️  WHAT A BANK HAS NO USE FOR */
+/* # 🔤 CSS */
+/* # 🎯 The controls that only mean something on a sheet, taken off the */
+/* #    strip while a test bank is what is open */
+/* # 🔗 The width of the Term column, covering the meanings, the zoom on */
+/* #    the sheet, the two languages, the dark paper: every one of them */
+/* #    acts on a sheet, and there is no sheet here. Left standing they */
+/* #    would be five buttons that answer a press with nothing at all, */
+/* #    which is the one thing the reader's own strip never does. What */
+/* #    stays is what still works: the sources, the size of the type, */
+/* #    the saved tick and fullscreen */
+/* ============================================================ */
+.banking .conly-paper,
+.banking #course-lang,
+.banking #course-dark { display: none; }
+
+/* ============================================================ */
+/* # 🎯 🗃️  THE TEST BANK */
+/* # 🔤 CSS */
+/* # 🎯 A card per question while writing them, and one question alone */
+/* #    on the screen while answering them */
+/* # 🔗 NO PAPER AND NO SHEETS. A sheet is for something read from end */
+/* #    to end; a question is looked at alone, answered and left. The */
+/* #    cards sit on the dark ground as cards, and during a run there */
+/* #    is one thing on the screen and nothing else — because the next */
+/* #    three questions in the corner of the eye are three answers */
+/* #    half given before they are asked */
+/* ============================================================ */
+.qdesk {
+  width: 100%;
+  max-width: 720px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qtop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.qtop-says { font-size: .82em; color: var(--dim); }
+
+.qstart {
+  flex: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border: 0;
+  border-radius: 7px;
+  background: #3a6bb0;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.qstart:hover:not(:disabled) { background: #4176c0; }
+.qstart:disabled { opacity: .4; cursor: default; }
+
+.qcard {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 10px 12px 11px;
+}
+
+/* Not finished, so it is not in the run. A dull edge and not a red one:
+   it is work in progress, not a mistake */
+.qcard-half { border-inline-start: 3px solid var(--mNone); }
+
+.qcard-head { display: flex; align-items: flex-start; gap: 8px; }
+
+.qcard-no {
+  flex: none;
+  font-family: var(--mono);
+  font-size: .68em;
+  color: var(--dim2);
+  padding-top: 3px;
+}
+
+.qcard-ask {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: .86em;
+  line-height: 1.6;
+  color: var(--ink);
+  outline: none;
+  word-break: break-word;
+}
+
+.qcard-ask:empty::before, .qpick-words:empty::before {
+  content: attr(data-empty);
+  color: var(--dim2);
+}
+
+.qcard-ask:focus, .qpick-words:focus { box-shadow: 0 1px 0 0 var(--blue); }
+
+.qcard-off, .qpick-off {
+  flex: none;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 3px;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+}
+
+.qcard:hover .qcard-off, .qpick:hover .qpick-off { color: var(--dim2); }
+.qcard-off:hover, .qpick-off:hover { color: var(--mBad); }
+
+.qcard-picks { display: flex; flex-direction: column; gap: 3px; margin: 8px 0 0 22px; }
+
+.qpick { display: flex; align-items: flex-start; gap: 7px; }
+
+/* The right answer is marked ON the choice. A letter typed in a box of
+   its own is a second place the truth lives: reorder the choices or
+   take one away and it points at whatever moved into that spot, with
+   nothing on the screen to say so */
+.qpick-mark {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+  padding: 0;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.qpick-mark:hover { border-color: var(--mOk); }
+.qpick.right .qpick-mark { border-color: var(--mOk); background: var(--mOk); }
+
+.qpick-words {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: .82em;
+  line-height: 1.6;
+  color: var(--ink);
+  outline: none;
+  word-break: break-word;
+}
+
+.qpick.right .qpick-words { color: #ffffff; }
+
+.qcard-feet { display: flex; gap: 6px; margin: 8px 0 0 22px; }
+
+.qcard-add {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dim2);
+  cursor: pointer;
+}
+
+.qcard-add:hover { color: #ffffff; border-color: var(--dim2); background: #25262c; }
+
+/* ============================================================ */
+/* # ▶️ 🧪  ONE QUESTION AT A TIME */
+/* # 🔤 CSS */
+/* # 🎯 The run: what is asked, what there is to choose, and how far */
+/* #    along it is */
+/* # 🔗 Nothing says which answer is right while the run is going. A */
+/* #    bank that lights the right one as you press is a bank you */
+/* #    cannot be wrong in, and a reader learns to read the lighting */
+/* #    instead of the question. It is all told at the end */
+/* ============================================================ */
+.qrun {
+  width: 100%;
+  max-width: 620px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.qrun-bar { display: flex; align-items: center; justify-content: space-between; }
+
+.qrun-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim2);
+  font-variant-numeric: tabular-nums;
+}
+
+.qrun-stop {
+  font: inherit;
+  font-size: 11px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.qrun-stop:hover { color: #ffffff; border-color: var(--dim2); }
+
+.qrun-ask {
+  margin: 0;
+  font-size: 1.05em;
+  line-height: 1.7;
+  color: #ffffff;
+}
+
+.qrun-picks { display: flex; flex-direction: column; gap: 7px; }
+
+.qrun-pick {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: .92em;
+  line-height: 1.6;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.qrun-pick:hover { background: #2c2d34; border-color: var(--dim2); }
+.qrun-pick.on { border-color: var(--blue); background: #26303f; color: #ffffff; }
+
+.qrun-feet { display: flex; gap: 8px; }
+
+.qrun-move {
+  flex: 1 1 0;
+  font: inherit;
+  font-size: 12px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.qrun-move:hover:not(:disabled) { color: #ffffff; border-color: var(--dim2); }
+.qrun-move:disabled { opacity: .35; cursor: default; }
+
+.qscore {
+  margin: 0;
+  font-size: 1.3em;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+}
+
+.qmissed { display: flex; flex-direction: column; gap: 10px; }
+
+.qmissed-one {
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--mBad);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 10px 12px;
+}
+
+.qmissed-ask { margin: 0 0 6px; font-size: .88em; line-height: 1.6; color: #ffffff; }
+.qmissed-said { margin: 0; font-size: .8em; color: var(--mBad); }
+.qmissed-was { margin: 2px 0 0; font-size: .8em; color: var(--mOk); }

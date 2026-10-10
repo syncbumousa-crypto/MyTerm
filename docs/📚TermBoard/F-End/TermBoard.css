@@ -1422,12 +1422,21 @@ body.reading .build { bottom: 46px; }
 .ctabs::-webkit-scrollbar-track { background: transparent; }
 .ctabs::-webkit-scrollbar-thumb { background: #4a4d57; border-radius: 4px; }
 
+/* ONE HEIGHT FOR EVERY TAB, folded or not. The height is the unfolded
+   one, so unfolding a chapter changes its width and nothing else — the
+   strip does not grow downward over the paper, and the tabs beside it
+   do not shift. The folded ones put their two lines along the bottom,
+   where the parts of an unfolded one sit, so the same reading is found
+   at the same height whichever state the tab is in */
 .ctab {
   flex: none;
+  box-sizing: border-box;
   width: 164px;
+  height: 102px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  justify-content: space-between;
   gap: 5px;
   padding: 7px 10px 8px;
   border: 1px solid #444;
@@ -1442,17 +1451,21 @@ body.reading .build { bottom: 46px; }
 
 .ctab:hover { background: #34353b; }
 
-/* Open, it is a frame round its parts: a little darker than the shut
-   ones and as wide as what it holds, so the eye reads it as the thing
-   those boxes are inside rather than as another box beside them */
-.ctab.on {
+/* The chapter being read says so even folded, since the white part that
+   says it is inside: a white name and a lighter edge */
+.ctab.on { border-color: #70727c; }
+.ctab.on .ctab-name { color: #ffffff; }
+
+/* Unfolded, it is a frame round its parts: a little darker than the
+   folded ones and as wide as what it holds, so the eye reads it as the
+   thing those boxes are inside rather than as another box beside them */
+.ctab.wide {
   width: auto;
   background: #212226;
   border-color: #55565e;
-  cursor: default;
 }
 
-.ctab.on:hover { background: #212226; }
+.ctab.wide:hover { background: #26272c; }
 
 .ctab-head { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
 
@@ -1472,8 +1485,28 @@ body.reading .build { bottom: 46px; }
   cursor: pointer;
 }
 
-.ctab.on .ctab-name { color: #ffffff; }
 .ctab.on .ctab-name:hover { text-decoration: underline; }
+
+/* Small, beside the chapter's own name. It adds a part TO THIS CHAPTER,
+   and a plus standing at the end of the row of parts was read as one
+   more part — the one thing it is not */
+.ctab-addpart {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+  border: 1px solid #55565e;
+  border-radius: 4px;
+  background: transparent;
+  color: #9a9ba3;
+  cursor: pointer;
+}
+
+.ctab-addpart:hover { background: rgba(255, 255, 255, .12); color: #ffffff; border-color: #9a9ba3; }
 
 /* The name turns into the box that changes it, in its own place and at
    its own size — so nothing on the strip moves while it is being typed */
@@ -1581,27 +1614,13 @@ body.reading .build { bottom: 46px; }
   white-space: nowrap;
 }
 
-.ctab-part-new {
-  width: 34px;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  font-weight: 400;
-  line-height: 1;
-  border-style: dashed;
-  background: transparent;
-  color: #888888;
-}
-
-.ctab-part-new:hover { background: rgba(255, 255, 255, .06); color: #ffffff; }
-
 /* It keeps the height of a shut tab and does not stretch to the open
    one. Stretched, it grew every time a chapter was opened — a door that
    changes size depending on what is behind it */
 .ctab-new {
   flex: none;
   align-self: flex-start;
-  height: 56px;
+  height: 102px;
   width: 34px;
   padding: 0;
   font: inherit;

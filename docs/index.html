@@ -19,9 +19,9 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=108">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=108">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=108">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=109">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=109">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=109">
 </head>
 <body>
 
@@ -227,7 +227,67 @@
     <button class="cpull cpull-top" type="button" id="course-bar-pull" title="Hide the chapters"></button>
   </div>
 
-  <main class="cbody" id="course-body"></main>
+  <!-- ============================================================ -->
+  <!-- # 📖 🪟  THE SOURCES, AND THE SUMMARY BESIDE THEM -->
+  <!-- # 🔤 HTML -->
+  <!-- # 🎯 Three columns: the books on the left, a handle, and the -->
+  <!-- #    summary on the right. The books start out of the way -->
+  <!-- # 🔗 THE SUMMARY IS LAST IN THE MARKUP AND ON THE RIGHT, which is -->
+  <!-- #    the reader's own arrangement: what is being made is on the -->
+  <!-- #    side the eye returns to, and what it is made from is on the -->
+  <!-- #    side it leaves. The handles are BUTTONS and not plain boxes, -->
+  <!-- #    so the keyboard can reach them at all. -->
+  <!-- # -->
+  <!-- #    Each column keeps its own scrolling box: two stacks of PDF -->
+  <!-- #    pages scrolling the window itself would mean the book and the -->
+  <!-- #    test bank could never be looked at on the same line -->
+  <!-- ============================================================ -->
+  <div class="csplit" id="course-split">
+
+    <aside class="csrc" id="course-sources" hidden>
+      <div class="csrc-top">
+        <button class="csrc-add" type="button" id="course-src-add">+ source</button>
+        <div class="csrc-keys" id="course-src-keys"></div>
+      </div>
+
+      <!-- Shown while a book goes up or comes down. A forty megabyte file
+           on a slow line is two minutes of a page that looks stopped -->
+      <div class="csrc-bar" id="course-src-bar" hidden>
+        <div class="csrc-rail"><i id="course-src-fill"></i></div>
+        <p class="csrc-says" id="course-src-says"></p>
+      </div>
+
+      <p class="csrc-none" id="course-src-none">No sources yet. Add the book this course is written from.</p>
+
+      <div class="csrc-cols" id="course-src-cols">
+        <section class="csrc-col" id="src-col-book" hidden>
+          <div class="csrc-head">
+            <button class="csrc-name" type="button" id="src-name-book" title="Press to rename"></button>
+            <span class="csrc-pages" id="src-pages-book"></span>
+            <button class="csrc-off" type="button" id="src-off-book" title="Take this source out">✕</button>
+          </div>
+          <div class="csrc-stack" id="src-stack-book"></div>
+        </section>
+
+        <button class="cgrip" type="button" id="course-grip-cols" hidden
+                title="Drag to share the room between them"></button>
+
+        <section class="csrc-col" id="src-col-tb" hidden>
+          <div class="csrc-head">
+            <button class="csrc-name" type="button" id="src-name-tb" title="Press to rename"></button>
+            <span class="csrc-pages" id="src-pages-tb"></span>
+            <button class="csrc-off" type="button" id="src-off-tb" title="Take this source out">✕</button>
+          </div>
+          <div class="csrc-stack" id="src-stack-tb"></div>
+        </section>
+      </div>
+    </aside>
+
+    <button class="cgrip" type="button" id="course-grip-main" hidden
+            title="Drag to give the sources more or less room"></button>
+
+    <main class="cbody" id="course-body"></main>
+  </div>
 
   <!-- ============================================================ -->
 <!-- # 🎚️ 🫥  THE STRIP THAT PEEKS UP -->
@@ -261,13 +321,12 @@
 
     <!-- LEFT: what the sheet is drawn like -->
     <span class="cfoot-side">
-      <!-- The sources of the course — the book a summary is written from.
-           There is no sources pane yet, so the button is here and plainly
-           DISABLED rather than here and silent: a press that does nothing
-           is worse than a control that says it is not ready. It is the
-           reader's own rule, from the same strip this one is copied from -->
+      <!-- The sources of the course — the books a summary is written from.
+           It brings them in on the LEFT and leaves the summary on the
+           right: what is being made is on the side the eye returns to,
+           and what it is made from is on the side it leaves. -->
       <span class="cgroup">
-        <button class="cbtn" type="button" id="course-book" title="Sources — not built yet" disabled></button>
+        <button class="cbtn" type="button" id="course-book" title="Sources"></button>
       </span>
 
       <span class="cgroup">
@@ -333,7 +392,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v108</p>
+<p class="build">v109</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -356,20 +415,22 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=108"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=108"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=108"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=108"></script>
-<script src="📚TermBoard/B-End/TermChapterStore.js?v=108"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=108"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=108"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=108"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=108"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=108"></script>
-<script src="📚TermBoard/F-End/TermChapterPaper.js?v=108"></script>
-<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=108"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=108"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=108"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=109"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=109"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=109"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=109"></script>
+<script src="📚TermBoard/B-End/TermChapterStore.js?v=109"></script>
+<script src="📚TermBoard/B-End/TermSourceStore.js?v=109"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=109"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=109"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=109"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=109"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=109"></script>
+<script src="📚TermBoard/F-End/TermChapterPaper.js?v=109"></script>
+<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=109"></script>
+<script src="📚TermBoard/F-End/TermSourcePane.js?v=109"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=109"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=109"></script>
 
 </body>
 </html>

@@ -65,6 +65,31 @@
   bookBtn.innerHTML = ICONS.book;
 
   // ============================================================
+  // # 📖 🚪  THE SOURCES BUTTON
+  // # 🔤 JavaScript
+  // # 🎯 Brings the books in on the left, or sends them away
+  // # 🔗 Opening the pane makes the summary narrower, so the sheet is
+  // #    cut again — and page counts are measured against a fixed A4, so
+  // #    the number of pages does NOT change, only how they are drawn.
+  // #    It is passed in rather than reached for, so the pane never has
+  // #    to know what this page calls its own redrawing
+  // ============================================================
+  const afterRoom = () => { window.MyTermPaper?.fit?.(); };
+
+  bookBtn.disabled = false;
+  bookBtn.title = 'Sources';
+  bookBtn.onclick = async () => {
+    const c = course();
+    if (!c) return;
+    const pane = window.MyTermSourcePane;
+    if (!pane?.arm(afterRoom)) return;
+
+    if (pane.isOpen()) { pane.shut(); bookBtn.innerHTML = ICONS.book; bookBtn.title = 'Sources'; }
+    else { await pane.open(keep.live(), c); bookBtn.innerHTML = ICONS.bookOpen; bookBtn.title = 'Hide the sources'; }
+    try { localStorage.setItem('myterm.read.src', pane.isOpen() ? '1' : '0'); } catch { /* locked */ }
+  };
+
+  // ============================================================
   // # 🪝 🎚️  PULLING A STRIP OPEN, AND SHUTTING IT
   // # 🔤 JavaScript
   // # 🎯 The two tabs, their arrows, and remembering which strips this

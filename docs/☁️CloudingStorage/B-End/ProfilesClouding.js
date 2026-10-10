@@ -202,6 +202,70 @@
   }
 
   // ============================================================
+  // # 📦 ⬆️  A WHOLE FILE, NOT A LINE OF JSON
+  // # 🔤 JavaScript
+  // # 🎯 Puts a book in the user's Drive and gets it back again
+  // # 🔗 RESUMABLE, NOT MULTIPART, and that is the whole point of writing
+  // #    it separately. Multipart sends the bytes inside the same request
+  // #    as the name: the browser holds the entire file in memory to build
+  // #    it, nothing can be reported while it goes, and a textbook that
+  // #    fails at ninety percent starts again from nothing. Resumable
+  // #    asks first and sends after, so the sending is a request of its
+  // #    own — which is what lets a bar be drawn and a break be survived.
+  // #
+  // #    And the sending is done with XHR and not fetch, for one reason:
+  // #    fetch cannot say how much of an upload has gone. On a forty
+  // #    megabyte book over a slow line that is two minutes of a page
+  // #    that looks frozen, and a reader who cannot tell a slow upload
+  // #    from a dead one presses the button again
+  // ============================================================
+  async function uploadBlob(parentId, name, blob, onGoing) {
+    const start = await drive(`${UPLOAD}?uploadType=resumable`,
+      json('POST', { name, mimeType: blob.type || 'application/pdf', parents: [parentId] }));
+    if (!start.ok) throw new Error(`Drive upload failed to start: ${start.status}`);
+
+    const to = start.headers.get('Location');
+    if (!to) throw new Error('Drive gave no place to send the file');
+
+    return new Promise((done, fail) => {
+      const call = new XMLHttpRequest();
+      call.open('PUT', to, true);
+      call.setRequestHeader('Content-Type', blob.type || 'application/pdf');
+      call.upload.onprogress = e => {
+        if (e.lengthComputable && onGoing) onGoing(e.loaded / e.total);
+      };
+      call.onload = () => {
+        if (call.status < 200 || call.status > 299) return fail(new Error(`Drive upload failed: ${call.status}`));
+        try { done(JSON.parse(call.responseText).id); }
+        catch { fail(new Error('Drive gave back no id')); }
+      };
+      call.onerror = () => fail(new Error('The upload was cut off'));
+      call.send(blob);
+    });
+  }
+
+  // Given back as bytes and not as a link. A Drive link needs the file
+  // shared with whoever opens it, and these files are the reader's own
+  // and shared with nobody — so the page fetches them with the permit it
+  // already holds, the same way it reads everything else
+  const readBlob = async id => {
+    const r = await drive(`${DRIVE}/${id}?alt=media`);
+    return r.ok ? r.blob() : null;
+  };
+
+  const fileFacts = async id => {
+    const r = await drive(`${DRIVE}/${id}?fields=id,name,size,trashed`);
+    if (!r.ok) return null;
+    const got = await r.json().catch(() => null);
+    return got && got.trashed !== true ? got : null;
+  };
+
+  async function dropFile(id) {
+    const r = await drive(`${DRIVE}/${id}`, json('PATCH', { trashed: true }));
+    return r.ok;
+  }
+
+  // ============================================================
   // # 📂 🧪  THE GOOGLE WINDOW, SHOWN OR HIDDEN
   // # 🔤 JavaScript
   // # 🎯 Opens Google's own folder window. Shown, it lets the user pick.
@@ -308,6 +372,7 @@
     askGoogle,
     unlink: () => server('unlink'),
     findOrMakeFolder, createJson, fileAlive, readFile, writeFile,
+    uploadBlob, readBlob, fileFacts, dropFile,
     parentOf, makeFolder, rename,
     pickFolder, probePicker,
     loadProfile, savePlace, forgetPlace

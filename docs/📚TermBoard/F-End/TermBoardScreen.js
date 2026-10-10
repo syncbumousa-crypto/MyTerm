@@ -1000,12 +1000,87 @@
 
     box.append(
       numberLine('How long it takes', ch.minutes, v => { ch.minutes = v; }),
-      numberLine('Done of it', ch.doneMinutes, v => { ch.doneMinutes = v; }),
+      doneLine(ch),
       bar,
+      partsOf(ch),
       mark,
       off
     );
     paintRow();
+    return box;
+  };
+
+  // ============================================================
+  // # 📑 ⏱️  THE PARTS OF A CHAPTER, ON THE BOARD
+  // # 🔤 JavaScript
+  // # 🎯 Under an opened chapter: every part of it, what it comes to,
+  // #    and how much of it is ticked off
+  // # 🔗 Read from the copy the chapter writes beside itself, never by
+  // #    opening the chapter. A board that opened every chapter to draw
+  // #    its card would read the whole term to show one course.
+  // #
+  // #    A chapter that has never been opened on this device has no copy
+  // #    yet, and says so rather than showing an empty list — which
+  // #    would read as a chapter with nothing in it
+  // ============================================================
+  const doneLine = ch => {
+    const line = document.createElement('div');
+    line.className = 'dline';
+    const key = document.createElement('span');
+    key.className = 'dk';
+    key.textContent = 'Done of it';
+    const said = document.createElement('span');
+    said.className = 'dsaid';
+    said.textContent = fmtHours(ch.doneMinutes);
+    // Said and not asked: it is counted from the boxes ticked inside the
+    // chapter, and a box here to type a different number would be a
+    // second place for one truth
+    said.title = 'Counted from the rows you have ticked off inside the chapter';
+    line.append(key, said);
+    return line;
+  };
+
+  const partsOf = ch => {
+    const box = document.createElement('div');
+    box.className = 'dparts';
+    const list = (ch.parts || []).filter(p => p.name !== '' || p.rows);
+    if (!list.length) {
+      const none = document.createElement('p');
+      none.className = 'dnone';
+      none.textContent = 'Open the chapter once and its parts will show here.';
+      box.append(none);
+      return box;
+    }
+
+    list.forEach(part => {
+      const row = document.createElement('div');
+      row.className = 'dpart';
+
+      const name = document.createElement('span');
+      name.className = 'dpname';
+      name.textContent = part.name;
+
+      const time = document.createElement('span');
+      time.className = 'dptime';
+      time.textContent = part.minutes ? fmtHours(part.minutes) : '—';
+      time.title = part.minutes
+        ? `${fmtHours(part.done)} done of ${fmtHours(part.minutes)}`
+        : 'No pace set on this part yet';
+
+      const rail = document.createElement('span');
+      rail.className = 'dprail';
+      const fill = document.createElement('i');
+      fill.style.width = (part.rows ? Math.round((part.learnt / part.rows) * 100) : 0) + '%';
+      rail.append(fill);
+
+      const count = document.createElement('span');
+      count.className = 'dpcount';
+      count.textContent = part.rows ? part.learnt + '/' + part.rows : '—';
+
+      row.append(name, time, rail, count);
+      row.title = part.name + ' · ' + (part.rows ? part.learnt + ' of ' + part.rows + ' ticked off' : 'nothing in it yet');
+      box.append(row);
+    });
     return box;
   };
 
@@ -1020,8 +1095,14 @@
   // #    not "about an hour", because the number is there to be trusted
   // ============================================================
   const fmtHours = minutes => {
-    const m = Math.max(0, Math.round(minutes || 0));
-    if (m === 0) return '0h';
+    const mins = Math.max(0, Number(minutes) || 0);
+    // Under a minute is said in seconds. A part paced at forty seconds a
+    // row is a real pace, and rounding its first row to "0h" would tell
+    // the reader their tick did nothing
+    const secs = Math.round(mins * 60);
+    if (secs === 0) return '0h';
+    if (secs < 60) return secs + 's';
+    const m = Math.round(mins);
     if (m < 60) return m + 'm';
     const h = Math.floor(m / 60), rest = m % 60;
     return h + 'h' + (rest ? rest + 'm' : '');
@@ -1052,16 +1133,35 @@
     ? Math.min(100, Math.round((ch.doneMinutes / ch.minutes) * 100))
     : (ch.done ? 100 : 0);
 
-  const chapterReading = ch => window.MyTermShapes.draw('sm', {
-    ready: ch.name.trim() !== '' ? 100 : 0,
-    readyTip: ch.name.trim() !== '' ? 'Named and ready' : 'Not named yet',
-    done: coverOf(ch),
-    doneTip: ch.minutes > 0
-      ? `${fmtHours(ch.doneMinutes)} of ${fmtHours(ch.minutes)}`
-      : (ch.done ? 'Finished' : 'Not finished yet'),
-    marks: { ok: 0, bad: 0, unknown: 0 },
-    marksTip: 'Nothing is judged chapter by chapter yet'
-  });
+  // ============================================================
+  // # 🟢 🔴  WHAT THE BANK SAYS, ON THE BOARD
+  // # 🔤 JavaScript
+  // # 🎯 The chapter's disc is its bank: green for the rows a question
+  // #    asked and you got, red for the ones you missed, grey for the
+  // #    rest of the chapter the bank has not asked about
+  // # 🔗 It is the one reading on this board the reader does not give
+  // #    themselves. The hours are typed, the tick is pressed, the name
+  // #    is written — all of them say what the reader believes. This
+  // #    says what actually happened when they were asked, and it
+  // #    arrives here on its own, counted off the chapter's own two
+  // #    files the moment an answer is given
+  // ============================================================
+  const chapterReading = ch => {
+    const asked = (ch.good || 0) + (ch.bad || 0);
+    return window.MyTermShapes.draw('sm', {
+      ready: ch.name.trim() !== '' ? 100 : 0,
+      readyTip: ch.name.trim() !== '' ? 'Named and ready' : 'Not named yet',
+      done: coverOf(ch),
+      doneTip: ch.minutes > 0
+        ? `${fmtHours(ch.doneMinutes)} of ${fmtHours(ch.minutes)}`
+        : (ch.done ? 'Finished' : 'Not finished yet'),
+      marks: { ok: ch.good || 0, bad: ch.bad || 0,
+               unknown: Math.max(0, (ch.rows || 0) - asked) },
+      marksTip: asked
+        ? `The bank asked ${asked} of ${ch.rows} — ${ch.good} right, ${ch.bad} wrong`
+        : 'The bank has not asked you anything in this chapter yet'
+    });
+  };
 
   // Which rows are open. It lives for as long as the page does and no
   // longer: a detail left open is a thing this reader is doing now, not

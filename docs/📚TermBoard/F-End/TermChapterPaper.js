@@ -128,8 +128,13 @@
   const rowHtml = (row, n) => {
     const on = store().isOn(row.id);
     const cls = [row.lead ? 'clead' : '', on ? 'done' : ''].filter(Boolean).join(' ');
+    // A gear and not a cross. A cross is one thing only, and the most
+    // destructive thing a row can do — standing on its own in the corner
+    // of every row, it is the easiest to press by accident and the only
+    // one that cannot be undone. The gear opens the list that removing
+    // sits at the bottom of, along with everything else about this row
     return `<tr data-row="${row.id}"${cls ? ` class="${cls}"` : ''}>`
-      + `<td class="cno"><span class="cdel" data-off="${row.id}" title="Remove this row">✕</span>${n}</td>`
+      + `<td class="cno"><span class="crowgear" data-gear="${row.id}" title="This row">⚙</span>${n}</td>`
       + cellOf(row, 'term')
       + cellOf(row, 'text')
       + `<td class="cbox"><button class="cbx${on ? ' on' : ''}" type="button" data-tick="${row.id}"`
@@ -473,8 +478,14 @@
         told();
         return;
       }
-      const off = event.target.closest('[data-off]');
-      if (off) { store().dropRow(off.dataset.off); repaint(); }
+      // The menu opens BESIDE the gear, not under the pointer: the gear
+      // is a place on the page and the reader's eye is already on it
+      const gear = event.target.closest('[data-gear]');
+      if (gear) {
+        const box = gear.getBoundingClientRect();
+        showMenu(gear.dataset.gear, Math.round(box.right + 4), Math.round(box.top), true);
+        return;
+      }
 
       const cell = event.target.closest(CELLS);
       if (!cell || cell.isContentEditable) return;

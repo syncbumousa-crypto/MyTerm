@@ -1744,6 +1744,71 @@ body.reading .build { bottom: 46px; }
 
 .cpace .cmenu-why { margin: 8px 0 0; }
 
+/* The one pace a bank has. It is drawn ON, in the place the choice
+   would have been, and cannot be pressed — there is nothing to choose,
+   and a reader who opens this to see how it is counted must find the
+   answer there rather than an empty space */
+.cmenu .cpace-one.only { flex: 0 1 auto; cursor: default; opacity: 1; }
+.cmenu .cpace-one.only:hover { background: #3a6bb0; color: #ffffff; }
+
+/* ============================================================ */
+/* # 🗑️ 🧩  TAKING A PART OUT */
+/* # 🔤 CSS */
+/* # 🎯 A quiet line under the pace, and the pair of answers it turns */
+/* #    into */
+/* # 🔗 It is DULL until it is hovered and red only when it is the real */
+/* #    press. A throwing-away that is red from across the room is a */
+/* #    red thing in the corner of the eye all evening, and the eye */
+/* #    stops reading it — then it is red at the moment it matters and */
+/* #    says nothing new */
+/* ============================================================ */
+.cpace-foot {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.cmenu .cpace-drop {
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  padding: 6px 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dim2);
+}
+
+.cmenu .cpace-drop:hover:not(:disabled) { color: var(--mBad); border-color: var(--mBad); background: transparent; }
+.cmenu .cpace-drop:disabled { color: var(--dim2); opacity: .45; cursor: default; }
+
+.cpace-pair { display: flex; gap: 6px; margin-top: 8px; }
+
+.cmenu .cpace-keep {
+  flex: 1 1 0;
+  width: auto;
+  text-align: center;
+  font-size: 11px;
+  padding: 6px 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--well);
+  color: var(--ink);
+}
+
+.cmenu .cpace-keep:hover { background: #2e2f36; color: #ffffff; }
+
+.cmenu .cpace-drop.sure {
+  flex: 1 1 0;
+  width: auto;
+  font-weight: 700;
+  border-color: var(--mBad);
+  background: var(--mBad);
+  color: #ffffff;
+}
+
+.cmenu .cpace-drop.sure:hover { background: hsl(0, 58%, 50%); border-color: hsl(0, 58%, 50%); color: #ffffff; }
+
 /* It keeps the height of a shut tab and does not stretch to the open
    one. Stretched, it grew every time a chapter was opened — a door that
    changes size depending on what is behind it */

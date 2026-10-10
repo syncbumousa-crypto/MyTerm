@@ -167,7 +167,10 @@
   // number typed once would be a number that stopped being true the
   // next time a row was added — and the whole point of asking is to
   // know how much is left
-  const PACES = ['row', 'page'];
+  // A bank is paced by the QUESTION. It is not a third way of measuring
+  // the same thing: a row and a page are two cuts of something read end
+  // to end, and a bank is neither read nor paged
+  const PACES = ['row', 'page', 'ask'];
 
   // A part is read and a bank is answered. It is the one field that
   // decides which of the two is drawn under the strip, and it is on the
@@ -183,9 +186,18 @@
         kind: KINDS.includes(s.kind) ? s.kind : 'part',
         per: PACES.includes(s.per) ? s.per : 'row',
         each: Math.max(0, Number(s.each) || 0),
+        // A PART IS CROSSED OUT, NOT TORN OUT, for the same reason a row
+        // is. The merge pushes back any section the other device still
+        // has and this one does not — so a part really taken out of the
+        // file would walk back in, with everything in it, at the next
+        // ring of the bell. And its own clock, so the later of the two
+        // devices decides its name, its pace and whether it is gone
+        deleted: s.deleted === true,
+        updatedAt: typeof s.updatedAt === 'string' ? s.updatedAt : null,
         rows: shapeRows(s.rows)
       }))
-    : [{ id: 'terms', name: 'Terms', kind: 'part', per: 'row', each: 0, rows: [] }];
+    : [{ id: 'terms', name: 'Terms', kind: 'part', per: 'row', each: 0,
+         deleted: false, updatedAt: null, rows: [] }];
 
   const shapeContent = doc => ({
     app: 'MyTerm',
@@ -501,9 +513,11 @@
   // somebody had once dragged over it
   const hasWords = html => /[^\s]/.test(String(html || '').replace(/<[^>]*>/g, ''));
 
+  const livingSections = () => (open?.content.sections || []).filter(s => !s.deleted);
+
   const sectionOf = () => {
-    const all = open?.content.sections;
-    if (!all || !all.length) return null;
+    const all = livingSections();
+    if (!all.length) return null;
     return all.find(s => s.id === chosen) || all[0];
   };
 
@@ -582,7 +596,7 @@
     // you know. A part can be fully written and not known at all, and
     // the other way round is possible too: a row you ticked before you
     // ever filled its meaning in
-    sections: () => (open?.content.sections || []).map(s => {
+    sections: () => livingSections().map(s => {
       const living = s.rows.filter(r => !r.deleted);
       return {
         id: s.id, name: s.name, kind: s.kind, per: s.per, each: s.each, rows: living.length,
@@ -602,8 +616,48 @@
       if (!open) return false;
       const section = open.content.sections.find(s => s.id === id);
       if (!section) return false;
-      section.per = PACES.includes(per) ? per : 'row';
+      // A bank is paced BY THE QUESTION and by nothing else. Rows and
+      // pages are two ways of measuring something read end to end, and
+      // a bank is neither read nor paged — one question is one sitting
+      // of work whatever its length
+      section.per = section.kind === 'tb' ? 'ask' : (PACES.includes(per) ? per : 'row');
       section.each = Math.max(0, Number(each) || 0);
+      section.updatedAt = now();
+      wrote();
+      return true;
+    },
+
+    // ============================================================
+    // # 🗑️ 🧩  TAKING A PART OUT
+    // # 🔤 JavaScript
+    // # 🎯 Crosses out a whole part and everything in it, and refuses to
+    // #    take out the last one
+    // # 🔗 A chapter with no part at all has nowhere to put the next row
+    // #    — addRow would have no section to push into and would answer
+    // #    a press with nothing. So the last one standing is refused,
+    // #    and the reader is told why rather than watching a button
+    // #    do nothing.
+    // #
+    // #    The rows are left exactly as they are, not crossed out one by
+    // #    one. They are in a part that is gone, which is already the
+    // #    whole truth, and touching twenty rows' clocks would hand this
+    // #    device the winning word on twenty sentences it never typed
+    // ============================================================
+    dropSection: id => {
+      if (!open) return false;
+      const living = livingSections();
+      if (living.length < 2) return false;
+      const section = living.find(s => s.id === id);
+      if (!section) return false;
+
+      section.deleted = true;
+      section.updatedAt = now();
+      // Somewhere to stand once the ground goes: the neighbour on the
+      // left, or the first one if this was the leftmost
+      if (chosen === id) {
+        const at = living.findIndex(s => s.id === id);
+        chosen = (living[at - 1] || living[at + 1]).id;
+      }
       wrote();
       return true;
     },
@@ -615,10 +669,11 @@
     addSection: (name, kind) => {
       if (!open) return null;
       const sort = KINDS.includes(kind) ? kind : 'part';
-      const count = open.content.sections.filter(s => s.kind === sort).length + 1;
+      const count = livingSections().filter(s => s.kind === sort).length + 1;
       const title = String(name || '').trim() || (sort === 'tb' ? 'TB ' + count : 'Part ' + count);
       const section = { id: 'p-' + Math.random().toString(36).slice(2, 8), name: title,
-                        kind: sort, per: 'row', each: 0, rows: [] };
+                        kind: sort, per: sort === 'tb' ? 'ask' : 'row', each: 0,
+                        deleted: false, updatedAt: now(), rows: [] };
       open.content.sections.push(section);
       chosen = section.id;
       wrote();
@@ -633,6 +688,7 @@
       // nothing is a box on the strip that cannot be told from the next
       if (!section || !want || section.name === want) return false;
       section.name = want;
+      section.updatedAt = now();
       wrote();
       return true;
     },
@@ -656,7 +712,7 @@
     // so the other chapters' tabs can show it without being opened
     counts: () => {
       let rows = 0, learnt = 0;
-      (open?.content.sections || []).forEach(s => s.rows.forEach(r => {
+      livingSections().forEach(s => s.rows.forEach(r => {
         if (r.deleted) return;
         rows++;
         if (open.state.marks[r.id]?.on === true) learnt++;
@@ -822,8 +878,23 @@
           const incoming = shapeContent(doc);
           incoming.sections.forEach(section => {
             const mine = open.content.sections.find(s => s.id === section.id);
-            if (mine) mine.rows = mergeRows(mine.rows, section.rows);
-            else open.content.sections.push(section);
+            if (!mine) { open.content.sections.push(section); return; }
+
+            mine.rows = mergeRows(mine.rows, section.rows);
+            // THE PART'S OWN FIELDS FOLLOW ITS OWN CLOCK, like a row's.
+            // Merging only the rows was quietly dropping everything else
+            // the other device had done to it: a part renamed on the
+            // phone, its pace set there, or the part taken out there,
+            // all reached this device and were thrown away
+            const newer = section.updatedAt &&
+                          (!mine.updatedAt || section.updatedAt > mine.updatedAt);
+            if (!newer) return;
+            mine.name = section.name;
+            mine.kind = section.kind;
+            mine.per = section.per;
+            mine.each = section.each;
+            mine.deleted = section.deleted;
+            mine.updatedAt = section.updatedAt;
           });
           open.content.version = incoming.version;
           cacheWrite(open.chapter.id, open.content);

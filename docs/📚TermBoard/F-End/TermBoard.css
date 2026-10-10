@@ -1400,6 +1400,27 @@ body.reading .build { bottom: 46px; }
   margin-inline: auto;
 }
 
+/* ============================================================ */
+/* # 🌓 📄  DARK PAPER */
+/* # 🔤 CSS */
+/* # 🎯 Turns the white sheets dark for reading at night, without */
+/* #    touching a single colour written anywhere else */
+/* # 🔗 ONE RULE INSTEAD OF A SECOND PALETTE. Inverting and then turning */
+/* #    the hue half a circle flips white to near-black and black to */
+/* #    near-white, while every colour on the sheet comes back out at */
+/* #    roughly the hue it went in at — the highlighter stays yellow, */
+/* #    red stays red, green stays green. The alternative is a dark */
+/* #    value beside every light one, every rule written twice, and the */
+/* #    day somebody adds a colour and forgets its twin it is invisible */
+/* #    on half the readers' screens. This is the reader's own trick */
+/* #    from their own pages. */
+/* # */
+/* #    It sits on the sheets alone. The menu and the mark bar are */
+/* #    pinned to the page and not to the paper, so they keep the dark */
+/* #    they already have and are not inverted into white boxes */
+/* ============================================================ */
+body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
+
 .cpaper-no {
   position: absolute;
   left: 0;
@@ -1563,17 +1584,25 @@ body.reading .build { bottom: 46px; }
 
 .ctbl tr.clead td.cterm { background: #d4d4d4; }
 
-.cdel {
+/* Always there, and quiet. It was a cross that only appeared when the
+   pointer found the row, which on a phone is never — and a control
+   nobody can reach is a control that is not there. Faint enough that a
+   page of thirty rows is not a page of thirty gears */
+.crowgear {
   position: absolute;
-  top: 1px;
+  top: 0;
   left: 2px;
   font-size: 9px;
-  line-height: 1;
-  color: transparent;
+  line-height: 1.4;
+  color: #9a9a9a;
   cursor: pointer;
 }
 
-.ctbl tr:hover .cdel { color: #8a3030; }
+.crowgear:hover { color: #111111; }
+.ctbl tr:hover .crowgear { color: #555555; }
+.ctbl tr:hover .crowgear:hover { color: #111111; }
+.ctbl tr.clead .crowgear { color: #9a9a9a; }
+.ctbl tr.clead .crowgear:hover { color: #ffffff; }
 
 /* Two signals live on one box and neither is allowed to overwrite the
    other: the tick is what the reader said, and later the border will

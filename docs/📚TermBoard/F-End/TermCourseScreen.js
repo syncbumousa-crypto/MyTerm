@@ -22,7 +22,7 @@
   const fullBtn = $('course-full'), syncDot = $('course-sync');
   const fontDown = $('font-down'), fontUp = $('font-up'), fontNow = $('font-now');
   const colDown = $('col-down'), colUp = $('col-up'), colNow = $('col-now');
-  const langBtn = $('course-lang'), eyeBtn = $('course-eye');
+  const langBtn = $('course-lang'), eyeBtn = $('course-eye'), darkBtn = $('course-dark');
 
   const now = () => new Date().toISOString();
   const alive = course => (course.chapters || []).filter(h => !h.deleted);
@@ -43,7 +43,8 @@
   // #    next course. Which chapter was open does carry one, because a
   // #    chapter number means nothing outside the course it belongs to
   // ============================================================
-  const PREF = { font: 'myterm.read.font', col: 'myterm.read.termcol', lang: 'myterm.read.lang' };
+  const PREF = { font: 'myterm.read.font', col: 'myterm.read.termcol',
+                 lang: 'myterm.read.lang', dark: 'myterm.read.darkpaper' };
   const FONTS = [85, 100, 115, 130, 150];
 
   // How wide the Term column is drawn, in the sheet's own units. What it
@@ -72,6 +73,12 @@
   let readLang = 'en';
   try { if (localStorage.getItem(PREF.lang) === 'ar') readLang = 'ar'; } catch {}
 
+  // Dark paper is the reader's too, and it is one word on the body
+  // rather than a second set of colours — the sheet is turned over
+  // whole, so nothing written on it has to know
+  let darkPaper = false;
+  try { darkPaper = localStorage.getItem(PREF.dark) === 'yes'; } catch {}
+
   const repaper = () => window.MyTermPaper.paint(body, drawTabs, readLang);
 
   const applyRead = () => {
@@ -84,6 +91,9 @@
     colDown.disabled = termPx <= COLS[0];
     colUp.disabled = termPx >= COLS[COLS.length - 1];
     langBtn.textContent = readLang === 'ar' ? 'ع' : 'EN';
+    document.body.classList.toggle('darkpaper', darkPaper);
+    darkBtn.classList.toggle('on', darkPaper);
+    darkBtn.title = darkPaper ? 'White paper' : 'Dark paper';
     // Every one of these moves where a sheet runs out — bigger type holds
     // fewer rows, a narrower Term column makes its words wrap over more
     // lines, and the other language is not the same length — so the paper
@@ -138,6 +148,16 @@
     readLang = readLang === 'ar' ? 'en' : 'ar';
     writePref(PREF.lang, readLang);
     applyRead();
+  };
+
+  // Turning the paper over changes no height and moves no row, so there
+  // is nothing to cut again — applyRead would do it for nothing
+  darkBtn.onclick = () => {
+    darkPaper = !darkPaper;
+    writePref(PREF.dark, darkPaper ? 'yes' : 'no');
+    document.body.classList.toggle('darkpaper', darkPaper);
+    darkBtn.classList.toggle('on', darkPaper);
+    darkBtn.title = darkPaper ? 'White paper' : 'Dark paper';
   };
 
   fullBtn.onclick = () => {

@@ -439,12 +439,24 @@
   // ============================================================
   const toSources = (rowId, col, event) => {
     hideMenu();
-    const want = col === 'term' ? 'term' : col === 'text' ? 'text' : col;
     const all = store().linksOf(rowId);
-    // The cell's own field first; if it has none of its own, the row's
-    // other places are better than nothing — a reader pressing a meaning
-    // that was never anchored still wants to see where the term is
-    const mine = all.filter(l => l.what === want);
+
+    // ============================================================
+    // THE TERM CELL ASKS A NARROW QUESTION; THE MEANING ASKS A WIDE ONE
+    //
+    // Pressing the term means "where is this word printed" — one spot,
+    // and the reader wants to be taken there. Pressing the meaning
+    // means "where does this come from", and the honest answer is
+    // everything: the passage in the book, and every question in the
+    // bank that asks it. That is the reader's own arrangement, and the
+    // reason it is not one rule for both is that they are not one
+    // question.
+    //
+    // A term with no spot of its own still falls back to the rest: a
+    // press that finds nothing when something is there is a press that
+    // tells the reader there is nothing
+    // ============================================================
+    const mine = col === 'term' ? all.filter(l => l.what === 'term') : all;
     const places = mine.length ? mine : all;
 
     // The bank questions that test this row are a second kind of answer

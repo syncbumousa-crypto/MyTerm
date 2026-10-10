@@ -538,10 +538,16 @@
       // one hands that question to its parts and gets out of their way.
       // Both at once would be the same thing said twice at two sizes,
       // and the whole of it is only the sum of the parts underneath
-      if (wide) tab.append(partsOf());
-      else tab.append(
-        barOf('done', ch.doneMinutes, ch.minutes, hours ? hours.fmt(ch.minutes) : ''),
-        barOf('learnt', learntOf, rowsOf, rowsOf ? learntOf + '/' + rowsOf : '—'));
+      if (wide) {
+        tab.append(partsOf());
+      } else {
+        const lines = document.createElement('span');
+        lines.className = 'ctab-lines';
+        lines.append(
+          barOf('done', ch.doneMinutes, ch.minutes, hours ? hours.fmt(ch.minutes) : ''),
+          barOf('learnt', learntOf, rowsOf, rowsOf ? learntOf + '/' + rowsOf : '—'));
+        tab.append(lines);
+      }
 
       // Pressing the chapter you are already in folds its tab away, and
       // again unfolds it. It does not stop you reading it: making the
@@ -619,11 +625,14 @@
 
       // The same two lines the chapter wore, now where they belong: one
       // part at a time, at a size that can be read
-      one.append(line,
+      const lines = document.createElement('span');
+      lines.className = 'ctab-lines';
+      lines.append(
         barOf('done', part.written, part.rows,
               part.rows ? part.written + '/' + part.rows : '—'),
         barOf('learnt', part.learnt, part.rows,
               part.rows ? part.learnt + '/' + part.rows : '—'));
+      one.append(line, lines);
 
       one.title = part.rows
         ? part.written + ' of ' + part.rows + ' written, ' + part.learnt + ' learnt'

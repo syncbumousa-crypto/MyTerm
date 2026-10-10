@@ -1431,19 +1431,19 @@ body.reading .build { bottom: 46px; }
 .ctab {
   flex: none;
   box-sizing: border-box;
-  width: 164px;
+  width: 140px;
   height: 102px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: space-between;
   gap: 5px;
-  padding: 7px 10px 8px;
+  padding: 8px 11px 9px;
   border: 1px solid #444;
   border-radius: 8px;
   background: #2c2d31;
   color: #aaa;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   user-select: none;
@@ -1476,8 +1476,12 @@ body.reading .build { bottom: 46px; }
   opacity: .62;
 }
 
+/* AS WIDE AS THE WORD AND NO WIDER. It used to take the whole head, so
+   a press anywhere along the top of a tab landed on the name and opened
+   it for renaming — the reader was asking for the chapter and getting
+   a typing box. It shrinks when the room runs out but never grows */
 .ctab-name {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1534,6 +1538,12 @@ body.reading .build { bottom: 46px; }
 /* #    ticks; on a part it is rows written and rows learnt. The same */
 /* #    two colours mean the same two things at both sizes */
 /* ============================================================ */
+/* The two lines sit closer to each other than either sits to the name,
+   because they are one reading in two parts and the name is a different
+   thing. Spaced the same as everything else they read as three
+   unrelated rows stacked up */
+.ctab-lines { display: flex; flex-direction: column; gap: 3px; }
+
 .ctab-line { display: flex; align-items: center; gap: 6px; }
 
 .ctab-bar {
@@ -1587,17 +1597,18 @@ body.reading .build { bottom: 46px; }
 
 .ctab-part {
   flex: none;
-  width: 148px;
+  width: 142px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  justify-content: space-between;
   gap: 5px;
-  padding: 7px 9px 8px;
+  padding: 8px 10px 9px;
   border: 1px solid #444;
   border-radius: 7px;
   background: #2c2d31;
   color: #aaa;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -1641,8 +1652,13 @@ body.reading .build { bottom: 46px; }
 
 /* What the chapter comes to, beside its name. A dash while no part has
    a pace set on it: nothing is a truer answer than a confident nought */
+/* Pushed to the far edge by its own margin, not by the name stretching
+   to fill the gap — the gap belongs to nobody, and a name that owns it
+   is a name that can be pressed from anywhere */
 .ctab-time {
   flex: none;
+  margin-inline-start: auto;
+  padding-inline-start: 6px;
   font-family: var(--mono);
   font-size: 9px;
   color: #9a9ba3;

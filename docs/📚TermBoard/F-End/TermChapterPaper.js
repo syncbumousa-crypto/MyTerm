@@ -25,6 +25,15 @@
   const PAPER_W = 800;
   const PAPER_H = Math.round(PAPER_W * 297 / 210);
 
+  // How much larger than fitting the desk the reader has asked for. It
+  // multiplies how the sheet is DRAWN and nothing else — what goes on a
+  // sheet is still counted against the real 800 by 1131, so zooming in
+  // moves not one row and changes not one page number. Written in one
+  // place: a ceiling spelled out at each of the three ways in means a
+  // way in that stops short of what the others allow
+  const ZOOM_MAX = 2.5;
+  let zoom = 1;
+
   // The number and the box are the width of what they hold and never
   // move. The Term column is the reader's to set, and the meaning column
   // is given no width at all — so it takes whatever is left, and every
@@ -725,10 +734,12 @@
   // ============================================================
   const fitOnce = () => {
     const room = stage.clientWidth || PAPER_W;
-    // Shrunk to fit, never blown up: a sheet stretched past its real
-    // size on a wide screen is a blurry A4, and how large the words are
-    // is the reader's own control
-    const drawn = Math.min(PAPER_W, room);
+    // A whole sheet across the desk is ONE HUNDRED PER CENT. Never more
+    // on its own: a sheet stretched past its real size by nobody's
+    // asking is a blurry A4. Past that it only goes where the reader
+    // takes it, and then the desk is scrolled to reach the edges
+    const base = Math.min(PAPER_W, room);
+    const drawn = Math.round(base * zoom);
     const scale = drawn / PAPER_W;
     stage.style.setProperty('--pageMaxW', drawn + 'px');
     stage.style.setProperty('--pageScale', scale.toFixed(4));
@@ -831,6 +842,20 @@
     // same sheets with the same rows on them, drawn a little smaller or
     // a little larger
     fit,
+
+    // How large the reader has asked for the paper to be drawn, and the
+    // one place that decides what counts as too large. Called many times
+    // a second while two fingers are moving, so it does no cutting and
+    // no building: it writes two numbers and resizes the slots
+    zoom: next => {
+      const want = Math.min(ZOOM_MAX, Math.max(1, Number(next) || 1));
+      if (want === zoom) return zoom;
+      zoom = want;
+      fit();
+      return zoom;
+    },
+
+    zoomNow: () => zoom,
 
     // ============================================================
     // # 👁️ 🗂️  THE WHOLE SHEET AT ONCE

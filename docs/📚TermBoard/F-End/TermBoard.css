@@ -1839,6 +1839,76 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
 .cmenu button:disabled { color: var(--dim2); cursor: default; }
 .cmenu hr { margin: 4px 2px; border: 0; border-top: 1px solid var(--line); }
 
+/* The menu turned into a question. It keeps the menu's own frame rather
+   than opening a box of its own, so the answer is given where the
+   question was asked and nothing else on the page moves */
+.cmenu.asking { width: 250px; padding: 10px; }
+
+.cmenu-ask {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* The line that says what will happen to the rows in between. It is the
+   whole difference between trading two rows and moving one, and the
+   names on the two buttons do not carry it */
+.cmenu-why {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+.cmenu-line { display: flex; align-items: center; gap: 6px; }
+
+.cmenu-box {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 28px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--well);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.cmenu-box:focus { outline: 2px solid var(--blue); outline-offset: 0; }
+
+/* Written with the menu in front of it on purpose. ".cmenu button" sets
+   every item in this panel to the full width, and it outweighs a bare
+   class — so the OK kept the whole line and squeezed the box it stands
+   beside down to nothing */
+.cmenu .cmenu-go {
+  flex: none;
+  width: auto;
+  padding: 0 12px;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 6px;
+  background: #3a6bb0;
+  color: #ffffff;
+}
+
+.cmenu .cmenu-go:hover { background: #4176c0; }
+
+.cmenu-bad {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--orange);
+}
+
+.cmenu-bad:empty { display: none; }
+
 .ctable-none {
   margin: 0;
   padding: 10px 2px;

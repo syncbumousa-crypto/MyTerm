@@ -1355,6 +1355,130 @@ body.reading .build { bottom: 46px; }
 .csheet-done:hover { color: #ffffff; border-color: var(--dim2); background: #25262c; }
 .csheet-done.on { color: var(--ready); border-color: var(--ready); }
 
+/* ============================================================ */
+/* # 📋 ✍️  THE TABLE OF A CHAPTER */
+/* # 🔤 CSS */
+/* # 🎯 A row per term: its number, the term, what it means, and a tick */
+/* # 🔗 The two text cells are written in directly — there is no edit */
+/* #    mode to enter and leave, because a summary is written over */
+/* #    weeks and a mode that must be turned on is a mode left off. An */
+/* #    empty cell shows what belongs in it rather than sitting blank, */
+/* #    since a row of two empty boxes says nothing about which is */
+/* #    which. And a ticked row dims instead of vanishing: what is done */
+/* #    is still part of the chapter */
+/* ============================================================ */
+.ctable {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 10px;
+}
+
+.crow {
+  display: grid;
+  grid-template-columns: 30px minmax(90px, 1fr) minmax(0, 2fr) 46px;
+  gap: 8px;
+  align-items: start;
+  padding: 7px 6px;
+  border-radius: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.crow:hover { background: #25262c; }
+
+.clegend {
+  font-size: .62em;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+  color: var(--dim2);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
+}
+
+.clegend:hover { background: transparent; }
+
+.crow-no {
+  font-family: var(--mono);
+  font-size: .72em;
+  color: var(--dim2);
+  padding-top: 2px;
+}
+
+.crow-term, .crow-text {
+  min-width: 0;
+  font-size: .82em;
+  line-height: 1.6;
+  color: var(--ink);
+  outline: none;
+  word-break: break-word;
+}
+
+.crow-term { font-weight: 700; color: #ffffff; }
+.crow-text { color: var(--ink); }
+
+.crow-term:empty::before, .crow-text:empty::before {
+  content: attr(data-empty);
+  color: var(--dim2);
+  font-weight: 400;
+}
+
+.crow-term:focus, .crow-text:focus { box-shadow: 0 1px 0 0 var(--blue); }
+.crow.done .crow-term, .crow.done .crow-text { color: var(--dim); }
+
+.crow-end { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+
+.crow-tick {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--well);
+  color: var(--well);
+  cursor: pointer;
+}
+
+.crow-tick:hover { border-color: var(--ready); }
+.crow-tick.on { background: var(--ready); border-color: var(--ready); color: #14151a; }
+
+.crow-off {
+  flex: none;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+}
+
+.crow:hover .crow-off { color: var(--dim2); }
+.crow-off:hover { color: var(--mBad); }
+
+.ctable-none {
+  margin: 0;
+  padding: 10px 6px;
+  font-size: .78em;
+  color: var(--dim2);
+}
+
+.ctable-count {
+  margin: 0 0 8px;
+  font-family: var(--mono);
+  font-size: .68em;
+  color: var(--dim2);
+  text-align: right;
+}
+
+@media (max-width: 620px) {
+  .crow { grid-template-columns: 24px minmax(0, 1fr) 40px; }
+  .crow-text { grid-column: 2 / 4; }
+}
 .cempty {
   margin: 0;
   text-align: center;

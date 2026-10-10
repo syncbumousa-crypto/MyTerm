@@ -143,24 +143,150 @@
   };
 
   // ============================================================
-  // # 📄 ✍️  THE CHAPTER IN HAND
+  // # 📄 📋  THE CHAPTER IN HAND
   // # 🔤 JavaScript
-  // # 🎯 What is known about the open chapter, and the two things that
-  // #    can be changed about it here
-  // # 🔗 This is the whole of the body for now, and it is deliberately
-  // #    the same facts the board holds rather than new ones: it is
-  // #    here to prove the path — a change made on this page reaching
-  // #    Drive and the other device — before anything is built on top
-  // #    of it. What goes here next is the chapter's own content, and
-  // #    that is read from a file of its own, not from this one
+  // # 🎯 The chapter's own table: a row per term, a tick for each, and
+  // #    the way to write new ones
+  // # 🔗 Two files stand behind this table and they are never confused.
+  // #    The words come from the chapter's content; the ticks come from
+  // #    its state. Typing a term rewrites one, ticking a box rewrites
+  // #    the other, and the other device downloads only what changed.
+  // #    A chapter that could not be read says so and offers to try
+  // #    again — it never shows an empty table, because an empty table
+  // #    is what a chapter with nothing in it looks like, and a reader
+  // #    told that about a chapter they filled last night would believe
+  // #    their work was gone
   // ============================================================
+  let loading = false;
+
+  const sayTrouble = words => {
+    body.textContent = '';
+    const box = document.createElement('div');
+    box.className = 'cempty';
+    const line = document.createElement('p');
+    line.textContent = words;
+    const again = document.createElement('button');
+    again.className = 'csheet-done';
+    again.type = 'button';
+    again.textContent = 'Try again';
+    again.onclick = () => loadChapter();
+    box.append(line, again);
+    body.append(box);
+  };
+
+  const drawRows = () => {
+    const content = window.MyTermChapterStore?.content();
+    if (!content) return;
+
+    const section = content.sections[0];
+    const sheet = document.createElement('article');
+    sheet.className = 'csheet';
+
+    const table = document.createElement('div');
+    table.className = 'ctable';
+
+    const legend = document.createElement('div');
+    legend.className = 'crow clegend';
+    ['#', 'Term', 'What it means', ''].forEach((word, i) => {
+      const cell = document.createElement('span');
+      cell.textContent = word;
+      if (i === 3) cell.className = 'crow-end';
+      legend.append(cell);
+    });
+    table.append(legend);
+
+    const rows = section.rows.filter(r => !r.deleted);
+    rows.forEach((row, index) => {
+      const line = document.createElement('div');
+      line.className = 'crow';
+
+      const no = document.createElement('span');
+      no.className = 'crow-no';
+      no.textContent = row.no || String(index + 1);
+
+      const term = document.createElement('div');
+      term.className = 'crow-term';
+      term.contentEditable = 'true';
+      term.textContent = row.term;
+      term.dataset.empty = 'Term';
+      term.oninput = () => window.MyTermChapterStore.editRow(row.id, 'term', term.textContent);
+
+      const text = document.createElement('div');
+      text.className = 'crow-text';
+      text.contentEditable = 'true';
+      text.textContent = row.text;
+      text.dataset.empty = 'What it means';
+      text.oninput = () => window.MyTermChapterStore.editRow(row.id, 'text', text.textContent);
+
+      // The tick is the only thing on this line that goes to the small
+      // file, and it is the only thing pressed a hundred times an evening
+      const tick = document.createElement('button');
+      tick.className = 'crow-tick';
+      tick.type = 'button';
+      const paintTick = () => {
+        const on = window.MyTermChapterStore.isOn(row.id);
+        tick.classList.toggle('on', on);
+        tick.textContent = on ? '✓' : '';
+        tick.title = on ? 'Done' : 'Not done yet';
+        line.classList.toggle('done', on);
+      };
+      tick.onclick = () => {
+        window.MyTermChapterStore.mark(row.id, !window.MyTermChapterStore.isOn(row.id));
+        paintTick();
+        drawTabs();
+      };
+      paintTick();
+
+      const off = document.createElement('button');
+      off.className = 'crow-off';
+      off.type = 'button';
+      off.textContent = '×';
+      off.title = 'Remove this row';
+      off.onclick = () => { window.MyTermChapterStore.dropRow(row.id); drawBody(); };
+
+      const end = document.createElement('span');
+      end.className = 'crow-end';
+      end.append(tick, off);
+
+      line.append(no, term, text, end);
+      table.append(line);
+    });
+
+    if (!rows.length) {
+      const none = document.createElement('p');
+      none.className = 'ctable-none';
+      none.textContent = 'Nothing written in this chapter yet.';
+      table.append(none);
+    }
+
+    const add = document.createElement('button');
+    add.className = 'csheet-done';
+    add.type = 'button';
+    add.textContent = '+ row';
+    add.onclick = () => {
+      window.MyTermChapterStore.addRow(section.id);
+      drawBody();
+      const last = body.querySelector('.crow:last-of-type .crow-term');
+      last?.focus();
+    };
+
+    const count = document.createElement('p');
+    count.className = 'ctable-count';
+    const done = rows.filter(r => window.MyTermChapterStore.isOn(r.id)).length;
+    count.textContent = rows.length ? `${done} of ${rows.length} done` : '';
+
+    sheet.append(table, count, add);
+    body.textContent = '';
+    body.append(sheet);
+  };
+
   const drawBody = () => {
     const c = course();
-    body.textContent = '';
     if (!c) return;
 
     const ch = alive(c).find(h => h.id === openChapter);
     if (!ch) {
+      body.textContent = '';
       const empty = document.createElement('p');
       empty.className = 'cempty';
       empty.textContent = alive(c).length ? 'Pick a chapter above.' : 'This course has no chapters yet.';
@@ -168,64 +294,35 @@
       return;
     }
 
-    const sheet = document.createElement('article');
-    sheet.className = 'csheet';
-
-    const heading = document.createElement('h2');
-    heading.className = 'csheet-title';
-    heading.textContent = ch.name || 'Unnamed chapter';
-    sheet.append(heading);
-
-    const note = document.createElement('p');
-    note.className = 'csheet-note';
-    note.textContent = 'The chapter itself goes here: its terms, its questions, its laws. '
-      + 'Until then, what this page proves is the path — change either number below '
-      + 'and watch it reach your other device.';
-    sheet.append(note);
-
-    const line = (label, value, write) => {
-      const row = document.createElement('label');
-      row.className = 'csheet-line';
-      const word = document.createElement('span');
-      word.textContent = label;
-      const box = document.createElement('input');
-      box.className = 'csheet-num';
-      box.type = 'number';
-      box.min = '0';
-      box.step = '0.5';
-      box.value = value ? Math.round((value / 60) * 100) / 100 : '';
-      box.placeholder = '0';
-      box.oninput = () => {
-        write(Math.max(0, Math.round((Number(box.value) || 0) * 60)));
-        ch.updatedAt = now();
-        touch();
-        drawTabs();
-      };
-      const unit = document.createElement('span');
-      unit.className = 'csheet-unit';
-      unit.textContent = 'hours';
-      row.append(word, box, unit);
-      return row;
-    };
-
-    sheet.append(line('How long it takes', ch.minutes, v => { ch.minutes = v; }));
-    sheet.append(line('Done of it', ch.doneMinutes, v => { ch.doneMinutes = v; }));
-
-    const mark = document.createElement('button');
-    mark.className = 'csheet-done' + (ch.done ? ' on' : '');
-    mark.type = 'button';
-    mark.textContent = ch.done ? '✓ finished' : 'mark finished';
-    mark.onclick = () => {
-      ch.done = !ch.done;
-      ch.updatedAt = now();
-      touch();
-      drawBody();
-      drawTabs();
-    };
-    sheet.append(mark);
-
-    body.append(sheet);
+    if (window.MyTermChapterStore?.openId() === ch.id) drawRows();
+    else loadChapter();
   };
+
+  async function loadChapter() {
+    const c = course();
+    const ch = c && alive(c).find(h => h.id === openChapter);
+    if (!c || !ch || loading) return;
+
+    loading = true;
+    body.textContent = '';
+    const wait = document.createElement('p');
+    wait.className = 'cempty';
+    wait.textContent = 'Opening the chapter…';
+    body.append(wait);
+
+    const opened = await window.MyTermChapterStore.open(keep.live(), c, ch).catch(() => null);
+    loading = false;
+
+    if (!opened) {
+      sayTrouble('Could not read this chapter from your Drive. Nothing was lost — what is in it is still there.');
+      return;
+    }
+    // Making the folder and the two files writes ids beside the chapter,
+    // and those ids belong in the course paper or the next open makes
+    // them all over again
+    touch();
+    drawRows();
+  }
 
   const openOne = id => {
     openChapter = id;
@@ -270,6 +367,8 @@
                   arrived: 'An update arrived from your other device',
                   failed: 'Not saved — your Drive access ran out',
                   unread: 'Could not read your file from Drive' };
+
+  window.MyTermChapterStore?.watch(state => window.MyTermCourseSync(state));
 
   window.MyTermCourseSync = state => {
     if (!syncDot) return;
@@ -319,7 +418,16 @@
       window.MyTermCoursePage.open(id);
     },
     openId: () => openId,
-    // News from the other device lands here too, not only on the board
-    redraw: () => { if (openId) draw(); }
+    // News from the other device lands here too, not only on the board —
+    // and the chapter in hand re-reads its own two files, because the
+    // board's paper knows nothing about which rows were ticked
+    redraw: async () => {
+      if (!openId) return;
+      if (window.MyTermChapterStore?.openId()) {
+        await window.MyTermChapterStore.refresh();
+        drawRows();
+      }
+      draw();
+    }
   };
 })();

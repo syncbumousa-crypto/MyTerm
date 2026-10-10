@@ -293,7 +293,7 @@
     if (lines[0]) {
       lines[0].textContent = list.length
         ? list.length + (list.length === 1 ? ' Chapter' : ' Chapters')
-        : 'No chapters yet';
+        : 'No chapters';
     }
 
     if (lines[1]) {

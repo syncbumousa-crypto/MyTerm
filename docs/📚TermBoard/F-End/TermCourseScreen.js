@@ -211,7 +211,7 @@
   const now = () => new Date().toISOString();
   const alive = course => (course.chapters || []).filter(h => !h.deleted);
 
-  let openId = null, openChapter = null;
+  let openId = null, openChapter = null, wideTab = true;
 
   const course = () => (keep.live()?.courses || []).find(c => c.id === openId) || null;
   const touch = () => { keep.touchCourse(openId); keep.change(keep.live()); };
@@ -418,9 +418,16 @@
     const list = alive(c);
 
     list.forEach((ch, index) => {
+      // TWO THINGS AND NOT ONE: whether this is the chapter being read,
+      // and whether its tab is unfolded. They were one, and then folding
+      // a tab away had to mean closing the chapter — so a reader who
+      // wanted the strip smaller had to stop reading to get it. Folded,
+      // the chapter being read still says so with a white name and a
+      // lighter edge, because the white part that said it is inside
       const open = ch.id === openChapter;
+      const wide = open && wideTab;
       const tab = document.createElement('div');
-      tab.className = 'ctab' + (open ? ' on' : '');
+      tab.className = 'ctab' + (open ? ' on' : '') + (wide ? ' wide' : '');
       tab.dataset.chapter = ch.id;
 
       const head = document.createElement('span');
@@ -445,6 +452,25 @@
 
       head.append(no, name);
 
+      // The way to add a part sits beside the chapter's own name, small,
+      // and only while the chapter is unfolded. It belongs to the
+      // CHAPTER — a plus at the end of the row of parts read as one more
+      // part, which is the one thing it is not
+      if (wide) {
+        const addPart = document.createElement('button');
+        addPart.className = 'ctab-addpart';
+        addPart.type = 'button';
+        addPart.textContent = '+';
+        addPart.title = 'Add a part to this chapter';
+        addPart.onclick = event => {
+          event.stopPropagation();
+          if (!window.MyTermChapterStore?.addSection()) return;
+          drawTabs();
+          drawRows();
+        };
+        head.append(addPart);
+      }
+
       // The open chapter is counted from the rows themselves, the rest
       // from the tally each wrote beside itself last time it saved. The
       // open one has its two files in hand, so asking them is both
@@ -457,15 +483,23 @@
 
       tab.append(head);
 
-      // A SHUT chapter says how far through it you are; an OPEN one
-      // hands that question to its parts and gets out of their way.
+      // A FOLDED chapter says how far through it you are; an unfolded
+      // one hands that question to its parts and gets out of their way.
       // Both at once would be the same thing said twice at two sizes,
       // and the whole of it is only the sum of the parts underneath
-      if (open) tab.append(partsOf());
+      if (wide) tab.append(partsOf());
       else tab.append(
         barOf('done', ch.doneMinutes, ch.minutes, hours ? hours.fmt(ch.minutes) : ''),
         barOf('learnt', learntOf, rowsOf, rowsOf ? learntOf + '/' + rowsOf : '—'));
-      tab.onclick = () => { if (!open) openOne(ch.id); };
+
+      // Pressing the chapter you are already in folds its tab away, and
+      // again unfolds it. It does not stop you reading it: making the
+      // strip smaller should not cost you the page you are on
+      tab.onclick = () => {
+        if (!open) { openOne(ch.id); return; }
+        wideTab = !wideTab;
+        drawTabs();
+      };
       tabs.append(tab);
     });
 
@@ -533,19 +567,6 @@
       };
       box.append(one);
     });
-
-    const more = document.createElement('button');
-    more.className = 'ctab-part ctab-part-new';
-    more.type = 'button';
-    more.textContent = '+';
-    more.title = 'Add a part to this chapter';
-    more.onclick = event => {
-      event.stopPropagation();
-      if (!window.MyTermChapterStore?.addSection()) return;
-      drawTabs();
-      drawRows();
-    };
-    box.append(more);
 
     return box;
   };
@@ -680,6 +701,10 @@
 
   const openOne = id => {
     openChapter = id;
+    // A chapter just opened shows what is in it. Folding is something
+    // the reader does to a chapter they already have open, so it starts
+    // over whenever a different one is opened
+    wideTab = true;
     try { if (openId) localStorage.setItem(lastChapterKey(openId), id); } catch {}
     drawTabs();
     drawBody();

@@ -813,6 +813,11 @@
 
     countLine();
     host.scrollTop = keptTop;
+    // The paper has been cut again, so whatever is counted off it —
+    // how much is written, how many pages, how long it takes — is now
+    // something else. The strip above is told rather than left to find
+    // out on its own the next time something happens to make it redraw
+    told();
   };
 
   const build = into => {
@@ -850,6 +855,35 @@
     // same sheets with the same rows on them, drawn a little smaller or
     // a little larger
     fit,
+
+    // ============================================================
+    // # 📏 📃  HOW MANY PAGES A LIST OF ROWS COMES TO
+    // # 🔤 JavaScript
+    // # 🎯 Counts the sheets some rows would fill, for working out how
+    // #    long a part takes to read
+    // # 🔗 MEASURED AT A FIXED REFERENCE AND NOT AT THE READER'S OWN
+    // #    SETTINGS. Type size and column width belong to whoever is
+    // #    looking, so pages counted at them would be a different
+    // #    number on the laptop and on the phone — and the minutes they
+    // #    feed go into the course paper, which both devices share. One
+    // #    of them would be wrong, and neither would know which.
+    // #
+    // #    The reference is the sheet's own size with type at sixteen
+    // #    and the Term column at a hundred and eighty: the size the
+    // #    division was designed against
+    // ============================================================
+    pagesOf: rows => {
+      if (!probe || !rows || !rows.length) return 0;
+      const keptFont = probe.style.fontSize, keptCol = probe.style.getPropertyValue('--term-col');
+      probe.style.fontSize = '16px';
+      probe.style.setProperty('--term-col', '180px');
+      const units = rows.map((row, i) => ({ row, n: i + 1, cid: row.cid, lead: row.lead }));
+      const pages = splitPages(units, PAPER_H).length;
+      probe.style.fontSize = keptFont;
+      if (keptCol) probe.style.setProperty('--term-col', keptCol);
+      else probe.style.removeProperty('--term-col');
+      return pages;
+    },
 
     // How large the reader has asked for the paper to be drawn, and the
     // one place that decides what counts as too large. Called many times

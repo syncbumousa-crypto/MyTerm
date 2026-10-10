@@ -17,6 +17,8 @@
     session: document.getElementById('session')
   };
 
+  const curtain = document.getElementById('boot');
+
   const formTitle = document.getElementById('form-title');
   const sendButton = document.getElementById('submit');
   const emailBox = document.getElementById('email');
@@ -26,7 +28,20 @@
 
   let mode = 'signup';
 
-  const show = name => Object.keys(panels).forEach(key => (panels[key].hidden = key !== name));
+  // Showing any panel takes the curtain down with it: the curtain is
+  // there only for the time when nothing is known yet
+  const show = name => {
+    window.MyTermCurtain.down();
+    Object.keys(panels).forEach(key => (panels[key].hidden = key !== name));
+  };
+
+  // Two names, two jobs. The curtain comes down for whatever screen
+  // turns out to be the right one — a panel here, the board, or the one
+  // course a tab was opened on — so it is not the panels' to keep.
+  // And the account panel is opened from two places that are not here:
+  // the face in the corner, and a storage step the visitor must act on
+  window.MyTermCurtain = { down: () => { curtain.hidden = true; } };
+  window.MyTermAccount = { show: () => show('session') };
 
   function openForm(which) {
     mode = which;
@@ -91,10 +106,17 @@
   // #    message sent too early is heard by nobody and is gone, while a
   // #    flag can still be read by that file a moment later
   // ============================================================
+  // Being signed in does NOT mean the account panel is the right screen.
+  // Nine times in ten the Drive place is already set and the board — or
+  // the one course a tab was opened on — is where this visitor is going;
+  // the panel was being shown for the eight tenths of a second it takes
+  // to ask where their file is kept, and it reads as being asked to sign
+  // in again. So the curtain stays, and whoever finds out what is needed
+  // opens the panel: the storage screen when there is a step to take,
+  // the board screen by taking the screen for itself
   function openSession(email) {
     who.textContent = 'Hello, ' + email;
     window.MyTermHud?.face(email);
-    show('session');
     window.myTermSignedIn = true;
     document.dispatchEvent(new CustomEvent('signed-in'));
   }

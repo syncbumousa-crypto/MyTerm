@@ -19,9 +19,9 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=90">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=90">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=90">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=91">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=91">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=91">
 </head>
 <body>
 
@@ -40,14 +40,32 @@
 </div>
 
 <!-- ============================================================ -->
+<!-- # ⏳ 🧵  THE CURTAIN -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 A turning circle and nothing else, until it is known which -->
+<!-- #    screen this visitor belongs on -->
+<!-- # 🔗 It is the only thing in this page that is NOT hidden, because -->
+<!-- #    whatever is not hidden is what shows before anything is known. -->
+<!-- #    The sign-in panel used to hold that place: so a reader opening -->
+<!-- #    one of their own courses was shown "Create account / Log in", -->
+<!-- #    then the account panel for the eight tenths of a second it -->
+<!-- #    takes to ask where their file is kept, and only then the page -->
+<!-- #    they had asked for. Both of those were the page guessing. -->
+<!-- #    Nothing is shown now until it is known to be the right thing -->
+<!-- ============================================================ -->
+<div class="spinner" id="boot"></div>
+
+<!-- ============================================================ -->
 <!-- # 👆 🔘  PICK WHAT TO DO -->
 <!-- # 🔤 HTML -->
 <!-- # 🎯 The first panel: two buttons to pick what to do, -->
 <!-- #    make a new account or log in -->
 <!-- # 🔗 The accounts screen file hides this panel and shows the form -->
-<!-- #    panel below when one of the buttons is clicked -->
+<!-- #    panel below when one of the buttons is clicked. It starts -->
+<!-- #    hidden like every other panel: it is the right screen only for -->
+<!-- #    a visitor with no account open, and that is not known yet -->
 <!-- ============================================================ -->
-<div class="box" id="choice">
+<div class="box" id="choice" hidden>
   <h1 class="title">MyTerm</h1>
   <p class="lede">Your term board — and your courses are saved in your own Drive, not with us.</p>
   <button class="btn btn-main" type="button" id="go-signup">Create account</button>
@@ -236,7 +254,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v90</p>
+<p class="build">v91</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -259,19 +277,19 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=90"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=90"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=90"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=90"></script>
-<script src="📚TermBoard/B-End/TermChapterStore.js?v=90"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=90"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=90"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=90"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=90"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=90"></script>
-<script src="📚TermBoard/F-End/TermChapterPaper.js?v=90"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=90"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=90"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=91"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=91"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=91"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=91"></script>
+<script src="📚TermBoard/B-End/TermChapterStore.js?v=91"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=91"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=91"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=91"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=91"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=91"></script>
+<script src="📚TermBoard/F-End/TermChapterPaper.js?v=91"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=91"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=91"></script>
 
 </body>
 </html>

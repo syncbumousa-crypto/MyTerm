@@ -3284,3 +3284,77 @@ body.cdragging { cursor: col-resize; user-select: none; }
 /* The same bar the uploads use, saying something that is not progress */
 .csrc-bar.saying .csrc-rail { display: none; }
 .csrc-bar.saying .csrc-says { margin: 0; color: var(--orange); font-size: 11px; }
+
+/* ============================================================ */
+/* # 🎯 📋  THE QUESTIONS THAT ASK YOU A ROW */
+/* # 🔤 CSS */
+/* # 🎯 A fold saying how many, and the questions themselves under it */
+/* # 🔗 FOLDED, because four questions are four sentences and opened */
+/* #    flat they push the places off the bottom of the screen. The */
+/* #    COUNT is on the fold itself, so the thing wanted at a glance — */
+/* #    are there any, how many — needs no press at all */
+/* ============================================================ */
+.cmenu .cmenu-fold {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.cmenu .cmenu-fold::before {
+  content: '';
+  flex: none;
+  width: 0;
+  height: 0;
+  border-inline-start: 4px solid currentColor;
+  border-block: 3.5px solid transparent;
+  transition: transform .14s ease;
+}
+
+.cmenu .cmenu-fold.open { color: #ffffff; }
+.cmenu .cmenu-fold.open::before { transform: rotate(90deg); }
+.cmenu .cmenu-fold:hover { color: #ffffff; background: #34353d; }
+
+.cmenu-asks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 232px;
+  overflow-y: auto;
+  padding-inline-start: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #45464e transparent;
+}
+
+/* The whole question, wrapped — not one clipped line. A reader is
+   deciding whether this is the question they want, and half a sentence
+   is not enough to decide on */
+.cmenu .cmenu-ask-one {
+  width: 100%;
+  text-align: left;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 5px 8px;
+  border: 0;
+  border-inline-start: 2px solid var(--line);
+  border-radius: 0 5px 5px 0;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  white-space: normal;
+}
+
+.cmenu .cmenu-ask-one:hover {
+  color: #ffffff;
+  background: #34353d;
+  border-inline-start-color: rgba(193, 77, 110, .8);
+}

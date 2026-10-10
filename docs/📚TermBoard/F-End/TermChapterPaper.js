@@ -447,19 +447,33 @@
     const mine = all.filter(l => l.what === want);
     const places = mine.length ? mine : all;
 
-    if (!places.length) { window.MyTermSourcePane?.sayNowhere?.(); return; }
+    // The bank questions that test this row are a second kind of answer
+    // to the same press: not WHERE it came from, but what will be asked
+    // of it. They are never guessed at and never skipped — a question
+    // list is the thing a reader is most pleased to be shown
+    const tests = store().testedBy ? store().testedBy(rowId) : [];
+
+    if (!places.length && !tests.length) { window.MyTermSourcePane?.sayNowhere?.(); return; }
 
     const books = new Set(places.map(l => l.src));
-    if (places.length === books.size) {
-      places.forEach(l => window.MyTermSourcePane?.goTo?.(l));
-      return;
-    }
+    const noChoice = places.length === books.size;
 
-    window.MyTermSourcePane?.goTo?.(places[0]);
-    showPlaces(places, Math.round(event.clientX), Math.round(event.clientY + 8));
+    // Light whatever can be lit straight away, in every column at once.
+    // Places in two different books are not alternatives: a thing
+    // explained in the book and tested in the bank has two sources,
+    // both true, and both columns are on the screen
+    if (noChoice) places.forEach(l => window.MyTermSourcePane?.goTo?.(l));
+    else if (places.length) window.MyTermSourcePane?.goTo?.(places[0]);
+
+    // The panel opens when there is something to choose or something to
+    // read — never merely to confirm what has already happened
+    if (!noChoice || tests.length) {
+      showPlaces(noChoice ? [] : places, tests,
+        Math.round(event.clientX), Math.round(event.clientY + 8));
+    }
   };
 
-  const showPlaces = (places, x, y) => {
+  const showPlaces = (places, tests, x, y) => {
     hideMenu();
     menu = document.createElement('div');
     menu.className = 'cmenu';
@@ -482,6 +496,54 @@
       one.onclick = () => { hideMenu(); window.MyTermSourcePane?.goTo?.(place); };
       menu.append(one);
     });
+
+    // ============================================================
+    // # 🎯 📋  THE QUESTIONS THAT WILL ASK YOU THIS
+    // # 🔤 JavaScript
+    // # 🎯 Every bank question that names this row, with its words
+    // # 🔗 BEHIND A FOLD, because there can be four of them and each is
+    // #    a sentence — opened flat they would push the places a reader
+    // #    was looking for off the bottom of the screen. The count is
+    // #    on the fold, so the one thing wanted at a glance — are there
+    // #    any, how many — is answered without opening it
+    // ============================================================
+    if (tests.length) {
+      if (places.length) menu.append(document.createElement('hr'));
+
+      const fold = document.createElement('button');
+      fold.type = 'button';
+      fold.className = 'cmenu-fold';
+      fold.textContent = tests.length === 1
+        ? '1 question asks you this' : tests.length + ' questions ask you this';
+
+      const list = document.createElement('div');
+      list.className = 'cmenu-asks';
+      list.hidden = true;
+
+      tests.forEach(q => {
+        const one = document.createElement('button');
+        one.type = 'button';
+        one.className = 'cmenu-ask-one';
+        const words = plainWords(q.ask);
+        one.textContent = words.length > 96 ? words.slice(0, 95) + '…' : (words || '(no words yet)');
+        one.title = words;
+        one.onclick = () => {
+          hideMenu();
+          window.MyTermCoursePage?.toRow?.({ row: q.id, section: q.section });
+        };
+        list.append(one);
+      });
+
+      fold.onclick = () => {
+        list.hidden = !list.hidden;
+        fold.classList.toggle('open', !list.hidden);
+        // Measured again, because the panel is a different height now
+        // and an opened fold must not hang off the bottom of the window
+        menu.style.top = Math.min(y, window.innerHeight - menu.offsetHeight - 8) + 'px';
+      };
+
+      menu.append(fold, list);
+    }
 
     document.body.append(menu);
     menu.style.left = Math.min(x, window.innerWidth - menu.offsetWidth - 8) + 'px';
@@ -733,9 +795,12 @@
       if (places) {
         const mine = store().linksOf(places.dataset.places);
         if (!mine.length) return;
-        if (mine.length === 1) { window.MyTermSourcePane?.goTo?.(mine[0]); return; }
+        const asks = store().testedBy ? store().testedBy(places.dataset.places) : [];
+        if (mine.length === 1 && !asks.length) { window.MyTermSourcePane?.goTo?.(mine[0]); return; }
+        if (mine.length === 1) window.MyTermSourcePane?.goTo?.(mine[0]);
         const spot = places.getBoundingClientRect();
-        showPlaces(mine, Math.round(spot.right + 4), Math.round(spot.top));
+        showPlaces(mine, store().testedBy ? store().testedBy(places.dataset.places) : [],
+                   Math.round(spot.right + 4), Math.round(spot.top));
         return;
       }
 

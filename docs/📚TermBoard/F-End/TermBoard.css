@@ -2157,8 +2157,17 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
    number on the left, the box on the right — and only the words inside a
    cell turn round. Turning the whole table would move the box a reader
    has been pressing all evening to the other side of the sheet, which is
-   a bigger surprise than a line of Arabic starting on the right */
-.ctbl td[dir="rtl"] { text-align: right; }
+   a bigger surprise than a line of Arabic starting on the right.
+
+   AND ARABIC IS SET AGAINST THE LEFT EDGE HERE, though it reads right to
+   left. The two are different things: the DIRECTION decides the order of
+   the letters and the words, which must stay right to left or the words
+   come out backwards; the ALIGNMENT decides which edge the block of
+   lines is pushed against. Set against the right, every Arabic cell in
+   the column starts at a different place from the English cell above it
+   and the eye has no line to run down. Against the left they all begin
+   where the column begins, in both languages */
+.ctbl td[dir="rtl"] { text-align: left; }
 
 /* The faint words in an empty cell are the row in the OTHER language, so
    they are given that language's direction and kept in their own run */
@@ -3570,9 +3579,14 @@ tr:hover .crowmore { opacity: 1; }
 /* #    somewhere behind it. The hand that knows where it is never */
 /* #    waits, and the eye that does not is never bothered */
 /* ============================================================ */
+/* RIGHT, and not "the far end". The far end of a cell is its left edge
+   the moment the cell is turned over to Arabic — so the mark jumped to
+   the other side of the box at the very press that turned it, and the
+   next press was no longer under the finger. A corner the hand can
+   learn has to be the same corner in both languages */
 .ccelllang {
   position: absolute;
-  inset-inline-end: 2px;
+  right: 2px;
   bottom: 1px;
   width: 16px;
   height: 12px;
@@ -3586,6 +3600,8 @@ tr:hover .crowmore { opacity: 1; }
   line-height: 1;
   cursor: pointer;
   user-select: none;
+  /* Its own two letters read left to right whatever the cell does */
+  direction: ltr;
 }
 
 .ctbl td:hover .ccelllang { color: #c0c0c0; }

@@ -2268,7 +2268,27 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
 .cpaper b { font-weight: 700; }
 .cpaper i { font-style: italic; }
 .cpaper u { text-decoration: underline; }
+/* ============================================================ */
+/* # 🎨 📄  THE COLOURS ON THE PAPER */
+/* # 🔤 CSS */
+/* # 🎯 Five grounds a word can sit on and five inks it can be written */
+/* #    in, on the paper and in the bar that puts them there */
+/* # 🔗 The first of each family keeps the name their own summaries have */
+/* #    always used — `hl` for the yellow and `pa` for the red — so */
+/* #    every page already written keeps its colours without being */
+/* #    touched by a single line of code. `bx`, the old blue box, is */
+/* #    still drawn as it was: nothing written is ever left unreadable */
+/* #    because a button stopped offering it */
+/* ============================================================ */
 .cpaper .hl { background-color: #ffff00; }
+.cpaper .hlg { background-color: #b6ff9c; }
+.cpaper .hlb { background-color: #9fd7ff; }
+.cpaper .hlp { background-color: #ffb3d1; }
+.cpaper .hlo { background-color: #ffcf8a; }
+
+.cpaper .tcb { color: #1155cc; font-weight: 700; }
+.cpaper .tco { color: #b45f06; font-weight: 700; }
+.cpaper .tcp { color: #7b1fa2; font-weight: 700; }
 .cpaper .pa { color: #cc0000; font-weight: 700; }
 .cpaper .pb { color: #38761d; font-weight: 700; }
 .cpaper .bx { background: #9fc5e8; padding: 0 2px; border-radius: 2px; }
@@ -2277,13 +2297,29 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
   position: fixed;
   z-index: 60;
   display: flex;
-  gap: 2px;
+  flex-direction: column;
+  gap: 3px;
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: #23242a;
   box-shadow: 0 4px 14px rgba(0, 0, 0, .6);
 }
+
+.cmark-row, .cmark-pal { display: flex; gap: 2px; }
+
+/* The colours sit UNDER the tools and not along them: ten swatches in a
+   row make a panel wide enough to hide the line being worked on */
+.cmark-pal { padding-top: 3px; border-top: 1px solid var(--line); }
+
+.cmark .cmark-dab {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, .18);
+}
+
+.cmark .m-hl.on, .cmark .m-ink.on { background: #34353d; outline: 1px solid var(--dim2); }
 
 .cmark button {
   width: 25px;
@@ -2301,10 +2337,21 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
 }
 
 .cmark button:hover { background: #34353d; }
-.cmark .m-hl { background: #ffff00; color: #141414; }
-.cmark .m-pa { color: #ff8585; }
-.cmark .m-pb { color: #7bc49a; }
-.cmark .m-bx { background: #9fc5e8; color: #141414; }
+
+/* The swatch IS the colour — a square of the very ground or ink it puts
+   on the words. A letter or a word in its place would be a name to read
+   where a colour can simply be seen */
+.cmark .on-hl { background: #ffff00; }
+.cmark .on-hlg { background: #b6ff9c; }
+.cmark .on-hlb { background: #9fd7ff; }
+.cmark .on-hlp { background: #ffb3d1; }
+.cmark .on-hlo { background: #ffcf8a; }
+
+.cmark .in-pa { background: #cc0000; }
+.cmark .in-pb { background: #38761d; }
+.cmark .in-tcb { background: #1155cc; }
+.cmark .in-tco { background: #b45f06; }
+.cmark .in-tcp { background: #7b1fa2; }
 
 /* ============================================================ */
 /* # 🖱️ 📜  THE MENU OF A ROW */

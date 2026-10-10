@@ -345,6 +345,21 @@ body.board-on {
 .col-menu-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .col-menu-num:focus { outline: 2px solid var(--blue); outline-offset: 0; }
 
+.col-menu-do {
+  display: block;
+  width: 100%;
+  font: inherit;
+  font-size: 9.5px;
+  padding: 5px;
+  margin-bottom: 4px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.col-menu-do:hover { color: #ffffff; border-color: var(--dim2); background: #31323a; }
 .col-menu-drop {
   display: block;
   width: 100%;
@@ -551,19 +566,7 @@ body.board-on {
 
 .ch-off:hover { color: var(--mBad); text-decoration: underline; }
 
-.col-add {
-  margin-top: 4px;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  padding: 4px;
-  border: 1px dashed var(--line);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--dim2);
-  cursor: pointer;
-}
 
-.col-add:hover { color: var(--ink); border-color: var(--dim2); background: #25262c; }
 
 /* ============================================================ */
 /* # 🗒️ 🤫  THE QUIET SAVING LINE */
@@ -755,7 +758,6 @@ body.board-on {
   font-variant-numeric: tabular-nums;
 }
 
-.marks .col-add { display: block; width: 100%; }
 
 .term-gpa {
   margin: 0;

@@ -1487,6 +1487,18 @@ body.reading .build { bottom: 46px; }
 }
 
 .ctbl td[contenteditable]:focus { outline: 2px solid #4b7bd4; outline-offset: -2px; }
+
+/* The table keeps its columns in the same order in both languages — the
+   number on the left, the box on the right — and only the words inside a
+   cell turn round. Turning the whole table would move the box a reader
+   has been pressing all evening to the other side of the sheet, which is
+   a bigger surprise than a line of Arabic starting on the right */
+.ctbl td[dir="rtl"] { text-align: right; }
+
+/* The faint words in an empty cell are the row in the OTHER language, so
+   they are given that language's direction and kept in their own run */
+.ctbl td[data-hintdir="ltr"]:empty::before { direction: ltr; unicode-bidi: isolate; }
+.ctbl td[data-hintdir="rtl"]:empty::before { direction: rtl; unicode-bidi: isolate; }
 .ctbl tr.done td.cterm, .ctbl tr.done td.cdef { color: #6f6f6f; }
 
 /* The primary row is the row a table is built around. Two things

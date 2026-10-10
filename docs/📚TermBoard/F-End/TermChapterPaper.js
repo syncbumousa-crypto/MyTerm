@@ -20,10 +20,30 @@
   const store = () => window.MyTermChapterStore;
 
   const COLS = '<colgroup><col style="width:34px"><col style="width:31%"><col><col style="width:34px"></colgroup>';
-  const HEAD = '<tr><th>#</th><th>Term</th><th>What it means</th><th></th></tr>';
+
+  // ============================================================
+  // # 🌍 🔁  THE TWO LANGUAGES OF A ROW
+  // # 🔤 JavaScript
+  // # 🎯 Which two of the row's four fields are on the paper, which way
+  // #    they read, and what the header over them says
+  // # 🔗 THE LANGUAGE IS CHOSEN BEFORE THE PAPER IS CUT, NEVER AFTER.
+  // #    The same idea is not the same length in two languages, so
+  // #    swapping the words in cells that are already laid out leaves
+  // #    the last rows hanging off the bottom of a sheet. The language
+  // #    goes into the very HTML the hidden sheet is measured with, and
+  // #    changing it cuts the paper again — which is also why typing
+  // #    while Arabic is showing writes into the Arabic field and not
+  // #    over the English one
+  // ============================================================
+  const LANGS = {
+    en: { term: 'term', text: 'text', dir: 'ltr', other: 'ar',
+          head: ['#', 'Term', 'What it means', ''] },
+    ar: { term: 'termAr', text: 'textAr', dir: 'rtl', other: 'en',
+          head: ['#', 'المصطلح', 'المعنى', ''] }
+  };
 
   let host = null, stage = null, probe = null, told = () => {};
-  let menu = null, bar = null, listening = false;
+  let menu = null, bar = null, listening = false, lang = 'en';
 
   // ============================================================
   // # 🧾 🔤  ONE ROW, WRITTEN OUT
@@ -36,16 +56,44 @@
   // #    and a reader counting down a page does not care which row was
   // #    written first
   // ============================================================
-  const cellOf = (row, field, kind, words) =>
-    `<td class="${kind}" contenteditable="true" data-field="${field}" data-empty="${words}">${row[field]}</td>`;
+  const plainWords = html => {
+    const box = document.createElement('div');
+    box.innerHTML = html || '';
+    return box.textContent.replace(/\s+/g, ' ').trim();
+  };
+
+  const asAttr = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+  // An empty cell does not sit blank: it shows the SAME ROW in the other
+  // language, faintly. Turning a chapter that was written in English over
+  // to Arabic would otherwise show a page of empty boxes — which is what
+  // a chapter nobody has written looks like — and the reader would have
+  // to turn back to see what each one is supposed to say. What shows here
+  // is only a hint drawn by the page; it is in no file, and the first
+  // letter typed replaces it
+  const cellOf = (row, which) => {
+    const here = LANGS[lang], there = LANGS[here.other];
+    const words = row[here[which]];
+    let hint = plainWords(row[there[which]]);
+    // The hint is the OTHER language, so it reads the other way round.
+    // Left to the cell's own direction, an English sentence hinted inside
+    // an Arabic cell had its full stop thrown to the far end of the line
+    let hintDir = there.dir;
+    if (hint.length > 90) hint = hint.slice(0, 89) + '…';
+    if (!hint) { hint = here.head[which === 'term' ? 1 : 2]; hintDir = here.dir; }
+    return `<td class="c${which === 'term' ? 'term' : 'def'}" contenteditable="true" dir="${here.dir}"`
+      + ` data-field="${here[which]}" data-hintdir="${hintDir}" data-empty="${asAttr(hint)}">${words}</td>`;
+  };
+
+  const headHtml = () => '<tr>' + LANGS[lang].head.map(w => `<th>${w}</th>`).join('') + '</tr>';
 
   const rowHtml = (row, n) => {
     const on = store().isOn(row.id);
     const cls = [row.lead ? 'clead' : '', on ? 'done' : ''].filter(Boolean).join(' ');
     return `<tr data-row="${row.id}"${cls ? ` class="${cls}"` : ''}>`
       + `<td class="cno"><span class="cdel" data-off="${row.id}" title="Remove this row">✕</span>${n}</td>`
-      + cellOf(row, 'term', 'cterm', 'Term')
-      + cellOf(row, 'text', 'cdef', 'What it means')
+      + cellOf(row, 'term')
+      + cellOf(row, 'text')
       + `<td class="cbox"><button class="cbx${on ? ' on' : ''}" type="button" data-tick="${row.id}"`
       + ` title="${on ? 'Learnt' : 'Not learnt yet'}"></button></td>`
       + '</tr>';
@@ -62,7 +110,7 @@
       const run = [];
       while (i < list.length && list[i].cid === cid) run.push(list[i++]);
       const cont = first && carry !== null && cid === carry;
-      out += `<table class="ctbl${cont ? ' cont' : ''}">${COLS}${cont ? '' : HEAD}`
+      out += `<table class="ctbl${cont ? ' cont' : ''}">${COLS}${cont ? '' : headHtml()}`
         + run.map(u => rowHtml(u.row, u.n)).join('') + '</table>';
       first = false;
     }
@@ -473,8 +521,9 @@
     // swept away by somebody else's honest work rather than by a fault,
     // and holding a reference to it without checking would draw sheets
     // into a box that nobody can see
-    paint: (into, onTick) => {
+    paint: (into, onTick, which) => {
       told = onTick || (() => {});
+      lang = LANGS[which] ? which : 'en';
       if (!stage || !stage.isConnected || stage.parentNode !== into) build(into);
       repaint();
     },

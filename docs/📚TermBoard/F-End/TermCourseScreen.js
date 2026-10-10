@@ -22,6 +22,7 @@
   const backBtn = $('course-back'), fullBtn = $('course-full'), syncDot = $('course-sync');
   const fontDown = $('font-down'), fontUp = $('font-up'), fontNow = $('font-now');
   const widthDown = $('width-down'), widthUp = $('width-up'), widthNow = $('width-now');
+  const langBtn = $('course-lang');
 
   const now = () => new Date().toISOString();
   const alive = course => (course.chapters || []).filter(h => !h.deleted);
@@ -42,7 +43,7 @@
   // #    next course. Which chapter was open does carry one, because a
   // #    chapter number means nothing outside the course it belongs to
   // ============================================================
-  const PREF = { font: 'myterm.read.font', width: 'myterm.read.width' };
+  const PREF = { font: 'myterm.read.font', width: 'myterm.read.width', lang: 'myterm.read.lang' };
   const FONTS = [85, 100, 115, 130, 150];
   const WIDTHS = [560, 720, 880, 1040, 1240];
 
@@ -57,6 +58,15 @@
   let fontPct = readPref(PREF.font, 100);
   let columnPx = readPref(PREF.width, 720);
 
+  // Which of a row's two languages is on the paper. A preference of the
+  // reader, like the size of type — not a fact of the term. Turning the
+  // laptop to Arabic must not turn the phone to Arabic, and the words
+  // themselves are in the file either way, both of them, always
+  let readLang = 'en';
+  try { if (localStorage.getItem(PREF.lang) === 'ar') readLang = 'ar'; } catch {}
+
+  const repaper = () => window.MyTermPaper.paint(body, drawTabs, readLang);
+
   const applyRead = () => {
     page.style.setProperty('--read-font', fontPct + '%');
     page.style.setProperty('--read-width', columnPx + 'px');
@@ -66,10 +76,12 @@
     fontUp.disabled = fontPct >= FONTS[FONTS.length - 1];
     widthDown.disabled = columnPx <= WIDTHS[0];
     widthUp.disabled = columnPx >= WIDTHS[WIDTHS.length - 1];
-    // Both of these move where a sheet runs out — wider paper holds more
-    // rows, bigger type holds fewer — so the paper is cut again. It is
-    // the same reason a window being resized cuts it again below
-    if (window.MyTermChapterStore?.openId()) window.MyTermPaper.paint(body, drawTabs);
+    langBtn.textContent = readLang === 'ar' ? 'ع' : 'EN';
+    // Every one of these moves where a sheet runs out — wider paper holds
+    // more rows, bigger type holds fewer, and the other language is not
+    // the same length — so the paper is cut again. It is the same reason
+    // a window being resized cuts it again below
+    if (window.MyTermChapterStore?.openId()) repaper();
   };
 
   // Steps, not free numbers: a reader pressing a button wants the next
@@ -84,6 +96,15 @@
   fontUp.onclick = () => { fontPct = step(FONTS, fontPct, 1); writePref(PREF.font, fontPct); applyRead(); };
   widthDown.onclick = () => { columnPx = step(WIDTHS, columnPx, -1); writePref(PREF.width, columnPx); applyRead(); };
   widthUp.onclick = () => { columnPx = step(WIDTHS, columnPx, 1); writePref(PREF.width, columnPx); applyRead(); };
+
+  // The button says which language is ON the paper, not which one it
+  // would turn to — the same way the one beside it says what size the
+  // type is now, and not what size pressing it would make it
+  langBtn.onclick = () => {
+    readLang = readLang === 'ar' ? 'en' : 'ar';
+    writePref(PREF.lang, readLang);
+    applyRead();
+  };
 
   fullBtn.onclick = () => {
     if (document.fullscreenElement) document.exitFullscreen?.();
@@ -185,7 +206,7 @@
   // of chapters above shows the same count and would otherwise go stale
   const drawRows = () => {
     if (!window.MyTermChapterStore?.content()) return;
-    window.MyTermPaper.paint(body, drawTabs);
+    repaper();
   };
 
   const drawBody = () => {
@@ -273,7 +294,7 @@
   window.addEventListener('resize', () => {
     if (!openId || !window.MyTermChapterStore?.openId()) return;
     clearTimeout(waiting);
-    waiting = setTimeout(() => window.MyTermPaper.paint(body, drawTabs), 180);
+    waiting = setTimeout(repaper, 180);
   });
 
   document.addEventListener('keydown', event => {

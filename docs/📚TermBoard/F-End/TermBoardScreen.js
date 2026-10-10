@@ -157,12 +157,19 @@
     head.textContent = course.name || 'Course name';
     head.classList.toggle('unnamed', !course.name);
 
+    // Two quiet lines under the name: how many chapters there are, then
+    // how much of their time is done. How many chapters are ticked is not
+    // among them — the bar of the three shapes says that, and saying it
+    // twice in two ways only makes a reader check which one to believe
     const count = document.createElement('span');
     count.className = 'col-count';
 
+    const hours = document.createElement('span');
+    hours.className = 'col-count';
+
     const title = document.createElement('div');
     title.className = 'col-title';
-    title.append(head, count);
+    title.append(head, count, hours);
 
     // ============================================================
     // # ⚙️ 🗃️  THE ONE BUTTON FOR THE RARE THINGS
@@ -272,48 +279,43 @@
   // ============================================================
   // # 🎓 🎨  WHAT THE HEAD OF A CARD SAYS
   // # 🔤 JavaScript
-  // # 🎯 Writes the count line and the grade, and walks the grade's
-  // #    colour from green at the top of the scale to red at the bottom
+  // # 🎯 Writes the two lines under the name and the grade, and walks the
+  // #    grade's colour from green at the top of the scale to red at the
+  // #    bottom
   // # 🔗 One function for all of it, called after every change, so the
-  // #    number, the letter and the colour are worked out in one place
-  // #    and cannot drift apart. A course with nothing marked shows a
-  // #    plain dash: no mark is not a bad mark
+  // #    numbers, the letter and the colour are worked out in one place
+  // #    and cannot drift apart
   // ============================================================
   const paintHead = (column, course) => {
     const list = alive(course);
-    const done = list.filter(h => h.done).length;
-    const count = column.querySelector('.col-count');
-    if (count) {
-      count.textContent = '';
-      if (list.length) {
-        const finished = document.createElement('b');
-        finished.textContent = done;
-        count.append(finished, document.createTextNode(` of ${list.length} · `),
-                     hoursPair(list.reduce((s, h) => s + h.doneMinutes, 0),
-                               list.reduce((s, h) => s + h.minutes, 0)));
-      } else {
-        count.textContent = 'no chapters yet';
-      }
+    const lines = column.querySelectorAll('.col-top .col-count');
+
+    if (lines[0]) {
+      lines[0].textContent = list.length
+        ? list.length + (list.length === 1 ? ' Chapter' : ' Chapters')
+        : 'No chapters yet';
+    }
+
+    if (lines[1]) {
+      lines[1].textContent = '';
+      lines[1].append(hoursPair(list.reduce((s, h) => s + h.doneMinutes, 0),
+                                list.reduce((s, h) => s + h.minutes, 0)));
     }
 
     const grade = column.querySelector('.col-grade');
     if (!grade) return;
     const standing = standingOf(course);
     grade.textContent = '';
-    grade.classList.toggle('has', Boolean(standing));
-    if (!standing) {
-      grade.textContent = '–';
-      grade.style.removeProperty('--g');
-      grade.title = 'No marks recorded yet — press to add them';
-      return;
-    }
+    grade.classList.add('has');
     const letter = document.createElement('b');
     letter.textContent = standing.letter;
     const pct = document.createElement('s');
     pct.textContent = Math.round(standing.pct) + '%';
     grade.append(letter, pct);
-    grade.style.setProperty('--g', `hsl(${Math.round((standing.points / 4) * 130)}, 58%, 44%)`);
-    grade.title = `${standing.pct}% · ${standing.letter} · ${standing.points} of 4 — on ${standing.weight} of 100 marked so far`;
+    grade.style.setProperty('--g', gradeColour(standing.points));
+    grade.title = standing.assumed
+      ? 'Nothing is graded yet, so this is what you are standing at — press to add what the course is graded on'
+      : `${standing.pct}% · ${standing.letter} · ${standing.points} of 4 — ${standing.marked} of ${standing.of} items have a score, the rest counted as full marks`;
   };
 
   // ============================================================
@@ -394,14 +396,24 @@
   const standingOf = course => {
     const list = marksOf(course);
     const weight = list.reduce((s, i) => s + (Number(i.weight) || 0), 0);
-    if (!list.length || weight <= 0) return null;
+
+    // A course with nothing in it yet stands at the top, like an item with
+    // no score: the reading begins at A+ and comes down as real marks
+    // arrive. It is marked `assumed` because nothing here was measured —
+    // the term average leaves such a course out of its sum rather than
+    // counting four points nobody earned
+    if (!list.length || weight <= 0) {
+      const [, letter, points] = gradeOf(100);
+      return { pct: 100, letter, points, weight: 0, earned: 0, marked: 0, of: list.length, assumed: true };
+    }
+
     const earned = list.reduce((s, i) => s + earnedOf(i), 0);
     // Over every weight, not only the marked ones, because the unmarked
     // are already counted as full above
     const pct = (earned / weight) * 100;
     const [, letter, points] = gradeOf(pct);
     return { pct: Math.round(pct * 10) / 10, letter, points, weight, earned,
-             marked: list.filter(isGraded).length, of: list.length };
+             marked: list.filter(isGraded).length, of: list.length, assumed: false };
   };
 
   // ============================================================
@@ -675,8 +687,12 @@
     }));
   };
 
+  // A course with no items of its own is out of the sum, not a four in it:
+  // its A+ is an assumption on the card, and an assumption must not be
+  // averaged with marks somebody actually earned
   const refreshTermGpa = () => {
-    const graded = living().map(c => ({ s: standingOf(c), credits: Number(c.credits) || 0 })).filter(x => x.s && x.credits > 0);
+    const graded = living().map(c => ({ s: standingOf(c), credits: Number(c.credits) || 0 }))
+      .filter(x => x.s && !x.s.assumed && x.credits > 0);
     if (!graded.length) { termGpa.textContent = ''; return; }
     const hours = graded.reduce((s, x) => s + x.credits, 0);
     const points = graded.reduce((s, x) => s + x.s.points * x.credits, 0);

@@ -724,6 +724,41 @@
       later();
     },
 
+    // ============================================================
+    // # ✅ 🧩  A WHOLE PART AT ONCE
+    // # 🔤 JavaScript
+    // # 🎯 Ticks every row of one part, or clears every one of them, and
+    // #    says how many actually changed
+    // # 🔗 ONE WRITE AND NOT FORTY-FOUR. Marking a row at a time through
+    // #    the single-row door would push the save back by its own delay
+    // #    on every row, so a part of a hundred would hold the file open
+    // #    for as long as the loop ran and send it all in one go at the
+    // #    end anyway — with a hundred status changes flickering past on
+    // #    the way.
+    // #
+    // #    The last answer is kept, exactly as the single-row door keeps
+    // #    it: ticking a part off must not throw away how its questions
+    // #    went in the last exam
+    // ============================================================
+    markAll: (sectionId, on) => {
+      if (!open) return 0;
+      const section = open.content.sections.find(s => s.id === sectionId);
+      if (!section) return 0;
+      let moved = 0;
+      section.rows.filter(r => !r.deleted).forEach(row => {
+        const was = open.state.marks[row.id] || {};
+        if ((was.on === true) === Boolean(on)) return;
+        open.state.marks[row.id] = { on: Boolean(on), at: now(),
+                                     was: was.was ?? null, when: was.when ?? null };
+        moved++;
+      });
+      if (!moved) return 0;
+      stateDirty = true;
+      tellStatus('waiting');
+      later();
+      return moved;
+    },
+
     // Which part of the chapter is on the paper, what parts there are,
     // and the way to start another one. The counts are read from the
     // rows themselves every time: a part that kept its own tally would

@@ -1332,6 +1332,16 @@
     const ch = c && alive(c).find(h => h.id === openChapter);
     if (!c || !ch || loading) return;
 
+    // ============================================================
+    // THE LATCH IS LIFTED WHATEVER HAPPENS
+    //
+    // It is here so two chapters are not opened at once. But a read
+    // that never comes back — a tab the browser has frozen, a network
+    // that neither answers nor refuses — used to leave it down for
+    // good, and from then on EVERY press on a chapter tab did nothing
+    // at all, silently, until the page was loaded again. A latch with
+    // no way up is worse than no latch
+    // ============================================================
     loading = true;
     body.textContent = '';
     const wait = document.createElement('p');
@@ -1339,8 +1349,14 @@
     wait.textContent = 'Opening the chapter…';
     body.append(wait);
 
-    const opened = await window.MyTermChapterStore.open(keep.live(), c, ch).catch(() => null);
-    loading = false;
+    let opened = null;
+    try {
+      opened = await window.MyTermChapterStore.open(keep.live(), c, ch);
+    } catch {
+      opened = null;
+    } finally {
+      loading = false;
+    }
 
     if (!opened) {
       sayTrouble('Could not read this chapter from your Drive. Nothing was lost — what is in it is still there.');
@@ -1356,6 +1372,10 @@
     // it is learnt — it showed an empty row of parts and a dash
     drawTabs();
     drawRows();
+    // The books on the left belong to the chapter, so they change with
+    // it. Left alone, a reader moving from one chapter to the next read
+    // their new summary beside the old chapter's pages
+    if (window.MyTermSourcePane?.isOpen?.()) window.MyTermSourcePane.redraw();
   }
 
   const openOne = id => {

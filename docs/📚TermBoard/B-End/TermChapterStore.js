@@ -742,6 +742,22 @@
     // and a page that cannot tell them apart will offer to start again
     // over work that is sitting safely in Drive
     open: async (wholeBoard, course, chapter) => {
+      // ============================================================
+      // WHAT IS NOT YET WRITTEN DOWN IS WRITTEN DOWN FIRST
+      //
+      // Everything typed here is saved a moment after the typing stops.
+      // Opening another chapter used to clear the two marks that say
+      // "this has not been saved" and walk away — so a tick, a word, a
+      // place, anything done in the second before the reader pressed
+      // the next chapter's tab was gone, with nothing anywhere saying
+      // so. It cost twenty links while this was being built, and those
+      // could be made again; a reader's sentence cannot.
+      //
+      // The wait is the length of one small write, and only when there
+      // is something to write
+      // ============================================================
+      await push().catch(() => {});
+
       board = wholeBoard;
       open = null;
       chosen = null;

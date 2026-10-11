@@ -3,12 +3,16 @@
 // # 🔤 JavaScript
 // # 🎯 The list of a course's sources, the file each one is, and the way
 // #    one is added, renamed or taken away
-// # 🔗 A SOURCE BELONGS TO THE COURSE AND NOT TO THE CHAPTER, and that
-// #    is the whole shape of this file. A textbook is one book for all
-// #    fourteen chapters: held on the chapter it would be sent up
-// #    fourteen times, sit in Drive fourteen times, and be downloaded
-// #    again every time the reader moved to the next chapter. Held on
-// #    the course it is sent once and every chapter opens the same file.
+// # 🔗 THE LIST IS THE COURSE'S AND EACH BOOK NAMES ITS CHAPTER, and
+// #    that is the whole shape of this file. The LIST is one per course
+// #    because a textbook held on the chapter would be sent up fourteen
+// #    times, sit in Drive fourteen times, and be downloaded again every
+// #    time the reader moved on. But a BOOK is not the course's: a term
+// #    of five chapters has five chapter books and five chapter banks in
+// #    the one list, and asked for "the book" the list hands back the
+// #    first — so every chapter showed chapter one's pages, with the open
+// #    chapter's own marks drawn on them. So each one says where it
+// #    belongs, and an empty `chapter` means the whole course.
 // #
 // #    And the bytes are NEVER in the JSON. The list is a few hundred
 // #    letters and is read on every open; a book is forty megabytes and
@@ -31,6 +35,21 @@
     id: typeof s.id === 'string' ? s.id : 's-' + Math.random().toString(36).slice(2, 8),
     name: typeof s.name === 'string' ? s.name : 'Untitled',
     kind: KINDS.includes(s.kind) ? s.kind : 'book',
+    // ============================================================
+    // WHICH CHAPTER THIS BOOK BELONGS TO
+    //
+    // The list is the COURSE's, because a course is where Drive keeps
+    // one folder and one list — but a book belongs to a CHAPTER. A term
+    // of five chapters has five books and five banks in one list, and
+    // without this the pane shows whichever came first for every
+    // chapter alike: the reader opens chapter six and is handed chapter
+    // one's book, with chapter six's marks drawn on its pages.
+    //
+    // EMPTY MEANS THE WHOLE COURSE, and that is the right answer for
+    // everything written before this field existed, and for a book that
+    // really does serve every chapter: it shows up wherever you are
+    // ============================================================
+    chapter: typeof s.chapter === 'string' ? s.chapter : '',
     fileId: typeof s.fileId === 'string' ? s.fileId : null,
     size: Math.max(0, Number(s.size) || 0),
     // Crossed out, not torn out, for the reason everything here is: the
@@ -157,7 +176,62 @@
     }
 
     open = { course, listId, list: shapeList(doc) };
+
+    // Everything sent up before a book could say which chapter it was
+    // for. Read off their names now, once, and written back
+    let settled = 0;
+    open.list.sources.forEach(s => { if (!s.chapter && settleChapter(s)) settled++; });
+    if (settled) wrote();
+
     return open;
+  };
+
+  // ============================================================
+  // # 🔢 📑  WHICH CHAPTER A BOOK IS FOR, READ OFF ITS NAME
+  // # 🔤 JavaScript
+  // # 🎯 Ten books were sent up before a book could say which chapter it
+  // #    belonged to, and every one of them says it in its own name:
+  // #    "MIS250 Ch3 TB", "MIS250-Ch4-Book"
+  // # 🔗 THE NAME IS THE CONTROL, and that is the point of doing it this
+  // #    way rather than with a button. A book sitting under the wrong
+  // #    chapter is moved by renaming it — which the head of the column
+  // #    already does, with one press — instead of by a control added
+  // #    for the one week after a repair and then never used again.
+  // #
+  // #    A NAME WITH NO CHAPTER IN IT MEANS THE WHOLE COURSE, and so
+  // #    does a name with two of them. Nothing is guessed at: where the
+  // #    name does not say, the book goes on every chapter's shelf,
+  // #    which is exactly where it was before any of this
+  // ============================================================
+  const chapterNumberIn = name => {
+    const found = new Set();
+    const re = /ch(?:apter)?\s*-?\s*(\d{1,2})(?!\d)/gi;
+    let hit;
+    while ((hit = re.exec(String(name || '')))) found.add(Number(hit[1]));
+    return found.size === 1 ? [...found][0] : null;
+  };
+
+  const settleChapter = source => {
+    const was = source.chapter;
+    const want = chapterNumberIn(source.name);
+    source.chapter = '';
+
+    if (want !== null) {
+      const fits = (open?.course.chapters || [])
+        .filter(h => h && !h.deleted && chapterNumberIn(h.name) === want);
+      // AN EMPTY CHAPTER IS NOT WHERE A BOOK LIVES. Two tabs can carry
+      // the same number — a half-made one left behind beside the real
+      // one — and the one with rows in it is the real one. Measured,
+      // not guessed: a tab with no parts and no rows has never been
+      // read from a book
+      const real = fits.filter(h => (h.rows || 0) > 0 || (h.parts || []).length > 0);
+      const only = real.length === 1 ? real[0] : (fits.length === 1 ? fits[0] : null);
+      if (only) source.chapter = only.id;
+    }
+
+    if (source.chapter === was) return false;
+    source.updatedAt = now();
+    return true;
   };
 
   // The folder the books themselves go in. Made on the first upload and
@@ -185,6 +259,25 @@
 
     all: () => living().map(s => ({ ...s })),
     of: kind => living().filter(s => s.kind === kind).map(s => ({ ...s })),
+
+    // What this chapter has, and what the whole course has. The second
+    // is not a leftover: a single book that covers every chapter is a
+    // real thing, and it belongs on every chapter's shelf
+    forChapter: chapterId => living()
+      .filter(s => !s.chapter || s.chapter === chapterId)
+      .map(s => ({ ...s })),
+
+    // Said out loud rather than guessed at: a book can be moved to the
+    // chapter it belongs to without being sent up a second time
+    belongsTo: (id, chapterId) => {
+      if (!open) return false;
+      const source = open.list.sources.find(s => s.id === id);
+      if (!source) return false;
+      source.chapter = typeof chapterId === 'string' ? chapterId : '';
+      source.updatedAt = now();
+      wrote();
+      return true;
+    },
     one: id => { const s = living().find(x => x.id === id); return s ? { ...s } : null; },
 
     // ============================================================
@@ -214,6 +307,11 @@
         const source = shapeOne({
           id: 's-' + Math.random().toString(36).slice(2, 8),
           name: file.name.replace(/\.pdf$/i, ''),
+          // A book added while a chapter is open is THAT chapter's book.
+          // It is the only moment anyone knows which chapter it is for,
+          // and asking would be asking a reader a question they have
+          // already answered by being there
+          chapter: window.MyTermChapterStore?.openId?.() || '',
           kind: sort, fileId, size: file.size, deleted: false, updatedAt: now()
         });
         open.list.sources.push(source);
@@ -255,6 +353,11 @@
       if (!source || !want || source.name === want) return false;
       source.name = want;
       source.updatedAt = now();
+      // The name says which chapter it is for, so a new name is a new
+      // answer — including "no chapter at all", which puts it back on
+      // every shelf. This is how a book is moved: there is no second
+      // control to learn, and no way to rename it into a lie
+      settleChapter(source);
       wrote();
       return true;
     },

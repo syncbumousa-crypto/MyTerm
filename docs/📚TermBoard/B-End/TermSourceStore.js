@@ -205,7 +205,12 @@
   // ============================================================
   const chapterNumberIn = name => {
     const found = new Set();
-    const re = /ch(?:apter)?\s*-?\s*(\d{1,2})(?!\d)/gi;
+    // Written as (?:chapter|ch) and not as ch(?:apter)? on purpose: the
+    // second spells the three letters "ch(" , and the site's own guard
+    // reads a file looking for names it calls without defining. It saw
+    // a call to a function called "ch". A pattern that reads as code to
+    // anything that looks at the file is a pattern written wrong
+    const re = /(?:chapter|ch)\s*-?\s*(\d{1,2})(?!\d)/gi;
     let hit;
     while ((hit = re.exec(String(name || '')))) found.add(Number(hit[1]));
     return found.size === 1 ? [...found][0] : null;

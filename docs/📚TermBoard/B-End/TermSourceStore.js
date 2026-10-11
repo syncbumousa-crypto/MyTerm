@@ -226,10 +226,16 @@
         .filter(h => h && !h.deleted && chapterNumberIn(h.name) === want);
       // AN EMPTY CHAPTER IS NOT WHERE A BOOK LIVES. Two tabs can carry
       // the same number — a half-made one left behind beside the real
-      // one — and the one with rows in it is the real one. Measured,
-      // not guessed: a tab with no parts and no rows has never been
-      // read from a book
-      const real = fits.filter(h => (h.rows || 0) > 0 || (h.parts || []).length > 0);
+      // one — and the one with ROWS in it is the real one.
+      //
+      // ROWS AND NOT PARTS, and that was measured the hard way: the tab
+      // left behind in the reader's own course has two parts in it and
+      // not one row. A part is a box somebody made and may never have
+      // filled; a row is a term read out of a book. Counting parts
+      // called the empty tab real, the two chapters tied, and both of
+      // chapter two's files stayed on every shelf — the very thing
+      // this is here to end
+      const real = fits.filter(h => (h.rows || 0) > 0);
       const only = real.length === 1 ? real[0] : (fits.length === 1 ? fits[0] : null);
       if (only) source.chapter = only.id;
     }

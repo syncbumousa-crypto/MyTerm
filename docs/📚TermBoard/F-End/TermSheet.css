@@ -1,0 +1,171 @@
+/* ============================================================
+   # 🎨 📄  THE LOOK OF A SHEET
+   # 🔤 CSS
+   # 🎯 The ninety-two rules that ARE a law sheet and a practice card:
+   #    the box, its number, the fraction, the coloured letters, the
+   #    table of givens, the financial statement, the journal entry
+   # 🔗 TAKEN FROM THE READER'S OWN STYLESHEET, NOT WRITTEN AGAIN.
+   #    Every one of these pages was drawn against these rules; a
+   #    second hand's idea of what they should look like would be a
+   #    different page wearing the same words.
+   #
+   #    AND EVERY SELECTOR IS HELD UNDER .msheet. Their stylesheet is
+   #    a whole application's and uses plain names -- .ask, .n, .tot --
+   #    that mean one thing on a sheet and another on this board. Held
+   #    under the sheet, they cannot reach a single thing outside it
+   ============================================================ */
+.msheet { color-scheme: dark; }
+.msheet .cf-op {background:#d0e0e3; padding:0 2px; border-radius:2px;}
+.msheet .cf-inv {background:#fce5cd; padding:0 2px; border-radius:2px;}
+.msheet .cf-fin {background:#d9d2e9; padding:0 2px; border-radius:2px;}
+.msheet .cf-in {color:#38761d; font-weight:700;}
+.msheet .cf-out {color:#cc0000; font-weight:700;}
+.msheet .eqPage {display:flex; flex-direction:column; align-items:center; justify-content:center; gap:calc(15px * var(--eqScale,1)); height:100%; --eqScale:1;}
+.msheet .eqHead {font-size:calc(13px * var(--fs)); font-weight:700; color:#1c4e9c; text-align:center; letter-spacing:.2px; margin-bottom:3px;}
+.msheet .lawBox {position:relative; width:100%; max-width:600px; /* الحشوةُ الجانبية تحجز شريطَ الزرّين (المصدر والشرح) في الزاوية — وهي متساويةٌ على الجانبين فيبقى مركزُ المعادلة مركزَ المربّع. وبدونها تمرّ المعادلةُ الطويلة تحت الزرّين (0.3 في ورقة التأصيل، 2026-09-30). */ padding:calc(17px * var(--eqScale,1)) 46px calc(14px * var(--eqScale,1)); border:1.6px solid #1c4e9c; border-radius:9px; background:#eef3fb; text-align:center; font-size:calc(14px * var(--fs) * var(--eqScale,1)); line-height:1.35;}
+.msheet .lawBox.lawDerived {border-style:dashed; background:#f3f7ee; border-color:#4a7a2c;}
+.msheet .lawBox.lawDerived .lawNo {background:#4a7a2c;}
+.msheet .lawNo {position:absolute; top:-9px; left:16px; background:#1c4e9c; color:#fff; border-radius:10px; padding:1px 8px; font-size:calc(10px * var(--fs)); font-weight:700; letter-spacing:.4px;}
+.msheet .lawEq {display:flex; flex-wrap:nowrap; align-items:baseline; justify-content:center; gap:5px; white-space:nowrap;}
+.msheet .lawBox[data-kind="map"] .lawEq, .msheet .lawBox[data-kind="list"] .lawEq {flex-wrap:wrap; white-space:normal; row-gap:6px;}
+.msheet .lawEq .frac {align-self:center;}
+.msheet .lawEq + .lawEq {margin-top:10px;}
+.msheet .lawGrid {display:grid; grid-template-columns:repeat(var(--cols,7), auto); justify-content:center; align-items:baseline; column-gap:6px; row-gap:calc(9px * var(--eqScale,1)); white-space:nowrap;}
+.msheet .lawGrid .lawEq {display:contents;}
+.msheet .lawGrid .lc {text-align:center;}
+.msheet .lawGrid .lc.lcOp {padding:0 2px;}
+.msheet .lawGrid .lawEq.lgAlt .lc {opacity:.86;}
+.msheet .lawIco {display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;}
+.msheet .lawIco svg {width:100%; height:100%; display:block;}
+.msheet .tt.lhs {border:1.4px solid currentColor; border-radius:7px; padding:2px 8px 3px; background:rgba(255,255,255,.55);}
+.msheet .lhsRow {display:inline;}
+.msheet .lhs .lawIco {width:1.05em; height:1.05em; margin-inline-end:.34em;}
+.msheet .v-a {color:#1c4e9c;}
+.msheet .v-b {color:#b3261e;}
+.msheet .v-c {color:#2e7d32;}
+.msheet .v-d {color:#8a5a00;}
+.msheet .v-e {color:#6a1b9a;}
+.msheet .v-f {color:#00695c;}
+.msheet .v-g {color:#4e342e;}
+.msheet .eqPage[data-tree] {gap:calc(3px * var(--eqScale,1));}
+.msheet .eqPage[data-tree] .lawBox {max-width:700px;}
+.msheet .treeArm {position:relative; width:2px; height:calc(30px * var(--eqScale,1)); background:linear-gradient(#9db4d6, #9db4d6); flex:0 0 auto;}
+.msheet .treeArm::after {content:''; position:absolute; bottom:-1px; left:-4px; border:5px solid transparent; border-top-color:#9db4d6;}
+.msheet .treeLbl {position:absolute; top:50%; inset-inline-start:10px; transform:translateY(-50%); white-space:nowrap; font-size:calc(9.5px * var(--fs) * var(--eqScale,1)); color:#6b7f9e; font-weight:600;}
+.msheet .treeEnd {height:calc(24px * var(--eqScale,1));}
+.msheet .eqRule {display:flex; align-items:center; gap:10px; width:100%; max-width:700px; font-size:calc(11.5px * var(--fs) * var(--eqScale,1)); font-weight:700; color:#1c4e9c; margin:calc(6px * var(--eqScale,1)) 0 calc(2px * var(--eqScale,1)); flex:0 0 auto;}
+.msheet .eqRule::before, .msheet .eqRule::after {content:''; flex:1 1 auto; height:1px; background:#c3d0e4;}
+.msheet .taxTag {display:inline-flex; align-items:center; justify-content:center; gap:3px; font-size:calc(8.5px * var(--fs) * var(--eqScale,1)); font-weight:700; padding:1px 6px 2px; border-radius:999px; white-space:nowrap; justify-self:center; margin-bottom:calc(3px * var(--eqScale,1));}
+.msheet .taxTag .lawIco {width:1em; height:1em;}
+.msheet .taxTag.yes {background:#fdeceb; color:#9c3b34; border:1px solid #e3b6b2;}
+.msheet .taxTag.no {background:#eaf3ec; color:#2e6b4f; border:1px solid #b3d4c0;}
+.msheet .srcNote {font-size:calc(8.5px * var(--fs) * var(--eqScale,1)); line-height:1.35; color:#6b7f9e; white-space:normal; max-width:18ch; text-align:center; justify-self:center;}
+.msheet .srcNote b {color:#4a5568;}
+.msheet .srcLink {height:calc(9px * var(--eqScale,1)); margin:calc(2px * var(--eqScale,1)) 8% 0; border:1.4px solid #9db4d6; border-bottom:none; border-radius:3px 3px 0 0;}
+.msheet .lawNote {display:block; margin-top:calc(10px * var(--eqScale,1)); font-size:calc(10.5px * var(--fs) * var(--eqScale,1)); color:#3a3a3a;}
+.msheet .tt small.ttNote {font-size:.55em; font-style:italic; opacity:1; color:#6b7f9e; margin-top:2px;}
+.msheet .frac {display:inline-flex; flex-direction:column; align-items:stretch; vertical-align:middle; margin:0 3px; line-height:1.2;}
+.msheet .frac .fnum, .msheet .frac .fden {display:block; text-align:center;}
+.msheet .frac .fnum {padding:0 8px 3px;}
+.msheet .frac .fden {padding:3px 8px 0; border-top:1.6px solid currentColor;}
+.msheet .qcard {border:1px solid #ccc; border-radius:6px; margin-bottom:12px;}
+.msheet .qcard .qh {background:#f3f3f3; font-weight:700; font-size:calc(12px * var(--fs)); color:#333; padding:5px 10px; border-bottom:1px solid #ccc;}
+.msheet .qcard .qb {padding:9px 12px; font-size:calc(13px * var(--fs));}
+.msheet .qcard hr {border:none; border-top:2px solid #cc0000; margin:7px 0; opacity:.7;}
+.msheet .qcard {cursor:pointer;}
+.msheet .qcard[data-qmode="full"] .qSimple, .msheet .qcard[data-qmode="full"] .sSimple {display:none;}
+.msheet .qcard[data-qmode="simple"] .qFull, .msheet .qcard[data-qmode="simple"] .sFull {display:none;}
+.msheet .qSwitch {float:right; font-size:calc(9.5px * var(--fs)); font-weight:600; opacity:.6;}
+.msheet .qFull {text-align:justify;}
+.msheet .qSimple .enOnly {display:block; direction:ltr; text-align:left;}
+.msheet .qSimple .arOnly {display:block; direction:rtl; text-align:right;}
+.msheet .qFull .enOnly {display:block; direction:ltr; text-align:justify;}
+.msheet .qFull .arOnly {display:block; direction:rtl; text-align:justify;}
+.msheet .ansToggle {display:inline-block; cursor:pointer; user-select:none; font-size:calc(11px * var(--fs)); font-weight:700; color:#cc0000; padding:3px 10px; border:1px dashed #cc0000; border-radius:6px;}
+.msheet .qcard[data-ans="hidden"] .ansBody, .msheet .qcard[data-ans="hidden"] .aHide {display:none;}
+.msheet .qcard[data-ans="shown"] .aShow {display:none;}
+.msheet .ansBody {margin-top:9px;}
+.msheet .ansBody .enOnly {display:block; direction:ltr; text-align:left;}
+.msheet .ansBody .arOnly {display:block; direction:rtl; text-align:right;}
+.msheet .ansBody .stepHead {font-weight:700;}
+.msheet .ask {color:#cc0000; font-weight:700;}
+.msheet .given {display:block; margin-bottom:6px;}
+.msheet .qTableWrap {overflow-x:auto; margin:10px 0 2px; direction:ltr;}
+.msheet .qTableWrap table.qTable {margin:0;}
+.msheet table.qTable {border-collapse:collapse; margin:10px 0 2px; font-size:calc(11.5px * var(--fs)); direction:ltr; font-variant-numeric:tabular-nums; table-layout:auto;}
+.msheet table.qTable caption {white-space:normal; overflow-wrap:anywhere;}
+.msheet table.qTable tr.qTSec th {border-top:2px solid #9aa0ab;}
+.msheet table.qTable th, .msheet table.qTable td {border:1px solid #d3d6dc; padding:3px 10px; text-align:left;}
+.msheet table.qTable td {white-space:nowrap;}
+.msheet table.qTable th {white-space:normal; overflow-wrap:anywhere;}
+.msheet table.qTable th {background:#eef0f4; font-weight:700;}
+.msheet table.qTable tbody tr:nth-child(even) td {background:#f7f8fa;}
+.msheet .lawBox {position:relative;}
+.msheet .lawBox > .epJump {position:absolute; top:6px; inset-inline-end:6px;}
+.msheet .lawBox > .srcJump {position:absolute; top:6px; inset-inline-end:32px;}
+.msheet .qh .srcJump, .msheet .qh .epJump, .msheet .qh .calcJump {margin-inline-start:8px; vertical-align:middle;}
+.msheet .qcard:hover .calcJump {opacity:1;}
+.msheet .lawBox:hover > .srcJump, .msheet .lawBox:hover > .epJump, .msheet .qcard:hover .srcJump, .msheet .qcard:hover .epJump {opacity:1;}
+
+/* ============================================================
+   THE LANGUAGE LIVES ON THE SHEET, NOT ON THE PAGE
+   Their stylesheet hangs this on <body data-rlang>, because there a
+   sheet is the whole screen. Here a sheet shares the board with a
+   summary and a book, so the sheet itself carries which language it
+   is showing -- and two of them could even differ
+   ============================================================ */
+.msheet[data-rlang="en"] .arOnly { display: none !important; }
+.msheet[data-rlang="ar"] .enOnly { display: none !important; }
+
+/* ============================================================
+   THE SHEET IS A FIXED SHEET, AND THE SCALE IS PUT ON IT BY HAND
+   --eqScale is measured after drawing by the paper's own fit pass;
+   it is declared here so a sheet drawn before the measuring still
+   has a value and does not collapse
+   ============================================================ */
+/* ============================================================
+   A LAW SHEET IS A SHEET: IT HAS A SIZE, AND IT KEEPS IT
+   Their .eqPage is `height:100%` because in their app it fills an A4
+   page. Dropped onto a board that grows with its content, `100%` of
+   nothing is nothing -- so the frame is given here, as the thing it
+   is: a page of paper, upright, never taller than the window.
+   And --fs is their own type knob, which these rules multiply by;
+   undeclared it reads as nothing and every law box collapses
+   ============================================================ */
+.msheet { --eqScale: 1; --fs: 1; overflow-x: hidden; }
+.msheet-law { aspect-ratio: 1 / 1.414; max-height: 86vh;
+              max-width: min(980px, calc(86vh / 1.414)); }
+
+/* The one control a sheet DOES answer: a card folds its solution away */
+.msheet .qcard[data-ans="hidden"] .ansBody { display: none; }
+.msheet .qcard[data-ans="hidden"] .aHide { display: none; }
+.msheet .qcard[data-ans="shown"]  .aShow { display: none; }
+.msheet .qcard .ansToggle { cursor: pointer; user-select: none; }
+
+/* and the card's two wordings: the book's, or the short one */
+.msheet .qcard[data-say="simple"] .qFull   { display: none; }
+.msheet .qcard[data-say="simple"] .sSimple { display: none; }
+.msheet .qcard:not([data-say="simple"]) .qSimple { display: none; }
+.msheet .qcard:not([data-say="simple"]) .sFull   { display: none; }
+.msheet .qcard .qSwitch { cursor: pointer; user-select: none; }
+
+/* ============================================================
+   THE WRAPPER THIS BOARD PUTS AROUND EACH SHEET
+   A sheet arrives as a finished page; what is added here is only
+   where it sits on this board and the one thing it did not have
+   before — a box to tick when you can do it
+   ============================================================ */
+.msheet { position: relative; margin: 0 auto 18px; max-width: 980px;
+          background: var(--paper, #16171a); border: 1px solid #2f3037;
+          border-radius: 10px; padding: 18px 20px; }
+.msheet-law { border-style: solid; }
+.msheet-card { border-style: dashed; }
+
+.msheet-tick { position: absolute; inset-inline-end: 10px; top: 10px;
+               width: 20px; height: 20px; border-radius: 5px;
+               border: 1.5px solid #4a4c55; background: transparent;
+               cursor: pointer; padding: 0; }
+.msheet-tick.on { background: #2f7d4f; border-color: #2f7d4f; }
+.msheet-tick.on::after { content: ''; position: absolute; inset: 3px 4px 5px 4px;
+                         border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+                         transform: rotate(-45deg); }

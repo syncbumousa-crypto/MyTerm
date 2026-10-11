@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // # 📚 🗄️  THE TWO FILES OF A CHAPTER
 // # 🔤 JavaScript
 // # 🎯 Nothing here shows on screen. It gives every chapter a folder of
@@ -315,13 +315,30 @@
   // SECTION and not on the rows — because a bank is a bank whether it
   // has three questions in it or none, and a part with no rows is still
   // a part waiting to be written
-  const KINDS = ['part', 'tb'];
+  // ============================================================
+  // A THIRD KIND: A STACK OF SHEETS
+  //
+  // A part is read and a bank is answered — and a RULES part is
+  // neither. It holds drawn pages: a law in its box, a practice card
+  // with its folded solution. They are not rows and they are not in
+  // this file at all; they live in the chapter's fourth file, and the
+  // section here only says which stack of them it shows (`group`).
+  //
+  // Paced by the card and not by the row: one problem is a sitting of
+  // work whatever its length, the same reason a bank is paced by the
+  // question
+  // ============================================================
+  const KINDS = ['part', 'tb', 'rules'];
 
   const shapeSections = list => Array.isArray(list)
     ? list.filter(s => s && typeof s === 'object').map(s => ({
         id: typeof s.id === 'string' ? s.id : 'terms',
         name: typeof s.name === 'string' ? s.name : 'Terms',
         kind: KINDS.includes(s.kind) ? s.kind : 'part',
+        // Which stack of sheets this part shows. Empty for every other
+        // kind, and NAMED HERE or it is dropped on the next read —
+        // and a rules part that forgets its stack shows nothing at all
+        group: typeof s.group === 'string' ? s.group : '',
         per: PACES.includes(s.per) ? s.per : 'row',
         each: Math.max(0, Number(s.each) || 0),
         // A PART IS CROSSED OUT, NOT TORN OUT, for the same reason a row
@@ -854,7 +871,7 @@
       return livingSections().map(s => {
         const living = s.rows.filter(r => !r.deleted);
         return {
-          id: s.id, name: s.name, kind: s.kind, per: s.per, each: s.each, rows: living.length,
+          id: s.id, name: s.name, kind: s.kind, group: s.group, per: s.per, each: s.each, rows: living.length,
           written: living.filter(r => hasWords(r.term || r.termAr) && hasWords(r.text || r.textAr)).length,
           learnt: living.filter(r => open.state.marks[r.id]?.on === true).length,
           good: living.filter(r => said.get(r.id) === 'ok').length,
@@ -924,13 +941,17 @@
 
     useSection: id => { chosen = id; },
 
-    addSection: (name, kind) => {
+    addSection: (name, kind, group) => {
       if (!open) return null;
       const sort = KINDS.includes(kind) ? kind : 'part';
       const count = livingSections().filter(s => s.kind === sort).length + 1;
-      const title = String(name || '').trim() || (sort === 'tb' ? 'TB ' + count : 'Part ' + count);
+      const title = String(name || '').trim() ||
+        (sort === 'tb' ? 'TB ' + count : sort === 'rules' ? 'Rules ' + count : 'Part ' + count);
       const section = { id: 'p-' + Math.random().toString(36).slice(2, 8), name: title,
-                        kind: sort, per: sort === 'tb' ? 'ask' : 'row', each: 0,
+                        kind: sort, group: sort === 'rules' ? String(group || '') : '',
+                        // a bank is paced by the question and a stack of
+                        // sheets by the card: neither is read by the row
+                        per: sort === 'part' ? 'row' : 'ask', each: 0,
                         deleted: false, updatedAt: now(), rows: [] };
       open.content.sections.push(section);
       chosen = section.id;

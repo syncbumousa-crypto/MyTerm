@@ -3690,3 +3690,86 @@ tr:hover .crownote { opacity: 1; }
 }
 
 .cnote-dir { font-size: 15px; font-weight: 700; }
+
+/* ============================================================ */
+/* # 📖 ✍️  WHAT AN EXPLANATION LOOKS LIKE */
+/* # 🔤 CSS */
+/* # 🎯 The shapes a long explanation is written with: the one-line key */
+/* #    it opens on, the trap from the bank, a figure from the book, a */
+/* #    small table, and the place an interactive piece stood */
+/* # 🔗 EVERY SIZE HERE IS A SHARE OF THE BODY'S ROOT, never a pixel */
+/* #    count — the body is scaled by one number and anything written */
+/* #    as a share moves with it for nothing. The class names are the */
+/* #    reader's own, unchanged, so an explanation carried over from */
+/* #    their pages is drawn by the same names it was written with */
+/* ============================================================ */
+.cep-said { line-height: 1.85; }
+
+.cep-said p { margin: 0 0 .75em; }
+.cep-said b { font-weight: 700; }
+
+/* The one line the whole thing opens on */
+.cep-said .epKey {
+  margin: 0 0 .85em;
+  padding: .6em .8em;
+  border-radius: .5em;
+  border-inline-start: .22em solid var(--blue);
+  background: rgba(91, 141, 239, .1);
+}
+
+/* What the bank catches a reader out on */
+.cep-said .epTrap {
+  margin: .85em 0;
+  padding: .6em .8em;
+  border-radius: .5em;
+  border-inline-start: .22em solid var(--orange);
+  background: rgba(216, 151, 60, .1);
+}
+
+.cep-said figure { margin: 1em 0; }
+.cep-said figcaption { margin-top: .4em; font-size: .88em; opacity: .85; }
+.cep-said .epFigSrc {
+  display: inline-block;
+  margin-inline-end: .4em;
+  padding: .1em .45em;
+  border-radius: .35em;
+  font-size: .82em;
+  background: rgba(127, 127, 127, .18);
+}
+
+.cep-said .epPhotoRow { display: flex; flex-wrap: wrap; gap: .8em; }
+.cep-said .epPhotoRow figure { flex: 1 1 12em; margin: 0; }
+
+/* A picture whose file is no longer in Drive says so rather than
+   showing the browser's broken-image mark, which says nothing */
+.cep-said img.cep-gone { display: none; }
+.cep-said img.cep-gone + figcaption::before { content: '[the picture is not in your Drive] '; opacity: .7; }
+
+.cep-said .epTbl {
+  width: 100%;
+  margin: 1em 0;
+  border-collapse: collapse;
+  font-size: .94em;
+}
+
+.cep-said .epTbl th, .cep-said .epTbl td {
+  padding: .4em .6em;
+  border: 1px solid rgba(127, 127, 127, .35);
+  text-align: start;
+  vertical-align: top;
+}
+
+.cep-said .epTbl th { background: rgba(127, 127, 127, .14); font-weight: 700; }
+
+/* The place an interactive piece stood. Said and not silently dropped:
+   a reader who knows one was here would otherwise read the explanation
+   as having lost something */
+.cep-said .epWidget {
+  margin: 1em 0;
+  padding: .7em .9em;
+  border-radius: .5em;
+  border: 1px dashed rgba(127, 127, 127, .45);
+  font-size: .88em;
+  text-align: center;
+  opacity: .75;
+}

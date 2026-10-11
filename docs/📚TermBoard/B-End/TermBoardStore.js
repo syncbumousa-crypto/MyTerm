@@ -129,6 +129,11 @@
         folderName: typeof c.folderName === 'string' ? c.folderName : null,
         contentId: typeof c.contentId === 'string' ? c.contentId : null,
         stateId: typeof c.stateId === 'string' ? c.stateId : null,
+        // The third file: the long explanations, which are heavier than
+        // the content and read far rarer. Named here or it is dropped on
+        // the next read and a second empty one is made beside the full
+        // one — which is what happened to the sources list
+        explainId: typeof c.explainId === 'string' ? c.explainId : null,
         contentVersion: Math.max(1, Number(c.contentVersion) || 1),
         // How many rows the chapter holds and how many are learnt,
         // written here by the chapter itself when it is open. It is a

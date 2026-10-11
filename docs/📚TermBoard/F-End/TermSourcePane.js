@@ -571,9 +571,27 @@
   // ============================================================
   const draw = () => {
     if (!pane || pane.hidden) return;
-    const all = sources()?.all?.() || [];
-    const book = all.find(s => s.kind === 'book') || null;
-    const tb = all.find(s => s.kind === 'tb') || null;
+    // ============================================================
+    // THE CHAPTER'S OWN BOOKS, NOT THE COURSE'S FIRST ONES
+    //
+    // The list belongs to the course — one folder, one file — and a
+    // term of five chapters keeps ten books in it. Asked for "a book",
+    // it hands back the first, which is chapter one's; so every chapter
+    // showed chapter one's pages, with its OWN marks drawn on them. The
+    // marks were right and the pages were somebody else's.
+    //
+    // A book with no chapter of its own belongs to all of them
+    // ============================================================
+    const here = window.MyTermChapterStore?.openId?.() || '';
+    const all = sources()?.forChapter?.(here) || sources()?.all?.() || [];
+    // THE CHAPTER'S OWN OUTRANKS THE COURSE'S. Both are offered here —
+    // the chapter's book and a book that covers the whole term — and
+    // only one column exists to show one of them. Taken in list order
+    // the course-wide one would win merely by having been added first
+    const pick = kind => all.find(s => s.kind === kind && s.chapter === here)
+      || all.find(s => s.kind === kind) || null;
+    const book = pick('book');
+    const tb = pick('tb');
 
     const was = { book: shown.book?.id, tb: shown.tb?.id };
     shown = { book, tb };

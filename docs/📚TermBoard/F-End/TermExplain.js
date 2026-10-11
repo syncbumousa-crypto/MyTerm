@@ -119,8 +119,10 @@
 
   const WORDS = {
     en: { empty: 'No long explanation for this row yet.',
+          coming: 'Fetching the explanations…',
           lang: 'التبديل إلى العربية', untitled: 'This row' },
     ar: { empty: 'ما فيه شرح موسّع لهذا الصف بعد.',
+          coming: 'تُجلب الشروح…',
           lang: 'Switch to English', untitled: 'هذا الصف' }
   };
 
@@ -140,26 +142,108 @@
     return null;
   };
 
-  const draw = () => {
+  // ============================================================
+  // # 🖼️ ⬇️  A PICTURE COMES DOWN ONCE
+  // # 🔤 JavaScript
+  // # 🎯 Turns every picture named in an explanation into one on screen
+  // # 🔗 Held by file name for as long as the page lives: one figure
+  // #    serves several rows — that is the reader's own rule, "the same
+  // #    figure appears in every item it serves" — so the same picture
+  // #    is asked for again and again, and fetching it each time would
+  // #    download a chapter's figures many times over
+  // ============================================================
+  const shown = new Map();
+
+  const showPictures = async () => {
+    for (const picture of [...body.querySelectorAll('img[data-file]:not([src])')]) {
+      const name = picture.dataset.file;
+      if (!shown.has(name)) {
+        shown.set(name, window.MyTermCloud.readBlob(name)
+          .then(blob => (blob ? URL.createObjectURL(blob) : ''))
+          .catch(() => ''));
+      }
+      const where = await shown.get(name);
+      if (where) picture.src = where;
+      else picture.classList.add('cep-gone');
+    }
+  };
+
+  // What this site cannot build: the interactive pictures of the
+  // reader's own pages. Their place is kept and SAID, so a reader who
+  // knows one stood here is not left thinking the explanation is short
+  const sayWidgets = () => {
+    body.querySelectorAll('.epWidget').forEach(spot => {
+      if (spot.childNodes.length) return;
+      spot.textContent = lang === 'ar'
+        ? 'تمثيلٌ تفاعليٌّ — في صفحاتك وحدها'
+        : 'An interactive piece — on your own pages only';
+    });
+  };
+
+  const draw = async () => {
+    // Which row this drawing is for, held so the answer that comes back
+    // from Drive can be thrown away if the reader has moved on. Without
+    // it, opening three rows quickly leaves whichever file arrived last
+    // on screen, under whichever name was asked for last
+    const asked = who;
     const row = rowNow();
     const ar = lang === 'ar';
     const dir = ar ? 'rtl' : 'ltr';
 
     title.dir = dir;
     title.textContent = row
-      ? (plain(ar ? (row.termAr || row.term) : (row.term || row.termAr))
-         || plain(row.ask) || WORDS[lang].untitled)
+      ? (plain(ar ? (row.termAr || row.term) : (row.term || row.textAr))
+         || plain(row.term) || plain(row.ask) || WORDS[lang].untitled)
       : WORDS[lang].untitled;
 
     body.dir = dir;
     body.textContent = '';
+    langBtn.title = WORDS[lang].lang;
+
+    // Said while it is on its way. The file is three hundred kilobytes
+    // and arrives on the first asking only — and a window that sits
+    // blank for two seconds reads as a window with nothing in it
     const note = document.createElement('p');
     note.className = 'cep-note';
-    note.textContent = WORDS[lang].empty;
+    note.textContent = WORDS[lang].coming;
     body.append(note);
-    body.scrollTop = 0;
 
-    langBtn.title = WORDS[lang].lang;
+    const words = await wordsFor(asked);
+    if (who !== asked) return;   // the reader moved on while it came down
+
+    const said = words && (lang === 'ar' ? words.ar : words.en);
+    // One language written and not the other is not an empty
+    // explanation: it is shown in the one it has
+    const other = words && (lang === 'ar' ? words.en : words.ar);
+    body.textContent = '';
+    if (said || other) {
+      const page = document.createElement('div');
+      page.className = 'cep-said';
+      page.innerHTML = said || other;
+      page.dir = said ? dir : (lang === 'ar' ? 'ltr' : 'rtl');
+      body.append(page);
+      sayWidgets();
+      showPictures();
+    } else {
+      const none = document.createElement('p');
+      none.className = 'cep-note';
+      none.textContent = WORDS[lang].empty;
+      body.append(none);
+    }
+    body.scrollTop = 0;
+  };
+
+  // The chapter's explanations, fetched once and kept while it is open
+  const wordsFor = async rowId => {
+    const store = window.MyTermExplainStore;
+    if (!store || !rowId) return null;
+    const board = window.MyTermBoardStore?.live?.();
+    const courseId = window.MyTermCoursePage?.openId?.();
+    const course = (board?.courses || []).find(c => c.id === courseId);
+    const chapter = (course?.chapters || []).find(c => c.id === window.MyTermChapterStore?.openId());
+    if (!chapter) return null;
+    await store.ready(courseId, chapter).catch(() => null);
+    return store.of(rowId);
   };
 
   const shut = () => {

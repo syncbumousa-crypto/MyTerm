@@ -3,7 +3,7 @@
 // # 🔤 JavaScript
 // # 🎯 Thirty-three line drawings, one per idea a law can be about:
 // #    a clock, a scale, a funnel, a bank
-// # 🔗 CARRIED OVER WHOLE FROM THE READER'S OWN visuals.js, not drawn
+// # 🔗 CARRIED OVER WHOLE FROM THE READER'S OWN ملفّ المفردات البصرية, not drawn
 // #    again. Every law sheet already names one of these by its own
 // #    name (`data-icon="growth"`), and a second hand's idea of what
 // #    "growth" looks like would put a different picture on a page
@@ -16,7 +16,7 @@
 // المفردات البصرية المشتركة — أيقوناتٌ ورسومٌ مفاهيمية تصلح للفصول كلها.
 //
 // لماذا هنا لا في ملفّ الفصل؟ لأن «المصرف» مصرفٌ في كل فصل، و«الميزان» ميزان.
-// وما يخصّ قوانين فصلٍ بعينه فموضعه widgets_chN.js.
+// وما يخصّ قوانين فصلٍ بعينه فموضعه ملفّ الفصل نفسه.
 //
 // وكلها SVG خطّيّ بلون currentColor، فيأخذ لون سياقه ويعمل في الوضعين.
 // ============================================================================
@@ -68,42 +68,3 @@ window.EP_ICONS = window.EP_ICONS || {};
   I.avg       = w('<path d="M5 12h14"/><circle cx="12" cy="7" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="17" r="1.7" fill="currentColor" stroke="none"/>'); // قسمة
   I.stepUp    = w('<path d="M3 19h5v-5h5V9h5"/><path d="m15 6 3 3-3 3"/><path d="M18 9h1"/>');      // الدولار التالي
 })();
-
-// ---------------------------------------------------------------------------
-// الترطيب: كل عنصر عليه data-icon يُملأ بأيقونته. وغير المعروف يبقى فارغًا بهدوء
-// بدل أن يكسر الشرح.
-// ---------------------------------------------------------------------------
-function hydrateIcons(root){
-  root.querySelectorAll('[data-icon]:not(.icoReady)').forEach(el=>{
-    el.classList.add('icoReady');
-    const svg = window.EP_ICONS[el.dataset.icon];
-    if(svg) el.innerHTML = svg;
-  });
-}
-
-// ---------------------------------------------------------------------------
-// الصور الحقيقية: موضعٌ محجوز باسمٍ متّفقٍ عليه.
-// وُجد الملف ⟵ ظهرت الصورة. لم يوجد ⟵ ظهر موضعٌ يحمل عبارة البحث وزرَّ فتحها.
-// فالصورة الناقصة تبقى **مهمّةً واضحة** لا فراغًا صامتًا.
-// ---------------------------------------------------------------------------
-function hydratePhotos(root){
-  root.querySelectorAll('.epPhoto:not(.phReady)').forEach(fg=>{
-    fg.classList.add('phReady');
-    const name = fg.dataset.photo, q = fg.dataset.q || name;
-    if(!name) return;
-    const cap = fg.querySelector('figcaption');
-    const capHtml = cap ? cap.outerHTML : '';
-    const img = new Image();
-    img.alt = fg.dataset.alt || q;
-    img.onload = ()=>{ fg.innerHTML = ''; fg.appendChild(img); if(cap) fg.insertAdjacentHTML('beforeend', capHtml); };
-    img.onerror = ()=>{
-      fg.innerHTML =
-          `<div class="phSlot"><span class="phIco" data-icon="eye"></span>`
-        + `<span class="phQ">${q}</span>`
-        + `<a class="phGo" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}" target="_blank" rel="noopener">ابحث عنها</a>`
-        + `<span class="phWhere">photos/${name}.jpg</span></div>` + capHtml;
-      hydrateIcons(fg);
-    };
-    img.src = 'photos/' + name + '.jpg';
-  });
-}

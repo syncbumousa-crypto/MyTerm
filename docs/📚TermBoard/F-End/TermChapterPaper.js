@@ -1094,10 +1094,11 @@
       // #    in the middle — and the thing it opens is wanted perhaps
       // #    twice an evening.
       // #
-      // #    Two presses and not one, for the same reason the cross
-      // #    became a gear: what this opens ends in removing the row,
-      // #    and a sleeping control cannot be opened by a hand that
-      // #    missed the number cell
+      // #    ONE PRESS OPENS IT. It used to take two — one to wake it,
+      // #    one to open it — but its place is now the whole margin
+      // #    beside the row, and the reader asked for the list to come
+      // #    up the moment a finger lands there. Removing the row is
+      // #    still at the bottom of that list, a second press away
       // ============================================================
       // ============================================================
       // # 📍 📖  FROM A ROW TO ITS PLACE IN THE BOOK
@@ -1125,10 +1126,6 @@
 
       const gear = event.target.closest('[data-gear]');
       if (gear) {
-        if (!gear.classList.contains('on')) {
-          wake(gear);
-          return;
-        }
         const box = gear.getBoundingClientRect();
         showMenu(gear.dataset.gear, Math.round(box.right + 4), Math.round(box.top), true);
         // After, not before: opening a list clears the one standing, and

@@ -44,14 +44,43 @@
   // #    of themselves, and the square is full
   // ============================================================
   const level = (got, goal) => {
-    if (!(got > 0)) return -1;
-    if (!(goal > 0)) return 4;
+    if (!(goal > 0)) return got > 0 ? 4 : -1;
     const r = got / goal;
     if (r >= 1) return 4;
     if (r >= 0.75) return 3;
     if (r >= 0.5) return 2;
     if (r >= 0.25) return 1;
-    return 0;
+    return 0;                       // including nothing at all: a day missed
+  };
+
+  // ============================================================
+  // # 🕛 ⚖️  A DAY IS JUDGED BY HOW MUCH OF IT HAS GONE
+  // # 🔤 JavaScript
+  // # 🎯 How much of the day's goal is due by now, and whether the day
+  // #    may be judged at all
+  // # 🔗 TODAY IS NOT A FAILED DAY AT NINE IN THE MORNING. Judging it
+  // #    against a whole day's goal paints it red for hours before the
+  // #    reader could possibly have met it — so what is due is the
+  // #    share of the day that has passed: half of it at noon, all of
+  // #    it by midnight, and nothing asked of an empty morning.
+  // #
+  // #    AND A DAY BEFORE ANY OF THIS WAS MEASURED IS NOT A DAY YOU
+  // #    MISSED. The record begins when the engine first ran; every
+  // #    square before that would otherwise be painted red for a
+  // #    failure that was never asked of anyone
+  // ============================================================
+  const dueShare = on => {
+    if (on !== key(midnight())) return 1;
+    const n = new Date();
+    return Math.min(1, (n.getHours() * 60 + n.getMinutes()) / 1440);
+  };
+
+  let began = null;
+  const firstMeasured = () => {
+    if (began !== null) return began;
+    const list = window.MyTermDaysStore?.stats?.().list || [];
+    began = list.length ? list.map(d => d.key).sort()[0] : '';
+    return began;
   };
 
   const asHours = m => {
@@ -270,13 +299,23 @@
           // measured, the tick is said
           // ============================================================
           const got = Math.round(minutesOn(k));
-          const goal = window.MyTermPace?.goalMinutes?.() || 0;
-          const lvl = level(got, goal);
+          const whole = window.MyTermPace?.goalMinutes?.() || 0;
+          const began = firstMeasured();
+          const share = dueShare(k);
+          const due = Math.round(whole * share);
+          // A day still ahead is not judged; nor is one from before any
+          // of this was being measured; nor an empty morning
+          const judge = !ahead && began && k >= began
+                        && !(isToday && share < 0.5 && got === 0);
+          const lvl = judge ? level(got, due) : -1;
           if (lvl >= 0) cell.dataset.lvl = String(lvl);
           cell.title = `${MONTHS[walk.getMonth()]} ${walk.getDate()}`
-            + (got > 0 ? ' · ' + asHours(got) + (goal > 0 ? ' of ' + asHours(goal) : ' (no goal set)') : '')
+            + (got > 0 ? ' · ' + asHours(got) : (judge ? ' · nothing finished' : ''))
+            + (judge && whole > 0
+                ? ' of ' + asHours(due) + (isToday && share < 1 ? ' due so far today' : '')
+                : '')
             + (mark?.done ? ' · marked as worked' : '')
-            + (ahead ? ' · still ahead' : got > 0 ? '' : mark?.done ? '' : ' · nothing finished');
+            + (ahead ? ' · still ahead' : (!began || k < began) ? ' · before this was measured' : '');
           cell.onclick = () => {
             board.days = board.days || {};
             const was = board.days[k]?.done === true;
@@ -327,11 +366,12 @@
       fromBox.value = board?.term?.start || '';
       toBox.value = board?.term?.end || '';
       counted = null;
+      began = null;
       build();
     },
     // Called when the goal moves or a day is left out of the average:
     // both change what a square should say about a day whose work has
     // not changed at all
-    repaint: () => { if (!board) return; counted = null; build(); }
+    repaint: () => { if (!board) return; counted = null; began = null; build(); }
   };
 })();

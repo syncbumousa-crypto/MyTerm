@@ -3950,3 +3950,39 @@ tr:hover .crownote { opacity: 1; }
 .paceDone { color: var(--green); font-weight: 700; }
 .paceAll  { color: var(--orange); font-weight: 700; }
 .paceOf   { color: var(--dim2, #6b6d75); }
+/* A day that has not come yet wore a white ring, which read as a thing
+   picked out rather than a thing still empty. It is simply quieter than
+   the rest now -- the absence of colour already says it */
+.day.ahead { box-shadow: none; background: rgba(255, 255, 255, 0.05); }
+
+/* The courses behind one day, under its own line */
+.paceCourse { display: flex; align-items: center; gap: 8px; padding: 2px 2px 2px 22px; }
+.paceCourseName { flex: 1; font-size: 11px; color: var(--ink, #e9eaee); font-weight: 600; }
+.paceCourseSum { font: 11px ui-monospace, Consolas, monospace; color: var(--dim, #9a9ca4);
+                 font-variant-numeric: tabular-nums; }
+.paceBit { padding-inline-start: 38px; }
+
+/* The expander sits to the START of the day, so every day's switch,
+   arrow and name line up down the list */
+.paceTwist { width: 14px; height: 14px; flex: none; padding: 0; cursor: pointer;
+             border: 0; background: transparent; color: var(--dim2, #6b6d75);
+             font-size: 9px; line-height: 1; transition: transform .12s; }
+.paceTwist:hover { color: var(--ink, #e9eaee); }
+.paceTwist.open { transform: rotate(90deg); }
+
+/* ============================================================
+   THE TERM AVERAGE IS COVERED UNTIL IT IS ASKED FOR
+   A grade is the one number on this board that a reader may not want
+   on screen in a room with other people in it. It starts hidden every
+   time the page opens -- not remembered, because a choice remembered
+   is a choice made once and then forgotten about
+   ============================================================ */
+.gpaEye { width: 22px; height: 22px; flex: none; padding: 0; cursor: pointer;
+          border: 1px solid #34353b; border-radius: 6px; background: transparent;
+          color: var(--dim2, #6b6d75); display: inline-flex; align-items: center;
+          justify-content: center; margin-inline-end: 10px; }
+.gpaEye:hover { color: var(--ink, #e9eaee); border-color: #4a4c55; }
+.gpaEye svg { width: 13px; height: 13px; fill: none; stroke: currentColor;
+              stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.term-gpa.hid .gpaVal,
+.term-gpa.hid .gpaSide { filter: blur(9px); opacity: .5; user-select: none; }

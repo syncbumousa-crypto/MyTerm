@@ -922,8 +922,34 @@
     side.className = 'gpaSide';
     side.append(bars, scale);
 
+    // ============================================================
+    // THE AVERAGE IS COVERED UNTIL IT IS ASKED FOR
+    // A grade is the one number on this board a reader may not want on
+    // screen in a room with other people in it — the same reason a
+    // banking app opens with the balance hidden. It starts covered on
+    // EVERY open and is not remembered: a choice remembered is a
+    // choice made once and then quietly forgotten about, which is
+    // exactly the wrong property for this one
+    // ============================================================
+    const eye = document.createElement('button');
+    eye.type = 'button';
+    eye.className = 'gpaEye';
+    const shut = '<svg viewBox="0 0 24 24"><path d="M3 3l18 18"/>'
+      + '<path d="M10.6 5.2A9 9 0 0 1 12 5c6 0 9 7 9 7a16 16 0 0 1-2.9 3.9"/>'
+      + '<path d="M6.5 7.4A16 16 0 0 0 3 12s3 7 9 7a9 9 0 0 0 3.8-.8"/>'
+      + '<path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+    const open = '<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>'
+      + '<circle cx="12" cy="12" r="3"/></svg>';
+    const cover = on => {
+      termGpa.classList.toggle('hid', on);
+      eye.innerHTML = on ? shut : open;
+      eye.title = on ? 'Show the term average' : 'Hide the term average';
+    };
+    eye.onclick = () => cover(!termGpa.classList.contains('hid'));
+
     termGpa.style.setProperty('--g', gradeColour(band[2]));
-    termGpa.append(value, side);
+    termGpa.append(eye, value, side);
+    cover(true);
     // Which of these are measured and which are still assumed is the one
     // thing the number itself cannot say, so the tip says it per course
     termGpa.title = `Term GPA — ${rows.length} course${rows.length === 1 ? '' : 's'} · ${hours} credit hours\n`

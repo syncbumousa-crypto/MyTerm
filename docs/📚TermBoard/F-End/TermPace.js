@@ -75,17 +75,17 @@
   // #    showing — and a chapter that has since been removed says so
   // #    rather than showing a bare id or vanishing
   // ============================================================
+  // The course is the heading these sit under, so it is not said again
+  // on every line beneath it
   const nameOf = e => {
     const b = board()?.board?.();
     const c = b?.courses.find(x => x.id === e.c);
     const h = (c?.chapters || []).find(x => x.id === e.h);
     const part = (h?.parts || []).find(p => p.id === e.s);
-    const bits = [];
-    bits.push(c ? c.name : 'a course since removed');
-    if (h) bits.push(h.name);
     const label = part ? part.name.split('·')[0].trim() : '';
-    return bits.join(' ') + (label ? ' · ' + label : '') +
-           (Math.abs(e.n) > 1 ? ' ×' + Math.abs(e.n) : '');
+    return (h ? h.name : 'a chapter since removed')
+         + (label ? ' · ' + label : '')
+         + (Math.abs(e.n) > 1 ? ' ×' + Math.abs(e.n) : '');
   };
 
   let where = null, pop = null;
@@ -134,6 +134,13 @@
         sw.onclick = () => { days().exclude(d.key, !d.off); draw(); paint();
                              window.MyTermDays?.repaint?.(); };
 
+        // The expander stands at the START of the row, so every day's
+        // switch, arrow and name line up down the whole list
+        const twist = el('button', 'paceTwist' + (open[d.key] ? ' open' : ''), '▸');
+        twist.type = 'button';
+        twist.title = open[d.key] ? 'Fold this day' : 'What this day was made of';
+        twist.onclick = () => { open[d.key] = !open[d.key]; draw(); };
+
         const pull = el('button', 'paceDayName');
         pull.type = 'button';
         pull.textContent = d.key + '  ·  ' + asHours(d.counted) +
@@ -141,21 +148,52 @@
           (d.rows.length === 1 ? ' piece' : ' pieces');
         pull.onclick = () => { open[d.key] = !open[d.key]; draw(); };
 
-        row.append(sw, pull);
+        row.append(sw, twist, pull);
         pop.append(row);
 
         if (!open[d.key]) return;
+
+        // ============================================================
+        // THE COURSES BEHIND ONE DAY
+        // The pieces alone answer "what did I touch"; they do not answer
+        // "where did the day go", which is the question somebody looking
+        // at a six-hour Tuesday is actually asking. So they are gathered
+        // by course first — how many things and how long in each — and
+        // the pieces sit under the course they belong to
+        // ============================================================
+        const byCourse = new Map();
         d.rows.forEach(r => {
-          const one = el('div', 'paceBit' + (r.off ? ' off' : ''));
-          const b2 = el('button', 'paceSwitch' + (r.off ? '' : ' on'));
-          b2.type = 'button';
-          b2.title = r.off ? 'Count this again' : 'Leave this out of the average';
-          b2.onclick = () => { days().exclude(r.id, !days().isOut(r.id)); draw(); paint();
-                               window.MyTermDays?.repaint?.(); };
-          one.append(b2, el('span', 'paceBitName', nameOf(r)),
-                     el('span', 'paceBitMin', (r.m < 0 ? '' : '+') + Math.round(r.m * 10) / 10 + 'm'));
-          pop.append(one);
+          const key = r.c || '?';
+          if (!byCourse.has(key)) byCourse.set(key, { n: 0, m: 0, rows: [] });
+          const g = byCourse.get(key);
+          g.rows.push(r);
+          if (!r.off) { g.n += r.n; g.m += r.m; }
         });
+
+        [...byCourse.entries()]
+          .sort((a, b) => b[1].m - a[1].m)
+          .forEach(([id, g]) => {
+            const b = board()?.board?.();
+            const course = b?.courses.find(x => x.id === id);
+            const line = el('div', 'paceCourse');
+            line.append(el('span', 'paceCourseName', course ? course.name : 'a course since removed'),
+                        el('span', 'paceCourseSum',
+                           Math.abs(g.n) + (Math.abs(g.n) === 1 ? ' row' : ' rows') +
+                           '  ·  ' + asHours(g.m)));
+            pop.append(line);
+
+            g.rows.forEach(r => {
+              const one = el('div', 'paceBit' + (r.off ? ' off' : ''));
+              const b2 = el('button', 'paceSwitch' + (r.off ? '' : ' on'));
+              b2.type = 'button';
+              b2.title = r.off ? 'Count this again' : 'Leave this out of the average';
+              b2.onclick = () => { days().exclude(r.id, !days().isOut(r.id)); draw(); paint();
+                                   window.MyTermDays?.repaint?.(); };
+              one.append(b2, el('span', 'paceBitName', nameOf(r)),
+                         el('span', 'paceBitMin', (r.m < 0 ? '' : '+') + Math.round(r.m * 10) / 10 + 'm'));
+              pop.append(one);
+            });
+          });
       });
     };
     draw();

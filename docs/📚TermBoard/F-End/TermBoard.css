@@ -3799,3 +3799,64 @@ tr:hover .crownote { opacity: 1; }
   text-align: center;
   opacity: .75;
 }
+
+/* ============================================================
+   WHEN THE WORK RUNS OUT -- TWO SENTENCES ABOVE THE SQUARES
+   The measured one first and the asked one under it, and the only
+   thing emphasised in either is the answer: a reader scanning this
+   is looking for a date, not for a sentence
+   ============================================================ */
+.pace { display: flex; flex-direction: column; gap: 2px; align-items: center;
+        position: relative; margin: 2px 0 10px; text-align: center; }
+.paceLine { margin: 0; font-size: 13px; color: var(--dim, #9a9ca4); line-height: 1.9; }
+.paceAsk { opacity: .82; }
+.paceDim { color: var(--dim, #9a9ca4); }
+.paceDays { color: var(--ink, #e9eaee); font-weight: 700; }
+
+.paceVal { font: inherit; font-weight: 700; color: var(--ink, #e9eaee);
+           background: #26272c; border: 1px solid #34353b; border-radius: 7px;
+           padding: 1px 8px; margin: 0 2px; cursor: pointer; }
+.paceVal:hover { border-color: #4a4c55; }
+.paceNum { cursor: default; min-width: 22px; display: inline-block; }
+
+.paceStep { font: inherit; font-weight: 700; color: var(--dim, #9a9ca4);
+            background: transparent; border: 1px solid #34353b; border-radius: 6px;
+            width: 20px; height: 20px; line-height: 1; padding: 0; cursor: pointer;
+            vertical-align: middle; }
+.paceStep:hover:not(:disabled) { color: var(--ink, #e9eaee); border-color: #4a4c55; }
+.paceStep:disabled { opacity: .35; cursor: default; }
+
+/* ============================================================
+   THE DAYS BEHIND THE AVERAGE
+   It opens over the board rather than pushing it down: pressing a
+   number to see where it came from should not move the thing you
+   pressed. And a day left out is dimmed, never removed -- what you
+   cannot see you cannot change your mind about
+   ============================================================ */
+.pacePop { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+           z-index: 40; width: min(460px, calc(100vw - 32px)); max-height: 60vh; overflow: auto;
+           background: #1c1d21; border: 1px solid #34353b; border-radius: 10px;
+           padding: 8px; text-align: start;
+           box-shadow: 0 12px 34px rgba(0,0,0,.5); }
+.pacePopHead { font-size: 12px; color: var(--dim, #9a9ca4); padding: 4px 6px 8px;
+               border-bottom: 1px solid #2a2b31; margin-bottom: 4px; }
+.paceDay { display: flex; align-items: center; gap: 8px; padding: 2px 2px; }
+.paceDayName { flex: 1; text-align: start; font: 12px/1.7 ui-monospace, Consolas, monospace;
+               color: var(--ink, #e9eaee); background: transparent; border: 0;
+               padding: 2px 4px; border-radius: 6px; cursor: pointer; }
+.paceDayName:hover { background: #26272c; }
+.paceDay.off .paceDayName { color: #6b6d75; text-decoration: line-through; }
+
+.paceBit { display: flex; align-items: center; gap: 8px; padding: 1px 2px 1px 22px; }
+.paceBitName { flex: 1; font-size: 12px; color: var(--dim, #9a9ca4); }
+.paceBitMin { font: 11px ui-monospace, Consolas, monospace; color: #6b6d75;
+              font-variant-numeric: tabular-nums; }
+.paceBit.off .paceBitName, .paceBit.off .paceBitMin { color: #55575e; text-decoration: line-through; }
+
+.paceSwitch { width: 14px; height: 14px; flex: none; padding: 0; cursor: pointer;
+              border-radius: 4px; border: 1.5px solid #4a4c55; background: transparent; }
+.paceSwitch.on { background: #2f7d4f; border-color: #2f7d4f; }
+
+@media (max-width: 520px) {
+  .paceLine { font-size: 12px; }
+}

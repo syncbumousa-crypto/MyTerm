@@ -160,6 +160,9 @@
       shown.set(id, Promise.resolve(picture.src));
       spot.replaceWith(picture);
       save();
+      // Picked at once, so the sizes are right there for the picture
+      // the reader has just put in
+      showSizer(picture);
     } catch {
       spot.replaceWith(document.createTextNode(''));
       says('that picture could not be sent up — it was not put in the note');
@@ -178,6 +181,19 @@
   // #    every keystroke. And it is flushed when the window is shut, so
   // #    nothing typed in the last half second is lost by closing it
   // ============================================================
+  // What goes to the file: each picture as its name and its size, and
+  // nothing this page put on it to show it or to mark it picked
+  const written = () => {
+    const copy = body.cloneNode(true);
+    copy.querySelectorAll('img').forEach(p => {
+      p.removeAttribute('src');
+      p.removeAttribute('style');
+      p.removeAttribute('class');
+    });
+    copy.querySelectorAll('.cnote-coming').forEach(p => p.remove());
+    return copy.innerHTML;
+  };
+
   const save = () => {
     if (!who) return;
     clearTimeout(timer);
@@ -185,10 +201,7 @@
       timer = null;
       // The pictures are written as their names and nothing else: the
       // address a picture is shown from belongs to this page, this time
-      const copy = body.cloneNode(true);
-      copy.querySelectorAll('img').forEach(p => p.removeAttribute('src'));
-      copy.querySelectorAll('.cnote-coming').forEach(p => p.remove());
-      store().editRow(who, 'note', copy.innerHTML);
+      store().editRow(who, 'note', written());
     }, 450);
   };
 
@@ -196,10 +209,7 @@
     if (!timer) return;
     clearTimeout(timer);
     timer = null;
-    const copy = body.cloneNode(true);
-    copy.querySelectorAll('img').forEach(p => p.removeAttribute('src'));
-    copy.querySelectorAll('.cnote-coming').forEach(p => p.remove());
-    store().editRow(who, 'note', copy.innerHTML);
+    store().editRow(who, 'note', written());
   };
 
   const applyDir = () => {
@@ -216,6 +226,7 @@
       ? (plain(row.term) || plain(row.termAr) || plain(row.ask) || 'This row')
       : 'This row';
     body.innerHTML = row?.note || '';
+    fitPictures();
     applyDir();
     applySize();
     says('');
@@ -224,6 +235,7 @@
   };
 
   const shut = () => {
+    hideSizer();
     flush();
     pop.hidden = true;
     who = null;
@@ -239,7 +251,92 @@
     return true;
   };
 
-  body.addEventListener('input', save);
+  // ============================================================
+  // # 🖼️ 📏  HOW BIG EACH PICTURE IS DRAWN
+  // # 🔤 JavaScript
+  // # 🎯 A press on a picture puts a row of sizes over it; the size
+  // #    chosen is kept in the note with the picture
+  // # 🔗 A PICTURE SITS IN THE LINE LIKE A WORD. Drawn as a block, every
+  // #    picture took a whole line however small it was. Now two or
+  // #    three small ones stand side by side, and a space typed between
+  // #    them is a space on the page. The size is a share of the note's
+  // #    width, so it is the same picture on the phone and the laptop
+  // ============================================================
+  const SIZES = [25, 33, 50, 75, 100];
+  let picked = null, sizer = null;
+
+  const fitPictures = () => body.querySelectorAll('img[data-file]').forEach(p => {
+    const wide = Number(p.dataset.w);
+    p.style.width = wide ? wide + '%' : '';
+  });
+
+  const hideSizer = () => {
+    sizer?.remove();
+    sizer = null;
+    picked?.classList.remove('cnote-picked');
+    picked = null;
+  };
+
+  const placeSizer = () => {
+    if (!sizer || !picked) return;
+    const box = picked.getBoundingClientRect();
+    const wide = sizer.offsetWidth, tall = sizer.offsetHeight;
+    const over = box.top - tall - 6;
+    sizer.style.top = (over >= 6 ? over : Math.min(window.innerHeight - tall - 6, box.top + 6)) + 'px';
+    sizer.style.left = Math.min(window.innerWidth - wide - 6, Math.max(6, box.left)) + 'px';
+  };
+
+  const showSizer = picture => {
+    hideSizer();
+    picked = picture;
+    picked.classList.add('cnote-picked');
+    sizer = document.createElement('div');
+    sizer.className = 'cnote-sizer';
+
+    const now = () => Number(picked.dataset.w) || 100;
+    const paint = () => sizer.querySelectorAll('[data-size]').forEach(b =>
+      b.classList.toggle('on', Number(b.dataset.size) === now()));
+    const set = want => {
+      const wide = Math.min(100, Math.max(10, Math.round(want)));
+      if (wide === 100) delete picked.dataset.w; else picked.dataset.w = String(wide);
+      picked.style.width = wide === 100 ? '' : wide + '%';
+      paint();
+      save();
+      placeSizer();
+    };
+    const button = (face, title, run, size) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = face;
+      b.title = title;
+      if (size) b.dataset.size = String(size);
+      // Refused on the way down, so the caret stays in the note
+      b.addEventListener('mousedown', event => event.preventDefault());
+      b.addEventListener('click', run);
+      sizer.append(b);
+    };
+    button('−', 'Smaller', () => set(now() - 10));
+    SIZES.forEach(size => button(size + '%', 'As wide as ' + size + '% of the note', () => set(size), size));
+    button('+', 'Larger', () => set(now() + 10));
+
+    document.body.append(sizer);
+    paint();
+    placeSizer();
+  };
+
+  body.addEventListener('click', event => {
+    const picture = event.target.closest('img[data-file]');
+    if (picture) showSizer(picture); else hideSizer();
+  });
+  body.addEventListener('scroll', placeSizer);
+  window.addEventListener('resize', placeSizer);
+
+  body.addEventListener('input', () => {
+    // A picture typed or cut away takes its sizes with it
+    if (picked && !body.contains(picked)) hideSizer();
+    else placeSizer();
+    save();
+  });
 
   body.addEventListener('paste', event => {
     const items = [...(event.clipboardData?.items || [])];

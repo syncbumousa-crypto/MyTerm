@@ -244,12 +244,25 @@
       where = typeof spot === 'string' ? $(spot) : spot;
       return Boolean(where);
     },
-    // Read once per board, then drawn. The record is one small file and
-    // is not read again on every repaint
+    // ============================================================
+    // # ⏱️ 🎨  AND THE SQUARES ARE TOLD WHEN THE RECORD ARRIVES
+    // # 🔤 JavaScript
+    // # 🎯 Reads the record once, draws the sentences, and sends the
+    // #    grid back to the record it could not see yet
+    // # 🔗 THE GRID IS BUILT BEFORE THIS FILE IS READ. The board draws
+    // #    the squares the moment it has the term's dates, which is
+    // #    long before a second file comes back from Drive — so every
+    // #    day was coloured against a record of nothing, and the
+    // #    squares came out grey. It LOOKED right for a while only
+    // #    because some later repaint happened to land after the read;
+    // #    a slower morning took the colours away and the reader asked
+    // #    where they had gone. Now it is said rather than hoped for
+    // ============================================================
     show: async () => {
       if (!where) return;
       await days()?.ready?.().catch(() => {});
       paint();
+      window.MyTermDays?.repaint?.();
     },
     paint,
     leftMinutes,

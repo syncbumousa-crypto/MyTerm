@@ -134,6 +134,11 @@
         // the next read and a second empty one is made beside the full
         // one — which is what happened to the sources list
         explainId: typeof c.explainId === 'string' ? c.explainId : null,
+        // The fourth file: the drawn pages of a Rules part. Named here
+        // or it is dropped on the next read -- the sheet store then
+        // hunts the folder for it on every opening, and a chapter that
+        // was written and read back would say it had none
+        sheetsId: typeof c.sheetsId === 'string' ? c.sheetsId : null,
         contentVersion: Math.max(1, Number(c.contentVersion) || 1),
         // How many rows the chapter holds and how many are learnt,
         // written here by the chapter itself when it is open. It is a

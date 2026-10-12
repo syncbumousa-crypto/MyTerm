@@ -264,8 +264,12 @@
   // Safari on the iPhone pays touch-action no mind for a pinch, and
   // zooms the screen itself on top of ours. It asks first, with its own
   // gesture events, and a refusal there is the only one it hears
+  // — unless the screen is ALREADY zoomed. The phone can get there on its
+  // own, and a reader left blown up with every way back refused is stuck
   ['gesturestart', 'gesturechange'].forEach(name => document.addEventListener(name, event => {
-    if (openId) event.preventDefault();
+    if (!openId) return;
+    if (window.visualViewport && window.visualViewport.scale > 1.01) return;
+    event.preventDefault();
   }, { passive: false }));
 
   // Written down once the fingers are off, not on every frame of the

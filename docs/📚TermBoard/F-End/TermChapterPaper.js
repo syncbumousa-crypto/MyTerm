@@ -1246,7 +1246,14 @@
       if (bar && !bar.contains(event.target) && !event.target.closest('.ctbl')) hideBar();
     });
     document.addEventListener('keydown', event => { if (event.key === 'Escape') { hideMenu(); hideBar(); } });
-    window.addEventListener('scroll', () => { hideMenu(); hideBar(); }, true);
+    // Not while the menu is being typed into. Putting the caret in its
+    // number box makes the phone scroll the box into view, and that scroll
+    // used to shut the menu under the reader — box, keyboard and all —
+    // before a digit could be written
+    window.addEventListener('scroll', () => {
+      if (!(menu && menu.contains(document.activeElement))) hideMenu();
+      hideBar();
+    }, true);
   };
 
   // ============================================================

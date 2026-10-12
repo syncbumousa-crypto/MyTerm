@@ -124,51 +124,128 @@
   // #    is replaced when it lands: a reader who pasted a picture and
   // #    saw nothing happen for four seconds pastes it again
   // ============================================================
-  const folder = async () => {
+  // ============================================================
+  // # 🐢 ➡️ 🐇  WHY A PICTURE USED TO TAKE SO LONG
+  // # 🔗 Three trips to Drive, one after the other, with nothing on the
+  // #    screen until the last came back: a SEARCH for the Notes folder
+  // #    on every paste (the slowest kind of question Drive is asked),
+  // #    a request to start the upload, and then the picture itself at
+  // #    full size — a phone's photo or screenshot is several megabytes.
+  // #
+  // #    Now the folder is looked up once per course and kept, and the
+  // #    asking starts the moment a note is opened; the picture is cut
+  // #    down to a sensible size before it goes; and it is put in the
+  // #    note AT ONCE from the copy already on the device, faint until
+  // #    Drive has it, so the reader never waits to see what they pasted
+  // ============================================================
+  const folders = new Map();
+
+  const folder = () => {
     const board = window.MyTermBoardStore?.live?.();
     const id = window.MyTermCoursePage?.openId?.();
     const course = (board?.courses || []).find(c => c.id === id);
-    if (!course?.folderId) return null;
-    return await cloud().findChild(course.folderId, 'Notes', cloud().FOLDER).catch(() => null)
-      || await cloud().makeFolder('Notes', course.folderId);
+    if (!course?.folderId) return Promise.resolve(null);
+    if (!folders.has(course.folderId)) {
+      const asking = (async () =>
+        await cloud().findChild(course.folderId, 'Notes', cloud().FOLDER).catch(() => null)
+        || await cloud().makeFolder('Notes', course.folderId))();
+      // A failed asking is forgotten, so the next paste asks again
+      asking.catch(() => folders.delete(course.folderId));
+      folders.set(course.folderId, asking);
+    }
+    return folders.get(course.folderId);
   };
 
+  // The longest side a picture is kept at. It is drawn at a quarter of
+  // the note's width to begin with, and at the whole width on a laptop
+  // this is still sharp
+  const LONGEST = 1600;
+
+  const shrink = async file => {
+    if (!/^image\/(png|jpeg|webp|heic|heif)$/i.test(file.type) || file.size < 300 * 1024) return file;
+    try {
+      const picture = await createImageBitmap(file);
+      const scale = Math.min(1, LONGEST / Math.max(picture.width, picture.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(picture.width * scale);
+      canvas.height = Math.round(picture.height * scale);
+      const pen = canvas.getContext('2d');
+      // JPEG has no see-through, so what was see-through becomes paper
+      pen.fillStyle = '#ffffff';
+      pen.fillRect(0, 0, canvas.width, canvas.height);
+      pen.drawImage(picture, 0, 0, canvas.width, canvas.height);
+      picture.close?.();
+      const made = await new Promise(done => canvas.toBlob(done, 'image/jpeg', 0.85));
+      return made && made.size < file.size ? made : file;
+    } catch {
+      return file;
+    }
+  };
+
+  // The row a note belongs to, by its id — the note may have been shut,
+  // or another opened, by the time a picture lands
+  const rowById = id => {
+    for (const part of store()?.sections() || []) {
+      const found = (store().rowsOf(part.id) || []).find(r => r.id === id);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  // New pictures start at a quarter of the note's width, at the reader's
+  // asking: small enough to stand several to a line
+  const START_WIDTH = 25;
+
   const takePicture = async file => {
-    const spot = document.createElement('span');
-    spot.className = 'cnote-coming';
-    spot.textContent = 'sending a picture up…';
+    const forRow = who;
+    const picture = document.createElement('img');
+    picture.className = 'cnote-sending';
+    picture.src = URL.createObjectURL(file);
+    picture.dataset.w = String(START_WIDTH);
+    picture.style.width = START_WIDTH + '%';
     const sel = window.getSelection();
     if (sel && sel.rangeCount && body.contains(sel.getRangeAt(0).commonAncestorContainer)) {
       const range = sel.getRangeAt(0);
       range.deleteContents();
-      range.insertNode(spot);
+      range.insertNode(picture);
+      range.setStartAfter(picture);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
     } else {
-      body.append(spot);
+      body.append(picture);
     }
 
     busy++;
     says('sending a picture up…');
     try {
-      const into = await folder();
+      const [into, small] = await Promise.all([folder(), shrink(file)]);
       if (!into) throw new Error('no folder');
-      const name = 'note-' + Date.now() + (file.name && /\.\w+$/.test(file.name)
-        ? file.name.slice(file.name.lastIndexOf('.')) : '.png');
-      const id = await cloud().uploadBlob(into, name, file);
-      const picture = document.createElement('img');
+      const kind = small.type === 'image/jpeg' ? '.jpg'
+        : file.name && /\.\w+$/.test(file.name) ? file.name.slice(file.name.lastIndexOf('.')) : '.png';
+      const id = await cloud().uploadBlob(into, 'note-' + Date.now() + kind, small);
       picture.dataset.file = id;
-      picture.src = URL.createObjectURL(file);
+      picture.classList.remove('cnote-sending');
       shown.set(id, Promise.resolve(picture.src));
-      spot.replaceWith(picture);
-      save();
-      // Picked at once, so the sizes are right there for the picture
-      // the reader has just put in
-      showSizer(picture);
+      if (who === forRow) {
+        // Taken out again while it was going up: the reader does not
+        // want it, and it is not put back
+        if (body.contains(picture)) save();
+      } else {
+        // The note was shut before Drive answered. It was written without
+        // the picture, so the picture is added to the end of it now
+        // rather than lost
+        const row = rowById(forRow);
+        if (row) store().editRow(forRow, 'note',
+          (row.note || '') + `<img data-file="${id}" data-w="${START_WIDTH}">`);
+      }
     } catch {
-      spot.replaceWith(document.createTextNode(''));
+      picture.remove();
       says('that picture could not be sent up — it was not put in the note');
+      setTimeout(() => says(''), 4000);
     } finally {
       busy--;
-      if (!busy) says('');
+      if (!busy && !saidEl.textContent.startsWith('that picture')) says('');
     }
   };
 
@@ -191,6 +268,9 @@
       p.removeAttribute('class');
     });
     copy.querySelectorAll('.cnote-coming').forEach(p => p.remove());
+    // A picture still on its way up has no name yet, and is written in
+    // once it has one
+    copy.querySelectorAll('img:not([data-file])').forEach(p => p.remove());
     return copy.innerHTML;
   };
 
@@ -247,6 +327,9 @@
     mine = (store()?.openId?.() || 'h') + ':' + rowId;
     draw();
     pop.hidden = false;
+    // The folder pictures go into is looked for now, while the reader is
+    // still reading, so the first paste does not wait for it
+    folder().catch(() => {});
     body.focus();
     return true;
   };
@@ -265,7 +348,7 @@
   const SIZES = [25, 33, 50, 75, 100];
   let picked = null, sizer = null;
 
-  const fitPictures = () => body.querySelectorAll('img[data-file]').forEach(p => {
+  const fitPictures = () => body.querySelectorAll('img').forEach(p => {
     const wide = Number(p.dataset.w);
     p.style.width = wide ? wide + '%' : '';
   });
@@ -325,7 +408,7 @@
   };
 
   body.addEventListener('click', event => {
-    const picture = event.target.closest('img[data-file]');
+    const picture = event.target.closest('img');
     if (picture) showSizer(picture); else hideSizer();
   });
   body.addEventListener('scroll', placeSizer);

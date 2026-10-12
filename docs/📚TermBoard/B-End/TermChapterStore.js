@@ -420,7 +420,31 @@
     return out;
   };
 
+  // ============================================================
+  // # 🙈 💾  WHICH CELLS ARE COVERED, KEPT
+  // # 🔤 JavaScript
+  // # 🎯 The reader's covers, by row and column, each with its own clock
+  // # 🔗 KEPT, AND KEPT HERE, at the reader's own asking: a sheet
+  // #    half-covered for a test is to be found that way again after a
+  // #    reload and on the other device. It is a thing about the reader
+  // #    and not the course, so it goes with the ticks and not in the
+  // #    words. A cover taken off is kept as off, with its time, so the
+  // #    other device's older "on" cannot bring it back on the merge
+  // ============================================================
+  const shapeCovers = given => {
+    const out = {};
+    if (given && typeof given === 'object') {
+      Object.keys(given).forEach(key => {
+        const c = given[key];
+        if (!c || typeof c !== 'object' || !/^[^:]{1,60}:(term|text)$/.test(key)) return;
+        out[key] = { on: c.on === true, at: typeof c.at === 'string' ? c.at : null };
+      });
+    }
+    return out;
+  };
+
   const shapeState = doc => ({ app: 'MyTerm', marks: shapeMarks(doc?.marks),
+                               covers: shapeCovers(doc?.covers),
                                seen: shapeSeen(doc?.seen), updatedAt: doc?.updatedAt ?? null });
 
   // ============================================================
@@ -1035,6 +1059,25 @@
 
     isOn: rowId => open?.state.marks[rowId]?.on === true,
 
+    isCovered: key => open?.state.covers?.[key]?.on === true,
+
+    // Many cells in one write, for covering a whole sheet at once
+    cover: (keys, on) => {
+      if (!open || !keys || !keys.length) return;
+      if (!open.state.covers) open.state.covers = {};
+      const at = now();
+      let moved = 0;
+      keys.forEach(key => {
+        if ((open.state.covers[key]?.on === true) === Boolean(on)) return;
+        open.state.covers[key] = { on: Boolean(on), at };
+        moved++;
+      });
+      if (!moved) return;
+      stateDirty = true;
+      tellStatus('waiting');
+      later();
+    },
+
     mark: (rowId, on) => {
       if (!open) return;
       // The tick and the last answer live in the same little object, and
@@ -1586,7 +1629,12 @@
     refresh: async () => {
       if (!open) return null;
       const stateDoc = await cloud().readFile(open.chapter.stateId).catch(() => null);
-      if (stateDoc) open.state.marks = mergeMarks(open.state.marks, shapeState(stateDoc).marks);
+      if (stateDoc) {
+        const theirs = shapeState(stateDoc);
+        open.state.marks = mergeMarks(open.state.marks, theirs.marks);
+        // The same rule folds the covers: the later word on each cell wins
+        open.state.covers = mergeMarks(open.state.covers || {}, theirs.covers);
+      }
 
       const theirVersion = Number(open.chapter.contentVersion) || 1;
       if (theirVersion !== open.content.version) {

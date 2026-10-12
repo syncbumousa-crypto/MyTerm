@@ -378,7 +378,8 @@
     ['ink', 'Text colour'],
     ['b', 'Bold'],
     ['i', 'Italic'],
-    ['u', 'Underline']
+    ['u', 'Underline'],
+    ['num', 'Number the lines']
   ];
 
   // Which cell the SELECTION is in, not which one has the focus. A cell
@@ -554,6 +555,107 @@
     hideBar();
   };
 
+  // ============================================================
+  // # 🔢 ✍️  NUMBERING THE LINES PICKED
+  // # 🔤 JavaScript
+  // # 🎯 Puts 1. 2. 3. at the start of every line the selection touches
+  // # 🔗 THE NUMBERS ARE WRITTEN, NOT COUNTED. They go into the words as
+  // #    plain text, exactly as if the reader had typed them, and are
+  // #    never worked out again: a list that renumbered itself when one
+  // #    line was taken out is the muddle the reader asked not to have.
+  // #    A line is what a break ends, so a cell with no breaks is one
+  // #    line. Lines that are only space are skipped and not counted.
+  // #
+  // #    Pressed again over lines that ALL already start with a number,
+  // #    it takes the numbers off — the same rule as bold
+  // ============================================================
+  const LEAD = /^(\s*)(\d+|[٠-٩]+)[.)-]\s?/;
+
+  const numberLines = () => {
+    const cell = editing();
+    const sel = window.getSelection();
+    if (!cell || !sel || !sel.rangeCount) return;
+    const picked = sel.getRangeAt(0);
+
+    // Where every line of the cell begins, in order: the start of the
+    // cell, the place after each break, and the start of each block a
+    // browser may have made out of a press of Enter
+    const starts = [{ node: cell, at: 0 }];
+    cell.querySelectorAll('br, div, p').forEach(el => {
+      if (el.closest('.ccelllang')) return;
+      if (el.nodeName === 'BR') starts.push({ node: el.parentNode, at: [...el.parentNode.childNodes].indexOf(el) + 1 });
+      else starts.push({ node: el, at: 0 });
+    });
+    const end = { node: cell, at: cell.childNodes.length };
+    const before = (a, b) => {
+      const r = document.createRange();
+      r.setStart(a.node, a.at);
+      return r.comparePoint(b.node, b.at) > 0;
+    };
+    starts.sort((a, b) => (before(a, b) ? -1 : before(b, a) ? 1 : 0));
+
+    const lines = [];
+    starts.forEach((from, i) => {
+      const to = starts[i + 1] || end;
+      const line = document.createRange();
+      line.setStart(from.node, from.at);
+      line.setEnd(to.node, to.at);
+      // Only the lines the selection reaches into
+      if (line.compareBoundaryPoints(Range.END_TO_START, picked) >= 0) return;   // ends before it starts
+      if (line.compareBoundaryPoints(Range.START_TO_END, picked) <= 0) return;   // starts after it ends
+      const copy = document.createElement('div');
+      copy.append(line.cloneContents());
+      copy.querySelectorAll('.ccelllang').forEach(node => node.remove());
+      const words = copy.textContent;
+      if (!words.trim()) return;
+      lines.push({ from, words });
+    });
+    if (!lines.length) return;
+
+    // The first piece of writing in a line, where its number is or goes
+    const firstText = from => {
+      const walk = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+      const r = document.createRange();
+      r.setStart(from.node, from.at);
+      for (let node = walk.nextNode(); node; node = walk.nextNode()) {
+        if (node.parentNode.closest?.('.ccelllang')) continue;
+        if (r.comparePoint(node, 0) >= 0 && node.textContent.length) return node;
+      }
+      return null;
+    };
+
+    const off = lines.every(l => LEAD.test(l.words));
+    // From the last line back to the first, so writing into one line
+    // never shifts where the lines before it begin
+    for (let k = lines.length - 1; k >= 0; k--) {
+      const text = firstText(lines[k].from);
+      if (off) {
+        const found = text && text.textContent.match(LEAD);
+        if (found) text.deleteData(found[1].length, found[0].length - found[1].length);
+      } else {
+        const label = (k + 1) + '. ';
+        const at = lines[k].from;
+        // Into the line's first words when nothing but space comes before
+        // them, so the number sits right against the line and wears what
+        // the line's first word wears; otherwise at the line's very start
+        const gap = document.createRange();
+        gap.setStart(at.node, at.at);
+        if (text) gap.setEnd(text, 0);
+        if (text && !gap.toString().trim()) {
+          text.insertData(text.textContent.search(/\S|$/), label);
+        } else {
+          gap.collapse(true);
+          gap.insertNode(document.createTextNode(label));
+        }
+      }
+    }
+
+    sel.removeAllRanges();
+    cell.normalize();
+    saveCell(cell);
+    hideBar();
+  };
+
   const hideBar = () => { if (bar) bar.remove(); bar = null; };
 
   // ============================================================
@@ -600,11 +702,12 @@
       button.type = 'button';
       button.className = 'm-' + kind;
       button.title = words;
-      button.textContent = kind === 'hl' ? '' : kind === 'ink' ? 'T' : kind.toUpperCase();
+      button.textContent = kind === 'hl' ? '' : kind === 'ink' ? 'T' : kind === 'num' ? '1.' : kind.toUpperCase();
       if (kind === 'hl') button.innerHTML = PEN;
 
       button.addEventListener('mousedown', event => {
         event.preventDefault();
+        if (kind === 'num') { numberLines(); return; }
         if (kind !== 'hl' && kind !== 'ink') { applyMark(kind); return; }
         // The same one twice shuts it again, so a reader who opened the
         // colours and changed their mind is one press from the words

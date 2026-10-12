@@ -46,6 +46,12 @@
       updatedAt: doc?.term?.updatedAt ?? null
     },
     days: shapeDays(doc?.days),
+    // Where the record of what was finished each day lives. It sits beside
+    // this paper rather than inside it: the paper is read on every open and
+    // must stay small, and the record only grows. NAMED HERE OR LOST — the
+    // id vanished on every read three times before, and each time a second
+    // empty file was made beside the full one
+    daysId: typeof doc?.daysId === 'string' ? doc.daysId : null,
     courses: Array.isArray(doc?.courses)
       ? doc.courses.filter(c => c && typeof c.name === 'string').map(c => ({
           id: typeof c.id === 'string' ? c.id : 'c-' + Math.random().toString(36).slice(2, 8),
@@ -398,6 +404,18 @@
 
     // Called when a course's chapters change, so only its file is written next
     touchCourse: id => { movedCourses.add(id); },
+
+    // The paper itself, and the folder it sits in. Anything that keeps a
+    // file of its own AT TERM LEVEL — rather than inside a course or a
+    // chapter — needs these two and has no other way to find them. The
+    // folder is asked of Drive once and then remembered
+    paperId: () => fileId,
+    homeFolder: async () => {
+      if (termFolder) return termFolder;
+      if (!fileId) return null;
+      termFolder = await cloud().parentOf(fileId).catch(() => null);
+      return termFolder;
+    },
 
     onStatus: fn => { tellStatus = fn; },
 

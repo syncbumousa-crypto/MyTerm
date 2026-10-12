@@ -123,7 +123,12 @@
         const sw = el('button', 'paceSwitch' + (d.off ? '' : ' on'));
         sw.type = 'button';
         sw.title = d.off ? 'Count this day again' : 'Leave this day out of the average';
-        sw.onclick = () => { days().exclude(d.key, !d.off); draw(); paint(); };
+        // Leaving a day out changes what it is worth, so the sentence
+        // AND that day's square both have to be redrawn: a square still
+        // green for a day the average no longer counts is the line and
+        // the grid saying different things about the same day
+        sw.onclick = () => { days().exclude(d.key, !d.off); draw(); paint();
+                             window.MyTermDays?.repaint?.(); };
 
         const pull = el('button', 'paceDayName');
         pull.type = 'button';
@@ -141,7 +146,8 @@
           const b2 = el('button', 'paceSwitch' + (r.off ? '' : ' on'));
           b2.type = 'button';
           b2.title = r.off ? 'Count this again' : 'Leave this out of the average';
-          b2.onclick = () => { days().exclude(r.id, !days().isOut(r.id)); draw(); paint(); };
+          b2.onclick = () => { days().exclude(r.id, !days().isOut(r.id)); draw(); paint();
+                               window.MyTermDays?.repaint?.(); };
           one.append(b2, el('span', 'paceBitName', nameOf(r)),
                      el('span', 'paceBitMin', (r.m < 0 ? '' : '+') + Math.round(r.m * 10) / 10 + 'm'));
           pop.append(one);
@@ -214,6 +220,10 @@
       perDay = Math.max(1, Math.min(24, perDay + by));
       try { localStorage.setItem(HOURS_KEY, String(perDay)); } catch {}
       paint();
+      // The squares below are coloured against this very number, so they
+      // are redrawn with it. Left alone they would be a judgement on a
+      // goal the reader has just changed their mind about
+      window.MyTermDays?.repaint?.();
     };
     minus.onclick = e => { e.stopPropagation(); step(-1); };
     plus.onclick = e => { e.stopPropagation(); step(1); };
@@ -242,6 +252,10 @@
       paint();
     },
     paint,
-    leftMinutes
+    leftMinutes,
+    // The hours a day the reader is aiming at. The squares below are
+    // coloured against it, so it is read from here and not kept twice
+    hours: () => perDay,
+    goalMinutes: () => perDay * 60
   };
 })();

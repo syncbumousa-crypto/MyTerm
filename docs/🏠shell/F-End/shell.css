@@ -275,3 +275,19 @@ body {
 }
 
 .hud-sync.wrong { color: #ffd0d0; }
+
+/* ============================================================
+   THIS PAGE IS OPEN SOMEWHERE ELSE
+   It covers everything on purpose. Two pages writing one file do not
+   merge, they take turns undoing each other -- and a quiet notice at
+   the edge would be read past, leaving a reader typing into a page
+   whose every save is being erased somewhere else
+   ============================================================ */
+.seatveil { position: fixed; inset: 0; z-index: 90; display: flex;
+            align-items: center; justify-content: center; padding: 24px;
+            background: rgba(18, 19, 23, 0.86); backdrop-filter: blur(3px); }
+.seatbox { width: min(420px, 100%); background: var(--panel2, #26272c);
+           border: 1px solid var(--line, #34353b); border-radius: 14px;
+           padding: 22px 22px 18px; text-align: center; }
+.seattitle { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: var(--ink, #e9eaee); }
+.seatsay { margin: 0 0 16px; font-size: 13px; line-height: 1.6; color: var(--dim, #9a9ca4); }

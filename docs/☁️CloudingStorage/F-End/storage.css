@@ -41,3 +41,62 @@ body.probing .picker-dialog-frame {
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* ============================================================
+   THE ACCOUNT SCREEN: TWO CARDS AND A WAY OUT
+   Two different accounts live on this screen -- one signs you in here,
+   the other is Google's and owns the folder your work is kept in. Run
+   together down one column, "Unlink Google" and "Log out" read as two
+   strengths of the same action, and they are not. So each gets its own
+   card, and leaving is pulled out of both
+   ============================================================ */
+.boxwide { width: min(520px, calc(100vw - 32px)); max-width: none; text-align: start; }
+
+.acct-top { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.acct-face { width: 38px; height: 38px; flex: none; border-radius: 50%;
+             background: var(--green, #2e9e6b); color: #10110f;
+             display: flex; align-items: center; justify-content: center;
+             font-weight: 700; font-size: 15px; }
+.acct-who { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.acct-mail { font-size: 13px; color: var(--ink, #e9eaee); overflow: hidden;
+             text-overflow: ellipsis; white-space: nowrap; }
+.acct-tag { font-size: 10.5px; color: var(--dim2, #6b6d75); }
+.acct-back { flex: none; font-size: 11.5px; padding: 6px 12px; }
+
+.acard { border: 1px solid var(--line, #34353b); border-radius: 12px;
+         background: #1c1d21; overflow: hidden; }
+.acard-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+              border-bottom: 1px solid var(--line, #34353b); background: #202127; }
+.gmark { width: 22px; height: 22px; flex: none; display: flex; }
+.gmark svg { width: 100%; height: 100%; }
+.acard-title { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.acard-title b { font-size: 13px; color: var(--ink, #e9eaee); }
+.acard-sub { font-size: 10.5px; color: var(--dim2, #6b6d75); overflow: hidden;
+             text-overflow: ellipsis; white-space: nowrap; }
+.acard-state { font-size: 10.5px; color: var(--green, #2e9e6b); flex: none; }
+.acard-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.acard-body .lede { margin: 0; font-size: 12px; line-height: 1.6; }
+.acard-body .where { margin: 0; font-size: 12.5px; color: var(--ink, #e9eaee); }
+.acard-foot { padding: 9px 14px; border-top: 1px solid var(--line, #34353b);
+              display: flex; justify-content: flex-end; }
+
+.arow { display: flex; gap: 8px; flex-wrap: wrap; }
+.arow .btn { flex: 1 1 140px; }
+
+.btn-ghost { background: transparent; border: 1px solid var(--line, #34353b);
+             color: var(--ink, #e9eaee); }
+.btn-ghost:hover { border-color: #4a4c55; background: #26272c; }
+.btn-quiet { background: transparent; border: 0; color: var(--dim2, #6b6d75);
+             font-size: 11.5px; padding: 6px 10px; width: auto; }
+.btn-quiet:hover { color: var(--mBad, #d06060); }
+
+/* Leaving is not a setting. It sits below everything, behind a rule, so
+   a reader looking for the way out never reads three buttons that
+   change things on the way to it */
+.acct-out { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line, #34353b);
+            display: flex; justify-content: center; }
+
+@media (max-width: 480px) {
+  .acct-back { font-size: 11px; padding: 5px 9px; }
+  .arow .btn { flex: 1 1 100%; }
+}

@@ -115,7 +115,12 @@
   // opens the panel: the storage screen when there is a step to take,
   // the board screen by taking the screen for itself
   function openSession(email) {
-    who.textContent = 'Hello, ' + email;
+    // The address alone, with "your MyTerm account" written under it by
+    // the page: a greeting reads as the point of the line, and the point
+    // of this line is WHICH account — there are two on this screen
+    who.textContent = email;
+    const face = document.getElementById('acct-face');
+    if (face) face.textContent = (email || '?').trim().charAt(0).toUpperCase();
     window.MyTermHud?.face(email);
     window.myTermSignedIn = true;
     document.dispatchEvent(new CustomEvent('signed-in'));

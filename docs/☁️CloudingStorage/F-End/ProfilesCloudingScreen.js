@@ -32,6 +32,25 @@
     Object.entries(steps).forEach(([key, box]) => (box.hidden = key !== name));
     spin.hidden = Boolean(name);
     if (name === 'link' || name === 'place') window.MyTermAccount?.show();
+
+    // The card's own head says where this stands without being opened:
+    // linked or not, and to what. A reader glancing at this screen is
+    // usually checking exactly that and nothing else
+    const state = $('drive-state'), sub = $('drive-who');
+    if (state) {
+      state.textContent = name === 'done' ? 'Linked'
+                        : name === 'place' ? 'Pick a folder'
+                        : name === 'link' ? 'Not linked yet' : '';
+      state.style.color = name === 'done' ? '' : 'var(--dim2, #6b6d75)';
+    }
+    if (sub) {
+      sub.textContent = name === 'done'
+        ? 'Your work is saved here'
+        : 'Where your work is kept';
+    }
+    // The unlink button is only an answer to a thing that happened
+    const unlink = $('unlink-google');
+    if (unlink) unlink.hidden = name === 'link';
   };
 
   const allowPick = ok => {

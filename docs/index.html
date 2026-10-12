@@ -19,10 +19,10 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=152">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=152">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=152">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermSheet.css?v=152">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=153">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=153">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=153">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermSheet.css?v=153">
 </head>
 <body>
 
@@ -92,51 +92,88 @@
 </form>
 
 <!-- ============================================================ -->
-<!-- # 👤 ✅  LOGGED IN PANEL -->
+<!-- # 👤 🗂️  TWO CARDS: WHO YOU ARE, AND WHERE YOUR WORK IS KEPT -->
 <!-- # 🔤 HTML -->
-<!-- # 🎯 Shows which account is open, the Google Drive part, and a way out -->
-<!-- # 🔗 The accounts screen file shows this one after a good login. The -->
-<!-- #    three groups inside are three steps, and the storage screen -->
-<!-- #    file shows one at a time: link the account, pick the place, -->
-<!-- #    then the finished file. All three start hidden behind a turning -->
-<!-- #    circle, because working out which one is right needs answers -->
-<!-- #    from two services. Showing any of them first would flash a -->
-<!-- #    wrong step for a moment -->
+<!-- # 🎯 The account on one card and the storage on another, with the -->
+<!-- #    way back to the term set apart from both -->
+<!-- # 🔗 THESE ARE TWO DIFFERENT ACCOUNTS AND THE SCREEN NOW SAYS SO. -->
+<!-- #    One signs you in here; the other is Google's, and it is the one -->
+<!-- #    that owns the folder your work lives in. Run together down one -->
+<!-- #    column -- which is how this read before -- "Unlink Google" and -->
+<!-- #    "Log out" sat one above the other as if they were two strengths -->
+<!-- #    of the same action, and they are not: one changes where your -->
+<!-- #    work is kept, the other only closes the door behind you. -->
+<!-- # -->
+<!-- #    And the way back is pulled out of the stack entirely. It is not -->
+<!-- #    a setting; it is leaving, and a reader looking for the way out -->
+<!-- #    should not have to read three buttons that change things first -->
 <!-- ============================================================ -->
-<div class="box" id="session" hidden>
-  <p class="who" id="who"></p>
+<div class="box boxwide" id="session" hidden>
+
+  <div class="acct-top">
+    <span class="acct-face" id="acct-face"></span>
+    <span class="acct-who">
+      <b class="acct-mail" id="who"></b>
+      <span class="acct-tag">Your MyTerm account</span>
+    </span>
+    <button class="btn btn-ghost acct-back" type="button" id="to-board" hidden>Back to the term</button>
+  </div>
 
   <div class="spinner" id="session-spin"></div>
 
-  <div class="stack" id="step-link" hidden>
-    <button class="btn btn-main" type="button" id="link-google">Link your Google account</button>
-    <p class="lede">So we can keep your courses in a folder of your Drive. We see nothing of your files but what we make ourselves.</p>
-  </div>
+  <!-- ---------- the storage card ---------- -->
+  <section class="acard" id="acard-drive">
+    <header class="acard-head">
+      <span class="gmark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.9z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3a7.2 7.2 0 0 1-10.7-3.8h-4v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.3 14.3a7.1 7.1 0 0 1 0-4.6v-3.1h-4a12 12 0 0 0 0 10.8l4-3.1z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.4.6 4.6 1.8l3.5-3.5A12 12 0 0 0 1.3 6.6l4 3.1A7.2 7.2 0 0 1 12 4.8z"/></svg>
+      </span>
+      <span class="acard-title">
+        <b>Google Drive</b>
+        <span class="acard-sub" id="drive-who">Where your work is kept</span>
+      </span>
+      <span class="acard-state" id="drive-state"></span>
+    </header>
 
-  <div class="stack" id="step-place" hidden>
-    <p class="where">Where your work is kept</p>
-    <p class="lede">Pick a folder of your own, or we make you a MyTerm folder at the root of your Drive.</p>
+    <div class="acard-body">
+      <div class="stack" id="step-link" hidden>
+        <p class="lede">So we can keep your courses in a folder of your Drive. We see nothing of your files but what we make ourselves.</p>
+        <button class="btn btn-main" type="button" id="link-google">Link your Google account</button>
+      </div>
 
-    <div class="spinner" id="probe-spin" hidden></div>
+      <div class="stack" id="step-place" hidden>
+        <p class="where">Where your work is kept</p>
+        <p class="lede">Pick a folder of your own, or we make you a MyTerm folder at the root of your Drive.</p>
 
-    <div class="stack" id="place-buttons">
-      <button class="btn btn-main" type="button" id="pick-place">Pick the place yourself</button>
-      <button class="btn" type="button" id="auto-place">Keep it in a MyTerm folder at my Drive root</button>
+        <div class="spinner" id="probe-spin" hidden></div>
+
+        <div class="stack" id="place-buttons">
+          <button class="btn btn-main" type="button" id="pick-place">Pick the place yourself</button>
+          <button class="btn" type="button" id="auto-place">Keep it in a MyTerm folder at my Drive root</button>
+        </div>
+
+        <p class="hint" id="shield-hint" hidden></p>
+      </div>
+
+      <div class="stack" id="step-done" hidden>
+        <p class="where" id="drive-where"></p>
+        <div class="arow">
+          <a class="btn btn-ghost" id="drive-open" href="#" target="_blank" rel="noopener">Open in Drive</a>
+          <button class="btn btn-ghost" type="button" id="change-place">Change the folder</button>
+        </div>
+      </div>
+
+      <p class="note" id="drive-note"></p>
     </div>
 
-    <p class="hint" id="shield-hint" hidden></p>
-  </div>
+    <footer class="acard-foot">
+      <button class="btn btn-quiet" type="button" id="unlink-google">Unlink Google</button>
+    </footer>
+  </section>
 
-  <div class="stack" id="step-done" hidden>
-    <p class="where" id="drive-where"></p>
-    <a class="btn btn-flat" id="drive-open" href="#" target="_blank" rel="noopener">Open the file in Drive</a>
-    <button class="btn btn-flat" type="button" id="change-place">Change where it is kept</button>
+  <!-- ---------- leaving, set apart from everything above ---------- -->
+  <div class="acct-out">
+    <button class="btn btn-quiet" type="button" id="logout">Log out</button>
   </div>
-
-  <p class="note" id="drive-note"></p>
-  <button class="btn btn-flat" type="button" id="unlink-google">Unlink Google</button>
-  <button class="btn btn-flat" type="button" id="to-board" hidden>Back to the term</button>
-  <button class="btn btn-flat" type="button" id="logout">Log out</button>
 </div>
 
 <!-- ============================================================ -->
@@ -185,6 +222,25 @@
   <!-- #    that is true whether or not you like it -->
   <!-- ============================================================ -->
   <div class="pace" id="pace"></div>
+
+<!-- ============================================================ -->
+<!-- # 💺 🔒  THIS PAGE IS OPEN SOMEWHERE ELSE -->
+<!-- # 🔤 HTML -->
+<!-- # 🎯 Shown when another window or device has taken over this page, -->
+<!-- #    with the one button that takes it back -->
+<!-- # 🔗 It covers the screen on purpose. Two pages writing one file do -->
+<!-- #    not merge, they take turns undoing each other -- and a quiet -->
+<!-- #    notice at the edge would be read past, leaving a reader typing -->
+<!-- #    into a page whose every save is being erased somewhere else -->
+<!-- ============================================================ -->
+<div class="seatveil" id="seat-veil" hidden>
+  <div class="seatbox">
+    <p class="seattitle">This page is open somewhere else</p>
+    <p class="seatsay">Your work is being saved from the other window now.
+       Nothing is lost — this page has simply stopped writing.</p>
+    <button class="btn btn-main" type="button" id="seat-here">Continue here instead</button>
+  </div>
+</div>
 
   <div class="days" id="days">
     <div class="days-grid" id="days-grid"></div>
@@ -476,7 +532,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v152</p>
+<p class="build">v153</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -499,31 +555,34 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=152"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=152"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=152"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=152"></script>
-<script src="📚TermBoard/B-End/TermChapterStore.js?v=152"></script>
-<script src="📚TermBoard/B-End/TermSourceStore.js?v=152"></script>
-<script src="📚TermBoard/B-End/TermExplainStore.js?v=152"></script>
-<script src="📚TermBoard/B-End/TermSheetStore.js?v=152"></script>
-<script src="📚TermBoard/B-End/TermDaysStore.js?v=152"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=152"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermPace.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermChapterPaper.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermSourceFind.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermSourcePane.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermExplain.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermNote.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermSheetIcons.js?v=152"></script>
-<script src="📚TermBoard/F-End/TermSheetPaper.js?v=152"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=152"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=153"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=153"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=153"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=153"></script>
+<script src="📚TermBoard/B-End/TermChapterStore.js?v=153"></script>
+<script src="📚TermBoard/B-End/TermSourceStore.js?v=153"></script>
+<script src="📚TermBoard/B-End/TermExplainStore.js?v=153"></script>
+<script src="📚TermBoard/B-End/TermSheetStore.js?v=153"></script>
+<script src="📚TermBoard/B-End/TermDaysStore.js?v=153"></script>
+<script src="📚TermBoard/B-End/TermSeat.js?v=153"></script>
+<script src="📚TermBoard/B-End/TermWhere.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermSeatVeil.js?v=153"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=153"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermPace.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermChapterPaper.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermSourceFind.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermSourcePane.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermExplain.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermNote.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermSheetIcons.js?v=153"></script>
+<script src="📚TermBoard/F-End/TermSheetPaper.js?v=153"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=153"></script>
 
 </body>
 </html>

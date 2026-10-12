@@ -341,18 +341,6 @@
         group: typeof s.group === 'string' ? s.group : '',
         per: PACES.includes(s.per) ? s.per : 'row',
         each: Math.max(0, Number(s.each) || 0),
-        // ============================================================
-        // WHAT ONE ITEM OF THIS PART IS WORTH, IN MINUTES
-        // The reader's own engine weighs a term at two minutes, a
-        // question at one and a half, a practice card at twenty and a
-        // bank question at half. On this board a terms part and a
-        // questions part are BOTH kind 'part' and nothing else tells
-        // them apart — so the weight has to live on the part itself,
-        // or every question would be counted as a term in silence.
-        // Zero means it has not been decided, and it is worked out
-        // from the kind and the name the first time it is needed
-        // ============================================================
-        rate: Math.max(0, Number(s.rate) || 0),
         // A PART IS CROSSED OUT, NOT TORN OUT, for the same reason a row
         // is. The merge pushes back any section the other device still
         // has and this one does not — so a part really taken out of the
@@ -614,17 +602,27 @@
   // ============================================================
   // # ⚖️ 🧮  WHAT A FINISHED ITEM IS WORTH
   // # 🔤 JavaScript
-  // # 🎯 Minutes per item, from the part itself when it says, and from
-  // #    what the part IS when it has not been told
-  // # 🔗 These four numbers are the reader's, not ours, and they are the
-  // #    whole basis of "you'll finish in N days" -- so they are read
-  // #    out of their engine rather than guessed: a term two minutes, a
-  // #    question one and a half, a practice card twenty, a bank
-  // #    question half
+  // # 🎯 Minutes for one ticked item of a part
+  // # 🔗 IT IS `each` -- THE PRICE THE BOARD ALREADY CHARGES. The strip
+  // #    under every chapter is drawn from `rows * each`, and the hours
+  // #    a course is said to be worth come from the same number. A
+  // #    second weight of my own beside it would be two measurements of
+  // #    one fact, and they had already drifted: the board prices a
+  // #    MIS250 term at a minute and a half and my own default said
+  // #    two, so the bar and the day would have disagreed about the
+  // #    same tick, forever, with neither of them wrong on its face.
+  // #
+  // #    It matters more than tidiness here: "you'll finish in N days"
+  // #    divides the work LEFT by what a day is worth. Measure those
+  // #    two in different currencies and the sentence means nothing.
+  // #
+  // #    A part priced by the PAGE is the exception -- a row has no
+  // #    price of its own there -- and one never priced falls back to
+  // #    what its kind is worth in the reader's own engine
   // ============================================================
   const rateOf = s => {
     if (!s) return 0;
-    if (Number(s.rate) > 0) return Number(s.rate);
+    if (s.per !== 'page' && Number(s.each) > 0) return Number(s.each);
     if (s.kind === 'tb') return 0.5;
     if (s.kind === 'rules') return 20;
     return /^\s*question/i.test(s.name || '') ? 1.5 : 2;

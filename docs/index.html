@@ -19,10 +19,10 @@
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=145">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=145">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=145">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermSheet.css?v=145">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=146">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=146">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=146">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermSheet.css?v=146">
 </head>
 <body>
 
@@ -172,6 +172,19 @@
   <p class="term-gpa" id="term-gpa"></p>
 
   <div class="term-shape" id="term-shape"></div>
+
+  <!-- ============================================================ -->
+  <!-- # 🏁 ⏳  WHEN THE TERM'S WORK RUNS OUT -->
+  <!-- # 🔤 HTML -->
+  <!-- # 🎯 Two sentences above the squares: what your own pace says, -->
+  <!-- #    and what a pace you choose would say -->
+  <!-- # 🔗 The first is MEASURED and the second is a question you ask -->
+  <!-- #    it. They sit together because the answer to "when will I be -->
+  <!-- #    done" is worth nothing without "at what rate" beside it — -->
+  <!-- #    and the measured one is put first, because that is the one -->
+  <!-- #    that is true whether or not you like it -->
+  <!-- ============================================================ -->
+  <div class="pace" id="pace"></div>
 
   <div class="days" id="days">
     <div class="days-grid" id="days-grid"></div>
@@ -463,7 +476,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v145</p>
+<p class="build">v146</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -486,30 +499,31 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=145"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=145"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=145"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=145"></script>
-<script src="📚TermBoard/B-End/TermChapterStore.js?v=145"></script>
-<script src="📚TermBoard/B-End/TermSourceStore.js?v=145"></script>
-<script src="📚TermBoard/B-End/TermExplainStore.js?v=145"></script>
-<script src="📚TermBoard/B-End/TermSheetStore.js?v=145"></script>
-<script src="📚TermBoard/B-End/TermDaysStore.js?v=145"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=145"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermChapterPaper.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermSourceFind.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermSourcePane.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermExplain.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermNote.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermSheetIcons.js?v=145"></script>
-<script src="📚TermBoard/F-End/TermSheetPaper.js?v=145"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=145"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=146"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=146"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=146"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=146"></script>
+<script src="📚TermBoard/B-End/TermChapterStore.js?v=146"></script>
+<script src="📚TermBoard/B-End/TermSourceStore.js?v=146"></script>
+<script src="📚TermBoard/B-End/TermExplainStore.js?v=146"></script>
+<script src="📚TermBoard/B-End/TermSheetStore.js?v=146"></script>
+<script src="📚TermBoard/B-End/TermDaysStore.js?v=146"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=146"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermPace.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermChapterPaper.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermSourceFind.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermSourcePane.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermExplain.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermNote.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermSheetIcons.js?v=146"></script>
+<script src="📚TermBoard/F-End/TermSheetPaper.js?v=146"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=146"></script>
 
 </body>
 </html>

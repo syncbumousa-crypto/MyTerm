@@ -1224,6 +1224,9 @@
     showName();
     drawColumns();
     window.MyTermDays?.show(data);
+    // The pace is drawn beside the days and reads the same board, but it
+    // waits on one small file of its own, so it is asked rather than told
+    if (window.MyTermPace?.arm('pace')) window.MyTermPace.show();
     drawTermShape();
     // A tab opened on one course lands on it, once the courses are here
     window.MyTermCoursePage?.fromAddress();

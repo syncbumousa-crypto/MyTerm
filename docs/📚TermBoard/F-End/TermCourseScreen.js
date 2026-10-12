@@ -353,6 +353,11 @@
     // lines, and the other language is not the same length — so the paper
     // is cut again. The sheet itself is the one thing that never moves
     if (window.MyTermChapterStore?.openId()) repaper();
+    // A STACK OF SHEETS FOLLOWS THE SAME BUTTON. Their pages carry both
+    // languages at once and show one; the globe that turns the summary
+    // over turns them too, so a reader is never asked twice which
+    // language they are reading in
+    window.MyTermSheetPaper?.lang?.(readLang);
     paintEye();
   };
 
@@ -1286,14 +1291,35 @@
     if (!window.MyTermChapterStore?.content()) return;
     const parts = window.MyTermChapterStore.sections();
     const here = window.MyTermChapterStore.openSection();
-    const bank = parts.find(p => p.id === here)?.kind === 'tb';
+    const part = parts.find(p => p.id === here);
+    const bank = part?.kind === 'tb';
+    // ============================================================
+    // A THIRD THING THAT CAN BE ON THE DESK
+    //
+    // A part is read, a bank is answered, and a STACK OF SHEETS is
+    // worked through. Three drawers and one box, so whichever two are
+    // not wanted are cleared out of it first.
+    //
+    // AND A SHEET TAKES NO SIZE CONTROLS. Every equation on these
+    // pages was composed on the understanding that its bounds are the
+    // frame of its page, and the page measures itself and shrinks to
+    // fit. A type button would promise what it cannot give: it would
+    // grow the letters, the frame would tighten, and the sheet would
+    // put them back in the same breath
+    // ============================================================
+    const rules = part?.kind === 'rules';
 
     // The strip is told first, so the controls that act on a sheet are
     // gone before the thing they act on is. The other way round there
     // is a frame in which a zoom button stands over a bank
     page.classList.toggle('banking', bank);
+    page.classList.toggle('sheeting', rules);
 
-    if (bank) {
+    if (rules) {
+      window.MyTermPaper.shut();
+      window.MyTermQuiz.shut();
+      drawSheets(part);
+    } else if (bank) {
       window.MyTermPaper.shut();
       window.MyTermQuiz.paint(body, afterPaper);
     } else {
@@ -1301,6 +1327,29 @@
       repaper();
     }
     paintAll();
+  };
+
+  // The sheets are fetched the way the explanations are: on the first
+  // asking and not before. Four hundred kilobytes is not a thing to
+  // download for a chapter whose laws nobody opened
+  const drawSheets = async part => {
+    const paper = window.MyTermSheetPaper;
+    const store = window.MyTermSheetStore;
+    if (!paper || !store) return;
+    body.textContent = '';
+    const holder = document.createElement('div');
+    holder.className = 'csheets';
+    body.append(holder);
+    paper.arm(holder);
+
+    const c = course();
+    const ch = alive(c).find(h => h.id === openChapter);
+    if (!ch) return;
+    await store.ready(c.id, ch);
+    // the reader may have moved on while four hundred kilobytes arrived
+    if (window.MyTermChapterStore.openSection() !== part.id) return;
+    paper.draw(part.group || '');
+    paper.lang(readLang);
   };
 
   const drawBody = () => {

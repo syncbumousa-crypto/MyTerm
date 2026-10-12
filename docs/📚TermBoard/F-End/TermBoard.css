@@ -1,4 +1,4 @@
-﻿/* ============================================================ */
+/* ============================================================ */
 /* # 🌑 🖥️  THE DARK BOARD */
 /* # 🔤 CSS */
 /* # 🎯 Moves the content to the top instead of the middle while the */
@@ -2634,6 +2634,32 @@ body.reading .build { bottom: 46px; }
 .banking .conly-paper,
 .banking #course-lang,
 .banking #course-dark { display: none; }
+
+/* ============================================================ */
+/* # 📐 📄  A SHEET TAKES NO SIZE CONTROLS                       */
+/* # 🔤 CSS                                                      */
+/* # 🎯 While a stack of law sheets is on the desk, the type and  */
+/* #    column controls are not there at all                      */
+/* # 🔗 NOT A DISABLED BUTTON, A BUTTON THAT IS NOT THERE. Every  */
+/* #    equation on these pages was composed on the understanding */
+/* #    that its bounds are the frame of its page, and the page   */
+/* #    measures itself after drawing and shrinks as one block to */
+/* #    fit. A type button would grow the letters, the frame      */
+/* #    would tighten, and the sheet would put them back in the   */
+/* #    same breath -- a press with no effect, or an effect the   */
+/* #    page undoes while you watch.                              */
+/* #                                                              */
+/* #    A framed painting is zoomed into, not enlarged. What      */
+/* #    stays is all that still means something: the language,    */
+/* #    the paper colour, the sources, fullscreen                 */
+/* ============================================================ */
+.sheeting .conly-paper,
+.sheeting #course-type,
+.sheeting #course-eye,
+.sheeting #course-all { display: none; }
+
+/* The sheets stand in the same box the summary does, and scroll in it */
+.csheets { height: 100%; overflow: auto; padding: 14px 10px 24px; }
 
 /* ============================================================ */
 /* # 🎯 🗃️  THE TEST BANK */

@@ -3901,3 +3901,52 @@ tr:hover .crownote { opacity: 1; }
   background: rgba(255, 255, 255, 0.92);
 }
 .day { position: relative; }
+/* ============================================================
+   MORE ROOM UNDER THE COURSE NAME
+   The hours line was being cut off ("6h18m / 91...") because the strip
+   spends its width on things that do not need it. Everything shifts
+   toward the start: a smaller fold arrow, a thinner gutter, tighter
+   gaps. Nothing is removed and nothing is made unreadable -- the room
+   comes from the spaces between
+   ============================================================ */
+.col-top { padding-inline-start: 6px; gap: 4px; }
+.col-twist { width: 15px; height: 15px; font-size: 9px; }
+.col-grade { min-width: 27px; padding: 0 3px; }
+.col-top .trio { flex: 0 0 78px; margin-inline-start: 0; }
+.col-title { min-width: 0; }
+/* and the line itself is allowed to use what it was given */
+.col-top .col-count { font-size: 9px; letter-spacing: -.1px; }
+
+/* ============================================================
+   MEASURED, OR WHAT YOU EXPECT IT TO COST
+   Beside "remove chapter", in the same quiet weight: this is a thing
+   said about the chapter, not an action taken on it, so it must not
+   shout louder than the one real action next to it
+   ============================================================ */
+.ch-hoursby { position: relative; margin-inline-start: 12px; }
+.ch-hlink { font-size: 9px; padding: 0; border: 0; background: transparent;
+            color: var(--dim2); cursor: pointer; }
+.ch-hlink:hover { color: var(--ink); text-decoration: underline; }
+.ch-hlink.guess { color: var(--orange); }
+
+.ch-hpop { position: absolute; top: calc(100% + 4px); inset-inline-start: 0; z-index: 30;
+           display: flex; flex-direction: column; gap: 2px; padding: 5px;
+           background: #1c1d21; border: 1px solid #34353b; border-radius: 8px;
+           box-shadow: 0 8px 22px rgba(0,0,0,.5); white-space: nowrap; }
+.ch-hpick { font-size: 10px; text-align: start; padding: 3px 8px; border: 0;
+            border-radius: 5px; background: transparent; color: var(--dim2); cursor: pointer; }
+.ch-hpick:hover { background: #26272c; color: var(--ink); }
+.ch-hpick.on { color: var(--ink); background: #2b2c33; }
+.ch-hnum { width: 92px; margin-top: 3px; font: inherit; font-size: 10px;
+           padding: 3px 6px; border-radius: 5px; border: 1px solid #34353b;
+           background: #16171a; color: var(--ink); }
+
+/* ============================================================
+   THE TERM'S OWN HOURS, ABOVE THE TWO FORECASTS
+   The same green and orange the cards use for the same two
+   quantities, so the eye carries one meaning between them
+   ============================================================ */
+.paceTally { margin: 0 0 2px; font-size: 13px; color: var(--dim, #9a9ca4); line-height: 1.7; }
+.paceDone { color: var(--green); font-weight: 700; }
+.paceAll  { color: var(--orange); font-weight: 700; }
+.paceOf   { color: var(--dim2, #6b6d75); }

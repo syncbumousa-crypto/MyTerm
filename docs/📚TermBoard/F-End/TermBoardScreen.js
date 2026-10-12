@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // # 🏷️ ✏️  THE TERM NAME
 // # 🔤 JavaScript
 // # 🎯 One spot at the top of the board that is three things in turn:
@@ -344,7 +344,7 @@
     if (lines[1]) {
       lines[1].textContent = '';
       lines[1].append(hoursPair(list.reduce((s, h) => s + h.doneMinutes, 0),
-                                list.reduce((s, h) => s + h.minutes, 0)));
+                                list.reduce((s, h) => s + keep.hoursOf(h), 0)));
     }
 
     const grade = column.querySelector('.col-grade');
@@ -797,10 +797,16 @@
   const sumOf = list => {
     let hours = 0, did = 0, rows = 0, good = 0, bad = 0, marked = 0;
     list.forEach(h => {
-      hours += h.minutes || 0;
+      // Measured, or the reader's own guess where they asked for it —
+      // decided in ONE place, because the bar beside the chapter, the
+      // hours under the course, the term's total and "you'll finish in
+      // N days" all divide by this and must not each decide for
+      // themselves what a chapter is worth
+      const worth = keep.hoursOf(h);
+      hours += worth;
       // A chapter nobody has paced still counts what was ticked on it,
       // the only way it ever could: all of it, or none
-      did += h.minutes > 0 ? Math.min(h.minutes, h.doneMinutes || 0) : 0;
+      did += worth > 0 ? Math.min(worth, h.doneMinutes || 0) : 0;
       rows += h.rows || 0;
       good += h.good || 0;
       bad += h.bad || 0;
@@ -973,7 +979,84 @@
       redraw();
     };
 
-    box.append(partsOf(ch), off);
+    // ============================================================
+    // # ⏳ 🔀  MEASURED, OR WHAT YOU EXPECT IT TO COST
+    // # 🔤 JavaScript
+    // # 🎯 A chapter says which of the two its hours are read by, and
+    // #    carries the reader's own guess when it is the second
+    // # 🔗 THE MEASURED NUMBER IS NEVER OVERWRITTEN. A chapter that has
+    // #    not been written yet measures nothing — truthfully — and a
+    // #    term made mostly of those read as a few hours of work, which
+    // #    is no use for planning. So the guess is a field of its own
+    // #    beside the measurement, and the chapter says which one it
+    // #    means. Switch back to Real and the measurement is still
+    // #    there, untouched, however long the guess has been showing
+    // ============================================================
+    const hoursWrap = document.createElement('span');
+    hoursWrap.className = 'ch-hoursby';
+
+    const draw = () => {
+      hoursWrap.textContent = '';
+      const byGuess = ch.hoursBy === 'expect';
+
+      const open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'ch-hlink' + (byGuess ? ' guess' : '');
+      open.textContent = 'hours';
+      open.title = byGuess
+        ? 'Read by what you expect it to cost'
+        : 'Read by what its parts actually hold';
+
+      const pop = document.createElement('span');
+      pop.className = 'ch-hpop';
+      pop.hidden = true;
+
+      const pick = (mode, words) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ch-hpick' + ((ch.hoursBy === mode) ? ' on' : '');
+        b.textContent = words;
+        b.onclick = e => {
+          e.stopPropagation();
+          ch.hoursBy = mode;
+          ch.updatedAt = now();
+          changed(course);
+          draw();
+          redraw();
+        };
+        return b;
+      };
+      pop.append(pick('real', 'Real'), pick('expect', 'By expectation'));
+
+      // The box only when the guess is what is being read — an hours
+      // field standing beside a number it is not feeding is a question
+      // with no answer attached
+      if (byGuess) {
+        const box = document.createElement('input');
+        box.type = 'number';
+        box.className = 'ch-hnum';
+        box.min = '0';
+        box.step = '0.5';
+        box.placeholder = 'hours';
+        box.value = ch.expect > 0 ? String(Math.round(ch.expect / 60 * 10) / 10) : '';
+        box.title = 'How many hours you expect this chapter to take';
+        box.onclick = e => e.stopPropagation();
+        box.oninput = () => {
+          const h = Math.max(0, Number(box.value) || 0);
+          ch.expect = Math.round(h * 60);
+          ch.updatedAt = now();
+          changed(course);
+          redraw();
+        };
+        pop.append(box);
+      }
+
+      open.onclick = e => { e.stopPropagation(); pop.hidden = !pop.hidden; };
+      hoursWrap.append(open, pop);
+    };
+    draw();
+
+    box.append(partsOf(ch), off, hoursWrap);
     return box;
   };
 
@@ -1139,7 +1222,7 @@
 
       const redraw = () => { drawChapters(course, body); refreshScores(); };
 
-      row.append(twist, no, name, hoursPair(ch.doneMinutes, ch.minutes), chapterReading(ch),
+      row.append(twist, no, name, hoursPair(ch.doneMinutes, keep.hoursOf(ch)), chapterReading(ch),
                  chapterDetail(course, ch, redraw));
       body.append(row);
     });

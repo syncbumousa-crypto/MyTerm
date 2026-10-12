@@ -48,19 +48,23 @@
   // #    a number on the end of the term that no part of the board can
   // #    be opened to check
   // ============================================================
-  const leftMinutes = () => {
+  const termHours = () => {
     const b = board()?.board?.();
-    if (!b) return 0;
-    let left = 0;
-    b.courses.filter(c => !c.deleted).forEach(c => {
+    let all = 0, did = 0;
+    (b?.courses || []).filter(c => !c.deleted).forEach(c => {
       (c.chapters || []).filter(h => !h.deleted).forEach(h => {
-        const all = Math.max(0, Number(h.minutes) || 0);
-        const did = Math.min(all, Math.max(0, Number(h.doneMinutes) || 0));
-        left += all - did;
+        // What a chapter is worth is asked of the store, so this line
+        // and the cards below it can never put a different price on the
+        // same chapter
+        const worth = board().hoursOf(h);
+        all += worth;
+        did += Math.min(worth, Math.max(0, Number(h.doneMinutes) || 0));
       });
     });
-    return left;
+    return { all, did, left: Math.max(0, all - did) };
   };
+
+  const leftMinutes = () => termHours().left;
 
   // ============================================================
   // # 🗂️ 🏷️  WHAT ONE PIECE OF A DAY WAS
@@ -178,8 +182,28 @@
     // the reason the sentence changed, and it must not disappear to
     // show the result of pressing something inside it
     [...where.children].forEach(n => { if (!n.classList.contains('pacePop')) n.remove(); });
-    const left = leftMinutes();
+    const sum = termHours();
+    const left = sum.left;
     const s = days()?.stats?.() || { avg: null, days: 0, total: 0, list: [] };
+
+    // ============================================================
+    // THE WHOLE TERM, IN ONE LINE, BEFORE ANY FORECAST
+    // Both sentences under this are predictions; this is the only
+    // number here that has already happened. It is said first and in
+    // the colours the cards use for the same two quantities — green
+    // for what is done, orange for what the work comes to — so a
+    // reader moving between the cards and this line is reading the
+    // same pair of numbers in the same pair of colours, added up
+    // ============================================================
+    const tally = el('p', 'paceTally');
+    tally.append(el('b', 'paceDone', asHours(sum.did)),
+                 el('span', 'paceOf', ' of '),
+                 el('b', 'paceAll', asHours(sum.all)),
+                 el('span', 'paceOf', ' of the term’s work'));
+    tally.title = sum.all > 0
+      ? Math.round(sum.did / sum.all * 100) + '% of everything on the board'
+      : 'Nothing on the board has hours yet';
+    where.append(tally);
 
     // --- the measured one ---
     const real = el('p', 'paceLine');

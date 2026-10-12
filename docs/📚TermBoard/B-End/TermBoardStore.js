@@ -126,6 +126,19 @@
         done: c.done === true,
         minutes: Math.max(0, Number(c.minutes) || 0),
         doneMinutes: Math.max(0, Number(c.doneMinutes) || 0),
+        // ============================================================
+        // WHAT THE READER EXPECTS THIS CHAPTER TO COST
+        // The measured hours are the sum of what its parts hold, and a
+        // chapter nobody has written yet holds nothing — so a term of
+        // fifty-nine chapters read as the work of the eleven that are
+        // built. That is honest about what exists and useless for
+        // planning. So a chapter may carry a GUESS as well, and say
+        // which of the two it is read by. The guess is never mixed
+        // into the measured number: two fields, and the chapter says
+        // which one it means
+        // ============================================================
+        expect: Math.max(0, Number(c.expect) || 0),
+        hoursBy: c.hoursBy === 'expect' ? 'expect' : 'real',
         // Where the chapter's own two files live, and which version of its
         // content this paper knows about. The version is written here on
         // purpose: this paper is read on every open anyway, so a device
@@ -409,6 +422,25 @@
     // file of its own AT TERM LEVEL — rather than inside a course or a
     // chapter — needs these two and has no other way to find them. The
     // folder is asked of Drive once and then remembered
+    // ============================================================
+    // # ⏳ ⚖️  WHAT ONE CHAPTER IS WORTH, ASKED IN ONE PLACE
+    // # 🔤 JavaScript
+    // # 🎯 Its measured hours, or the reader's own guess when they have
+    // #    asked to be read that way
+    // # 🔗 FOUR THINGS ON SCREEN DIVIDE BY THIS NUMBER: the bar beside
+    // #    the chapter, the hours under the course name, the term's own
+    // #    total, and "you'll finish in N days". Worked out separately
+    // #    in four places it would be four chances to disagree, and the
+    // #    kind of disagreement nobody notices because each number
+    // #    looks reasonable on its own
+    // ============================================================
+    hoursOf: ch => {
+      if (!ch) return 0;
+      const guess = Math.max(0, Number(ch.expect) || 0);
+      if (ch.hoursBy === 'expect' && guess > 0) return guess;
+      return Math.max(0, Number(ch.minutes) || 0);
+    },
+
     paperId: () => fileId,
     homeFolder: async () => {
       if (termFolder) return termFolder;

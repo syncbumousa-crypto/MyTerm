@@ -12,17 +12,20 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The browser never zooms on its own. The only zoom is the paper's own,
+     by two fingers: left to itself, the iPhone blew the page up every time a
+     cell or a box smaller than 16px was pressed to type in, and left it there -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <!-- Said here, before any style is read, because a browser that has not
      been told decides for itself that this is a light page and darkens
      the colours a second time. Measured: #1b1c1f was being drawn as
      rgb(22,24,25), so the page on screen was never the page written -->
 <meta name="color-scheme" content="dark">
 <title>MyTerm</title>
-<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=159">
-<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=159">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=159">
-<link rel="stylesheet" href="📚TermBoard/F-End/TermSheet.css?v=159">
+<link rel="stylesheet" href="🏠shell/F-End/shell.css?v=160">
+<link rel="stylesheet" href="☁️CloudingStorage/F-End/storage.css?v=160">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermBoard.css?v=160">
+<link rel="stylesheet" href="📚TermBoard/F-End/TermSheet.css?v=160">
 </head>
 <body>
 
@@ -532,7 +535,7 @@
 <!-- #    not, the browser is serving an old copy out of its memory, and -->
 <!-- #    this one line says so at a glance instead of leaving it a guess -->
 <!-- ============================================================ -->
-<p class="build">v159</p>
+<p class="build">v160</p>
 
 <!-- ============================================================ -->
 <!-- # 📦 🔌  LIBRARIES AND SCRIPTS -->
@@ -555,34 +558,34 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
-<script src="🔐accounts/B-End/ProfilesSupabase.js?v=159"></script>
-<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=159"></script>
-<script src="📚TermBoard/B-End/TermBoardBell.js?v=159"></script>
-<script src="📚TermBoard/B-End/TermBoardStore.js?v=159"></script>
-<script src="📚TermBoard/B-End/TermChapterStore.js?v=159"></script>
-<script src="📚TermBoard/B-End/TermSourceStore.js?v=159"></script>
-<script src="📚TermBoard/B-End/TermExplainStore.js?v=159"></script>
-<script src="📚TermBoard/B-End/TermSheetStore.js?v=159"></script>
-<script src="📚TermBoard/B-End/TermDaysStore.js?v=159"></script>
-<script src="📚TermBoard/B-End/TermSeat.js?v=159"></script>
-<script src="📚TermBoard/B-End/TermWhere.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermSeatVeil.js?v=159"></script>
-<script src="🏠shell/F-End/ShellHud.js?v=159"></script>
-<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermShapes.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermDays.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermPace.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermBoardScreen.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermChapterPaper.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermSourceFind.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermSourcePane.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermCourseScreen.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermExplain.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermNote.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermSheetIcons.js?v=159"></script>
-<script src="📚TermBoard/F-End/TermSheetPaper.js?v=159"></script>
-<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=159"></script>
+<script src="🔐accounts/B-End/ProfilesSupabase.js?v=160"></script>
+<script src="☁️CloudingStorage/B-End/ProfilesClouding.js?v=160"></script>
+<script src="📚TermBoard/B-End/TermBoardBell.js?v=160"></script>
+<script src="📚TermBoard/B-End/TermBoardStore.js?v=160"></script>
+<script src="📚TermBoard/B-End/TermChapterStore.js?v=160"></script>
+<script src="📚TermBoard/B-End/TermSourceStore.js?v=160"></script>
+<script src="📚TermBoard/B-End/TermExplainStore.js?v=160"></script>
+<script src="📚TermBoard/B-End/TermSheetStore.js?v=160"></script>
+<script src="📚TermBoard/B-End/TermDaysStore.js?v=160"></script>
+<script src="📚TermBoard/B-End/TermSeat.js?v=160"></script>
+<script src="📚TermBoard/B-End/TermWhere.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermSeatVeil.js?v=160"></script>
+<script src="🏠shell/F-End/ShellHud.js?v=160"></script>
+<script src="🔐accounts/F-End/ProfilesSupabaseScreen.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermShapes.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermDays.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermPace.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermBoardScreen.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermChapterPaper.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermChapterQuiz.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermSourceFind.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermSourcePane.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermCourseScreen.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermExplain.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermNote.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermSheetIcons.js?v=160"></script>
+<script src="📚TermBoard/F-End/TermSheetPaper.js?v=160"></script>
+<script src="☁️CloudingStorage/F-End/ProfilesCloudingScreen.js?v=160"></script>
 
 </body>
 </html>

@@ -33,6 +33,21 @@
   --mono: ui-monospace, Consolas, "SF Mono", monospace;
 }
 
+/* ============================================================ */
+/* # 🔤 📱  THE PHONE MAY NOT ENLARGE TEXT ON ITS OWN */
+/* # 🔤 CSS */
+/* # 🎯 Type is drawn at the size it was given, on every device */
+/* # 🔗 The paper is a fixed 800px sheet scaled down to fit. Mobile */
+/* #    browsers read that as a desktop page and blow up long blocks */
+/* #    of text to keep them legible — so a definition came out bigger */
+/* #    than the term beside it, and only shrank back while it was */
+/* #    being edited, which switches that boosting off */
+/* ============================================================ */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 html, body {
   margin: 0;
   padding: 0;

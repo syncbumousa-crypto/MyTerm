@@ -341,6 +341,18 @@
         group: typeof s.group === 'string' ? s.group : '',
         per: PACES.includes(s.per) ? s.per : 'row',
         each: Math.max(0, Number(s.each) || 0),
+        // ============================================================
+        // WHAT ONE ITEM OF THIS PART IS WORTH, IN MINUTES
+        // The reader's own engine weighs a term at two minutes, a
+        // question at one and a half, a practice card at twenty and a
+        // bank question at half. On this board a terms part and a
+        // questions part are BOTH kind 'part' and nothing else tells
+        // them apart — so the weight has to live on the part itself,
+        // or every question would be counted as a term in silence.
+        // Zero means it has not been decided, and it is worked out
+        // from the kind and the name the first time it is needed
+        // ============================================================
+        rate: Math.max(0, Number(s.rate) || 0),
         // A PART IS CROSSED OUT, NOT TORN OUT, for the same reason a row
         // is. The merge pushes back any section the other device still
         // has and this one does not — so a part really taken out of the
@@ -374,7 +386,36 @@
     return out;
   };
 
-  const shapeState = doc => ({ app: 'MyTerm', marks: shapeMarks(doc?.marks), updatedAt: doc?.updatedAt ?? null });
+  // ============================================================
+  // # 🪧 📈  HOW MUCH OF THIS CHAPTER WAS ALREADY COUNTED
+  // # 🔤 JavaScript
+  // # 🎯 The number of finished items in each part, as of the last time
+  // #    the day's record was written
+  // # 🔗 IT LIVES WITH THE MARKS IT DESCRIBES, in the same small file
+  // #    and written in the same write. Kept anywhere else it would
+  // #    drift from them: a chapter copied without it would credit its
+  // #    whole history to one day, and a chapter deleted would leave it
+  // #    behind.
+  // #
+  // #    AND null IS NOT THE SAME AS EMPTY. null means this chapter has
+  // #    never been counted, so whatever is already ticked is the
+  // #    BASELINE and is credited to no day at all -- otherwise every
+  // #    item the reader ever finished lands on the day this shipped,
+  // #    as one impossible afternoon. An empty object means it has been
+  // #    counted and nothing was ticked, and the next tick does count.
+  // #    Their own engine learned this the hard way; it is carried
+  // ============================================================
+  const shapeSeen = given => {
+    if (!given || typeof given !== 'object') return null;
+    const out = {};
+    Object.keys(given).forEach(id => {
+      if (typeof id === 'string' && id.length <= 40) out[id] = Math.max(0, Math.trunc(Number(given[id])) || 0);
+    });
+    return out;
+  };
+
+  const shapeState = doc => ({ app: 'MyTerm', marks: shapeMarks(doc?.marks),
+                               seen: shapeSeen(doc?.seen), updatedAt: doc?.updatedAt ?? null });
 
   // ============================================================
   // # ⏱️ ⏱️  TWO CLOCKS ON ONE ROW
@@ -570,6 +611,73 @@
   // ============================================================
   let contentDirty = false, stateDirty = false;
 
+  // ============================================================
+  // # ⚖️ 🧮  WHAT A FINISHED ITEM IS WORTH
+  // # 🔤 JavaScript
+  // # 🎯 Minutes per item, from the part itself when it says, and from
+  // #    what the part IS when it has not been told
+  // # 🔗 These four numbers are the reader's, not ours, and they are the
+  // #    whole basis of "you'll finish in N days" -- so they are read
+  // #    out of their engine rather than guessed: a term two minutes, a
+  // #    question one and a half, a practice card twenty, a bank
+  // #    question half
+  // ============================================================
+  const rateOf = s => {
+    if (!s) return 0;
+    if (Number(s.rate) > 0) return Number(s.rate);
+    if (s.kind === 'tb') return 0.5;
+    if (s.kind === 'rules') return 20;
+    return /^\s*question/i.test(s.name || '') ? 1.5 : 2;
+  };
+
+  // How many things are finished in one part right now. A rules part is
+  // counted by its TICKS and not by its sheets: a law sheet is the page
+  // you work from and carries no tick at all, and an empty seat is not a
+  // card. Counting the sheets instead once turned fourteen cards into
+  // thirty-three and doubled the hours a chapter claimed
+  const doneIn = s => {
+    if (!open) return 0;
+    if (s.kind === 'rules') {
+      const head = 's-' + (s.group || ' ') + ':';
+      return Object.keys(open.state.marks)
+        .filter(k => k.indexOf(head) === 0 && open.state.marks[k]?.on === true).length;
+    }
+    return s.rows.filter(r => !r.deleted && open.state.marks[r.id]?.on === true).length;
+  };
+
+  // ============================================================
+  // # 📔 ➕  THE DAY'S RECORD, SETTLED BEFORE THE STATE IS WRITTEN
+  // # 🔤 JavaScript
+  // # 🎯 Works out what was finished since the last count and hands it
+  // #    to the record of the days
+  // # 🔗 THE NEW MARK GOES OUT IN THE SAME WRITE AS THE TICKS IT
+  // #    DESCRIBES. Written a moment apart, a failure between the two
+  // #    would leave Drive holding ticks that were never counted, or a
+  // #    count of ticks that are not there -- and the next open would
+  // #    credit the same afternoon twice.
+  // #
+  // #    The difference is SIGNED. A reader who takes a tick back gets
+  // #    its minutes taken back, or ticking and unticking would be a
+  // #    way to inflate a day without doing anything
+  // ============================================================
+  const weighToday = () => {
+    if (!open) return null;
+    const fresh = {};
+    livingSections().forEach(s => { fresh[s.id] = doneIn(s); });
+
+    const seen = open.state.seen;
+    if (!seen) return { fresh, credits: [], baseline: true };
+
+    const credits = [];
+    livingSections().forEach(s => {
+      const d = fresh[s.id] - Math.max(0, Number(seen[s.id]) || 0);
+      if (!d) return;
+      credits.push({ c: open.course.id, h: open.chapter.id, s: s.id,
+                     n: d, m: Math.round(d * rateOf(s) * 100) / 100 });
+    });
+    return { fresh, credits, baseline: false };
+  };
+
   async function push() {
     if (sending || !open || (!contentDirty && !stateDirty)) return;
     sending = true;
@@ -577,6 +685,13 @@
     const wantedContent = contentDirty, wantedState = stateDirty;
     contentDirty = stateDirty = false;
     tellStatus('saving');
+
+    // Weighed before anything is written, because the new high-water
+    // mark has to travel in the same write as the ticks it counts
+    const weighed = weighToday();
+    const wasSeen = open.state.seen;
+    const mustState = Boolean(weighed && (weighed.baseline || weighed.credits.length));
+    if (weighed) open.state.seen = weighed.fresh;
 
     try {
       if (wantedContent && open.chapter.contentId) {
@@ -586,9 +701,22 @@
         cacheWrite(open.chapter.id, open.content);
       }
 
-      if (wantedState && open.chapter.stateId) {
+      if ((wantedState || mustState) && open.chapter.stateId) {
         open.state.updatedAt = now();
         await cloud().writeFile(open.chapter.stateId, open.state);
+      }
+
+      // AND ONLY NOW. The mark is safely in Drive, so the same work
+      // cannot be counted a second time if this next part fails; the
+      // record of the days keeps its own unsent flag and tries again.
+      // Of the two ways to be wrong, a day missing minutes it earned is
+      // a smaller lie than a day claiming minutes nobody worked
+      if (weighed && weighed.credits.length) {
+        const days = window.MyTermDaysStore;
+        if (days) {
+          await days.ready().catch(() => {});
+          weighed.credits.forEach(one => days.add(one));
+        }
       }
 
       // How many rows this chapter has and how many are learnt, written
@@ -611,6 +739,12 @@
     } catch {
       contentDirty = contentDirty || wantedContent;
       stateDirty = stateDirty || wantedState;
+      // The high-water mark goes back to what Drive still holds. Left
+      // where it was moved to, the work it stands for would never be
+      // counted: the next try would see no difference and credit
+      // nothing, and an afternoon would vanish because a write failed
+      open.state.seen = wasSeen;
+      if (mustState) stateDirty = true;
       dirty = true;
       tellStatus('failed');
     } finally {
@@ -796,6 +930,28 @@
       if (!stateDoc) return null;
 
       open = { course, chapter, content, state: shapeState(stateDoc) };
+
+      // ============================================================
+      // THE BASELINE IS TAKEN WHEN THE CHAPTER IS OPENED, NOT AT THE
+      // FIRST TICK
+      //
+      // A chapter this engine has never counted has a whole history of
+      // ticks in it, and none of them happened today. So what is ticked
+      // the moment it opens is the line to measure from.
+      //
+      // Taken later — at the first push, which is caused by the first
+      // tick — that tick is INSIDE the baseline and is silently never
+      // counted. One swallowed item per chapter, and the only sign is a
+      // day quietly worth two minutes less than it was. The guard found
+      // it on the first run; their own engine takes it on load too
+      // ============================================================
+      if (!open.state.seen) {
+        const seen = {};
+        livingSections().forEach(s => { seen[s.id] = doneIn(s); });
+        open.state.seen = seen;
+        stateDirty = true;
+        later();
+      }
       return open;
     },
 

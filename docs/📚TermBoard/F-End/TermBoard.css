@@ -1105,6 +1105,12 @@ body.board-on {
      and whatever it loses the meaning column gains — the sheet itself is
      an A4 and does not move */
   --term-col: 180px;
+  /* Scrolling stays the browser's, pinching does not. Our own pinch makes
+     the paper larger, and the browser's would blow the whole screen up
+     in pixels on top of it — two zooms from one pair of fingers. The
+     script cannot stop it alone: it lets the first few pixels of a
+     two-finger touch through, and the browser has started by then */
+  touch-action: pan-x pan-y;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;

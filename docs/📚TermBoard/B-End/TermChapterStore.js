@@ -83,6 +83,10 @@
         if (!keepPictures || !file || !/^[\w-]{6,80}$/.test(file)) return;
         const made = doc.createElement('img');
         made.setAttribute('data-file', file);
+        // How wide the reader drew it, as a share of the note. A number
+        // and nothing else: anything else is not a size
+        const wide = Number(node.getAttribute('data-w'));
+        if (Number.isInteger(wide) && wide >= 10 && wide < 100) made.setAttribute('data-w', String(wide));
         into.append(made);
         return;
       }

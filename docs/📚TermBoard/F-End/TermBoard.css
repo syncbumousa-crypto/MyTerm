@@ -3734,12 +3734,48 @@ body.darkpaper .cep-note { color: #9a9ca4; }
 }
 
 .cnote-body img {
-  display: block;
+  /* In the line like a word, so small ones stand side by side and a space
+     typed between them shows. The width is set per picture from its size */
+  display: inline-block;
+  vertical-align: bottom;
+  width: 100%;
   max-width: 100%;
   height: auto;
-  margin: .6em 0;
+  margin: .3em 0;
   border-radius: .4em;
+  cursor: pointer;
 }
+
+.cnote-body img.cnote-picked { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* The row of sizes over a picked picture. Above the note's own window */
+.cnote-sizer {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: #26272d;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .45);
+}
+
+.cnote-sizer button {
+  min-width: 34px;
+  height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cnote-sizer button.on { background: var(--blue-dk); color: #ffffff; }
+@media (hover: hover) { .cnote-sizer button:hover:not(.on) { background: #34353d; } }
 
 .cnote-coming {
   display: inline-block;

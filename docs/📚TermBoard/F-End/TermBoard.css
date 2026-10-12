@@ -2234,16 +2234,22 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
    middle — and what it opens is wanted perhaps twice an evening.
    The PLACE is always there and always takes a press; only the picture
    waits. One press wakes it, the next opens its list. */
+/* The whole height of the row and the whole margin beside it, and on out
+   past the edge of the paper: on a phone the sheet is drawn at under half
+   size, and a 14px mark became a 6px one no finger could find. Now a
+   press anywhere to the left of a row is a press on that row's gear. The
+   mark itself still stands where it always did, next to the number */
 .crowgear {
   position: absolute;
-  top: 50%;
-  inset-inline-start: -18px;
-  transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
+  top: 0;
+  bottom: 0;
+  inset-inline-start: -60px;
+  width: 60px;
+  box-sizing: border-box;
+  padding-inline-end: 4px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   font-size: 10px;
   line-height: 1;
   color: transparent;

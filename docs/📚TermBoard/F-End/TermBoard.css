@@ -1105,6 +1105,12 @@ body.board-on {
      and whatever it loses the meaning column gains — the sheet itself is
      an A4 and does not move */
   --term-col: 180px;
+  /* Scrolling stays the browser's, pinching does not. Our own pinch makes
+     the paper larger, and the browser's would blow the whole screen up
+     in pixels on top of it — two zooms from one pair of fingers. The
+     script cannot stop it alone: it lets the first few pixels of a
+     two-finger touch through, and the browser has started by then */
+  touch-action: pan-x pan-y;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -2092,8 +2098,10 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
    It is a stripe and not a colour because the colours on this paper all
    mean something already, and because a stripe still reads as a stripe
    when the sheet is turned over into the dark */
+/* The ruling is laid over whatever the box is coloured, so a term can be
+   both outside the syllabus and tinted, and still read as both */
 .ctbl td.cterm.outside {
-  background-image: repeating-linear-gradient(45deg, #e2e2e2, #e2e2e2 9px, #cfcfcf 9px, #cfcfcf 11px);
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 9px, rgba(0, 0, 0, .085) 9px, rgba(0, 0, 0, .085) 11px);
 }
 
 /* ============================================================ */
@@ -2193,6 +2201,27 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
 }
 
 .ctbl tr.clead td.cterm { background: #d4d4d4; }
+
+/* ============================================================ */
+/* # 🎨 🔖  A TERM COLOURED TO COME BACK TO */
+/* # 🔤 CSS */
+/* # 🎯 The reader's three colours, on the term's box and nowhere else */
+/* # 🔗 Pale enough that black type still reads on them, and written */
+/* #    after the first row's darker shade so a coloured term keeps its */
+/* #    colour on the first row of a table too */
+/* ============================================================ */
+.ctbl tr td.cterm.tint-yellow, .ctint-dot.tint-yellow { background-color: #fbe68a; }
+.ctbl tr td.cterm.tint-green,  .ctint-dot.tint-green  { background-color: #b5e3b0; }
+.ctbl tr td.cterm.tint-blue,   .ctint-dot.tint-blue   { background-color: #b3d4f5; }
+
+.cmenu .ctint-pick { display: flex; align-items: center; gap: 8px; }
+.ctint-dot {
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, .35);
+}
 
 /* Always there, and quiet. It was a cross that only appeared when the
    pointer found the row, which on a phone is never — and a control

@@ -261,6 +261,13 @@
     zoomTo(pinch.was * (span / pinch.from), false);
   }, { passive: false });
 
+  // Safari on the iPhone pays touch-action no mind for a pinch, and
+  // zooms the screen itself on top of ours. It asks first, with its own
+  // gesture events, and a refusal there is the only one it hears
+  ['gesturestart', 'gesturechange'].forEach(name => document.addEventListener(name, event => {
+    if (openId) event.preventDefault();
+  }, { passive: false }));
+
   // Written down once the fingers are off, not on every frame of the
   // pinch — and only if it ever became a pinch at all
   ['touchend', 'touchcancel'].forEach(name => document.addEventListener(name, event => {

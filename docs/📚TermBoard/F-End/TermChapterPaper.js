@@ -152,6 +152,7 @@
     // is the term — whether you are asked for it — and the meaning is
     // only the answer to it
     const away = which === 'term' && row.outside ? ' outside' : '';
+    const tint = which === 'term' && row.tint ? ' tint-' + row.tint : '';
     // The mark that turns this one cell over, asleep in its far bottom
     // corner. It is drawn INSIDE the cell because that is the box it
     // belongs to — and so it is taken out again before a word of the
@@ -160,7 +161,7 @@
       + ` data-flip="${which}" title="${here.other === 'ar' ? 'Show this one in Arabic' : 'Show this one in English'}">`
       + `${here.other === 'ar' ? 'ع' : 'En'}</button>`;
 
-    return `<td class="c${which === 'term' ? 'term' : 'def'}${away}${hide}" dir="${here.dir}"`
+    return `<td class="c${which === 'term' ? 'term' : 'def'}${away}${tint}${hide}" dir="${here.dir}"`
       + ` data-col="${which}" data-field="${here[which]}"`
       + ` data-hintdir="${hintDir}" data-empty="${asAttr(hint)}">${words}${flip}</td>`;
   };
@@ -180,7 +181,10 @@
   const wordsOf = cell => {
     const copy = cell.cloneNode(true);
     copy.querySelectorAll('.ccelllang').forEach(node => node.remove());
-    return copy.innerHTML;
+    // The line break an empty cell is given to type on (see startTyping)
+    // is room for a caret, not something the reader wrote, and a break at
+    // the very end of a cell draws nothing anyway
+    return copy.innerHTML.replace(/<br\s*\/?>\s*$/i, '');
   };
 
   // Only ever one language mark awake, like the gear
@@ -870,6 +874,19 @@
     menu.append(document.createElement('hr'));
     item(rows[at].outside ? '▨  Mark as required' : '▨  Mark as not required',
          false, () => store().outside(rowId, !rows[at].outside));
+    // Three colours for the TERM's box, to find a term again at a glance.
+    // Choosing the colour it already has takes it off
+    [['yellow', 'Yellow'], ['green', 'Green'], ['blue', 'Blue']].forEach(([colour, name]) => {
+      const on = rows[at].tint === colour;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ctint-pick';
+      const dot = document.createElement('i');
+      dot.className = 'ctint-dot tint-' + colour;
+      button.append(dot, (on ? 'Remove ' + name.toLowerCase() : 'Colorize ' + name.toLowerCase()) + (on ? '  ✓' : ''));
+      button.onclick = () => { hideMenu(); store().tint(rowId, on ? '' : colour); repaint(); };
+      menu.append(button);
+    });
     menu.append(document.createElement('hr'));
     item('✕  Remove this row', false, () => store().dropRow(rowId));
 
@@ -952,11 +969,30 @@
     cell.contentEditable = 'true';
     cell.focus();
 
+    // ============================================================
+    // # ✍️ 📱  THE CARET GOES BEFORE THE LANGUAGE MARK, NEVER AFTER IT
+    // # 🔗 The mark is the last thing in every cell, and in a NEW row it
+    // #    is the only thing. A caret put after it had nowhere to stand
+    // #    but against the mark, and the phone's keyboard wrote into the
+    // #    mark itself: the letters were there, in transparent type, and
+    // #    were thrown out with the mark when the cell was saved. So an
+    // #    empty cell is given a line to type on, and the caret is set
+    // #    down at the end of the WORDS
+    // ============================================================
     let range = picked;
     if (!range) {
+      const flip = cell.querySelector('.ccelllang');
       range = document.createRange();
-      range.selectNodeContents(cell);
-      range.collapse(false);
+      if (!wordsOf(cell).trim()) {
+        cell.insertBefore(document.createElement('br'), cell.firstChild);
+        range.setStart(cell, 0);
+      } else if (flip) {
+        range.setStartBefore(flip);
+      } else {
+        range.selectNodeContents(cell);
+        range.collapse(false);
+      }
+      range.collapse(true);
     }
     sel.removeAllRanges();
     sel.addRange(range);

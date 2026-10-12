@@ -1044,14 +1044,14 @@
       // ============================================================
       // # 🌐 💤  THE LANGUAGE MARK SLEEPS IN THE CORNER
       // # 🔤 JavaScript
-      // # 🎯 One press in its place wakes it; the next turns that cell
-      // #    over to the other language and puts it back to sleep
-      // # 🔗 The same two-press rule the gear has, and for the same
-      // #    reason: there is one of these in every cell of every row,
-      // #    and a sheet showing them all is a sheet of buttons with a
-      // #    summary somewhere behind it. Asleep they are invisible but
-      // #    still there to be pressed, so the hand that knows where
-      // #    they are never waits
+      // # 🎯 One press in its place turns that cell over to the other
+      // #    language, and leaves the mark showing in the cell it turned
+      // # 🔗 There is one of these in every cell of every row, and a
+      // #    sheet showing them all is a sheet of buttons with a summary
+      // #    somewhere behind it — so they sleep, invisible but still
+      // #    there to be pressed. It used to take a press to wake one and
+      // #    another to use it; the hand that knows where it is now
+      // #    never waits, as the reader asked, the same as the gear
       // ============================================================
       const flip = event.target.closest('[data-flip]');
       if (flip) {
@@ -1059,15 +1059,16 @@
         const cell = flip.closest(CELLS);
         const tr = cell && cell.closest('tr[data-row]');
         if (!tr) return;
-        if (!flip.classList.contains('on')) { wakeFlip(flip); return; }
         const key = coverKey(tr.dataset.row, cell.dataset.col);
         if (flipped.has(key)) flipped.delete(key); else flipped.add(key);
-        wakeFlip(null);
         // The cell is redrawn where it stands rather than the sheet
         // recut: the two languages of one cell are rarely the same
         // length, and recutting would move the row out from under the
         // finger that just pressed it
         redrawCell(cell, tr.dataset.row);
+        // Awake in the new cell, so the reader sees what they pressed and
+        // can press it again to turn back
+        wakeFlip(tr.querySelector(`[data-flip="${cell.dataset.col}"]`));
         return;
       }
 

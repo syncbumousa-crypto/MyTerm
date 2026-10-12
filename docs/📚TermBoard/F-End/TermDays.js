@@ -29,6 +29,52 @@
 
   let board = null, editingDates = false;
 
+  // ============================================================
+  // # 🎨 📏  THE FIVE STEPS OF A DAY
+  // # 🔤 JavaScript
+  // # 🎯 Turns minutes finished and minutes meant into one of five
+  // #    verdicts, or no verdict at all
+  // # 🔗 −1 IS NOT ZERO. A day with nothing finished has no verdict: it
+  // #    is drawn as it always was, and a day still ahead is drawn
+  // #    hollow — a day that has not come yet is not a day you failed,
+  // #    and the grid must never say otherwise.
+  // #
+  // #    And a day with NO GOAL is all gain: if the reader never set an
+  // #    hours-a-day, anything they finished is above what they asked
+  // #    of themselves, and the square is full
+  // ============================================================
+  const level = (got, goal) => {
+    if (!(got > 0)) return -1;
+    if (!(goal > 0)) return 4;
+    const r = got / goal;
+    if (r >= 1) return 4;
+    if (r >= 0.75) return 3;
+    if (r >= 0.5) return 2;
+    if (r >= 0.25) return 1;
+    return 0;
+  };
+
+  const asHours = m => {
+    const whole = Math.max(0, Math.round(m));
+    const h = Math.floor(whole / 60), r = whole % 60;
+    if (h && r) return h + 'h' + String(r).padStart(2, '0') + 'm';
+    if (h) return h + 'h';
+    return r + 'm';
+  };
+
+  // What was finished on one day, after whatever the reader left out of
+  // their average. Read from the record, not kept here: the line above
+  // and the squares below must not be able to say different numbers
+  let counted = null;
+  const refreshCounted = () => {
+    counted = new Map();
+    (window.MyTermDaysStore?.stats?.().list || []).forEach(d => counted.set(d.key, d.counted));
+  };
+  const minutesOn = key => {
+    if (!counted) refreshCounted();
+    return counted.get(key) || 0;
+  };
+
   const touch = () => keep.change(board);
   const openDates = () => { editingDates = true; ring.hidden = true; when.hidden = false; };
 
@@ -207,7 +253,30 @@
           else if (!isToday) cell.classList.add('miss');
           if (isToday) cell.classList.add('today');
           if (!ahead) past++;
-          cell.title = `${MONTHS[walk.getMonth()]} ${walk.getDate()}` + (mark?.done ? ' · worked' : ahead ? ' · still ahead' : '');
+
+          // ============================================================
+          // THE COLOUR IS WHAT YOU FINISHED, AGAINST WHAT YOU MEANT TO
+          //
+          // Not a comparison with your other days: a judgement on the
+          // day against the goal YOU set, which is the number in the
+          // line directly above this grid. Five steps rather than a
+          // smooth scale, because the point is a verdict read at a
+          // glance — met it, nearly, half, a little, a trace — and the
+          // exact share is in the tooltip for whoever wants it.
+          //
+          // And the press keeps its own meaning: it says "count this as
+          // a day I worked", which is a thing only the reader knows. So
+          // the two facts are drawn differently — the colour is
+          // measured, the tick is said
+          // ============================================================
+          const got = Math.round(minutesOn(k));
+          const goal = window.MyTermPace?.goalMinutes?.() || 0;
+          const lvl = level(got, goal);
+          if (lvl >= 0) cell.dataset.lvl = String(lvl);
+          cell.title = `${MONTHS[walk.getMonth()]} ${walk.getDate()}`
+            + (got > 0 ? ' · ' + asHours(got) + (goal > 0 ? ' of ' + asHours(goal) : ' (no goal set)') : '')
+            + (mark?.done ? ' · marked as worked' : '')
+            + (ahead ? ' · still ahead' : got > 0 ? '' : mark?.done ? '' : ' · nothing finished');
           cell.onclick = () => {
             board.days = board.days || {};
             const was = board.days[k]?.done === true;
@@ -257,7 +326,12 @@
       board = live;
       fromBox.value = board?.term?.start || '';
       toBox.value = board?.term?.end || '';
+      counted = null;
       build();
-    }
+    },
+    // Called when the goal moves or a day is left out of the average:
+    // both change what a square should say about a day whose work has
+    // not changed at all
+    repaint: () => { if (!board) return; counted = null; build(); }
   };
 })();

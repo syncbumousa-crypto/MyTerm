@@ -280,6 +280,24 @@
         doc = id ? await cloud().readFile(id).catch(() => null) : null;
       }
       if (doc) { open.fileId = id; open.doc = shapeDoc(doc); open.chapter.sheetsId = id; }
+
+      // ============================================================
+      // AND THE CHAPTER IS TOLD HOW BIG ITS STACKS ARE
+      // A rules part has no rows, so it reported a size of zero and
+      // every drawn page in the two numerical courses was worth no
+      // minutes at all. Only this file knows the answer, and only once
+      // it has been read -- so the moment it is read, the chapter is
+      // told, and it keeps the number in its own file afterwards.
+      // FILLED CARDS ONLY: a law sheet is the page you work from
+      // ============================================================
+      const cards = {};
+      Object.values(open.doc.sheets).forEach(s => {
+        if (s.deleted || s.kind !== 'card' || !s.html) return;
+        cards[s.group] = (cards[s.group] || 0) + 1;
+      });
+      if (window.MyTermChapterStore?.openId?.() === open.chapter.id) {
+        window.MyTermChapterStore.sizeRules(cards);
+      }
       return open.doc;
     })();
     return coming;

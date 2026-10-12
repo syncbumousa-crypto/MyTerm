@@ -341,6 +341,18 @@
         group: typeof s.group === 'string' ? s.group : '',
         per: PACES.includes(s.per) ? s.per : 'row',
         each: Math.max(0, Number(s.each) || 0),
+        // ============================================================
+        // HOW MANY THINGS ARE IN A PART THAT HAS NO ROWS
+        // A rules part's units are its practice cards, and those live in
+        // a file of their own — so the part itself reported a size of
+        // ZERO, and `rows * each` made every drawn page in ACCT210 and
+        // FIN250 worth nothing at all. Their own board puts chapter 14
+        // at 1325 minutes; this one said 225, and no card the reader
+        // ticked could move the bar by a minute. Counted once when the
+        // sheets are first read, and kept here afterwards so a chapter
+        // nobody has opened still knows its own size
+        // ============================================================
+        units: Math.max(0, Math.trunc(Number(s.units)) || 0),
         // A PART IS CROSSED OUT, NOT TORN OUT, for the same reason a row
         // is. The merge pushes back any section the other device still
         // has and this one does not — so a part really taken out of the
@@ -643,6 +655,13 @@
     return s.rows.filter(r => !r.deleted && open.state.marks[r.id]?.on === true).length;
   };
 
+  // How many things a part holds: its rows, or — for a part whose work
+  // is drawn pages rather than rows — the number of cards it was told
+  // it has. Never the sheets: a law sheet carries no tick
+  const unitsOf = s => (s.kind === 'rules'
+    ? Math.max(0, Number(s.units) || 0)
+    : s.rows.filter(r => !r.deleted).length);
+
   // ============================================================
   // # 📔 ➕  THE DAY'S RECORD, SETTLED BEFORE THE STATE IS WRITTEN
   // # 🔤 JavaScript
@@ -729,6 +748,28 @@
       open.chapter.learnt = tally.learnt;
       open.chapter.good = tally.good;
       open.chapter.bad = tally.bad;
+
+      // ============================================================
+      // THE HOURS ARE WRITTEN HERE, WHERE THE TICKS ARE
+      //
+      // They were worked out only by the course screen, and only for
+      // the chapter it had open — so every chapter the reader had not
+      // opened on that screen kept a `doneMinutes` of zero while its
+      // `learnt` said ninety-five. The board then drew a full bar's
+      // worth of work as an empty bar, and the two numbers sat on the
+      // same card disagreeing with each other.
+      //
+      // Measured with the same price the day's record is credited at,
+      // so the strip, the hours and the average can never drift apart
+      // ============================================================
+      let all = 0, did = 0;
+      livingSections().forEach(s => {
+        const rate = rateOf(s);
+        all += unitsOf(s) * rate;
+        did += doneIn(s) * rate;
+      });
+      open.chapter.minutes = all;
+      open.chapter.doneMinutes = Math.min(all, did);
       window.MyTermBoardStore?.touchCourse?.(open.course.id);
       window.MyTermBoardStore?.change?.(board);
 
@@ -1024,14 +1065,52 @@
       const said = bankSaid();
       return livingSections().map(s => {
         const living = s.rows.filter(r => !r.deleted);
+        // A rules part counts its CARDS, which are not rows and not
+        // here. Reported as rows it had none, so every measurement
+        // downstream — its hours, its share of the chapter, the bar on
+        // the board — came out zero for the heaviest part of the two
+        // numerical courses
+        const sheets = s.kind === 'rules';
         return {
-          id: s.id, name: s.name, kind: s.kind, group: s.group, per: s.per, each: s.each, rows: living.length,
-          written: living.filter(r => hasWords(r.term || r.termAr) && hasWords(r.text || r.textAr)).length,
-          learnt: living.filter(r => open.state.marks[r.id]?.on === true).length,
+          id: s.id, name: s.name, kind: s.kind, group: s.group, per: s.per, each: s.each,
+          rows: sheets ? unitsOf(s) : living.length,
+          written: sheets ? unitsOf(s)
+                 : living.filter(r => hasWords(r.term || r.termAr) && hasWords(r.text || r.textAr)).length,
+          learnt: sheets ? doneIn(s)
+                : living.filter(r => open.state.marks[r.id]?.on === true).length,
           good: living.filter(r => said.get(r.id) === 'ok').length,
           bad: living.filter(r => said.get(r.id) === 'no').length
         };
       });
+    },
+
+    // ============================================================
+    // # 📐 📄  TOLD HOW BIG ITS DRAWN PARTS ARE
+    // # 🔤 JavaScript
+    // # 🎯 Takes the number of practice cards in each stack of sheets
+    // #    and keeps it on the part it belongs to
+    // # 🔗 The sheets are a file of their own and are read only when one
+    // #    is opened, so the chapter cannot count them for itself. It is
+    // #    told once and remembers: written into the chapter's own file,
+    // #    a part knows its size on every device afterwards, including
+    // #    the ones that never open it.
+    // #
+    // #    FILLED CARDS ONLY — not sheets. A law sheet is the page you
+    // #    work from and an empty seat is not a card; counting those
+    // #    once turned fourteen cards into thirty-three
+    // ============================================================
+    sizeRules: counts => {
+      if (!open || !counts) return false;
+      let moved = false;
+      livingSections().forEach(s => {
+        if (s.kind !== 'rules' || !s.group) return;
+        const n = Math.max(0, Math.trunc(Number(counts[s.group])) || 0);
+        if (n === s.units) return;
+        s.units = n;
+        moved = true;
+      });
+      if (moved) wrote();
+      return moved;
     },
 
     // The rows of one part, for whoever needs to measure them. Handed

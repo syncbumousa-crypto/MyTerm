@@ -66,6 +66,9 @@
   let menu = null, bar = null, listening = false, lang = 'en', rowFlash = null;
   // A press that has not yet found out whether it is one press or two
   let pressing = null;
+  // The last single press on a cell, for telling a double press on a
+  // phone apart from two single ones (see the press listener)
+  let lastPress = null;
 
   // ============================================================
   // # 🙈 🧠  COVERING A CELL, TO SEE IF YOU KNOW IT
@@ -932,6 +935,18 @@
   // ============================================================
   const coverOf = cell => coverKey(cell.closest('tr[data-row]').dataset.row, cell.dataset.col);
 
+  // How long a second press may take to make a double one. A finger
+  // lifts and lands slower than a mouse button clicks
+  const DOUBLE_MS = window.matchMedia?.('(pointer: coarse)').matches ? 340 : 240;
+  let coveredAt = 0;
+
+  // The word a double press picks out on its way is not wanted when the
+  // double press meant "cover"
+  const dropPicked = cell => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount && cell.contains(sel.getRangeAt(0).commonAncestorContainer)) sel.removeAllRanges();
+  };
+
   const turnOver = (cell, on) => {
     if (on) covered.add(coverOf(cell)); else covered.delete(coverOf(cell));
     cell.classList.toggle('covered', on);
@@ -1132,6 +1147,28 @@
       // press is the reader putting the caret where they want it
       const cell = event.target.closest(CELLS);
       if (!cell || cell.isContentEditable) return;
+
+      // ============================================================
+      // # 📱 ✌️  A DOUBLE PRESS ON A PHONE IS COUNTED HERE
+      // # 🔗 A PHONE DOES NOT RELIABLY SAY "DOUBLE". Two taps came in as
+      // #    two single presses and no dblclick at all, so the first one
+      // #    opened the cell for typing and the second landed in a cell
+      // #    already open — and covering on the phone never happened.
+      // #    So the two presses are timed here, by the cell they landed
+      // #    on, and a finger is given longer than a mouse to come back
+      // ============================================================
+      const at = Date.now();
+      if (lastPress && lastPress.cell === cell && at - lastPress.at < DOUBLE_MS) {
+        lastPress = null;
+        clearTimeout(pressing);
+        pressing = null;
+        dropPicked(cell);
+        turnOver(cell, !cell.classList.contains('covered'));
+        coveredAt = at;
+        return;
+      }
+      lastPress = { cell, at };
+
       // A press that ended a selection is not a tap. The reader was
       // picking out words to mark, and turning the cell over under their
       // hand would throw away what they had just selected
@@ -1180,7 +1217,7 @@
       // #    pick a word to colour — which is the whole of the bar above
       // ============================================================
       clearTimeout(pressing);
-      pressing = setTimeout(() => { pressing = null; startTyping(cell); }, 220);
+      pressing = setTimeout(() => { pressing = null; lastPress = null; startTyping(cell); }, DOUBLE_MS);
     });
 
     desk.addEventListener('dblclick', event => {
@@ -1190,6 +1227,10 @@
       if (pressing) { clearTimeout(pressing); pressing = null; }
       if (cell.isContentEditable) return;   // picking out a word, not covering
       event.preventDefault();
+      // Already turned by the press listener, which counted the same two
+      // presses; turning it here as well would turn it straight back
+      if (Date.now() - coveredAt < 600) return;
+      lastPress = null;
       turnOver(cell, !cell.classList.contains('covered'));
     });
 

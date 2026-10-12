@@ -152,6 +152,7 @@
     // is the term — whether you are asked for it — and the meaning is
     // only the answer to it
     const away = which === 'term' && row.outside ? ' outside' : '';
+    const tint = which === 'term' && row.tint ? ' tint-' + row.tint : '';
     // The mark that turns this one cell over, asleep in its far bottom
     // corner. It is drawn INSIDE the cell because that is the box it
     // belongs to — and so it is taken out again before a word of the
@@ -160,7 +161,7 @@
       + ` data-flip="${which}" title="${here.other === 'ar' ? 'Show this one in Arabic' : 'Show this one in English'}">`
       + `${here.other === 'ar' ? 'ع' : 'En'}</button>`;
 
-    return `<td class="c${which === 'term' ? 'term' : 'def'}${away}${hide}" dir="${here.dir}"`
+    return `<td class="c${which === 'term' ? 'term' : 'def'}${away}${tint}${hide}" dir="${here.dir}"`
       + ` data-col="${which}" data-field="${here[which]}"`
       + ` data-hintdir="${hintDir}" data-empty="${asAttr(hint)}">${words}${flip}</td>`;
   };
@@ -870,6 +871,19 @@
     menu.append(document.createElement('hr'));
     item(rows[at].outside ? '▨  Mark as required' : '▨  Mark as not required',
          false, () => store().outside(rowId, !rows[at].outside));
+    // Three colours for the TERM's box, to find a term again at a glance.
+    // Choosing the colour it already has takes it off
+    [['yellow', 'Yellow'], ['green', 'Green'], ['blue', 'Blue']].forEach(([colour, name]) => {
+      const on = rows[at].tint === colour;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ctint-pick';
+      const dot = document.createElement('i');
+      dot.className = 'ctint-dot tint-' + colour;
+      button.append(dot, (on ? 'Remove ' + name.toLowerCase() : 'Colorize ' + name.toLowerCase()) + (on ? '  ✓' : ''));
+      button.onclick = () => { hideMenu(); store().tint(rowId, on ? '' : colour); repaint(); };
+      menu.append(button);
+    });
     menu.append(document.createElement('hr'));
     item('✕  Remove this row', false, () => store().dropRow(rowId));
 

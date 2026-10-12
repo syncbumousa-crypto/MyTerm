@@ -234,6 +234,8 @@
       }))
     : [];
 
+  const TINTS = ['yellow', 'green', 'blue'];
+
   const shapeRows = list => settleOrder(Array.isArray(list)
     ? list.filter(r => r && typeof r === 'object').map(r => ({
         id: typeof r.id === 'string' ? r.id : newRowId(),
@@ -247,6 +249,10 @@
         // it is as true on the phone as on the laptop — so it lives in
         // the chapter's own file beside the words, not with the ticks
         outside: r.outside === true,
+        // A colour the reader laid on the term to find it again. Belongs
+        // to the course file for the same reason the stripe does: it is
+        // the same summary on the phone and on the laptop
+        tint: TINTS.includes(r.tint) ? r.tint : '',
         // A ROW IN A TEST BANK IS STILL A ROW. It carries a question, a
         // list of answers to choose from, and which of them is right —
         // three more fields on the same shape, empty on every other
@@ -468,7 +474,7 @@
       // language by its own clock would let a device that only ever
       // reads English drag the Arabic back with it
       term: w.term, text: w.text, termAr: w.termAr, textAr: w.textAr,
-      outside: w.outside, ask: w.ask, pick: w.pick, right: w.right,
+      outside: w.outside, tint: w.tint, ask: w.ask, pick: w.pick, right: w.right,
       cid: p.cid, order: p.order, lead: p.lead, movedAt: p.movedAt,
       // EACH LINK BY ITS OWN CLOCK, not by the row's. A reader who adds
       // one place in the book on the laptop and another on the phone
@@ -1267,7 +1273,7 @@
       if (!section) return null;
       const living = livingRows();
       const row = {
-        id: newRowId(), no: '', term: '', text: '', termAr: '', textAr: '', outside: false,
+        id: newRowId(), no: '', term: '', text: '', termAr: '', textAr: '', outside: false, tint: '',
         ask: '', pick: [], right: -1, srcs: [], about: [], note: '', noteDir: '',
         // It joins the table at the end rather than starting a new one:
         // a reader adding a row is carrying on, not opening a chapter
@@ -1478,6 +1484,23 @@
         if (!row) continue;
         if (row.outside === Boolean(on)) return true;
         row.outside = Boolean(on);
+        row.updatedAt = now();
+        wrote();
+        return true;
+      }
+      return false;
+    },
+
+    // One colour or none. Asking for the colour it already wears takes it
+    // off again, so the menu needs no item of its own for clearing
+    tint: (rowId, colour) => {
+      if (!open) return false;
+      const want = TINTS.includes(colour) ? colour : '';
+      for (const section of open.content.sections) {
+        const row = section.rows.find(r => r.id === rowId);
+        if (!row) continue;
+        if (row.tint === want) return true;
+        row.tint = want;
         row.updatedAt = now();
         wrote();
         return true;

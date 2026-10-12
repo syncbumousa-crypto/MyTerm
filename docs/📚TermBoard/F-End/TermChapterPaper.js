@@ -1193,6 +1193,19 @@
       turnOver(cell, !cell.classList.contains('covered'));
     });
 
+    // Words are pasted as WORDS, as in the note. What the phone hands
+    // over from another page is that page's markup, colour included, and
+    // a sentence copied off a dark page arrived white on the white paper:
+    // there, and saved, and invisible until the sheet was drawn again.
+    // The file throws the markup away on the next read anyway
+    desk.addEventListener('paste', event => {
+      const cell = event.target.closest && event.target.closest(CELLS);
+      if (!cell || !cell.isContentEditable) return;
+      event.preventDefault();
+      const words = event.clipboardData?.getData('text/plain') || '';
+      document.execCommand('insertText', false, words);
+    });
+
     desk.addEventListener('input', event => {
       const cell = event.target.closest(CELLS);
       const row = cell && cell.closest('tr[data-row]');

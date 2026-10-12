@@ -400,17 +400,49 @@
     if (row) store().editRow(row.dataset.row, cell.dataset.field, wordsOf(cell));
   };
 
-  // Is the selection already inside a mark of this kind? Then pressing it
-  // again takes it off. Only the mark the whole selection sits inside is
-  // found, which is the case a reader means nine times in ten — and the
-  // last button on the bar strips a selection of everything regardless
-  const wearing = (range, name, cls, cell) => {
-    let node = range.commonAncestorContainer;
+  // ============================================================
+  // # 🔁 🅱️  PRESSING A MARK THE WORDS ALREADY WEAR TAKES IT OFF
+  // # 🔗 IT USED TO ASK ONLY THE ONE ELEMENT HOLDING THE WHOLE SELECTION.
+  // #    A word picked out by a double press, or by dragging from one
+  // #    end of it to the other, has its edges OUTSIDE the <b> around
+  // #    it, so that question found nothing — and bold went on a second
+  // #    time instead of coming off. Now every letter picked is asked:
+  // #    if each one already wears the mark, the press takes it off what
+  // #    was picked and nothing else; if any one does not, the whole
+  // #    selection gets it, as a word processor does
+  // ============================================================
+  const isMark = (node, kind) => {
+    if (!node || node.nodeType !== 1) return false;
+    if (kind === 'b') return node.nodeName === 'B' || node.nodeName === 'STRONG';
+    if (kind === 'i') return node.nodeName === 'I' || node.nodeName === 'EM';
+    if (kind === 'u') return node.nodeName === 'U';
+    return node.nodeName === 'SPAN' && node.classList.contains(kind);
+  };
+
+  // The outermost mark of this kind standing over a node, inside the cell
+  const markAbove = (node, kind, cell) => {
+    let top = null;
     while (node && node !== cell) {
-      if (node.nodeType === 1 && node.nodeName === name && (!cls || node.classList.contains(cls))) return node;
+      if (isMark(node, kind)) top = node;
       node = node.parentNode;
     }
-    return null;
+    return top;
+  };
+
+  // Does every letter picked already wear it? Spaces are not asked: a
+  // reader dragging across two bold words picks the plain space between
+  const allWear = (range, kind, cell) => {
+    const walk = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+    let any = false;
+    for (let node = walk.nextNode(); node; node = walk.nextNode()) {
+      if (!range.intersectsNode(node) || node.parentNode.closest?.('.ccelllang')) continue;
+      const from = node === range.startContainer ? range.startOffset : 0;
+      const to = node === range.endContainer ? range.endOffset : node.length;
+      if (!node.textContent.slice(from, to).trim()) continue;
+      any = true;
+      if (!markAbove(node.parentNode, kind, cell)) return false;
+    }
+    return any;
   };
 
   // ============================================================
@@ -448,18 +480,47 @@
     if (!cell || !sel || !sel.rangeCount || sel.isCollapsed) return;
 
     const plain = kind === 'b' || kind === 'i' || kind === 'u';
-    const name = plain ? kind.toUpperCase() : 'SPAN';
-    const worn = wearing(sel.getRangeAt(0), name, plain ? '' : kind, cell);
-    if (worn) {
-      // The same colour twice means take it off. It is the only way back
-      // to plain words now that the bar is five tools and no more
-      unwrap(worn);
+    const range = sel.getRangeAt(0);
+    if (allWear(range, kind, cell)) {
+      // Off, from what was picked and nothing else. The words are lifted
+      // out and stripped of the mark; if a mark of it stood over the
+      // whole selection, that mark is cut in two around the gap so the
+      // words either side keep it
+      const top = markAbove(range.commonAncestorContainer, kind, cell);
+      if (top) {
+        // Cut from each edge of the selection to the END of that mark,
+        // the far edge first: a range reaching to the end of an element
+        // carries a copy of every mark it passes through, so a highlight
+        // inside the bold stays on the words that come out of the bold
+        const [sc, so, ec, eo] = [range.startContainer, range.startOffset, range.endContainer, range.endOffset];
+        const cut = (node, at) => {
+          const part = document.createRange();
+          part.setStart(node, at);
+          part.setEnd(top, top.childNodes.length);
+          return part.extractContents();
+        };
+        const after = top.cloneNode(false);
+        after.append(cut(ec, eo));
+        const piece = cut(sc, so);
+        [...piece.querySelectorAll('*')].filter(node => isMark(node, kind)).forEach(unwrap);
+        top.parentNode.insertBefore(after, top.nextSibling);
+        top.parentNode.insertBefore(piece, after);
+        if (!after.textContent) after.remove();
+        if (!top.textContent) top.remove();
+      } else {
+        const piece = range.extractContents();
+        [...piece.querySelectorAll('*')].filter(node => isMark(node, kind)).forEach(unwrap);
+        range.insertNode(piece);
+      }
     } else {
-      const range = sel.getRangeAt(0);
       const made = document.createElement(plain ? kind : 'span');
       if (!plain) made.className = kind;
       made.append(range.extractContents());
       range.insertNode(made);
+      // The same mark already on some of the words inside is folded into
+      // the new one, not left nested inside it where it could never be
+      // taken off on its own
+      [...made.querySelectorAll('*')].filter(node => isMark(node, kind)).forEach(unwrap);
 
       // THE NEW MARK GOES ON FIRST, AND THE ONE IT REPLACES COMES OFF
       // AFTER. The other way round was tried and measured: taking the

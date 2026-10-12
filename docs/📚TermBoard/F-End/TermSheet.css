@@ -14,7 +14,22 @@
    #    that mean one thing on a sheet and another on this board. Held
    #    under the sheet, they cannot reach a single thing outside it
    ============================================================ */
-.msheet { color-scheme: dark; }
+/* ============================================================
+   THE ONE RULE OF THEIRS THAT HAS NO CLASS ON IT
+   Their stylesheet opens with `* { box-sizing: border-box }`, and
+   every box below was measured in a world where it holds. Extraction
+   went looking for sheet class names and a bare `*` carries none, so
+   this -- the rule the other ninety-one all lean on -- was the one
+   left behind. Without it `.lawBox { width:100%; max-width:600px }`
+   means six hundred pixels PLUS its 46px of side padding and its
+   border, and every law box on every sheet hung 27px out over both
+   edges of its page. Reported by the reader, not by the guard
+   ============================================================ */
+.msheet, .msheet *, .msheet *::before, .msheet *::after { box-sizing: border-box; }
+
+/* A sheet is white paper, not a dark panel: light is what a scrollbar
+   or a control inside one should be drawn as */
+.msheet { color-scheme: light; }
 .msheet .cf-op {background:#d0e0e3; padding:0 2px; border-radius:2px;}
 .msheet .cf-inv {background:#fce5cd; padding:0 2px; border-radius:2px;}
 .msheet .cf-fin {background:#d9d2e9; padding:0 2px; border-radius:2px;}
@@ -128,13 +143,11 @@
    Their .eqPage is `height:100%` because in their app it fills an A4
    page. Dropped onto a board that grows with its content, `100%` of
    nothing is nothing -- so the frame is given here, as the thing it
-   is: a page of paper, upright, never taller than the window.
+   is: a page of paper, upright.
    And --fs is their own type knob, which these rules multiply by;
    undeclared it reads as nothing and every law box collapses
    ============================================================ */
-.msheet { --eqScale: 1; --fs: 1; overflow-x: hidden; }
-.msheet-law { aspect-ratio: 1 / 1.414; max-height: 86vh;
-              max-width: min(980px, calc(86vh / 1.414)); }
+.msheet { --eqScale: 1; --fs: 1; }
 
 /* The one control a sheet DOES answer: a card folds its solution away */
 .msheet .qcard[data-ans="hidden"] .ansBody { display: none; }
@@ -153,19 +166,60 @@
    THE WRAPPER THIS BOARD PUTS AROUND EACH SHEET
    A sheet arrives as a finished page; what is added here is only
    where it sits on this board and the one thing it did not have
-   before — a box to tick when you can do it
-   ============================================================ */
-.msheet { position: relative; margin: 0 auto 18px; max-width: 980px;
-          background: var(--paper, #16171a); border: 1px solid #2f3037;
-          border-radius: 10px; padding: 18px 20px; }
-.msheet-law { border-style: solid; }
-.msheet-card { border-style: dashed; }
+   before — a box to tick when you can do it.
 
-.msheet-tick { position: absolute; inset-inline-end: 10px; top: 10px;
-               width: 20px; height: 20px; border-radius: 5px;
-               border: 1.5px solid #4a4c55; background: transparent;
-               cursor: pointer; padding: 0; }
+   AND IT IS AN 800-PIXEL A4, DRAWN SMALLER -- NEVER A NARROWER PAGE.
+   This is their own geometry, to the pixel, and the summary sheet on
+   this very board already works this way: a slot holds the room the
+   page takes once shrunk, the page itself stays 800 wide, and a
+   scale puts it in the slot. Every law was composed against a 776px
+   line; a page rebuilt at the column's width would be a DIFFERENT
+   page -- `max-width:600px` boxes in a 485px frame, which is exactly
+   what the reader was looking at. Nothing can spill now, because
+   nothing is narrower than what it was drawn for. And it is the
+   reader's own ruling made literal: the size is fixed, and there is
+   no button that pretends otherwise
+   ============================================================ */
+.msheet-slot { position: relative; margin: 0 auto 18px;
+               width: var(--sheetW, 800px);
+               height: calc(var(--sheetW, 800px) * 297 / 210); }
+.msheet { position: absolute; top: 0; left: 0; width: 800px;
+          transform-origin: left top; transform: scale(var(--sheetScale, 1));
+          background: #fff; color: #111; border: 1px solid #444;
+          padding: 30px 12px; overflow: hidden; }
+.msheet-law { height: calc(800px * 297 / 210); border-style: solid; }
+.msheet-card { min-height: calc(800px * 297 / 210); border-style: dashed; }
+
+/* ============================================================
+   THE DARK PAPER IS ONE SWITCH FOR BOTH KINDS OF PAGE
+   The board turns its summary sheet over with a filter rather than a
+   second palette, so that every highlight and every coloured term
+   keeps its own hue instead of being re-themed one rule at a time --
+   and their app does the identical thing to these very sheets
+   (`body.darkPages .sheet`). The switch was here and the sheets did
+   not answer it, because this one line was not: `.cpaper` was named
+   and `.msheet` was not. Reported by the reader
+   ============================================================ */
+body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
+
+/* ============================================================
+   THE TICK IS DRAWN IN PAGE PIXELS AND LANDS IN SCREEN PIXELS
+   It lives inside the page, so the page's scale would take a 20px
+   box down to 12 on a narrow desk -- and a tick box is a thing a
+   finger has to hit, not a thing that shrinks with the paper. So it
+   is sized at 22 DIVIDED BY the scale, which the scale then
+   multiplies back to 22 wherever the page is drawn
+   ============================================================ */
+.msheet-tick { position: absolute; z-index: 3;
+               top: calc(10px / var(--sheetScale, 1));
+               inset-inline-end: calc(10px / var(--sheetScale, 1));
+               width: calc(22px / var(--sheetScale, 1));
+               height: calc(22px / var(--sheetScale, 1));
+               border-radius: calc(5px / var(--sheetScale, 1));
+               border: calc(1.5px / var(--sheetScale, 1)) solid #8a8d96;
+               background: #fff; cursor: pointer; padding: 0; }
 .msheet-tick.on { background: #2f7d4f; border-color: #2f7d4f; }
-.msheet-tick.on::after { content: ''; position: absolute; inset: 3px 4px 5px 4px;
-                         border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+.msheet-tick.on::after { content: ''; position: absolute; inset: 20% 22% 28% 22%;
+                         border-left: calc(2px / var(--sheetScale, 1)) solid #fff;
+                         border-bottom: calc(2px / var(--sheetScale, 1)) solid #fff;
                          transform: rotate(-45deg); }

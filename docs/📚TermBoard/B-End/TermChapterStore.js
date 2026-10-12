@@ -925,6 +925,8 @@
   window.MyTermChapterStore = {
     watch: fn => { tellStatus = fn || (() => {}); },
 
+    hold: on => { penHeld = on !== false; },
+
     openId: () => open?.chapter?.id ?? null,
 
     // Returns null when something could not be read — never an empty

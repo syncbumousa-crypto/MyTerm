@@ -1346,6 +1346,12 @@
     board.hidden = false;
     backBtn.hidden = false;
     document.body.classList.add('board-on');
+    // A tab that is showing the board is not showing a course, so this
+    // is the moment the address and the seat both belong to the board
+    if (!window.MyTermCoursePage?.openId?.()) {
+      window.MyTermWhere?.atBoard?.();
+      window.MyTermSeat?.take?.('board', () => window.MyTermShell?.lostSeat?.());
+    }
   };
 
   const openBoard = async event => {

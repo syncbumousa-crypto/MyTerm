@@ -441,6 +441,8 @@
       return Math.max(0, Number(ch.minutes) || 0);
     },
 
+    hold: on => { penHeld = on !== false; },
+
     paperId: () => fileId,
     homeFolder: async () => {
       if (termFolder) return termFolder;

@@ -863,6 +863,7 @@
         event.stopPropagation();
         if (part.id !== here) {
           window.MyTermChapterStore.useSection(part.id);
+      sayWhere();
           drawTabs();
           drawRows();
           return;
@@ -891,6 +892,7 @@
       one.onclick = event => {
         event.stopPropagation();
         window.MyTermChapterStore.useSection(part.id);
+      sayWhere();
         drawTabs();
         drawRows();
       };
@@ -1513,7 +1515,20 @@
   // ============================================================
   let cameByAddress = false;
 
-  const askedFor = () => new URLSearchParams(location.search).get('course');
+  const askedFor = () => window.MyTermWhere?.asked?.().id
+    || new URLSearchParams(location.search).get('course');
+
+  // The address follows the page: board / course / the part on the desk.
+  // Written on every move rather than only on arrival, so the link in
+  // the bar is always the link to what is actually on screen
+  const sayWhere = () => {
+    if (!openId) return;
+    const c = course();
+    const here = window.MyTermChapterStore?.openSection?.();
+    const part = (window.MyTermChapterStore?.sections() || [])
+      .find(s => s.id === here);
+    window.MyTermWhere?.atCourse?.(c, part ? part.name.split('·')[0].trim() : '');
+  };
 
   window.MyTermCoursePage = {
     asked: askedFor,
@@ -1529,6 +1544,11 @@
       window.MyTermCurtain?.down();
       board.hidden = true;
       page.hidden = false;
+      // This page is one seat: the same course open twice would be two
+      // pages writing one chapter, each undoing the other's save
+      window.MyTermSeat?.take?.('course:' + id, () => window.MyTermShell?.lostSeat?.());
+      window.MyTermWhere?.atCourse?.(
+        (keep.live()?.courses || []).find(c => c.id === id), '');
       // The shell's floating corner and its build mark belong to the board.
       // This page pins its own strips to both edges, and the two of them
       // landed on top of it — the avatar over the chapter tabs, the build

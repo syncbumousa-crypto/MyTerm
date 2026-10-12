@@ -137,7 +137,12 @@
   // #    the phone may have written while this page was open, and the
   // #    one thing this file must never do is lose a day
   // ============================================================
+  let penHeld = true;   // put down when another page takes this seat
+
   const push = async () => {
+    // Frozen rather than failed: what is unsaved stays marked unsaved,
+    // so the page that takes the seat back saves it rather than losing it
+    if (!penHeld) return;
     if (!doc || !dirty || sending) return;
     sending = true;
     dirty = false;
@@ -243,6 +248,7 @@
 
   window.MyTermDaysStore = {
     ready,
+    hold: on => { penHeld = on !== false; },
     has: () => Boolean(fileId),
     fileId: () => fileId,
     today,

@@ -181,7 +181,10 @@
   const wordsOf = cell => {
     const copy = cell.cloneNode(true);
     copy.querySelectorAll('.ccelllang').forEach(node => node.remove());
-    return copy.innerHTML;
+    // The line break an empty cell is given to type on (see startTyping)
+    // is room for a caret, not something the reader wrote, and a break at
+    // the very end of a cell draws nothing anyway
+    return copy.innerHTML.replace(/<br\s*\/?>\s*$/i, '');
   };
 
   // Only ever one language mark awake, like the gear
@@ -966,11 +969,30 @@
     cell.contentEditable = 'true';
     cell.focus();
 
+    // ============================================================
+    // # ✍️ 📱  THE CARET GOES BEFORE THE LANGUAGE MARK, NEVER AFTER IT
+    // # 🔗 The mark is the last thing in every cell, and in a NEW row it
+    // #    is the only thing. A caret put after it had nowhere to stand
+    // #    but against the mark, and the phone's keyboard wrote into the
+    // #    mark itself: the letters were there, in transparent type, and
+    // #    were thrown out with the mark when the cell was saved. So an
+    // #    empty cell is given a line to type on, and the caret is set
+    // #    down at the end of the WORDS
+    // ============================================================
     let range = picked;
     if (!range) {
+      const flip = cell.querySelector('.ccelllang');
       range = document.createRange();
-      range.selectNodeContents(cell);
-      range.collapse(false);
+      if (!wordsOf(cell).trim()) {
+        cell.insertBefore(document.createElement('br'), cell.firstChild);
+        range.setStart(cell, 0);
+      } else if (flip) {
+        range.setStartBefore(flip);
+      } else {
+        range.selectNodeContents(cell);
+        range.collapse(false);
+      }
+      range.collapse(true);
     }
     sel.removeAllRanges();
     sel.addRange(range);

@@ -2260,7 +2260,11 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
 /* A mouse crossing the spot gets the faintest hint, so the place can be
    found at all. A hand on a screen has no hover and needs none: there,
    the first press is the hint */
-.crowgear:hover { color: #c0c0c0; }
+/* Only where there is a real pointer to hover with. On an iPhone a press
+   that makes something appear through :hover is taken as the hover and
+   NOT as a press — the first tap showed the gear and the second opened
+   it. Every hover on the paper that shows something is fenced off so */
+@media (hover: hover) { .crowgear:hover { color: #c0c0c0; } }
 .crowgear.on, .crowgear.on:hover { color: #111111; }
 
 /* The sheet is drawn inside 26px of margin, which is the room the gear
@@ -3355,7 +3359,7 @@ body.cdragging { cursor: col-resize; user-select: none; }
   user-select: none;
 }
 
-.crowsrc:hover { color: #141414; }
+@media (hover: hover) { .crowsrc:hover { color: #141414; } }
 
 /* The row a passage sent the reader back to. On the ROW and not on one
    cell: they are looking for the line they marked, and the line is the
@@ -3626,8 +3630,10 @@ body.darkpaper .cep-note { color: #9a9ca4; }
   opacity: .35;
 }
 
-tr:hover .crowmore { opacity: 1; }
-.crowmore:hover { background: rgba(127, 127, 127, .18); color: var(--ink); }
+@media (hover: hover) {
+  tr:hover .crowmore { opacity: 1; }
+  .crowmore:hover { background: rgba(127, 127, 127, .18); color: var(--ink); }
+}
 
 /* ============================================================ */
 /* # 🌐 💤  THE LANGUAGE MARK IN A CELL'S CORNER */
@@ -3665,7 +3671,7 @@ tr:hover .crowmore { opacity: 1; }
   direction: ltr;
 }
 
-.ctbl td:hover .ccelllang { color: #c0c0c0; }
+@media (hover: hover) { .ctbl td:hover .ccelllang { color: #c0c0c0; } }
 .ccelllang.on, .ccelllang.on:hover { color: #111111; background: rgba(127, 127, 127, .16); }
 
 /* The cells must be a frame for it to sit in the corner of */
@@ -3700,8 +3706,10 @@ tr:hover .crowmore { opacity: 1; }
   opacity: .35;
 }
 
-tr:hover .crownote { opacity: 1; }
-.crownote:hover { background: rgba(127, 127, 127, .18); color: var(--ink); }
+@media (hover: hover) {
+  tr:hover .crownote { opacity: 1; }
+  .crownote:hover { background: rgba(127, 127, 127, .18); color: var(--ink); }
+}
 .crownote.has { opacity: 1; color: var(--blue); }
 
 /* ============================================================ */

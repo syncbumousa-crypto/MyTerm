@@ -47,14 +47,32 @@
   // ============================================================
   const human = d => `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 
+  // ============================================================
+  // THE RING COUNTS THE TERM THE WAY THE GRID DRAWS IT
+  // A square is drawn for the start day AND for the end day, and the
+  // line under the grid counts them both — but the ring measured the
+  // DISTANCE between the two dates, which is one less. So the same
+  // term read 127 days inside the ring and 128 directly beneath it,
+  // and the last day of the term was a day you can be marked for and
+  // the ring did not know existed. The last day is a day you study.
+  //
+  // `gone` is days BEGUN, today included, so the start day is day one
+  // and not day zero; `left` is then the days after today, which is
+  // what the line below already says.
+  // ============================================================
+  // The term measured ONCE, and read twice. It was measured twice and
+  // read twice, and the two measurements were not the same measurement
+  const spanOf = (start, end) => {
+    const total = Math.round((end - start) / DAY) + 1;
+    const gone = Math.round((midnight() - start) / DAY) + 1;
+    const seen = Math.max(0, Math.min(total, gone));
+    return { total, gone, seen, left: total - seen };
+  };
+
   const drawRing = (start, end) => {
     ring.textContent = '';
-    const total = Math.round((end - start) / DAY);
+    const { total, gone, seen, left } = spanOf(start, end);
     if (!(total > 0)) return false;
-
-    const gone = Math.round((midnight() - start) / DAY);
-    const seen = Math.max(0, Math.min(total, gone));
-    const left = total - seen;
 
     const NS = 'http://www.w3.org/2000/svg';
     const SIZE = 96, WIDTH = 9, r = (SIZE - WIDTH) / 2, round = 2 * Math.PI * r;
@@ -107,7 +125,7 @@
 
     ring.append(svg, pencil);
     ring.title = `Term ${human(start)} → ${human(end)}`
-      + (gone < 0 ? ' · not started yet'
+      + (gone < 1 ? ' · not started yet'
         : gone > total ? ' · over'
         : ` · day ${seen} of ${total} · ${left} day${left === 1 ? '' : 's'} left`);
     return true;
@@ -211,9 +229,13 @@
     body.append(names, stack);
     grid.append(body);
 
-    const all = Math.round((end - start) / DAY) + 1;
-    const left = Math.max(0, Math.round((end - today) / DAY));
-    line.textContent = `${done} of ${past} days worked · ${all} days in the term · ${left} left`;
+    // The same measurement the ring was drawn from. The line used to
+    // take its own, and "left" meant a different thing in each: the
+    // ring meant days OF THE TERM still to come, the line meant days
+    // until the end date — which for a term that has not started yet
+    // counts days that are not in the term at all
+    const span = spanOf(start, end);
+    line.textContent = `${done} of ${past} days worked · ${span.total} days in the term · ${span.left} left`;
   };
 
   const setDate = (which, value) => {

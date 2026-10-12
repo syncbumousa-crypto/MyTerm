@@ -3986,3 +3986,25 @@ tr:hover .crownote { opacity: 1; }
               stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .term-gpa.hid .gpaVal,
 .term-gpa.hid .gpaSide { filter: blur(9px); opacity: .5; user-select: none; }
+/* ============================================================
+   THE BEST DAY AND THE WORST, UNDER THE SQUARES
+   The colours rank a day against its own goal, never against the other
+   days -- so the biggest day of the term is not the greenest and
+   cannot be found by looking. These two name it
+   ============================================================ */
+.days-line, #days-line { display: flex; justify-content: center; gap: 34px; }
+.dayPeak { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.peakWhat { font-size: 9.5px; color: var(--dim2, #6b6d75); letter-spacing: .3px; }
+.peakHours { font-family: var(--mono); font-size: 15px; font-weight: 700; line-height: 1.1; }
+.peakWhen { font-size: 9.5px; color: var(--dim2, #6b6d75); }
+.dayPeak.best .peakHours { color: var(--green); }
+.dayPeak.worst .peakHours { color: var(--orange); }
+
+/* The week behind the S */
+.weekPop { width: auto; }
+.weekRow { display: flex; align-items: center; gap: 8px; padding: 1px 4px; }
+.weekName { width: 30px; font: 11px ui-monospace, Consolas, monospace; color: var(--dim, #9a9ca4); }
+.weekNum { width: 62px; font: inherit; font-size: 11px; padding: 3px 6px;
+           border-radius: 5px; border: 1px solid #34353b; background: #16171a; color: var(--ink); }
+.weekUnit { font-size: 10px; color: var(--dim2, #6b6d75); }
+.weekBack { margin-top: 6px; width: 100%; font-size: 10px; }

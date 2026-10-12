@@ -75,16 +75,21 @@
   // # 🔤 JavaScript
   // # 🎯 Remembers which cells are covered over, so a sheet can be read
   // #    as a test instead of as a summary
-  // # 🔗 KEPT FOR THE SITTING ONLY, and written to no file. What you have
-  // #    covered up this evening is not a fact about the course and has
-  // #    no business travelling to the phone — nor being there tomorrow.
+  // # 🔗 KEPT, in the reader's own file beside the ticks, so a sheet
+  // #    covered for a test is found that way again after a reload and
+  // #    on the other device — the reader's own asking. It used to be
+  // #    for the sitting only, and every reload handed back a sheet with
+  // #    the whole test undone.
   // #
   // #    And it is kept by COLUMN, not by language: covering the meaning
   // #    of a row covers that row's meaning, whichever of the two
   // #    languages happens to be on the paper
   // ============================================================
-  const covered = new Set();
   const coverKey = (rowId, col) => rowId + ':' + col;
+  const covered = {
+    has: key => store().isCovered?.(key) === true,
+    set: (keys, on) => store().cover?.(keys, on)
+  };
 
   // ============================================================
   // # 🌐 🔳  ONE CELL IN THE OTHER LANGUAGE
@@ -948,7 +953,7 @@
   };
 
   const turnOver = (cell, on) => {
-    if (on) covered.add(coverOf(cell)); else covered.delete(coverOf(cell));
+    covered.set([coverOf(cell)], on);
     cell.classList.toggle('covered', on);
     window.MyTermCourseEye?.();
   };
@@ -1631,14 +1636,9 @@
         covered.has(coverKey(r.id, 'term')) || covered.has(coverKey(r.id, 'text'))),
 
       all: on => {
-        store().rows().forEach(r => {
-          if (on) {
-            covered.add(coverKey(r.id, 'text'));
-          } else {
-            covered.delete(coverKey(r.id, 'text'));
-            covered.delete(coverKey(r.id, 'term'));
-          }
-        });
+        const rows = store().rows();
+        if (on) covered.set(rows.map(r => coverKey(r.id, 'text')), true);
+        else covered.set(rows.flatMap(r => [coverKey(r.id, 'text'), coverKey(r.id, 'term')]), false);
         if (!stage) return;
         stage.querySelectorAll('.ctbl tr[data-row]').forEach(tr => {
           tr.querySelectorAll('td.cterm, td.cdef').forEach(cell => {

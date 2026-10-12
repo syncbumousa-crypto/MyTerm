@@ -48,6 +48,17 @@ html {
   text-size-adjust: 100%;
 }
 
+/* A box to type in, on a touch screen, is never written smaller than
+   16px. Below that the iPhone zooms the whole page in on it the moment
+   it is pressed, and leaves it zoomed */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 html, body {
   margin: 0;
   padding: 0;

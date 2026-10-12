@@ -3748,6 +3748,9 @@ body.darkpaper .cep-note { color: #9a9ca4; }
 
 .cnote-body img.cnote-picked { outline: 2px solid var(--blue); outline-offset: 2px; }
 
+/* There on the page at once, and faint until Drive has it */
+.cnote-body img.cnote-sending { opacity: .45; }
+
 /* The row of sizes over a picked picture. Above the note's own window */
 .cnote-sizer {
   position: fixed;

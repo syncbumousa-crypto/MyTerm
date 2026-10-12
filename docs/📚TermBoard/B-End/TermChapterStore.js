@@ -991,6 +991,30 @@
         stateDirty = true;
         later();
       }
+
+      // ============================================================
+      // THE SUMMARY BESIDE THE CHAPTER IS BROUGHT UP TO DATE ON OPEN
+      //
+      // The strip over the page reads the OPEN chapter from its rows and
+      // every other chapter from the tally written beside it — and that
+      // tally is only as fresh as the last time the chapter was saved.
+      // So a chapter could stand at full while you were in it and at a
+      // third the moment you left, with both numbers honestly reported
+      // and one of them years out of date. The reader saw exactly that:
+      // "the one I was just in went from full to half".
+      //
+      // Reading the chapter is the one moment its real numbers are in
+      // hand for nothing, so that is when they are written down
+      // ============================================================
+      const fresh = window.MyTermChapterStore.counts();
+      const ch = open.chapter;
+      if (ch.rows !== fresh.rows || ch.learnt !== fresh.learnt
+          || ch.good !== fresh.good || ch.bad !== fresh.bad) {
+        ch.rows = fresh.rows; ch.learnt = fresh.learnt;
+        ch.good = fresh.good; ch.bad = fresh.bad;
+        window.MyTermBoardStore?.touchCourse?.(course.id);
+        window.MyTermBoardStore?.change?.(board);
+      }
       return open;
     },
 

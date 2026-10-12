@@ -299,7 +299,11 @@
           // measured, the tick is said
           // ============================================================
           const got = Math.round(minutesOn(k));
-          const whole = window.MyTermPace?.goalMinutes?.() || 0;
+          // THIS day's goal, not an average of the week: a Thursday with
+          // two hours in it and a Sunday with six are not the same day,
+          // and one number held over both makes one of them fail every
+          // week while the other coasts
+          const whole = window.MyTermPace?.goalMinutes?.(k) || 0;
           const began = firstMeasured();
           const share = dueShare(k);
           const due = Math.round(whole * share);
@@ -337,13 +341,41 @@
     body.append(names, stack);
     grid.append(body);
 
-    // The same measurement the ring was drawn from. The line used to
-    // take its own, and "left" meant a different thing in each: the
-    // ring meant days OF THE TERM still to come, the line meant days
-    // until the end date — which for a term that has not started yet
-    // counts days that are not in the term at all
-    const span = spanOf(start, end);
-    line.textContent = `${done} of ${past} days worked · ${span.total} days in the term · ${span.left} left`;
+    // ============================================================
+    // THE BEST DAY AND THE WORST, INSTEAD OF A COUNT OF DAYS
+    //
+    // The line used to say how many days the term is and how many are
+    // left — and the ring directly above it already says both, in
+    // bigger type. Two readings of one fact, one of them redundant.
+    //
+    // What the grid could not say is which day was the best and which
+    // the worst: the colours rank a day against its own goal, not
+    // against the other days, so the biggest day of the term is not
+    // picked out by being the greenest. Now it is named
+    // ============================================================
+    line.textContent = '';
+    // counted is a Map, and Object.entries of a Map is always empty —
+    // which made this read "nothing finished yet" on a term full of work
+    if (!counted) refreshCounted();
+    const inTerm = [...counted.entries()]
+      .filter(([k, m]) => m > 0 && k >= key(start) && k <= key(end));
+    if (!inTerm.length) {
+      line.textContent = 'Nothing finished yet — the days you work will show here.';
+      return;
+    }
+    const best = inTerm.reduce((a, b) => (b[1] > a[1] ? b : a));
+    const worst = inTerm.reduce((a, b) => (b[1] < a[1] ? b : a));
+    const short = k => { const d = fromKey(k); return d ? d.getDate() + ' ' + MONTHS[d.getMonth()] : k; };
+    const one = (label, pair, cls) => {
+      const box = document.createElement('span');
+      box.className = 'dayPeak ' + cls;
+      box.append(Object.assign(document.createElement('span'), { className: 'peakWhat', textContent: label }),
+                 Object.assign(document.createElement('b'), { className: 'peakHours', textContent: asHours(pair[1]) }),
+                 Object.assign(document.createElement('span'), { className: 'peakWhen', textContent: short(pair[0]) }));
+      box.title = label + ': ' + asHours(pair[1]) + ' on ' + pair[0];
+      return box;
+    };
+    line.append(one('Best day', best, 'best'), one('Worst day', worst, 'worst'));
   };
 
   const setDate = (which, value) => {

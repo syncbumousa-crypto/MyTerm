@@ -18,8 +18,39 @@
   const $ = id => document.getElementById(id);
 
   const HOURS_KEY = 'myterm.pace.hours';
+  const WEEK_KEY = 'myterm.pace.week';
   let perDay = 4;
   try { const v = Number(localStorage.getItem(HOURS_KEY)); if (v >= 1 && v <= 24) perDay = v; } catch {}
+
+  // ============================================================
+  // # 🗓️ 🎯  A GOAL FOR EACH DAY OF THE WEEK
+  // # 🔤 JavaScript
+  // # 🎯 Seven numbers, or none at all
+  // # 🔗 ONE NUMBER FOR SEVEN DAYS IS A LIE ABOUT MOST WEEKS. A Thursday
+  // #    with two free hours and a Sunday with six are not the same day,
+  // #    and holding both to four makes one of them fail every week
+  // #    while the other coasts. So the goal may be a week rather than a
+  // #    number — and the squares below colour each day against ITS OWN,
+  // #    which is the only reading that can be acted on.
+  // #
+  // #    Null, not seven fours: a schedule that has never been set is a
+  // #    different thing from one set to the same number everywhere, and
+  // #    only the first may be replaced by a single knob
+  // ============================================================
+  const readWeek = () => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(WEEK_KEY) || 'null');
+      if (!Array.isArray(raw) || raw.length !== 7) return null;
+      return raw.map(n => Math.max(0, Math.min(24, Number(n) || 0)));
+    } catch { return null; }
+  };
+  let week = readWeek();
+  const saveWeek = () => {
+    try {
+      if (week) localStorage.setItem(WEEK_KEY, JSON.stringify(week));
+      else localStorage.removeItem(WEEK_KEY);
+    } catch {}
+  };
 
   const el = (tag, cls, words) => {
     const n = document.createElement(tag);
@@ -88,9 +119,65 @@
          + (Math.abs(e.n) > 1 ? ' ×' + Math.abs(e.n) : '');
   };
 
+  const DAYNAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   let where = null, pop = null;
 
   const shut = () => { if (pop) { pop.remove(); pop = null; } };
+
+  // ============================================================
+  // # 🗓️ ✏️  SETTING THE WEEK
+  // # 🔤 JavaScript
+  // # 🎯 Seven boxes, one per weekday, and a way back to a single number
+  // # 🔗 Changing any of them repaints the SQUARES as well as the
+  // #    sentence: the colour of every Thursday on the grid is a verdict
+  // #    against the Thursday goal, so leaving them standing would be a
+  // #    judgement against a goal the reader had just changed
+  // ============================================================
+  const openWeek = anchor => {
+    if (pop) { shut(); return; }
+    pop = el('div', 'pacePop weekPop');
+    pop.setAttribute('role', 'dialog');
+    pop.setAttribute('aria-label', 'Hours for each day of the week');
+    pop.addEventListener('click', e => e.stopPropagation());
+
+    const head = el('div', 'pacePopHead',
+      'How many hours you mean to finish on each day');
+    pop.append(head);
+
+    const draft = week ? week.slice() : [perDay, perDay, perDay, perDay, perDay, perDay, perDay];
+
+    DAYNAMES.forEach((name, i) => {
+      const row = el('div', 'weekRow');
+      const box = el('input');
+      box.type = 'number'; box.min = '0'; box.max = '24'; box.step = '0.5';
+      box.className = 'weekNum';
+      box.value = String(draft[i]);
+      box.onclick = e => e.stopPropagation();
+      box.oninput = () => {
+        draft[i] = Math.max(0, Math.min(24, Number(box.value) || 0));
+        week = draft.slice();
+        saveWeek();
+        paint();
+        window.MyTermDays?.repaint?.();
+      };
+      row.append(el('span', 'weekName', name), box, el('span', 'weekUnit', 'h'));
+      pop.append(row);
+    });
+
+    const back = el('button', 'paceVal weekBack', week ? 'One number for every day' : 'Use a week');
+    back.type = 'button';
+    back.onclick = e => {
+      e.stopPropagation();
+      week = week ? null : draft.slice();
+      saveWeek();
+      shut();
+      paint();
+      window.MyTermDays?.repaint?.();
+    };
+    pop.append(back);
+    where.append(pop);
+  };
 
   // ============================================================
   // # 📜 🚫  THE DAYS, AND LEAVING SOME OUT
@@ -272,8 +359,19 @@
     const ask = el('p', 'paceLine paceAsk');
     const minus = el('button', 'paceStep', '−');
     const plus = el('button', 'paceStep', '+');
-    const val = el('span', 'paceVal paceNum', String(perDay));
+    // A BUTTON, NOT A READING: pressed, it opens the week. And when a
+    // week is set it says S rather than a number, because no one number
+    // is true of seven different days and printing any of them would be
+    // picking a day to lie about
+    const val = el('button', 'paceVal paceNum', week ? 'S' : String(perDay));
+    val.type = 'button';
+    val.setAttribute('aria-haspopup', 'dialog');
+    val.title = week
+      ? DAYNAMES.map((n, i) => n + ' ' + week[i] + 'h').join(' · ')
+      : 'Press to set each day of the week';
+    val.onclick = e => { e.stopPropagation(); openWeek(val); };
     minus.type = plus.type = 'button';
+    minus.hidden = plus.hidden = Boolean(week);     // the two knobs belong to the single number
     minus.disabled = perDay <= 1;
     plus.disabled = perDay >= 24;
     minus.setAttribute('aria-label', 'one hour less a day');
@@ -292,8 +390,19 @@
 
     ask.append(document.createTextNode('If completing '), minus, val, plus,
                document.createTextNode(' hours a day, then by '));
-    ask.append(el('b', 'paceDays',
-      left > 0 ? daysWord(Math.ceil(left / (perDay * 60))) : 'nothing left'));
+    // With a week set, the days are counted off one weekday at a time
+    // from today — a plain division by an average would promise an end
+    // on a Friday you had already told it you do nothing on
+    const atThatPace = () => {
+      if (left <= 0) return 'nothing left';
+      if (!week) return daysWord(Math.ceil(left / (perDay * 60)));
+      const any = week.some(h => h > 0);
+      if (!any) return 'never';
+      let rest = left, days = 0, d = new Date();
+      while (rest > 0 && days < 3650) { days++; d.setDate(d.getDate() + 1); rest -= week[d.getDay()] * 60; }
+      return daysWord(days);
+    };
+    ask.append(el('b', 'paceDays', atThatPace()));
     where.append(ask);
 
     where.title = left > 0 ? asHours(left) + ' of work left on the board' : '';
@@ -331,6 +440,16 @@
     // The hours a day the reader is aiming at. The squares below are
     // coloured against it, so it is read from here and not kept twice
     hours: () => perDay,
-    goalMinutes: () => perDay * 60
+    // What is asked of ONE day. Given a date it answers that weekday's
+    // own goal when a schedule is set; asked for nothing in particular
+    // it answers the single number
+    goalMinutes: on => {
+      if (!week) return perDay * 60;
+      if (!on) return (week.reduce((a, h) => a + h, 0) / 7) * 60;
+      const p = String(on).split('-');
+      const d = new Date(+p[0], +p[1] - 1, +p[2]);
+      return (week[d.getDay()] || 0) * 60;
+    },
+    week: () => (week ? week.slice() : null)
   };
 })();

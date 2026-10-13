@@ -656,7 +656,7 @@
     hideBar();
   };
 
-  const hideBar = () => { if (bar) bar.remove(); bar = null; };
+  const hideBar = () => { if (bar) bar.remove(); bar = null; keptRange = null; };
 
   // ============================================================
   // # 🖍️ 🎨  FIVE TOOLS, AND TWO OF THEM OPEN A CHOICE
@@ -673,6 +673,20 @@
   // #    swatches in a row is a panel wide enough to hide the line being
   // #    worked on, to say nothing of a reader who wants bold
   // ============================================================
+  // ============================================================
+  // # 👆 🧷  A PRESS ON THE BAR, BY MOUSE OR BY FINGER
+  // # 🔗 BY FINGER IT IS TAKEN ON THE WAY DOWN, and refused there. A tap
+  // #    on a phone sends its mouse events only after the finger lifts,
+  // #    and by then the tap has already moved the caret and the words
+  // #    picked are gone — so nothing was coloured. Refusing the touch at
+  // #    its start leaves the selection where it was; and if it was lost
+  // #    anyway, it is put back from the copy kept when the bar opened
+  // ============================================================
+  const press = (el, run) => {
+    el.addEventListener('mousedown', event => { event.preventDefault(); bringBack(); run(); });
+    el.addEventListener('touchstart', event => { event.preventDefault(); bringBack(); run(); }, { passive: false });
+  };
+
   const buildBar = () => {
     bar = document.createElement('div');
     bar.className = 'cmark';
@@ -692,7 +706,7 @@
         swatch.type = 'button';
         swatch.className = 'cmark-dab ' + (family === 'hl' ? 'on-' + cls : 'in-' + cls);
         swatch.title = words;
-        swatch.addEventListener('mousedown', event => { event.preventDefault(); applyMark(cls); });
+        press(swatch, () => applyMark(cls));
         palette.append(swatch);
       });
     };
@@ -705,8 +719,7 @@
       button.textContent = kind === 'hl' ? '' : kind === 'ink' ? 'T' : kind === 'num' ? '1.' : kind.toUpperCase();
       if (kind === 'hl') button.innerHTML = PEN;
 
-      button.addEventListener('mousedown', event => {
-        event.preventDefault();
+      press(button, () => {
         if (kind === 'num') { numberLines(); return; }
         if (kind !== 'hl' && kind !== 'ink') { applyMark(kind); return; }
         // The same one twice shuts it again, so a reader who opened the
@@ -728,6 +741,17 @@
   // under them if there is not — a bar that opens a second row near the
   // top of the window would otherwise be pushed off the screen
   let place = () => {};
+  let keptRange = null;
+  const TOUCH = window.matchMedia?.('(pointer: coarse)').matches === true;
+
+  // Puts back the selection the bar was opened for, when a press on the
+  // bar has taken it away
+  const bringBack = () => {
+    const sel = window.getSelection();
+    if (!keptRange || !sel) return;
+    const lost = !sel.rangeCount || sel.isCollapsed || !editing();
+    if (lost) { sel.removeAllRanges(); sel.addRange(keptRange); }
+  };
 
   const showBar = () => {
     const sel = window.getSelection();
@@ -738,10 +762,20 @@
 
     if (!bar) buildBar();
 
+    // Kept, so a press on the bar that loses the selection on its way —
+    // as a finger on a phone can — still knows what was picked
+    keptRange = sel.getRangeAt(0).cloneRange();
+
     place = () => {
       const wide = bar.offsetWidth || 160, tall = bar.offsetHeight || 32;
       const over = box.top - tall - 8;
-      bar.style.top = (over >= 6 ? over : Math.min(window.innerHeight - tall - 8, box.bottom + 8)) + 'px';
+      const under = box.bottom + 8;
+      // On a touch screen UNDER the words first: the phone puts its own
+      // Copy / Paste above a selection, and the two would sit on each other
+      const top = TOUCH
+        ? (under + tall <= window.innerHeight - 6 ? under : Math.max(6, over))
+        : (over >= 6 ? over : Math.min(window.innerHeight - tall - 8, under));
+      bar.style.top = top + 'px';
       bar.style.left = Math.min(window.innerWidth - wide - 8,
                                 Math.max(8, box.left + box.width / 2 - wide / 2)) + 'px';
     };
@@ -1446,6 +1480,28 @@
     // final until the browser has finished with the press
     desk.addEventListener('mouseup', () => setTimeout(showBar, 0));
     desk.addEventListener('keyup', () => setTimeout(showBar, 0));
+    // ============================================================
+    // # 📱 ✋  A SELECTION MADE BY FINGER
+    // # 🔗 ON A PHONE NO MOUSEUP EVER COMES. Words are picked by holding a
+    // #    finger on them and dragging the two handles, and the page is
+    // #    told only that the selection changed — so the bar, which
+    // #    waited for a mouse button to come up, never appeared on the
+    // #    phone at all. It now listens to the selection itself, once the
+    // #    handles have stopped moving
+    // ============================================================
+    let settling = null;
+    document.addEventListener('selectionchange', () => {
+      clearTimeout(settling);
+      settling = setTimeout(() => {
+        const sel = window.getSelection();
+        if (editing() && sel && sel.rangeCount && !sel.isCollapsed) showBar();
+        else if (bar && !(sel && sel.rangeCount && bar.contains(sel.anchorNode))) {
+          // Gone only when the selection has truly gone — not while a
+          // press on the bar itself is being made
+          if (!sel || !sel.rangeCount || sel.isCollapsed) hideBar();
+        }
+      }, 250);
+    });
   };
 
   const listenOnce = () => {

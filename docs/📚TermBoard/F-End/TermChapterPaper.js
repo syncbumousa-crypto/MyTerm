@@ -766,18 +766,38 @@
     // as a finger on a phone can — still knows what was picked
     keptRange = sel.getRangeAt(0).cloneRange();
 
+    // ============================================================
+    // # 👀 ⌨️  ONLY WHERE THE READER CAN SEE IT
+    // # 🔗 THE WINDOW'S HEIGHT IS NOT WHAT IS ON SCREEN on an iPhone with
+    // #    the keyboard up: Safari keeps reporting the full height and lays
+    // #    the keyboard over the bottom of it. The bar was put "under the
+    // #    words, where there is room" — and the room was behind the
+    // #    keyboard, so on the iPhone it was there and never seen. The
+    // #    part actually on screen is the visual viewport, and the bar is
+    // #    kept inside it: under the words, else over them, else at the
+    // #    top of what is visible
+    // ============================================================
     place = () => {
+      if (!bar) return;
+      const from = keptRange && keptRange.getBoundingClientRect();
+      const at = from && (from.width || from.height) ? from : box;
+      const view = window.visualViewport;
+      const lo = view ? view.offsetTop : 0;
+      const hi = view ? view.offsetTop + view.height : window.innerHeight;
+      const left = view ? view.offsetLeft : 0;
+      const right = view ? view.offsetLeft + view.width : window.innerWidth;
       const wide = bar.offsetWidth || 160, tall = bar.offsetHeight || 32;
-      const over = box.top - tall - 8;
-      const under = box.bottom + 8;
+      const over = at.top - tall - 8;
+      const under = at.bottom + 8;
+      const fitsUnder = under + tall <= hi - 6, fitsOver = over >= lo + 6;
       // On a touch screen UNDER the words first: the phone puts its own
       // Copy / Paste above a selection, and the two would sit on each other
       const top = TOUCH
-        ? (under + tall <= window.innerHeight - 6 ? under : Math.max(6, over))
-        : (over >= 6 ? over : Math.min(window.innerHeight - tall - 8, under));
+        ? (fitsUnder ? under : fitsOver ? over : lo + 6)
+        : (fitsOver ? over : fitsUnder ? under : lo + 6);
       bar.style.top = top + 'px';
-      bar.style.left = Math.min(window.innerWidth - wide - 8,
-                                Math.max(8, box.left + box.width / 2 - wide / 2)) + 'px';
+      bar.style.left = Math.min(right - wide - 8,
+                                Math.max(left + 8, at.left + at.width / 2 - wide / 2)) + 'px';
     };
     place();
   };
@@ -1489,6 +1509,11 @@
     // #    phone at all. It now listens to the selection itself, once the
     // #    handles have stopped moving
     // ============================================================
+    // The keyboard coming up or going, and the page sliding under it,
+    // move what is visible — so the bar is set down again
+    window.visualViewport?.addEventListener('resize', () => place());
+    window.visualViewport?.addEventListener('scroll', () => place());
+
     let settling = null;
     document.addEventListener('selectionchange', () => {
       clearTimeout(settling);
@@ -1516,7 +1541,11 @@
     // before a digit could be written
     window.addEventListener('scroll', () => {
       if (!(menu && menu.contains(document.activeElement))) hideMenu();
-      hideBar();
+      // The bar FOLLOWS the words and is not shut by a scroll. On the
+      // iPhone the page scrolls by itself while the handles are dragged
+      // and when the keyboard comes up, and that shut the bar the moment
+      // it appeared. It goes when the selection goes, and not before
+      if (bar) place();
     }, true);
   };
 

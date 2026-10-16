@@ -1,0 +1,13 @@
+{
+  "course": "FIN250",
+  "chapter": "Ch1",
+  "built": true,
+  "pct": 99,
+  "cap": 100,
+  "parts": { "anchors": 1, "bank": 1, "book": 1, "data": 1, "explain": 0.963, "figs": 1, "ledger": 1, "links": 1, "photos": 1, "widgets": 1 },
+  "counts": { "anchored": 120, "bookPages": 41, "calcCards": 0, "figs": 5, "items": 135, "ledgerRows": 110, "linked": 110, "photos": 5, "tbPages": 32, "widgets": 3 },
+  "guards": ["_vbars.html", "_vblank.html", "_vbox.html", "_vbul.html", "_vcards.html", "_vcell.html", "_vcursor.html", "_vdup.html", "_vexp.html", "_vfig.html", "_vfp.html", "_vink.html", "_vlang.html", "_vlaw.html", "_vlinks.html", "_vmark.html", "_vnarrow.html", "_vone.html", "_vorder.html", "_vperf.html", "_vpos.html", "_vprint.html", "_vprose.html", "_vrail.html", "_vsel.html", "_vsheet.html", "_vslide.html", "_vsrc.html", "_vstore.html", "_vstore2.html", "_vtb.html", "_vthe.html", "_vvis.html", "_vwho.html", "_vwidg.html", "_vzoom.html"],
+  "delivery": "",
+  "expected": "",
+  "handoverToNext": ""
+}

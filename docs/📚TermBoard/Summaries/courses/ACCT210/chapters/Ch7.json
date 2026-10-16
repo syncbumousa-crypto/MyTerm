@@ -1,0 +1,13 @@
+{
+  "course": "ACCT210",
+  "chapter": "Ch7",
+  "built": false,
+  "pct": 0,
+  "cap": 100,
+  "parts": {  },
+  "counts": {  },
+  "guards": [],
+  "delivery": "",
+  "expected": "",
+  "handoverToNext": ""
+}

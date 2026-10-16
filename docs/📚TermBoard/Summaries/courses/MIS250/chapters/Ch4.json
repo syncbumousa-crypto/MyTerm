@@ -1,0 +1,13 @@
+{
+  "course": "MIS250",
+  "chapter": "Ch4",
+  "built": true,
+  "pct": 94,
+  "cap": 100,
+  "parts": { "anchors": 1, "bank": 1, "book": 1, "data": 1, "explain": 1, "figs": 1, "ledger": 1, "links": 1, "photos": 0, "widgets": 0 },
+  "counts": { "anchored": 48, "bookPages": 39, "calcCards": 0, "figs": 3, "items": 82, "ledgerRows": 100, "linked": 100, "photos": 0, "tbPages": 30, "widgets": 0 },
+  "guards": ["_vbars.html", "_vblank.html", "_vbox.html", "_vbul.html", "_vcards.html", "_vcell.html", "_vch4.html", "_vdup.html", "_vexp.html", "_vfig.html", "_vfp.html", "_vlang.html", "_vlinks.html", "_vmark.html", "_vnarrow.html", "_vone.html", "_vorder.html", "_vperf.html", "_vpos.html", "_vprint.html", "_vprose.html", "_vrail.html", "_vsheet.html", "_vsrc.html", "_vstore.html", "_vstore2.html", "_vtb.html", "_vthe.html", "_vvis.html", "_vwho.html", "_vwidg.html", "_vzoom.html"],
+  "delivery": "",
+  "expected": "{ \"bookPages\": 39, \"tbPages\": 30, \"items\": 82, \"figs\": 3, \"photos\": 0, \"widgets\": 0 }",
+  "handoverToNext": ""
+}

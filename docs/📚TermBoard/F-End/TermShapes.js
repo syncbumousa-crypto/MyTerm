@@ -71,6 +71,23 @@
       fill.style.height = (reading.ready ?? 0) + '%';
       square.appendChild(fill);
 
+      // A square that stands for summarising work can be pressed to see
+      // that work. The caller says which chapter it belongs to; a square
+      // with no chapter behind it stays a picture, because a thing that
+      // looks pressable and is not is worse than one that never offered
+      if (reading.openSummary) {
+        square.classList.add('can');
+        square.setAttribute('role', 'button');
+        square.setAttribute('tabindex', '0');
+        const go = e => {
+          e.preventDefault(); e.stopPropagation();
+          window.MyTermSummaryPane?.open(reading.openSummary.course,
+                                         reading.openSummary.chapter, square);
+        };
+        square.addEventListener('click', go);
+        square.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') go(e); });
+      }
+
       const bar = document.createElement('span');
       bar.className = 'tbar';
       bar.title = reading.doneTip || '';

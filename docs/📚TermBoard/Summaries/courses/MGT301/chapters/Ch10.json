@@ -1,0 +1,13 @@
+{
+  "course": "MGT301",
+  "chapter": "Ch10",
+  "built": false,
+  "pct": 0,
+  "cap": 75,
+  "parts": {  },
+  "counts": {  },
+  "guards": [],
+  "delivery": "",
+  "expected": "",
+  "handoverToNext": ""
+}

@@ -129,8 +129,32 @@
         ? '<h4>Handed to the next chapter</h4><div class="sumHand">' + hand(ch.handoverToNext) + '</div>'
         : '') +
 
-      '<p class="sumFoot">The skill this was summarised with lives in ' +
-        '<code>Summaries/courses/' + esc(nature.course) + '/skills.md</code></p>';
+      '<p class="sumFoot" id="sumDrive">…</p>';
+
+    whereFrom(nature.course, key);
+  };
+
+  // Which copy is being read matters more than it looks. The tree that
+  // ships with the site is the record as it stood when it was carried
+  // over; the one in the reader's Drive is theirs and can have moved
+  // since. Saying "shipped" or "yours" is the difference between a
+  // number you can act on and one you cannot
+  const whereFrom = async (code, key) => {
+    const line = document.getElementById('sumDrive');
+    if (!line) return;
+    const D = window.MyTermSummaryDrive;
+    if (!D || !(await D.ready().catch(() => false))) {
+      line.innerHTML = 'Read from the copy that ships with the site. ' +
+        'Sign in and this chapter can keep its own record in your Drive.';
+      return;
+    }
+    const mine = await D.chapter.read(code, key).catch(() => null);
+    const sk = await D.skills.read(code).catch(() => null);
+    line.innerHTML =
+      (mine ? 'Your Drive has a record for this chapter, saved ' + esc((mine.savedAt || '').slice(0, 10)) + '.'
+            : 'Your Drive has no record for this chapter yet — what you see ships with the site.') +
+      (sk ? ' Skill at <b>v' + sk.version + '</b>' + (sk.after ? ' after ' + esc(sk.after) : '') + '.'
+          : ' No skill file in your Drive yet.');
   };
 
   // The handover was written as markdown in the delivery note, so the

@@ -1,0 +1,12 @@
+{
+  "builtAt": 1792177581,
+  "source": "التلخيص الذكي — النسخة الكاملة على الجهاز",
+  "readForAChapter": [
+    "method/index.json ثمّ ما يَخصّ الخطوة",
+    "courses/<CODE>/nature.json",
+    "courses/<CODE>/skills.md",
+    "courses/<CODE>/chapters/<الفصل السابق>.json → handoverToNext"
+  ],
+  "courses": [{"code": "ACCT210", "chapters": 11, "cap": 100}, {"code": "FIN250", "chapters": 12, "cap": 100}, {"code": "MGT210", "chapters": 14, "cap": 75}, {"code": "MGT301", "chapters": 12, "cap": 75}, {"code": "MIS250", "chapters": 10, "cap": 100}],
+  "method": 14
+}

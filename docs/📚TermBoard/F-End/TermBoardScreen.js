@@ -1325,13 +1325,30 @@
   // #    counted off the chapter's own two files the moment an answer
   // #    is given
   // ============================================================
-  const chapterReading = ch => {
+  // How much of this chapter has been summarised, out of how much this
+  // book can have. The number comes from the Summaries tree; when there
+  // is none for this chapter the square falls back to what it used to
+  // say, so a course with no summarising work behind it reads exactly as
+  // it did before any of this existed
+  const summaryReading = (courseName, ch) =>
+    window.MyTermSummary?.quick(courseName, ch.name) || null;
+
+  // The tree lands after the first paint, so the squares are drawn again
+  // when it does. Nothing else on the board moves
+  addEventListener('myterm:summaries', () => { try { refreshScores(); } catch (e) {} });
+
+  const chapterReading = (ch, courseName) => {
     // Counted by the same hand that counts the course above it and the
     // term above that, over a list of one
     const sum = sumOf([ch]);
+    const s = summaryReading(courseName, ch);
     return window.MyTermShapes.draw('sm', {
-      ready: ch.name.trim() !== '' ? 100 : 0,
-      readyTip: ch.name.trim() !== '' ? 'Named and ready' : 'Not named yet',
+      openSummary: courseName ? { course: courseName, chapter: ch.name } : null,
+      ready: s ? s.ofReachable : (ch.name.trim() !== '' ? 100 : 0),
+      readyTip: s
+        ? s.ofReachable + '% summarised - ' + s.pct + ' of ' + s.reachable +
+          ' points this book can have. Press to see the steps.'
+        : (ch.name.trim() !== '' ? 'Named and ready - press for the summarising steps' : 'Not named yet'),
       done: sum.through,
       doneTip: hoursTip(sum, [ch]),
       marks: { ok: sum.good, bad: sum.bad, unknown: sum.unknown },
@@ -1376,7 +1393,7 @@
 
       const redraw = () => { drawChapters(course, body); refreshScores(); };
 
-      row.append(twist, no, name, hoursPair(ch.doneMinutes, keep.hoursOf(ch)), chapterReading(ch),
+      row.append(twist, no, name, hoursPair(ch.doneMinutes, keep.hoursOf(ch)), chapterReading(ch, course.name),
                  chapterDetail(course, ch, redraw));
       body.append(row);
     });

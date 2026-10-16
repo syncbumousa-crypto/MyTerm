@@ -4130,3 +4130,86 @@ body.darkpaper .cep-note { color: #9a9ca4; }
   margin-top: 1px;
 }
 .term-gpa.whatIf { outline: 1px dashed var(--orange); outline-offset: 6px; border-radius: 10px; }
+/* ============================================================ */
+/* # 🔍 🪟  THE PANE BEHIND THE SQUARE */
+/* # 🔤 CSS */
+/* # 🎯 A sheet over the board showing the eleven steps of */
+/* #    summarising one chapter, what each left behind, and which */
+/* #    of them this book can have at all */
+/* # 🔗 Four states are drawn differently on purpose: done, part, */
+/* #    not yet, and a fourth the others would hide - a step that */
+/* #    leaves no artefact and is attested rather than measured. */
+/* #    Giving it the same filled mark as a measured step would be */
+/* #    the one lie this pane exists to avoid */
+/* ============================================================ */
+.sq.can { cursor: pointer; }
+.sq.can:hover { outline: 1px solid var(--dim2); outline-offset: 2px; }
+.sq.can:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.sumPane {
+  position: fixed; inset: 0; z-index: 90; display: grid; place-items: center;
+  background: rgba(0, 0, 0, .55); padding: 20px;
+}
+.sumCard {
+  position: relative; width: min(680px, 100%); max-height: 86vh; overflow: auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 20px 22px; color: var(--ink);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
+}
+.sumX {
+  position: absolute; inset-inline-end: 12px; top: 10px; border: 0; background: transparent;
+  color: var(--dim); font-size: 22px; line-height: 1; cursor: pointer; padding: 2px 6px;
+}
+.sumX:hover { color: var(--ink); }
+.sumHead { display: flex; align-items: baseline; gap: 9px; margin-bottom: 14px; }
+.sumHead b { font-size: 16px; }
+.sumHead span { color: var(--dim); font-size: 13px; }
+
+.sumTop { display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+          padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.sumBig b { font-size: 34px; font-weight: 700; line-height: 1; }
+.sumBig s { display: block; text-decoration: none; color: var(--dim2); font-size: 11px;
+            margin-top: 3px; }
+.sumSide { font-size: 12.5px; color: var(--dim); }
+.sumCap { color: var(--orange); margin-top: 4px; font-size: 11.5px; max-width: 42ch; }
+
+.sumCard h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em;
+              color: var(--dim2); margin: 18px 0 8px; font-weight: 600; }
+.sumN { color: var(--dim); }
+
+.sumSteps { list-style: none; margin: 0; padding: 0; }
+.st { display: grid; grid-template-columns: 16px 26px 1fr auto; gap: 9px;
+      align-items: baseline; padding: 4px 0; font-size: 13px; }
+.st b { font-size: 11px; }
+.st .no { color: var(--dim2); font-size: 11px; font-variant-numeric: tabular-nums; }
+.st .nt { color: var(--dim2); font-size: 11px; text-align: end; }
+.st.done b { color: var(--green); }
+.st.part b { color: var(--orange); }
+.st.todo b { color: var(--dim2); }
+.st.attested b { color: var(--term); }
+.st.na { opacity: .42; }
+.sumKey { font-size: 10.5px; color: var(--dim2); margin: 8px 0 0; }
+
+.sumParts { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.sumParts th { text-align: start; font-weight: 600; color: var(--dim2);
+               font-size: 10.5px; text-transform: uppercase; padding-bottom: 5px; }
+.sumParts td { padding: 3px 0; }
+.sumParts .w { color: var(--dim2); width: 34px; font-variant-numeric: tabular-nums; }
+.sumParts .b { width: 46%; padding-inline: 10px; }
+.sumParts .v { text-align: end; color: var(--dim); font-variant-numeric: tabular-nums; width: 46px; }
+.sumParts tr.na { opacity: .45; }
+.naWord { font-size: 10.5px; color: var(--dim2); }
+.sumBar { display: block; height: 6px; border-radius: 3px; background: var(--well); overflow: hidden; }
+.sumBar i { display: block; height: 100%; background: var(--green); }
+
+.sumGuards, .sumList { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; }
+.sumGuards span, .sumList span {
+  font-size: 10.5px; color: var(--dim); border: 1px solid var(--line);
+  border-radius: 999px; padding: 1px 8px;
+}
+.sumHand { font-size: 12.5px; line-height: 1.75; color: var(--ink);
+              unicode-bidi: plaintext; }
+.sumHand p { margin: 0 0 8px; }
+.sumNo { color: var(--orange); font-size: 13px; }
+.sumFoot { margin: 16px 0 0; font-size: 11px; color: var(--dim2); }
+.sumFoot code { color: var(--dim); }

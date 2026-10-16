@@ -434,13 +434,70 @@
     return outOf > 0 ? got > outOf : (w > 0 && got > w);
   };
 
-  // What this item has earned of the course, out of a hundred. An item
-  // with no score yet counts as FULL marks, so the standing starts at the
-  // top and comes down as real scores arrive — it does not start at zero
-  // and frighten you with exams you have not sat
+  // An item nobody has put a score against yet. Kept apart from isOdd
+  // below, which is a different thing wearing the same clothes
+  const isBlank = item => !isGraded(item);
+
+  // ============================================================
+  // # 🔭 📌  THE LENS: WHAT A BLANK ITEM IS TAKEN TO BE WORTH
+  // # 🔤 JavaScript
+  // # 🎯 One number from 0 to 1. At 1 a blank item counts as full marks,
+  // #    which is what this board has always done; at 0 it counts as
+  // #    nothing. It is what the control under the term average sets.
+  // # 🔗 It is a LENS, not data. Nothing here writes to item.got and
+  // #    nothing reaches Drive: the marks under it do not move, only the
+  // #    reading of them. And it is read by the one function both the
+  // #    cards and the term average already go through, so the two can
+  // #    never end up describing the same course differently - which is
+  // #    a promise the file makes a few lines above and would have been
+  // #    broken by applying the lens to the average alone.
+  // ============================================================
+  // Kept across reloads, on this device only, beside the folded columns
+  // and for the same reason: it is a way of looking at the term, not
+  // part of the term, so it never goes to Drive and the laptop's
+  // what-if does not follow you to the phone.
+  //
+  // It is remembered even though the eye above deliberately is not, and
+  // the two are not in conflict. The eye hides something true, so
+  // forgetting it fails safe. This shows something untrue, so forgetting
+  // it would fail safe and REMEMBERING it is the risk - a board opened
+  // tomorrow still reading 0.62. What makes remembering safe is that the
+  // mark never leaves: the dashed frame and the words under the number
+  // are on screen the whole time the lens is off Full. Take that mark
+  // away and this line has to go back to forgetting.
+  const ASSUME = 'myterm.assume';
+
+  let assumeRatio = 1;
+  const clampAssume = r => {
+    const n = Number(r);
+    return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 1;
+  };
+  try { assumeRatio = clampAssume(localStorage.getItem(ASSUME) ?? 1); } catch { /* forgets */ }
+
+  const getAssume = () => assumeRatio;
+  const setAssume = r => {
+    assumeRatio = clampAssume(r);
+    try { localStorage.setItem(ASSUME, String(assumeRatio)); } catch { /* forgets */ }
+  };
+
+  // The blanks the lens can actually move. One with no weight is not
+  // counted: it cannot change any number, and counting it would put a
+  // figure beside the control that does not match what the control does
+  const blanksOf = course => marksOf(course)
+    .filter(i => isBlank(i) && (Number(i.weight) || 0) > 0);
+
+  // What this item has earned of the course, out of a hundred.
+  //
+  // A blank follows the lens. An impossible score does NOT, and the two
+  // used to share this line. They are not the same: a blank is a
+  // question not yet answered, and an impossible score is a typing slip
+  // already made - the weight-2 item marked 6 that the note above
+  // describes. Had they stayed together, choosing "zero" would have
+  // dropped an item you did fill in, punishing you for the typo
   const earnedOf = item => {
     const w = Number(item.weight) || 0, outOf = Number(item.outOf) || 0;
-    if (!isGraded(item) || isOdd(item)) return w;
+    if (isBlank(item)) return w * assumeRatio;
+    if (isOdd(item)) return w;
     const got = Number(item.got);
     return outOf > 0 ? w * (got / outOf) : got;
   };
@@ -454,9 +511,14 @@
     // arrive. It is marked `assumed` because nothing here was measured —
     // the term average leaves such a course out of its sum rather than
     // counting four points nobody earned
+    // The lens reaches here too. A course with nothing in it is a course
+    // where EVERYTHING is unanswered, so asking "what if I score zero in
+    // what I have not done" and getting A+ back from it would be the one
+    // course on the board that ignored the question
     if (!list.length || weight <= 0) {
-      const [, letter, points] = gradeOf(100);
-      return { pct: 100, letter, points, weight: 0, earned: 0, marked: 0, of: list.length, assumed: true };
+      const pct = Math.round(100 * assumeRatio * 10) / 10;
+      const [, letter, points] = gradeOf(pct);
+      return { pct, letter, points, weight: 0, earned: 0, marked: 0, of: list.length, assumed: true };
     }
 
     const earned = list.reduce((s, i) => s + earnedOf(i), 0);
@@ -884,7 +946,7 @@
     return hours > 0 ? hours : 3;        // nothing said reads as three
   };
 
-  const refreshTermGpa = () => {
+  const refreshTermGpa = (reveal = false) => {
     const rows = living().map(c => ({ course: c, s: standingOf(c), credits: creditsOf(c) }))
       .filter(x => x.s);
 
@@ -918,9 +980,61 @@
     scale.className = 'gpaOf';
     scale.textContent = 'GPA · OUT OF 4.00';
 
+    // ============================================================
+    // # 🔭 🎛️  WHAT IF THE BLANKS GO THE OTHER WAY
+    // # 🎯 Three choices for what an unanswered item is taken to be
+    // #    worth, and a count of how many items that is. The average
+    // #    above and every card below move together on the choice.
+    // # 🔗 The count is shown because a control that appears to do
+    // #    nothing is worse than one that is missing: with no blanks
+    // #    left in the term, Full and Zero give the same number, and
+    // #    without "0 items" beside them the reader concludes the
+    // #    buttons are broken rather than that the term is finished.
+    // #    And when the choice is anything but Full the number above
+    // #    is no longer a reading of the term, so it says so out loud
+    // #    rather than in a tooltip nobody hovers.
+    // ============================================================
+    const blanks = living().reduce((sum, c) => sum + blanksOf(c).length, 0);
+    const inCourses = living().filter(c => blanksOf(c).length).length;
+
+    const lens = document.createElement('span');
+    lens.className = 'gpaLens';
+
+    const word = document.createElement('span');
+    word.className = 'gpaLensWord';
+    word.textContent = 'Blank items count as';
+
+    const CHOICES = [['Full', 1], ['Half', 0.5], ['Zero', 0]];
+    const picks = CHOICES.map(([label, ratio]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'gpaPick' + (getAssume() === ratio ? ' on' : '');
+      b.textContent = label;
+      b.title = label === 'Full'
+        ? 'What this board has always shown'
+        : 'A what-if. Your marks do not change.';
+      b.onclick = () => {
+        // Clicking a what-if must not slam the cover back down on the
+        // very number it was asked to change
+        const shown = !termGpa.classList.contains('hid');
+        setAssume(ratio);
+        refreshScores(shown);
+      };
+      return b;
+    });
+
+    const many = document.createElement('span');
+    many.className = 'gpaLensCount';
+    many.textContent = blanks
+      ? blanks + ' item' + (blanks === 1 ? '' : 's') + ' in ' + inCourses +
+        ' course' + (inCourses === 1 ? '' : 's')
+      : 'nothing left blank';
+
+    lens.append(word, ...picks, many);
+
     const side = document.createElement('span');
     side.className = 'gpaSide';
-    side.append(bars, scale);
+    side.append(bars, scale, lens);
 
     // ============================================================
     // THE AVERAGE IS COVERED UNTIL IT IS ASKED FOR
@@ -948,8 +1062,22 @@
     eye.onclick = () => cover(!termGpa.classList.contains('hid'));
 
     termGpa.style.setProperty('--g', gradeColour(band[2]));
+
+    // A what-if that looks exactly like the truth is worse than no
+    // what-if at all: a glance from across the desk reads 1.92 and
+    // believes it. So the whole block is marked while the lens is off
+    // Full, and the mark is in the layout, not in a title
+    const guessing = getAssume() !== 1;
+    termGpa.classList.toggle('whatIf', guessing);
+    if (guessing) {
+      const flag = document.createElement('span');
+      flag.className = 'gpaWhatIf';
+      flag.textContent = 'what if · blanks at ' + Math.round(getAssume() * 100) + '%';
+      value.append(flag);
+    }
+
     termGpa.append(eye, value, side);
-    cover(true);
+    cover(!reveal);
     // Which of these are measured and which are still assumed is the one
     // thing the number itself cannot say, so the tip says it per course
     termGpa.title = `Term GPA — ${rows.length} course${rows.length === 1 ? '' : 's'} · ${hours} credit hours\n`
@@ -1255,7 +1383,10 @@
 
   };
 
-  const refreshScores = () => {
+  // `reveal` is for the one caller that has a reason to keep the average
+  // uncovered: the what-if control under it. Everywhere else leaves it
+  // covered, which is the rule the eye below sets out
+  const refreshScores = (reveal = false) => {
     const here = living();
     columns.querySelectorAll('.col').forEach(column => {
       const course = here.find(c => c.id === column.dataset.course);
@@ -1270,6 +1401,13 @@
     // The term reads itself again from the courses: its three shapes
     // and its lines are counted, never stored, so they cannot lag
     drawTermShape();
+    // ...and so does the average. It used to be drawn only when a mark
+    // or a credit-hours box was edited, and #term-gpa is empty in the
+    // markup - so on a freshly opened board there was no average at all
+    // until the reader happened to change something. The number belongs
+    // to the same reading as the cards this function just repainted, so
+    // it is drawn in the same breath
+    refreshTermGpa(reveal);
   };
 
   // The way to add a course stands in the row it adds to, as a tile of

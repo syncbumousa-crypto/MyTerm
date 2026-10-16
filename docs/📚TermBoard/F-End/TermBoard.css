@@ -4090,3 +4090,43 @@ body.darkpaper .cep-note { color: #9a9ca4; }
            border-radius: 5px; border: 1px solid #34353b; background: #16171a; color: var(--ink); }
 .weekUnit { font-size: 10px; color: var(--dim2, #6b6d75); }
 .weekBack { margin-top: 6px; width: 100%; font-size: 10px; }
+/* ============================================================ */
+/* # 🔭 🎛️  THE WHAT-IF CONTROL UNDER THE TERM AVERAGE */
+/* # 🔤 CSS */
+/* # 🎯 A line of three small choices and a count, sitting under */
+/* #    "GPA · OUT OF 4.00", plus the mark the block wears while the */
+/* #    answer above it is a guess */
+/* # 🔗 The mark is deliberately loud. Everything else on this board */
+/* #    is a reading of what happened; this is the only place that can */
+/* #    show a number nobody earned, and the cost of it being taken */
+/* #    for the real standing - once, at a glance, from across a desk */
+/* #    - is higher than the cost of the control looking plain. It is */
+/* #    also what lets the choice be remembered between visits */
+/* ============================================================ */
+.term-gpa .gpaLens {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 5px;
+  margin-top: 2px;
+}
+.term-gpa .gpaLensWord,
+.term-gpa .gpaLensCount {
+  font-size: 10px; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--dim2);
+}
+.term-gpa .gpaLensCount { margin-inline-start: 3px; }
+.term-gpa .gpaPick {
+  border: 1px solid var(--line); background: transparent; color: var(--dim);
+  font: inherit; font-size: 10.5px; line-height: 1;
+  padding: 3px 8px; border-radius: 999px; cursor: pointer;
+}
+.term-gpa .gpaPick:hover { color: var(--ink); border-color: var(--dim2); }
+.term-gpa .gpaPick.on {
+  background: var(--g, var(--blue)); border-color: transparent;
+  color: #fff; font-weight: 600;
+}
+.term-gpa.whatIf .gpaVal { position: relative; }
+.term-gpa .gpaWhatIf {
+  display: block; font-size: 9.5px; font-weight: 600; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--orange); white-space: nowrap;
+  margin-top: 1px;
+}
+.term-gpa.whatIf { outline: 1px dashed var(--orange); outline-offset: 6px; border-radius: 10px; }

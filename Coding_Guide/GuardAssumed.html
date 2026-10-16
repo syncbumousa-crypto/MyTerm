@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guard · assumed marks</title>
+<!-- ============================================================
+     # 🛡️ 📌  THE GUARD THAT PROVES THE LENS CHANGES NOTHING WHEN OFF
+     # 🔤 HTML + JavaScript
+     # 🎯 Runs the real grading maths over a fixture of awkward courses
+     #    and prints one line each. Run it before a change and after,
+     #    and the two printings must be identical while the lens sits
+     #    at Full.
+     # 🔗 It reads the maths out of TermBoardScreen.js at run time and
+     #    evaluates it, rather than restating it here. A fixture that
+     #    re-implements the thing it is checking proves only that two
+     #    copies of one idea agree, which is the one thing never in
+     #    doubt. The functions live inside an IIFE and are not exported,
+     #    so the block is cut out by the names that open and close it -
+     #    if either name is renamed this guard fails loudly, which is
+     #    the correct response to someone moving the thing it watches.
+     ============================================================ -->
+<style>
+  body { background:#1b1c1f; color:#ddd; font:13px ui-monospace, Consolas, monospace;
+         margin:0; padding:18px; }
+  h1 { font-size:14px; margin:0 0 4px; }
+  p  { color:#8d9098; margin:0 0 14px; }
+  table { border-collapse:collapse; }
+  td, th { padding:3px 12px 3px 0; text-align:left; white-space:pre; }
+  th { color:#8d9098; font-weight:600; border-bottom:1px solid #3a3b42; }
+  .bad { color:#d5883c; }
+  #sum { margin-top:14px; padding-top:10px; border-top:1px solid #3a3b42; }
+</style>
+</head>
+<body>
+<h1>Guard · assumed marks</h1>
+<p>The real maths, run over awkward courses. Copy this whole page's text
+   before a change and after; while the lens is at Full they must match.</p>
+<div id="out">reading TermBoardScreen.js …</div>
+<div id="sum"></div>
+
+<script>
+(async () => {
+  const SRC = '../docs/%F0%9F%93%9ATermBoard/F-End/TermBoardScreen.js';
+
+  // Awkward on purpose. Every row here was a real question while reading
+  // the code: what does an empty course stand at, does an impossible
+  // score behave like a blank one, does a zero-weight item move anything
+  const FIXTURE = [
+    ['empty course',        { items: [] }],
+    ['no items key',        {}],
+    ['all graded',          { items: [ {weight:50, got:40, outOf:50}, {weight:50, got:25, outOf:50} ] }],
+    ['half graded',         { items: [ {weight:50, got:40, outOf:50}, {weight:50} ] }],
+    ['none graded',         { items: [ {weight:40}, {weight:60} ] }],
+    ['got 0 is a score',    { items: [ {weight:50, got:0, outOf:50}, {weight:50} ] }],
+    ['impossible score',    { items: [ {weight:2,  got:6,  outOf:0}, {weight:98, got:98, outOf:98} ] }],
+    ['no outOf given',      { items: [ {weight:30, got:21}, {weight:70} ] }],
+    ['zero-weight blank',   { items: [ {weight:0}, {weight:100, got:80, outOf:100} ] }],
+    ['deleted ignored',     { items: [ {weight:50, got:10, outOf:50}, {weight:50, got:50, outOf:50, deleted:true} ] }],
+    ['weights sum to zero', { items: [ {weight:0, got:5, outOf:10} ] }]
+  ];
+
+  let text;
+  try { text = await (await fetch(SRC + '?t=' + Date.now())).text(); }
+  catch (e) { document.getElementById('out').textContent = 'could not read the source: ' + e; return; }
+
+  // Cut from the grade scale down to the end of standingOf
+  const from = text.indexOf('const CUTS');
+  const to   = text.indexOf('// ============', text.indexOf('const standingOf'));
+  if (from < 0 || to < 0) {
+    document.getElementById('out').innerHTML =
+      '<b class="bad">FAIL</b> - could not find the block. ' +
+      'Did CUTS or standingOf get renamed or moved?';
+    return;
+  }
+  const block = text.slice(from, to);
+
+  let api;
+  try {
+    api = Function(block +
+      '; return { standingOf, earnedOf, isGraded, isOdd,' +
+      '  setAssume: typeof setAssume === "function" ? setAssume : null,' +
+      '  blanksOf:  typeof blanksOf  === "function" ? blanksOf  : null };')();
+  } catch (e) {
+    document.getElementById('out').innerHTML = '<b class="bad">FAIL</b> - the block did not run: ' + e;
+    return;
+  }
+
+  // The lens is remembered in localStorage, and this page is served from
+  // the same origin as the board. Setting it here to run the fixture
+  // would quietly overwrite a real choice - a guard that changes what it
+  // watches is not a guard. So the value is put back on the way out
+  const KEY = 'myterm.assume';
+  const kept = (() => { try { return localStorage.getItem(KEY); } catch { return null; } })();
+  const restore = () => {
+    try { kept === null ? localStorage.removeItem(KEY) : localStorage.setItem(KEY, kept); } catch {}
+  };
+  addEventListener('pagehide', restore);
+
+  const fingerprint = rows => {
+    const stamp = rows.map(r => r.slice(1).join(',')).join(' | ');
+    let h = 0;
+    for (const ch of stamp) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return h.toString(16);
+  };
+
+  const run = () => FIXTURE.map(([name, course]) => {
+    const s = api.standingOf(course);
+    return [name, s.pct, s.letter, s.points, s.weight, Math.round(s.earned * 100) / 100,
+            s.marked, s.of, s.assumed];
+  });
+
+  const head = ['course', 'pct', 'letter', 'points', 'weight', 'earned', 'marked', 'of', 'assumed'];
+  const table = rows =>
+    '<table><tr>' + head.map(h => '<th>' + h + '</th>').join('') + '</tr>' +
+    rows.map(r => '<tr>' + r.map(v => '<td>' + v + '</td>').join('') + '</tr>').join('') +
+    '</table>';
+
+  // ===== 1. Neutrality. This table and this number are the whole point
+  // of the guard: with the lens at Full, every figure must be what it
+  // was before the lens existed. Its shape is frozen so the fingerprint
+  // stays comparable across changes
+  if (api.setAssume) api.setAssume(1);
+  const base = run();
+  document.getElementById('out').innerHTML = table(base);
+
+  const lines = ['rows ' + base.length + '  ·  fingerprint ' + fingerprint(base)];
+
+  // ===== 2. The lens moving. Not a pass/fail - a record of what each
+  // setting does, so a change in it is seen rather than discovered
+  if (api.setAssume) {
+    const extra = [];
+    for (const r of [0.5, 0]) {
+      api.setAssume(r);
+      const rows = run();
+      extra.push('<h1 style="margin-top:18px">lens at ' + (r * 100) + '%</h1>' + table(rows));
+      lines.push('at ' + (r * 100) + '%  ·  fingerprint ' + fingerprint(rows));
+    }
+    api.setAssume(1);
+    document.getElementById('out').insertAdjacentHTML('beforeend', extra.join(''));
+
+    // A lens that reads the same at 0% as at 100% is a lens that is not
+    // wired to anything
+    if (fingerprint(base) === lines[2].split('fingerprint ')[1])
+      lines.push('<b class="bad">FAIL - 0% reads the same as 100%: the lens moves nothing</b>');
+  } else {
+    lines.push('no lens in the source yet - neutrality table only');
+  }
+
+  restore();
+  lines.push('<span style="color:#6b6d75">your own setting was put back: ' +
+             (kept === null ? 'none was stored' : kept) + '</span>');
+
+  document.getElementById('sum').innerHTML = lines.join('<br>');
+})();
+</script>
+</body>
+</html>

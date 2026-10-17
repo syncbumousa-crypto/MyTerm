@@ -58,8 +58,12 @@
     'qcard', 'qh', 'qb', 'qAns', 'qSwitch', 'qFull', 'qSimple',
     'sFull', 'sSimple', 'ansToggle', 'ansBody', 'aShow', 'aHide',
     'given', 'ask', 'note', 'miss', 'lbl', 'exp',
-    // a table of givens
-    'qTable', 'qTableWrap', 'qTSec', 'c1', 'c2', 'c3', 'n', 'u', 'd', 'r',
+    // a table of givens. `qTbl` is the plain year-by-year cash flow table
+    // FIN250 Ch10, Ch11 and Ch15 set inside a practice card - twenty-six of
+    // them. Nothing styles it here or on the reader's own pages, so losing
+    // it costs no look; it is kept because it is the author's own name for
+    // what that table IS, and a name dropped once cannot be styled later
+    'qTable', 'qTableWrap', 'qTSec', 'qTbl', 'c1', 'c2', 'c3', 'n', 'u', 'd', 'r',
     'in1', 'in2', 'an', 'lc', 'lcOp', 'dt', 'cr', 'tot', 'no', 'yes',
     // the financial statements, the journal and the cash flows
     'finStmt', 'finStmtWrap', 'fsKey', 'fsTitle', 'fsCo', 'fsWhen', 'acct',
@@ -93,8 +97,14 @@
   // property is read and the declaration is kept only if it is one of
   // the seven these pages actually use
   // ============================================================
+  // padding-left is the INDENT OF A CREDIT LINE. A journal entry sets its
+  // debits flush and steps its credits in, and nothing else on the page
+  // does it: ACCT210 Ch3 carries twenty-eight of them inline on td.acct,
+  // and no class in this file or in TermSheet.css indents that cell. Drop
+  // the property and every entry in the chapter reads as all debits -
+  // a page that still looks finished and says something untrue.
   const STYLE_OK = new Set(['caption-side', 'text-align', 'font-size',
-                            'padding-bottom', 'color', '--cols', 'grid-column']);
+                            'padding-bottom', 'padding-left', 'color', '--cols', 'grid-column']);
 
   const DROP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'IFRAME',
                         'OBJECT', 'EMBED', 'HEAD', 'TITLE', 'LINK', 'META', 'IMG']);

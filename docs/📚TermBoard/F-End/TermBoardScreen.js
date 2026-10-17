@@ -389,14 +389,54 @@
   // #    lost; it simply stops borrowing a shape that answers something
   // #    else at every other size
   // ============================================================
+  // ============================================================
+  // # 🟦 ➕  THE SQUARE ADDS UP, CHAPTER TO COURSE TO TERM
+  // # 🔤 JavaScript
+  // # 🎯 One number per chapter — how much of its summarising is done —
+  // #    and the course's square and the term's square are those same
+  // #    numbers put together
+  // # 🔗 THE THREE SQUARES USED TO ANSWER THREE DIFFERENT QUESTIONS. The
+  // #    chapter's said how much of it was summarised; the course's and
+  // #    the term's still said how many chapters had a NAME. So every
+  // #    chapter could be finished and the course read the same as the
+  // #    day its chapters were typed in. Now there is one question, asked
+  // #    here and nowhere else: the course's square is the average of the
+  // #    squares under it, and the term's is the average of every
+  // #    chapter in the term — a course with twelve chapters weighs
+  // #    twelve, not one, because it is twelve chapters of work
+  // ============================================================
+  // How much of a chapter has been summarised, out of how much its book
+  // can have, from the Summaries tree. A chapter with nothing in the tree
+  // falls back to what the square always said — full once it is named —
+  // so a course with no summarising work behind it reads as it did before
+  const chapterSquare = (ch, courseName) => {
+    const s = window.MyTermSummary?.quick(courseName, ch.name) || null;
+    return { s, value: s ? s.ofReachable : (ch.name.trim() !== '' ? 100 : 0) };
+  };
+
+  const squareOf = pairs => {
+    if (!pairs.length) return { value: 0, full: 0, count: 0 };
+    let total = 0, full = 0;
+    pairs.forEach(([ch, courseName]) => {
+      const v = chapterSquare(ch, courseName).value;
+      total += v;
+      if (v >= 100) full++;
+    });
+    return { value: Math.round(total / pairs.length), full, count: pairs.length };
+  };
+
+  const squareTip = (sq, what) => (sq.count
+    ? `${sq.value}% summarised — ${what}: the average of its ${sq.count} chapter squares, ${sq.full} of them full`
+    : 'No chapters yet');
+
   const readingOf = (course, size) => {
     const list = alive(course);
-    const named = list.filter(h => h.name.trim() !== '').length;
     const sum = sumOf(list);
+    const sq = squareOf(list.map(h => [h, course.name]));
 
     return window.MyTermShapes.draw(size, {
-      ready: list.length ? Math.round((named / list.length) * 100) : 0,
-      readyTip: list.length ? `${named} of ${list.length} chapters named` : 'No chapters yet',
+      ready: sq.value,
+      readyTip: squareTip(sq, 'this course'),
       done: sum.through,
       doneTip: hoursTip(sum, list),
       marks: { ok: sum.good, bad: sum.bad, unknown: sum.unknown },
@@ -900,6 +940,7 @@
       courses: courses.length,
       chapters: chapters.length,
       named: chapters.filter(h => h.name.trim() !== '').length,
+      square: squareOf(courses.flatMap(c => alive(c).map(h => [h, c.name]))),
       list: chapters,
       sum: sumOf(chapters)
     };
@@ -909,8 +950,8 @@
     const r = termReading();
     termShape.textContent = '';
     termShape.append(window.MyTermShapes.draw('lg', {
-      ready: r.chapters ? Math.round((r.named / r.chapters) * 100) : 0,
-      readyTip: `Set up — ${r.named} of ${r.chapters} chapters named`,
+      ready: r.square.value,
+      readyTip: squareTip(r.square, 'the whole term'),
       done: r.sum.through,
       doneTip: hoursTip(r.sum, r.list),
       marks: { ok: r.sum.good, bad: r.sum.bad, unknown: r.sum.unknown },
@@ -1325,14 +1366,6 @@
   // #    counted off the chapter's own two files the moment an answer
   // #    is given
   // ============================================================
-  // How much of this chapter has been summarised, out of how much this
-  // book can have. The number comes from the Summaries tree; when there
-  // is none for this chapter the square falls back to what it used to
-  // say, so a course with no summarising work behind it reads exactly as
-  // it did before any of this existed
-  const summaryReading = (courseName, ch) =>
-    window.MyTermSummary?.quick(courseName, ch.name) || null;
-
   // The tree lands after the first paint, so the squares are drawn again
   // when it does. Nothing else on the board moves
   addEventListener('myterm:summaries', () => { try { refreshScores(); } catch (e) {} });
@@ -1341,10 +1374,10 @@
     // Counted by the same hand that counts the course above it and the
     // term above that, over a list of one
     const sum = sumOf([ch]);
-    const s = summaryReading(courseName, ch);
+    const s = chapterSquare(ch, courseName).s;
     return window.MyTermShapes.draw('sm', {
       openSummary: courseName ? { course: courseName, chapter: ch.name } : null,
-      ready: s ? s.ofReachable : (ch.name.trim() !== '' ? 100 : 0),
+      ready: chapterSquare(ch, courseName).value,
       readyTip: s
         ? s.ofReachable + '% summarised - ' + s.pct + ' of ' + s.reachable +
           ' points this book can have. Press to see the steps.'

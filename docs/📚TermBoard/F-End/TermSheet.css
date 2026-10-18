@@ -303,3 +303,55 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
                          border-right: calc(2px / var(--sheetScale, 1)) solid #8a8d96;
                          border-bottom: calc(2px / var(--sheetScale, 1)) solid #8a8d96;
                          transform: rotate(45deg); opacity: .55; }
+
+/* ============================================================
+   THE CALCULATOR A PROBLEM CARD OPENS
+
+   Carried over from their own visuals.js unchanged, class names and
+   all: this is the BA II Plus panel their chapters were written
+   around, and a second drawing of it would be a second thing to keep
+   in step. It sits in a sheet of its own over the page rather than
+   inside the explanation window, because what it holds is not an
+   explanation — it is this problem's own numbers and the keys the
+   book presses on them.
+   ============================================================ */
+.mcalc-veil { position: fixed; inset: 0; z-index: 60; background: rgba(12,13,16,.55);
+              display: flex; align-items: center; justify-content: center; padding: 18px; }
+.mcalc-card { background: #fff; color: #2d3038; border-radius: 12px; padding: 14px 16px 16px;
+              max-width: 760px; width: 100%; max-height: 86vh; overflow: auto;
+              font-family: Arial, "Segoe UI", sans-serif; box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+.mcalc-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
+.mcalc-name { font-weight: 700; font-size: 13.5px; flex: 1 1 auto; }
+.mcalc-shut { border: 1px solid #c9ccd2; background: #fff; color: #6b6d75; width: 24px; height: 24px;
+              border-radius: 6px; cursor: pointer; flex: 0 0 auto; font-size: 15px; line-height: 1; }
+/* ---------- الحاسبة المالية (BA II Plus) — الشكل 5.3 في الكتاب ---------- */
+.w5Calc{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;margin-top:6px}
+.w5CalcBody{flex:0 0 268px;background:#23252b;border:1px solid #3a3d45;border-radius:14px;padding:12px 11px 13px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.w5Disp{background:#c9d6c2;border:1px solid #2c2f35;border-radius:5px;padding:7px 9px;margin-bottom:10px;min-height:44px;direction:ltr;text-align:right;font-family:ui-monospace,Consolas,monospace}
+.w5DispK{display:block;font-size:10px;color:#4a5348;letter-spacing:.5px;min-height:12px}
+.w5DispV{display:block;font-size:19px;font-weight:700;color:#1b2018;font-variant-numeric:tabular-nums;word-break:break-all}
+.w5Mode{display:flex;justify-content:space-between;font-size:9.5px;color:#8f949e;margin:-6px 0 8px;direction:ltr}
+.w5Mode b{color:#e0a030;font-weight:700}
+.w5Pad{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.w5Pad button{font:inherit;font-size:11px;font-weight:700;padding:7px 2px;border-radius:6px;cursor:pointer;border:1px solid #4a4e57;background:#33363e;color:#e8eaee;line-height:1.35;direction:ltr}
+.w5Pad button:hover{background:#3d414a}
+.w5Pad button:active{transform:translateY(1px)}
+.w5Pad button.tvm{background:#2f5fa8;border-color:#2f5fa8}
+.w5Pad button.fn{background:#7a5c1e;border-color:#8a6a24;font-size:10px}
+.w5Pad button.op{background:#44484f}
+.w5Pad button.cpt{background:#a8442f;border-color:#a8442f}
+.w5Pad button[aria-pressed="true"]{outline:2px solid #e0a030}
+.w5CalcSide{flex:1 1 210px;min-width:0}
+.w5Regs{display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:5px;margin-bottom:9px}
+.w5Reg{padding:4px 7px;border-radius:7px;background:#fff;border:1px solid #e0e3e9;text-align:center}
+.w5Reg.set{background:#eef3fb;border-color:#c9d6ee}
+.w5Reg.solved{background:#e9f5ef;border-color:#8fc3aa}
+.w5RegK{display:block;font-size:9.5px;color:#6b6d75}
+.w5RegV{display:block;font-size:12.5px;font-weight:700;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;color:#2d3038}
+.w5Steps{margin:0;padding:0;list-style:none;counter-reset:st}
+.w5Steps li{counter-increment:st;font-size:11px;line-height:1.75;color:#4a5568;padding-inline-start:22px;position:relative}
+.w5Steps li::before{content:counter(st);position:absolute;inset-inline-start:0;top:3px;width:15px;height:15px;border-radius:50%;background:#dfe4ec;color:#4a5568;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.w5Steps li.done::before{background:#2e7d57;color:#fff}
+.w5Steps kbd{font-family:ui-monospace,Consolas,monospace;font-size:10.5px;background:#2f3138;color:#e8eaee;border-radius:4px;padding:1px 5px;margin:0 1px;direction:ltr;display:inline-block}
+.w5CalcMsg{font-size:11.5px;line-height:1.7;color:#2d3038;background:#eef3fb;border:1px solid #c9d6ee;border-radius:8px;padding:7px 9px;margin-top:9px}
+.w5CalcMsg b{color:#1c4e9c}

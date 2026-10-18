@@ -188,6 +188,54 @@
   };
 
   // ============================================================
+  // # 🧮 🚪  THE CALCULATOR, IN A SHEET OF ITS OWN
+  // # 🔤 JavaScript
+  // # 🎯 Opens the BA II Plus panel over the page for one problem card
+  // # 🔗 NOT IN THE EXPLANATION WINDOW, which is where their own pages
+  // #    put it. What this holds is not an explanation of a law: it is
+  // #    this problem's own numbers and the keys the book presses on
+  // #    them, and it rides on the card in `data-calc` rather than in
+  // #    the explanations file. Its own sheet keeps the two apart.
+  // ============================================================
+  const openCalc = (card, name) => {
+    const calc = window.MyTermCalc;
+    if (!calc || !card?.getAttribute('data-calc')) return;
+
+    const veil = document.createElement('div');
+    veil.className = 'mcalc-veil';
+    const sheet = document.createElement('div');
+    sheet.className = 'mcalc-card';
+
+    const head = document.createElement('div');
+    head.className = 'mcalc-head';
+    const title = document.createElement('div');
+    title.className = 'mcalc-name';
+    title.textContent = name || '';
+    const shut = document.createElement('button');
+    shut.type = 'button';
+    shut.className = 'mcalc-shut';
+    shut.title = 'Close';
+    shut.textContent = '×';
+    head.append(title, shut);
+
+    const spot = document.createElement('div');
+    spot.setAttribute('data-calc', card.getAttribute('data-calc'));
+    sheet.append(head, spot);
+    veil.append(sheet);
+
+    const away = () => { veil.remove(); document.removeEventListener('keydown', key); };
+    // The ground around it is a way out and the panel itself is not: a
+    // press on the keys you came to press must never close them
+    const key = event => { if (event.key === 'Escape') away(); };
+    shut.onclick = away;
+    veil.addEventListener('mousedown', event => { if (event.target === veil) away(); });
+    document.addEventListener('keydown', key);
+
+    document.body.append(veil);
+    calc.draw(spot, { lang: lang === 'en' ? 'en' : 'ar' });
+  };
+
+  // ============================================================
   // # 📐 🔍  THE SHEET IS A FIXED SHEET, SO THE WRITING SHRINKS
   // # 🔤 JavaScript
   // # 🎯 Measures each sheet after it is drawn and takes the type down
@@ -359,6 +407,13 @@
       // taken — it turns the wording between the book's and the short one
       const head = card.querySelector(':scope > .qh');
       if (head) presses(head, one.group + ':' + one.at);
+      // And the ones the book solves on the calculator say so
+      if (head && card.hasAttribute('data-calc') && !head.querySelector('.calcJump')) {
+        const name = head.cloneNode(true);
+        name.querySelectorAll('button, .qSwitch').forEach(x => x.remove());
+        head.append(button('calcJump', 'حُلّها بالحاسبة المالية — الخطوات والمفاتيح',
+                           ICON_CALC, () => openCalc(card, name.textContent.trim())));
+      }
     });
 
     if (one.kind === 'card') {

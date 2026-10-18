@@ -13,7 +13,7 @@
   const sheets = () => window.MyTermSheetStore;
   const icons = () => window.EP_ICONS || {};
 
-  let where = null, group = null, lang = 'ar';
+  let where = null, group = null, lang = 'ar', told = () => {};
 
   // The tick on a practice card is a mark like any other, and it is
   // keyed by the card's SEAT — `s-rules1:55`. Not by its order among
@@ -372,6 +372,13 @@
         const on = !tick.classList.contains('on');
         tick.classList.toggle('on', on);
         chapters()?.mark?.(key, on);
+        // AND THE STRIP IS TOLD. The store knows at once, but the count
+        // over the section is drawn and left — so a card ticked off went
+        // on reading 6/9 until something else happened to redraw it, and
+        // unticking one looked like a press that had not registered.
+        // The rows' own tick has said this since it was written; the
+        // sheets simply had nobody to say it to until now.
+        told();
       };
       box.prepend(tick);
     }
@@ -422,9 +429,13 @@
 
   window.MyTermSheetPaper = {
     // Where the sheets go. Said once, so a redraw does not hunt for it
-    arm: spot => {
+    // Told where to draw, and what to call when a tick changes — the
+    // same bargain the rows' paper is handed, and for the same reason:
+    // this file must not know the course screen's own names
+    arm: (spot, onTick) => {
       where = typeof spot === 'string' ? document.getElementById(spot) : spot;
       if (!where) return false;
+      told = onTick || (() => {});
       where.addEventListener('click', pressed);
       watchSize();
       return true;

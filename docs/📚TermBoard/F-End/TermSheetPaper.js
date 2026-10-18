@@ -22,6 +22,61 @@
   const keyOf = (g, at) => 's-' + g + ':' + at;
 
   // ============================================================
+  // # 🔎 📖  THE TWO PRESSES THE SHEETS WERE MISSING
+  // # 🔤 JavaScript
+  // # 🎯 A law box and a problem card each owe the reader two answers:
+  // #    where it came from in the book, and what it means at length.
+  // # 🔗 ONE KEY ANSWERS BOTH. A law is keyed by its own number
+  // #    (`rules1:1.1`) because a law PAGE holds several boxes — nine
+  // #    pages carry twenty-six of them in FIN250 Ch4 — and a card by
+  // #    its SEAT (`rules1:55`), which is what its tick and the
+  // #    reader's ink are keyed by too. Never by its order among the
+  // #    filled ones: a card that moves seats would wear another
+  // #    card's explanation.
+  // # 🔗 The explanation window takes any key at all, so nothing but
+  // #    the button was ever missing. The places are read from the
+  // #    chapter's own sheets file, resolved when it was built — the
+  // #    reader's book is a PDF read a page at a time, and searching
+  // #    it for a ten-word window would turn one press into a hundred
+  // #    page reads.
+  // ============================================================
+  const ICON_SRC = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2.5H20v19H6.5A2.5 2.5 0 0 1 4 19V5a2.5 2.5 0 0 1 2.5-2.5z"/></svg>';
+  const ICON_EP = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.1a2.7 2.7 0 1 1 3.9 2.5c-.7.4-1.2 1-1.2 1.8v.4"/><line x1="12" y1="17.2" x2="12" y2="17.3"/></svg>';
+  const ICON_CALC = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><rect x="7.8" y="5.4" width="8.4" height="3.4" rx=".6"/><path d="M8.6 12.4h.01M12 12.4h.01M15.4 12.4h.01M8.6 15.6h.01M12 15.6h.01M15.4 15.6h.01M8.6 18.4h.01M12 18.4h.01M15.4 18.4h.01"/></svg>';
+
+  const button = (cls, title, art, go) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = cls;
+    b.title = title;
+    b.innerHTML = art;
+    b.onclick = event => { event.stopPropagation(); go(); };
+    return b;
+  };
+
+  // A press that finds nothing when something is there is a press that
+  // tells the reader there is nothing — so each button is added only
+  // when what it would open exists
+  const presses = (host, key) => {
+    if (!host || !key || host.querySelector(':scope > .srcJump, :scope > .epJump')) return;
+
+    const places = sheets()?.srcsOf?.(key) || [];
+    if (places.length) {
+      host.append(button('srcJump', 'اذهب لمصدره في الكتاب', ICON_SRC, () => {
+        // Two books are not two alternatives: a law stated in the book
+        // and tested in the bank has both, and both columns are open
+        places.forEach(place => window.MyTermSourcePane?.goTo?.(place));
+      }));
+    }
+
+    if (window.MyTermExplainStore?.of?.(key)) {
+      host.append(button('epJump', 'الشرح الموسّع', ICON_EP, () => {
+        window.MyTermExplain?.open(key);
+      }));
+    }
+  };
+
+  // ============================================================
   // # 📐 🔍  THE SHEET IS A FIXED SHEET, SO THE WRITING SHRINKS
   // # 🔤 JavaScript
   // # 🎯 Measures each sheet after it is drawn and takes the type down
@@ -180,6 +235,19 @@
     box.querySelectorAll('.qcard').forEach(card => {
       if (!card.getAttribute('data-ans')) card.setAttribute('data-ans', 'hidden');
       if (!card.getAttribute('data-say')) card.setAttribute('data-say', 'full');
+    });
+
+    // A law answers under its own number; a card answers under its seat
+    box.querySelectorAll('.lawBox').forEach(lawBox => {
+      const no = lawBox.querySelector('.lawNo');
+      const num = no ? String(no.textContent).trim() : '';
+      if (num) presses(lawBox, one.group + ':' + num);
+    });
+    box.querySelectorAll('.qcard').forEach(card => {
+      // The head and not the card: pressing the card itself is already
+      // taken — it turns the wording between the book's and the short one
+      const head = card.querySelector(':scope > .qh');
+      if (head) presses(head, one.group + ':' + one.at);
     });
 
     if (one.kind === 'card') {

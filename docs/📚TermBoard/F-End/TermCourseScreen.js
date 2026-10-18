@@ -1369,7 +1369,7 @@
     const holder = document.createElement('div');
     holder.className = 'csheets';
     body.append(holder);
-    paper.arm(holder);
+    paper.arm(holder, afterPaper);
 
     const c = course();
     const ch = alive(c).find(h => h.id === openChapter);

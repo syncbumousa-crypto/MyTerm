@@ -286,7 +286,20 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
                border: calc(1.5px / var(--sheetScale, 1)) solid #8a8d96;
                background: #fff; cursor: pointer; padding: 0; }
 .msheet-tick.on { background: #2f7d4f; border-color: #2f7d4f; }
-.msheet-tick.on::after { content: ''; position: absolute; inset: 20% 22% 28% 22%;
-                         border-left: calc(2px / var(--sheetScale, 1)) solid #fff;
+/* A TICK HAS ONE SHORT ARM AND ONE LONG ONE. Drawn inside a box as wide
+   as it is tall, the two arms come out equal and what the reader sees
+   is a chevron — an arrow pointing down, which reads as "open this",
+   not as "I have done this". Reported as exactly that. So the box the
+   arms are drawn in is narrow and tall (32% by 60%), and the corner
+   turns to the bottom: short arm up to the left, long arm up to the
+   right. */
+.msheet-tick.on::after { content: ''; position: absolute; inset: 14% 34% 26% 34%;
+                         border-right: calc(2px / var(--sheetScale, 1)) solid #fff;
                          border-bottom: calc(2px / var(--sheetScale, 1)) solid #fff;
-                         transform: rotate(-45deg); }
+                         transform: rotate(45deg); }
+/* And the empty box says what it is for before it is pressed: the same
+   tick, faint, while the pointer is over it */
+.msheet-tick:not(.on):hover::after { content: ''; position: absolute; inset: 14% 34% 26% 34%;
+                         border-right: calc(2px / var(--sheetScale, 1)) solid #8a8d96;
+                         border-bottom: calc(2px / var(--sheetScale, 1)) solid #8a8d96;
+                         transform: rotate(45deg); opacity: .55; }

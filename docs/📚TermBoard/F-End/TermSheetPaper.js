@@ -60,6 +60,32 @@
     return row ? row.id : '';
   };
 
+  // ============================================================
+  // # 🏷️ 📚  WHICH COPY OF THE BOOK A KIND MEANS
+  // # 🔤 JavaScript
+  // # 🎯 Turns `book` and `bank` into this chapter's own source ids
+  // # 🔗 A sheet place was resolved when the chapter was built, where
+  //  #   the only thing known about the book was that it WAS the book.
+  // #    The panel's jump matches a place against the id of the source
+  // #    it is showing, so a place carrying a kind lights nothing.
+  // # 🔗 Read off THE CHAPTER'S OWN ROWS, because they point at the
+  // #    chapter's own copies — a course has twenty sources and the
+  // #    name on them is not a contract
+  // ============================================================
+  const idForKind = () => {
+    const map = {};
+    const all = window.MyTermSources;
+    (chapters()?.sections?.() || []).forEach(section => {
+      (chapters()?.rowsOf?.(section.id) || []).forEach(row => {
+        (row.srcs || []).forEach(link => {
+          const kind = all?.one?.(link.src)?.kind;
+          if (kind && !map[kind]) map[kind] = link.src;
+        });
+      });
+    });
+    return map;
+  };
+
   const button = (cls, title, art, go) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -95,16 +121,29 @@
     if (places.length) {
       host.append(button('srcJump', 'اذهب لمصدره في الكتاب', ICON_SRC, async () => {
         const pane = window.MyTermSourcePane;
-        if (pane && !pane.isOpen?.()) pane.open?.();
+        // The panel is opened by PRESSING THE READER'S OWN BUTTON, not by
+        // calling open() here. It takes the board and the course, it arms
+        // itself with the course screen's own handlers, it loads the
+        // sources, and it keeps the button's icon honest — open() called
+        // bare did none of that and quietly did nothing at all.
+        if (pane && !pane.isOpen?.()) {
+          const book = document.getElementById('course-book');
+          if (book) { book.click(); await new Promise(r => setTimeout(r, 400)); }
+        }
         const tries = [];
+        const ids = idForKind();
         places.forEach(place => {
           // A law goes through its row; a problem card has no row and
           // goes on its own mark, which the panel now draws for it
           const rowId = place.ref ? rowFor(place.ref) : '';
           // Two books are not two alternatives: a law stated in the book
           // and tested in the bank has both, and both columns are open
-          if (rowId) (chapters()?.linksOf?.(rowId) || []).forEach(link => tries.push(pane?.goTo?.(link)));
-          else tries.push(pane?.goTo?.(place));
+          if (rowId) {
+            (chapters()?.linksOf?.(rowId) || []).forEach(link => tries.push(pane?.goTo?.(link)));
+            return;
+          }
+          const src = ids[place.src === 'bank' ? 'tb' : 'book'];
+          if (src) tries.push(pane?.goTo?.({ ...place, src }));
         });
         // Counted by what came back, not by how many were attempted: the
         // jump is awaited, so a press that lit nothing says so instead

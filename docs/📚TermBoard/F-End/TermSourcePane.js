@@ -219,7 +219,14 @@
     if (!source || !store?.linksOn || !finder) return;
 
     const n = Number(slot.dataset.page);
-    const links = store.linksOn(source.id, n);
+    // The chapter's rows, and the law and problem sheets with them. The
+    // sheets keep their places in a file of their own, so they are asked
+    // separately — and asked by the KIND of book, because a place was
+    // resolved before this copy of the book had an id. Left out, a law
+    // or a card could be pressed and nothing would light: the panel only
+    // ever flashes a mark it has already drawn
+    const links = store.linksOn(source.id, n)
+      .concat(window.MyTermSheetStore?.linksOn?.(source.kind, n) || []);
     const skips = window.MyTermSources?.skipsOn?.(source.id, n) || [];
     if (!links.length && !skips.length) return;
 

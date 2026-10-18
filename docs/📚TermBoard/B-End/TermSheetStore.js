@@ -238,12 +238,26 @@
         src: typeof p?.src === 'string' ? p.src : '',
         page: Math.max(1, Math.trunc(Number(p?.page) || 0)),
         anchor: typeof p?.anchor === 'string' ? p.anchor : '',
-        what: typeof p?.what === 'string' ? p.what : 'ask'
+        what: typeof p?.what === 'string' ? p.what : 'ask',
+        // A LAW'S PLACE BELONGS TO A ROW, and this says which: `terms:9`,
+        // the stack and the row's own number, exactly as the chapter was
+        // written. Not a row id — the seven chapters moved in October
+        // carry ids drawn at random (`r-3cgajx`), so an id minted by the
+        // build would match nine chapters and miss seven. And it is the
+        // row's marks the panel lights: `src` here is a KIND (`book`),
+        // never a source id, so a place pressed on its own lights
+        // nothing at all.
+        ref: typeof p?.ref === 'string' ? p.ref : ''
       })).filter(p => p.src && p.anchor);
       if (list.length) out[k] = list;
     });
     return out;
   };
+
+  // One id per place, minted the same way everywhere it is needed: the
+  // mark the panel draws on a page and the press that flashes it must
+  // agree on a name, and a place has none of its own in the file
+  const placeId = (key, i) => 'sh-' + key + '-' + i;
 
   const shapeDoc = doc => {
     const sheets = {};
@@ -365,7 +379,36 @@
     // The places one key's press should light, or an empty list. Asked
     // per key and not handed out whole, so a sheet that has no source
     // costs the caller nothing to find out
-    srcsOf: key => ((open?.doc.srcs || {})[key] || []).slice(),
+    srcsOf: key => ((open?.doc.srcs || {})[key] || [])
+      .map((p, i) => ({ ...p, id: placeId(key, i) })),
+
+    // ============================================================
+    // # 🖍️ 📖  THE PLACES ON ONE PAGE, FOR THE PANEL TO MARK
+    // # 🔤 JavaScript
+    // # 🎯 Every sheet place that falls on this page of this kind of
+    // #    book, shaped like a row's link so the panel can draw it
+    // #    without knowing a sheet from a row
+    // # 🔗 ASKED BY KIND, NOT BY SOURCE ID. A sheet place was resolved
+    // #    when the chapter was built, where the only thing known about
+    // #    the book was that it WAS the book — the id is minted later,
+    // #    on import, and differs per chapter.
+    // # 🔗 And `bank` here is the kind the sources call `tb`. Two names
+    // #    for one thing, both already written down in files that exist;
+    // #    the translation belongs in one line, here.
+    // ============================================================
+    linksOn: (kind, page) => {
+      const want = Math.max(1, Math.trunc(Number(page)) || 1);
+      const mine = kind === 'tb' ? 'bank' : kind === 'book' ? 'book' : '';
+      if (!mine) return [];
+      const out = [];
+      Object.keys(open?.doc.srcs || {}).forEach(key => {
+        open.doc.srcs[key].forEach((p, i) => {
+          if (p.src !== mine || p.page !== want) return;
+          out.push({ ...p, id: placeId(key, i), row: '', section: '', no: null });
+        });
+      });
+      return out;
+    },
     nameGroup: (group, name) => {
       if (!open || !/^[\w-]{1,24}$/.test(String(group))) return false;
       open.doc.labels[group] = String(name || '').slice(0, 80);

@@ -1606,8 +1606,30 @@
   // pressed did nothing at all and said nothing
   let cutting = false;
 
+  // ============================================================
+  // # ⌨️ 🛑  NEVER CUT UNDER A CARET
+  // # 🔤 JavaScript
+  // # 🎯 A cut asked for while a cell is being typed in waits until the
+  // #    reader leaves the cell, whoever asked for it
+  // # 🔗 A CUT REBUILDS EVERY CELL, the one being typed in included. On a
+  // #    phone or an iPad the cell the keyboard belonged to is then gone,
+  // #    and the keyboard goes with it — after a single letter, because
+  // #    the news of the save that letter caused, or of the other
+  // #    device, arrived and the page was drawn again to show it. The
+  // #    rule was already written ("the paper is NOT recut while a cell
+  // #    is being typed in") but only the paper's own cuts kept it, and
+  // #    the bell and the course page asked for cuts it never refused.
+  // #    Now it is refused HERE, for every caller; the cut is made on
+  // #    the way out of the paper, where focusout always makes one
+  // ============================================================
+  const typingHere = () => {
+    const at = document.activeElement;
+    return Boolean(stage && at && at.isContentEditable && stage.contains(at));
+  };
+
   const repaint = () => {
     if (!host || !stage || cutting) return;
+    if (typingHere()) return;
     cutting = true;
     try { layOut(); } finally { cutting = false; }
   };

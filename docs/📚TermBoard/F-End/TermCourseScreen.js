@@ -452,8 +452,24 @@
   if (allBtn) allBtn.onclick = () => {
     const part = partNow();
     if (!part || !part.rows) return;
-    window.MyTermChapterStore.markAll(part.id, part.learnt !== part.rows);
-    drawRows();
+    // ============================================================
+    // A STACK OF SHEETS IS TICKED BY ITS CARDS, NOT BY ITS ROWS
+    //
+    // markAll walks the section's rows, and a rules part has none: its
+    // work is cards, kept in a file of their own and keyed by their
+    // seat. Pressed on one, the button did nothing at all — the same
+    // silent nothing the single tick did before it was given a bell.
+    // ============================================================
+    if (part.kind === 'rules') {
+      const on = part.learnt !== part.rows;
+      (window.MyTermSheetStore?.of?.(part.group) || [])
+        .filter(one => one.kind === 'card')
+        .forEach(one => window.MyTermChapterStore.mark('s-' + one.group + ':' + one.at, on));
+      drawRows();
+    } else {
+      window.MyTermChapterStore.markAll(part.id, part.learnt !== part.rows);
+      drawRows();
+    }
     afterPaper();
     paintAll();
   };

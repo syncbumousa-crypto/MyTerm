@@ -44,6 +44,22 @@
   const ICON_EP = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.1a2.7 2.7 0 1 1 3.9 2.5c-.7.4-1.2 1-1.2 1.8v.4"/><line x1="12" y1="17.2" x2="12" y2="17.3"/></svg>';
   const ICON_CALC = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><rect x="7.8" y="5.4" width="8.4" height="3.4" rx=".6"/><path d="M8.6 12.4h.01M12 12.4h.01M15.4 12.4h.01M8.6 15.6h.01M12 15.6h.01M15.4 15.6h.01M8.6 18.4h.01M12 18.4h.01M15.4 18.4h.01"/></svg>';
 
+  // `terms:9` — which stack of rows, and the row's own NUMBER in it.
+  // Matched by name because that is what the reference is written in:
+  // the stacks are called "Terms · Ch1" and "Questions · Ch1", or bare
+  // "Terms" and "Questions" in the chapters built later
+  const rowFor = ref => {
+    const cut = String(ref || '').split(':');
+    if (cut.length < 2) return '';
+    const want = /^questions/i.test(cut[0]) ? /^questions/i : /^terms/i;
+    const section = (chapters()?.sections?.() || [])
+      .find(s => s.kind === 'part' && want.test(s.name || ''));
+    if (!section) return '';
+    const no = cut.slice(1).join(':');
+    const row = (chapters()?.rowsOf?.(section.id) || []).find(r => String(r.no) === no);
+    return row ? row.id : '';
+  };
+
   const button = (cls, title, art, go) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -60,12 +76,41 @@
   const presses = (host, key) => {
     if (!host || !key || host.querySelector(':scope > .srcJump, :scope > .epJump')) return;
 
+    // ============================================================
+    // A LAW IS PRESSED THROUGH ITS ROW
+    //
+    // The panel does not light a piece of text handed to it. It draws
+    // the marks of the chapter's ROWS onto each page as it is read, and
+    // then flashes one of them by its id. A sheet's own place carries a
+    // source KIND (`book`) and no id, so pressed on its own it lights
+    // nothing whatever, and the reader is left pressing a dead button —
+    // which is worse than no button.
+    //
+    // So the place names the row it came out of (`terms:9`) and the
+    // press goes through that row: real ids, marks already on the page,
+    // and the same behaviour as pressing the row itself. The row is
+    // found by its NUMBER, which is what the chapter was written with.
+    // ============================================================
     const places = sheets()?.srcsOf?.(key) || [];
     if (places.length) {
-      host.append(button('srcJump', 'اذهب لمصدره في الكتاب', ICON_SRC, () => {
-        // Two books are not two alternatives: a law stated in the book
-        // and tested in the bank has both, and both columns are open
-        places.forEach(place => window.MyTermSourcePane?.goTo?.(place));
+      host.append(button('srcJump', 'اذهب لمصدره في الكتاب', ICON_SRC, async () => {
+        const pane = window.MyTermSourcePane;
+        if (pane && !pane.isOpen?.()) pane.open?.();
+        const tries = [];
+        places.forEach(place => {
+          // A law goes through its row; a problem card has no row and
+          // goes on its own mark, which the panel now draws for it
+          const rowId = place.ref ? rowFor(place.ref) : '';
+          // Two books are not two alternatives: a law stated in the book
+          // and tested in the bank has both, and both columns are open
+          if (rowId) (chapters()?.linksOf?.(rowId) || []).forEach(link => tries.push(pane?.goTo?.(link)));
+          else tries.push(pane?.goTo?.(place));
+        });
+        // Counted by what came back, not by how many were attempted: the
+        // jump is awaited, so a press that lit nothing says so instead
+        // of leaving the reader to decide whether it registered
+        const done = await Promise.all(tries);
+        if (!done.some(Boolean)) pane?.sayNowhere?.();
       }));
     }
 

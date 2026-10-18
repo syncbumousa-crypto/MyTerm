@@ -1085,9 +1085,25 @@
     // pace is still shown, in the place the choice would have been,
     // because a reader who opens this to see how it is counted must
     // find an answer there and not an empty space
+    // ============================================================
+    // A STACK OF SHEETS IS PACED BY THE QUESTION, FOR THE SAME REASON
+    // A BANK IS
+    //
+    // It has no rows and no pages of its own: what it holds is practice
+    // cards, and one card is one sitting of work whatever its length.
+    // Offered "By the row" it answered in rows it does not have, and a
+    // reader opening this to ask how many questions are in the section
+    // was told a number under the wrong word.
+    //
+    // The count itself was already right — a rules part reports its
+    // CARDS as its rows — so this is the word and the choice catching up
+    // with the measurement.
+    // ============================================================
     const bank = part.kind === 'tb';
-    let per = bank ? 'ask' : part.per, each = part.each;
-    const pages = bank ? 0
+    const sheets = part.kind === 'rules';
+    const asked = bank || sheets;
+    let per = asked ? 'ask' : part.per, each = part.each;
+    const pages = asked ? 0
       : (window.MyTermPaper?.pagesOf(window.MyTermChapterStore?.rowsOf(part.id) || []) || 0);
 
     paceBox = document.createElement('div');
@@ -1145,15 +1161,15 @@
         + (minutes ? (window.MyTermHours ? window.MyTermHours.fmt(minutes) : minutes + 'm') : 'nothing yet');
     };
 
-    const paces = bank ? [['ask', 'By the question']]
-                       : [['row', 'By the row'], ['page', 'By the page']];
+    const paces = asked ? [['ask', 'By the question']]
+                        : [['row', 'By the row'], ['page', 'By the page']];
 
     paces.forEach(([which, words]) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'cpace-one' + (per === which ? ' on' : '') + (bank ? ' only' : '');
+      button.className = 'cpace-one' + (per === which ? ' on' : '') + (asked ? ' only' : '');
       button.textContent = words;
-      if (bank) button.disabled = true;
+      if (asked) button.disabled = true;
       button.onclick = () => {
         per = which;
         [...pick.children].forEach(b => b.classList.toggle('on', b === button));

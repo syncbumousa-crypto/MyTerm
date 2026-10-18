@@ -115,6 +115,24 @@
 .msheet table.qTable th {white-space:normal; overflow-wrap:anywhere;}
 .msheet table.qTable th {background:#eef0f4; font-weight:700;}
 .msheet table.qTable tbody tr:nth-child(even) td {background:#f7f8fa;}
+/* ============================================================
+   THE THREE PRESSES A SHEET CARRIES
+   Their own buttons, their own measurements: a 22px square, half
+   opaque until the thing it sits on is hovered. Only the placing
+   rules came over in the first transfer and the base ones did not,
+   so for a whole release the buttons would have been invisible
+   squares had anything drawn them at all.
+   ============================================================ */
+.msheet .srcJump, .msheet .epJump, .msheet .calcJump {
+  border:1px solid #c9ccd2; background:#fff; color:#6b6d75;
+  width:22px; height:22px; padding:0; border-radius:6px; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  opacity:.5; transition:opacity .15s ease, background .15s ease, border-color .15s ease;
+}
+.msheet .srcJump svg, .msheet .epJump svg, .msheet .calcJump svg {
+  width:13px; height:13px; fill:none; stroke:currentColor;
+  stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round;
+}
 .msheet .lawBox {position:relative;}
 .msheet .lawBox > .epJump {position:absolute; top:6px; inset-inline-end:6px;}
 .msheet .lawBox > .srcJump {position:absolute; top:6px; inset-inline-end:32px;}

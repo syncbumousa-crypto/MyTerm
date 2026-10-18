@@ -1359,6 +1359,12 @@
     const ch = alive(c).find(h => h.id === openChapter);
     if (!ch) return;
     await store.ready(c.id, ch);
+    // And the explanations with them. A sheet's explain button is drawn
+    // only where there IS an explanation — the reader's own rule on
+    // their own pages, and a button that opens an empty window on
+    // twenty-six law boxes is worse than no button — so the file has to
+    // be here before the sheets are drawn, not on the first press
+    await Promise.resolve(window.MyTermExplainStore?.ready?.(c.id, ch)).catch(() => null);
     // the reader may have moved on while four hundred kilobytes arrived
     if (window.MyTermChapterStore.openSection() !== part.id) return;
     paper.draw(part.group || '');

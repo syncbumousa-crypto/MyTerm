@@ -213,6 +213,38 @@
     return out;
   };
 
+  // ============================================================
+  // # 🔎 📖  WHERE A LAW OR A PROBLEM CAME FROM IN THE BOOK
+  // # 🔤 JavaScript
+  // # 🎯 Holds the places a sheet's press should light, keyed the same
+  // #    way its explanation is: `<group>:<law number>` for a law box,
+  // #    `<group>:<at>` for a problem card.
+  // # 🔗 NOT A FIELD ON THE SHEET. A law PAGE carries several law boxes
+  // #    — nine pages hold twenty-six of them in FIN250 Ch4 alone — and
+  // #    each box is a different law with a different spot in the book.
+  // #    One field on the sheet would give all of them one source, and
+  // #    the wrong one for most.
+  // # 🔗 The places are RESOLVED WHEN THE CHAPTER IS BUILT, on the
+  // #    machine where the book's words are already in memory, never
+  // #    searched for here: the reader's copy of the book is a PDF read
+  // #    a page at a time, and hunting a ten-word window through it
+  // #    would turn one press into a hundred page reads.
+  // ============================================================
+  const shapeSrcs = given => {
+    const out = {};
+    Object.keys(given && typeof given === 'object' ? given : {}).forEach(k => {
+      if (typeof k !== 'string' || !Array.isArray(given[k])) return;
+      const list = given[k].map(p => ({
+        src: typeof p?.src === 'string' ? p.src : '',
+        page: Math.max(1, Math.trunc(Number(p?.page) || 0)),
+        anchor: typeof p?.anchor === 'string' ? p.anchor : '',
+        what: typeof p?.what === 'string' ? p.what : 'ask'
+      })).filter(p => p.src && p.anchor);
+      if (list.length) out[k] = list;
+    });
+    return out;
+  };
+
   const shapeDoc = doc => {
     const sheets = {};
     const given = doc && typeof doc.sheets === 'object' && doc.sheets ? doc.sheets : {};
@@ -223,7 +255,7 @@
       sheets[id] = one;
     });
     return { app: 'MyTerm', kind: 'sheets', chapter: doc?.chapter ?? null,
-             labels: shapeLabels(doc?.labels), sheets };
+             labels: shapeLabels(doc?.labels), srcs: shapeSrcs(doc?.srcs), sheets };
   };
 
   // The key is the group and the place inside it, because together they
@@ -236,7 +268,14 @@
       const here = out[id];
       if (!here || !here.updatedAt || (one.updatedAt && one.updatedAt > here.updatedAt)) out[id] = one;
     });
-    return { ...mine, sheets: out, labels: { ...mine.labels, ...theirs.labels } };
+    // The sources merge the same way the labels do — written by the
+    // build and not by the reader, so the newer file simply wins per
+    // key. Left out of this line they would vanish at the first sync
+    // from a second device, which is how a field named in the shape but
+    // forgotten in the merge dies quietly
+    return { ...mine, sheets: out,
+             labels: { ...mine.labels, ...theirs.labels },
+             srcs: { ...mine.srcs, ...theirs.srcs } };
   };
 
   let open = null, timer = null, dirty = false, coming = null;
@@ -276,7 +315,7 @@
     clearTimeout(timer);
     await push();
     open = { courseId, chapter, fileId: chapter.sheetsId || null,
-             doc: { app: 'MyTerm', kind: 'sheets', chapter: chapter.id, labels: {}, sheets: {} } };
+             doc: { app: 'MyTerm', kind: 'sheets', chapter: chapter.id, labels: {}, srcs: {}, sheets: {} } };
     dirty = false;
 
     coming = (async () => {
@@ -322,6 +361,11 @@
     gate: clean,
 
     labels: () => ({ ...(open?.doc.labels || {}) }),
+
+    // The places one key's press should light, or an empty list. Asked
+    // per key and not handed out whole, so a sheet that has no source
+    // costs the caller nothing to find out
+    srcsOf: key => ((open?.doc.srcs || {})[key] || []).slice(),
     nameGroup: (group, name) => {
       if (!open || !/^[\w-]{1,24}$/.test(String(group))) return false;
       open.doc.labels[group] = String(name || '').slice(0, 80);

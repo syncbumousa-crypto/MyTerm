@@ -1367,6 +1367,26 @@
       // A cell already open for writing answers to nothing here: the
       // press is the reader putting the caret where they want it
       const cell = event.target.closest(CELLS);
+      // ============================================================
+      // # 📱 ✌️  THE SECOND TAP OF A DOUBLE, ON A CELL THE FIRST OPENED
+      // # 🔗 On a touch screen the first tap opens the cell at once (see
+      // #    below), so the second lands in a cell already open for
+      // #    typing. Quick enough, and on the same cell, it was not
+      // #    typing that was meant but covering: the cell is turned to
+      // #    the opposite of what it was BEFORE the first tap — that tap
+      // #    uncovered it to type in — and the keyboard is sent away
+      // ============================================================
+      if (cell && cell.isContentEditable && lastPress?.opened && lastPress.cell === cell
+          && Date.now() - lastPress.at < DOUBLE_MS) {
+        const was = lastPress.wasCovered;
+        lastPress = null;
+        dropPicked(cell);
+        turnOver(cell, !was);
+        coveredAt = Date.now();
+        cell.blur();
+        return;
+      }
+
       if (!cell || cell.isContentEditable) return;
 
       // ============================================================
@@ -1437,6 +1457,22 @@
       // #    and taking it to mean "cover" would make it impossible to
       // #    pick a word to colour — which is the whole of the bar above
       // ============================================================
+      // ============================================================
+      // # 📱 ⌨️  ON A TOUCH SCREEN THE FIRST TAP OPENS AT ONCE
+      // # 🔗 AN iPHONE OR iPAD ONLY BRINGS UP ITS KEYBOARD FOR A CELL
+      // #    FOCUSED INSIDE THE TAP ITSELF. Waited for, the way a mouse
+      // #    press is, the cell was focused a third of a second later —
+      // #    outside the tap — and got its blue frame and no keyboard, so
+      // #    every edit took two taps. So a finger opens the cell now,
+      // #    and a second tap on it soon after is read as the double
+      // #    that covers (above). A mouse still waits: there the wait
+      // #    costs nothing and spares a flash of the caret
+      // ============================================================
+      if (TOUCH) {
+        lastPress = { cell, at, opened: true, wasCovered: cell.classList.contains('covered') };
+        startTyping(cell);
+        return;
+      }
       clearTimeout(pressing);
       pressing = setTimeout(() => { pressing = null; lastPress = null; startTyping(cell); }, DOUBLE_MS);
     });

@@ -29,7 +29,14 @@
 
 /* A sheet is white paper, not a dark panel: light is what a scrollbar
    or a control inside one should be drawn as */
-.msheet { color-scheme: light; }
+/* Their own stack, off their own body, and Arial first: every law line,
+   every fraction and every Arabic gloss on these sheets was set and
+   measured in it. This file named no font at all, so the sheets came
+   out in the site's system-ui — a different face, a different width per
+   character, and lines that had been fitted to their paper no longer
+   were. The sheet is paper, and paper does not change its type because
+   it was carried to another desk. */
+.msheet { color-scheme: light; font-family: Arial, "Segoe UI", sans-serif; }
 .msheet .cf-op {background:#d0e0e3; padding:0 2px; border-radius:2px;}
 .msheet .cf-inv {background:#fce5cd; padding:0 2px; border-radius:2px;}
 .msheet .cf-fin {background:#d9d2e9; padding:0 2px; border-radius:2px;}
@@ -78,12 +85,47 @@
 .msheet .srcNote b {color:#4a5568;}
 .msheet .srcLink {height:calc(9px * var(--eqScale,1)); margin:calc(2px * var(--eqScale,1)) 8% 0; border:1.4px solid #9db4d6; border-bottom:none; border-radius:3px 3px 0 0;}
 .msheet .lawNote {display:block; margin-top:calc(10px * var(--eqScale,1)); font-size:calc(10.5px * var(--fs) * var(--eqScale,1)); color:#3a3a3a;}
+/* ============================================================
+   THE ARABIC SITS UNDER THE ENGLISH, AND THAT IS ONE DECLARATION
+
+   A term on a law line is an English name with its Arabic beneath it,
+   and the whole of what makes that happen is `<small>` being a BLOCK —
+   their own comment says so in one line. Inline, as every browser has
+   it by default, the two run together and the line reads
+   "Depreciable value of an assetالقيمة القابلة للإهلاك".
+
+   The refinements of these two rules were carried over in the first
+   transfer and the two rules themselves were not: `.tt.lhs` and
+   `.tt small.ttNote` were here, sharpening something that had never
+   arrived. A base rule is not the boring part of a port; it is the part
+   the others are corrections to.
+   ============================================================ */
+.msheet .tt {display:inline-block; text-align:center; line-height:1.15; vertical-align:middle;}
+.msheet .tt small {display:block; font-size:.6em; opacity:.68; font-weight:400; margin-top:1px; white-space:nowrap;}
+.msheet .tt[class*="v-"] > small {opacity:.8;}
 .msheet .tt small.ttNote {font-size:.55em; font-style:italic; opacity:1; color:#6b7f9e; margin-top:2px;}
 .msheet .frac {display:inline-flex; flex-direction:column; align-items:stretch; vertical-align:middle; margin:0 3px; line-height:1.2;}
 .msheet .frac .fnum, .msheet .frac .fden {display:block; text-align:center;}
 .msheet .frac .fnum {padding:0 8px 3px;}
 .msheet .frac .fden {padding:3px 8px 0; border-top:1.6px solid currentColor;}
-.msheet .qcard {border:1px solid #ccc; border-radius:6px; margin-bottom:12px;}
+/* ============================================================
+   TWO DIFFERENT THINGS ARE CALLED .qcard
+
+   The quiz has one (TermBoard.css) and it is a dark panel:
+   `background: var(--panel)`. A problem card on a sheet is paper, and
+   its writing is near-black. The quiz rule is one class deep and
+   unscoped, so it reached in here and painted every problem card
+   #212227 under text of #111 — dark on dark, and the invert that the
+   dark switch puts over the sheet turned it into pale on pale. Neither
+   is readable, and nothing in this file said anything about a
+   background, which is why it was so hard to see.
+
+   So the paper is NAMED here rather than left to be inherited: this
+   selector is two classes deep and wins, and a sheet card no longer
+   depends on what some other screen means by the same word.
+   ============================================================ */
+.msheet .qcard {border:1px solid #ccc; border-radius:6px; margin-bottom:12px;
+                background:transparent; padding:0;}
 .msheet .qcard .qh {background:#f3f3f3; font-weight:700; font-size:calc(12px * var(--fs)); color:#333; padding:5px 10px; border-bottom:1px solid #ccc;}
 .msheet .qcard .qb {padding:9px 12px; font-size:calc(13px * var(--fs));}
 .msheet .qcard hr {border:none; border-top:2px solid #cc0000; margin:7px 0; opacity:.7;}
@@ -107,7 +149,14 @@
 .msheet .given {display:block; margin-bottom:6px;}
 .msheet .qTableWrap {overflow-x:auto; margin:10px 0 2px; direction:ltr;}
 .msheet .qTableWrap table.qTable {margin:0;}
-.msheet table.qTable {border-collapse:collapse; margin:10px 0 2px; font-size:calc(11.5px * var(--fs)); direction:ltr; font-variant-numeric:tabular-nums; table-layout:auto;}
+/* `width:100%` squeezes a twelve-column table until its cells spill into
+   one another, and no width at all lets a narrow one shrink to its text
+   — which is how "Property class" came to be drawn as "Propert / y
+   class" in a column two words wide. Their own answer, and the right
+   one: auto with a floor of the full width, and the wrapper scrolls
+   whatever is wider. */
+.msheet table.qTable {border-collapse:collapse; margin:10px 0 2px; font-size:calc(11.5px * var(--fs)); direction:ltr; font-variant-numeric:tabular-nums; table-layout:auto;
+                      width:auto; min-width:100%;}
 .msheet table.qTable caption {white-space:normal; overflow-wrap:anywhere;}
 .msheet table.qTable tr.qTSec th {border-top:2px solid #9aa0ab;}
 .msheet table.qTable th, .msheet table.qTable td {border:1px solid #d3d6dc; padding:3px 10px; text-align:left;}

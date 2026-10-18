@@ -86,6 +86,26 @@
     return map;
   };
 
+  // ============================================================
+  // # ⏱️ 🎯  A JUMP MADE WHILE THE PANEL IS STILL BEING BUILT
+  // # 🔤 JavaScript
+  // # 🎯 Asks for the jump again until it takes, or gives up and says so
+  // # 🔗 The panel answers false while the page it is asked for has no
+  // #    slot yet — and pressing Sources returns long before the stacks
+  // #    are laid out. The first build waited four tenths of a second
+  // #    and the press landed on an empty panel: open, and nothing lit.
+  // #    Waiting on the panel's own markup would be this file reaching
+  // #    into another's; asking again until the answer changes needs to
+  // #    know nothing at all.
+  // ============================================================
+  const jump = async (pane, link) => {
+    for (let i = 0; i < 16; i++) {
+      if (await pane?.goTo?.(link)) return true;
+      await new Promise(r => setTimeout(r, 250));
+    }
+    return false;
+  };
+
   const button = (cls, title, art, go) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -128,7 +148,7 @@
         // bare did none of that and quietly did nothing at all.
         if (pane && !pane.isOpen?.()) {
           const book = document.getElementById('course-book');
-          if (book) { book.click(); await new Promise(r => setTimeout(r, 400)); }
+          if (book) book.click();
         }
         const tries = [];
         const ids = idForKind();
@@ -139,11 +159,11 @@
           // Two books are not two alternatives: a law stated in the book
           // and tested in the bank has both, and both columns are open
           if (rowId) {
-            (chapters()?.linksOf?.(rowId) || []).forEach(link => tries.push(pane?.goTo?.(link)));
+            (chapters()?.linksOf?.(rowId) || []).forEach(link => tries.push(jump(pane, link)));
             return;
           }
           const src = ids[place.src === 'bank' ? 'tb' : 'book'];
-          if (src) tries.push(pane?.goTo?.({ ...place, src }));
+          if (src) tries.push(jump(pane, { ...place, src }));
         });
         // Counted by what came back, not by how many were attempted: the
         // jump is awaited, so a press that lit nothing says so instead

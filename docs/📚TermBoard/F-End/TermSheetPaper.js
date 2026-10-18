@@ -197,6 +197,19 @@
   // #    them, and it rides on the card in `data-calc` rather than in
   // #    the explanations file. Its own sheet keeps the two apart.
   // ============================================================
+  // The card's name as the reader is actually reading it. Taken off the
+  // LIVE head and not a copy of it, because the sheet's own data-rlang
+  // is what hides the language not in use — a clone outside the sheet
+  // is governed by nothing and gives back both, so the panel came up
+  // headed "…in one questionMC-38 — السلسلةُ كلُّها في سؤال". The
+  // switch's own words are taken off the end for the same reason the
+  // buttons are: they belong to the card, not to its name
+  const headWords = head => {
+    const all = (head.innerText || '').replace(/\s+/g, ' ').trim();
+    const sw = (head.querySelector('.qSwitch')?.innerText || '').replace(/\s+/g, ' ').trim();
+    return (sw && all.endsWith(sw) ? all.slice(0, -sw.length) : all).trim();
+  };
+
   const openCalc = (card, name) => {
     const calc = window.MyTermCalc;
     if (!calc || !card?.getAttribute('data-calc')) return;
@@ -409,10 +422,8 @@
       if (head) presses(head, one.group + ':' + one.at);
       // And the ones the book solves on the calculator say so
       if (head && card.hasAttribute('data-calc') && !head.querySelector('.calcJump')) {
-        const name = head.cloneNode(true);
-        name.querySelectorAll('button, .qSwitch').forEach(x => x.remove());
         head.append(button('calcJump', 'حُلّها بالحاسبة المالية — الخطوات والمفاتيح',
-                           ICON_CALC, () => openCalc(card, name.textContent.trim())));
+                           ICON_CALC, () => openCalc(card, headWords(head))));
       }
     });
 

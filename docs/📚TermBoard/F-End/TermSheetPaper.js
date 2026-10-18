@@ -97,11 +97,18 @@
   // #    Waiting on the panel's own markup would be this file reaching
   // #    into another's; asking again until the answer changes needs to
   // #    know nothing at all.
+  // # 🔗 AND isOpen() IS NOT THE SIGNAL. Measured on the live page: the
+  // #    panel reports itself open two milliseconds after the button is
+  // #    pressed, and the first jump does not take until 3,140 — and
+  // #    that was with the sources already loaded. Sixteen quarters of
+  // #    a second was on the edge of that and over it from cold, which
+  // #    is exactly the press that lit nothing in B164. Sixteen seconds
+  // #    now, and they cost nothing at all when the first ask takes.
   // ============================================================
   const jump = async (pane, link) => {
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 40; i++) {
       if (await pane?.goTo?.(link)) return true;
-      await new Promise(r => setTimeout(r, 250));
+      await new Promise(r => setTimeout(r, 400));
     }
     return false;
   };

@@ -127,18 +127,63 @@
   }
 
   document.getElementById('logout').onclick = async () => {
+    // Said BEFORE asking, so the listener below knows this ending was
+    // asked for and leaves it to this button
+    window.myTermSignedIn = false;
     await auth.signOut();
+    window.MyTermHud?.hide();
+    document.dispatchEvent(new CustomEvent('signed-out'));
+    putAway();
+    show('choice');
+  };
+
+  // ============================================================
+  // # 🚪 🧹  SIGNED OUT MEANS NOTHING ELSE ON SCREEN
+  // # 🔤 JavaScript
+  // # 🎯 The way in stands alone: the board and the course page are put
+  // #    away, whether the page opened with no one signed in or the
+  // #    sign in ended while it was open
+  // # 🔗 THE BOARD IS DRAWN FROM THE COPY KEPT ON THIS DEVICE before the
+  // #    service has answered, and a course tab opens on its course the
+  // #    same way. So a page that found nobody signed in showed the way
+  // #    in ON TOP of a board or a course, both half alive and neither
+  // #    able to save. And a sign in that ended while the page was open
+  // #    — the service refusing to renew it — went unnoticed, the board
+  // #    still up behind a panel that had not been asked for. Now both
+  // #    roads lead to the same clean screen. Work not yet sent is
+  // #    pushed first, while Drive's own permit may still take it
+  // ============================================================
+  const putAway = () => {
+    ['board', 'course'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.hidden = true;
+    });
+    document.body.classList.remove('board-on');
+  };
+
+  const signedOutUnasked = async () => {
+    const pending = [window.MyTermBoardStore?.flush?.(), window.MyTermDaysStore?.flush?.()]
+      .map(p => Promise.resolve(p).catch(() => {}));
+    await Promise.race([Promise.all(pending), new Promise(done => setTimeout(done, 3000))]);
     window.myTermSignedIn = false;
     window.MyTermHud?.hide();
     document.dispatchEvent(new CustomEvent('signed-out'));
+    putAway();
     show('choice');
   };
+
+  auth.db.auth.onAuthStateChange(event => {
+    // Only an ending this page did not ask for: the button above does
+    // its own, and a page nobody was signed in on has nothing to end
+    if (event === 'SIGNED_OUT' && window.myTermSignedIn) signedOutUnasked();
+  });
 
   (async () => {
     const answer = await auth.session();
     if (answer.data.session) {
       openSession(answer.data.session.user.email);
     } else {
+      putAway();
       show('choice');
     }
   })();

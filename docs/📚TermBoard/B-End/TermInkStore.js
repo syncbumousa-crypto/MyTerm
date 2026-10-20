@@ -677,6 +677,58 @@
         + ' ' + (h24 < 12 ? 'AM' : 'PM');
     },
 
+    // ============================================================
+    // # 📦 ➡️  WHAT HE ALREADY WROTE, CARRIED IN
+    // # 🔤 JavaScript
+    // # 🎯 Takes the attempts of one card as they were kept on his own
+    // #    machine and puts them into this record
+    // # 🔗 IT IS A COPY, NOT A CONVERSION. His application stores a
+    // #    stroke as `{c, w, p:[x, y, pressure, …]}` in a space twice the
+    // #    card's size with whole-number coordinates and pressure in one
+    // #    byte — which is exactly what this store holds, because it was
+    // #    built to hold it. So nothing is recomputed, resampled or
+    // #    rescaled: his ink arrives with the same shape it had, and will
+    // #    be drawn by the same engine it was drawn with.
+    // #
+    // # 🔗 AND RUNNING IT TWICE CHANGES NOTHING. Each carried attempt
+    // #    gets an id made out of where it came from, so the fold —
+    // #    which keeps sheets by identity — recognises it the second
+    // #    time and keeps one. A carrier that duplicates on a second run
+    // #    is a carrier nobody dares run twice, and then nobody dares
+    // #    run it at all.
+    // #
+    // # 🔗 They are marked as belonging to the MACHINE THEY CAME FROM
+    // #    (`by`), not to this one: that is true, and it keeps the
+    // #    ownership rule honest — this browser does not claim work it
+    // #    did not do, and the attempts carry their own origin for ever.
+    // ============================================================
+    carry: (key, pages, from) => {
+      if (!Array.isArray(pages) || !pages.length) return 0;
+      const d = record(key);
+      const who = String(from || 'd-local');
+      const here = new Set(d.sh.map(s => s.id));
+      let added = 0, strokes = 0;
+      pages.forEach((p, i) => {
+        const id = 's-loc-' + String(key).replace('#', '-') + '-' + i;
+        if (here.has(id)) return;                 // already carried: left alone
+        const list = (Array.isArray(p.s) ? p.s : [])
+          .filter(st => st && Array.isArray(st.p) && st.p.length >= 3)
+          .map(st => ({ c: String(st.c || '#12141a'), w: Number(st.w) || 5.5,
+                        p: st.p.map(n => Math.round(Number(n) || 0)) }));
+        if (!list.length) return;                 // an empty attempt is not worth a tab
+        d.sh.push({ id, by: who, ts: Number(p.ts) || 0, at: now(), s: list });
+        added++; strokes += list.length;
+      });
+      if (!added) return 0;
+      // The empty page this card was opened with is dropped once real
+      // attempts arrive — it was never written in and it would sit in
+      // front of them in the strip
+      if (d.sh.length > added && !d.sh[0].s.length && !d.sh[0].ts && d.sh[0].by === me) d.sh.shift();
+      openSheet.set(key, d.sh.length - 1);
+      wrote(key);
+      return strokes;
+    },
+
     flush,
     owed: () => owed.size,
     watch: fn => { tellStatus = fn || (() => {}); },

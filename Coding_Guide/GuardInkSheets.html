@@ -152,6 +152,33 @@
     if (refused !== false) faults.push('the store itself deleted the last attempt when asked directly');
     if (left !== 1) faults.push('the store left ' + left + ' attempts on a record that had one');
 
+    // ---- WHAT HE ALREADY WROTE ON HIS OWN MACHINE, CARRIED IN
+    // Measured on his browser before this was built: 21 cards, 24
+    // attempts, 2379 strokes under `http://localhost:8000`. It arrives as
+    // a copy — the stored shape is the same on both sides — and the test
+    // that matters is that running the carrier twice adds nothing, or
+    // nobody would dare run it at all
+    const far = 'rules3#1';
+    const strokeOf = x => ({ c: '#12141a', w: 5.5, p: [x, 20, 150, x + 9, 44, 190, x + 18, 61, 210] });
+    await S.load(far);
+    const pages = [
+      { ts: 1760000000000, s: [strokeOf(10), strokeOf(40), strokeOf(70)] },
+      { ts: 0, s: [strokeOf(20), strokeOf(55)] }
+    ];
+    const gotStrokes = S.carry(far, pages, 'd-his-laptop');
+    const list = S.sheets(far);
+    out.push('carried: ' + gotStrokes + ' strokes into ' + list.length + ' attempt(s) — '
+             + list.map(s => s.strokes).join(' + '));
+    if (gotStrokes !== 5) faults.push('the carrier brought ' + gotStrokes + ' strokes of five');
+    if (list.length !== 2) faults.push('the carried card holds ' + list.length + ' attempts, expected 2 (the empty one it opened with should go)');
+    if (!list.every(s => s.by === 'd-his-laptop')) faults.push('the carried attempts were claimed by this browser instead of the machine they came from');
+    if (list[0].ts !== 1760000000000) faults.push('the moment an attempt was sealed at did not survive the carry');
+    const again = S.carry(far, pages, 'd-his-laptop');
+    out.push('and carried a second time: ' + again + ' strokes, ' + S.sheets(far).length + ' attempt(s)');
+    if (again !== 0 || S.sheets(far).length !== 2) {
+      faults.push('running the carrier twice duplicated the attempts: ' + S.sheets(far).length);
+    }
+
     // ---- and the clock, at the four hours that break a naive conversion
     const read = (h, m) => S.stamp(new Date(2026, 9, 20, h, m, 0).getTime());
     const clock = [read(0, 0), read(11, 59), read(12, 0), read(23, 59)];

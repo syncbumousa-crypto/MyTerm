@@ -115,6 +115,18 @@
   // opens the panel: the storage screen when there is a step to take,
   // the board screen by taking the screen for itself
   function openSession(email) {
+    // ============================================================
+    // # 🚪 ✅  THE WAY IN IS PUT AWAY THE MOMENT IT HAS BEEN USED
+    // # 🔗 IT WAS NEVER TAKEN DOWN. The board, when it opens, puts away
+    // #    the ACCOUNT panel — and the form that had just been filled in
+    // #    stayed where it was. The page lays its parts side by side, so
+    // #    every sign in after the first left the log-in form standing at
+    // #    the left of the board, and of every course after it. The
+    // #    account panel is not touched here: whoever finds out what
+    // #    comes next decides whether it is wanted (see below)
+    // ============================================================
+    panels.choice.hidden = true;
+    panels.form.hidden = true;
     // The address alone, with "your MyTerm account" written under it by
     // the page: a greeting reads as the point of the line, and the point
     // of this line is WHICH account — there are two on this screen

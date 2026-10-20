@@ -73,8 +73,8 @@
     }
     tell('books: ' + Object.keys(docs).length);
 
-    const seen = { rows: 0, anchors: 0, figures: 0, files: 0, sheets: 0 };
-    const bad = { anchors: [], lang: [], figures: [], gate: [], entities: [], guard: [], missing: [] };
+    const seen = { rows: 0, anchors: 0, figures: 0, files: 0, sheets: 0, asks: 0, sorted: 0, joined: 0 };
+    const bad = { anchors: [], lang: [], figures: [], gate: [], entities: [], guard: [], missing: [], bank: [] };
 
     // ============================================================
     // EVERYTHING IS TAKEN DOWN BEFORE ANYTHING IS SEARCHED
@@ -95,6 +95,12 @@
       rows: (chapters().rowsOf(section.id) || []).map(row => ({
         no: row.no, id: row.id,
         term: row.term, termAr: row.termAr, text: row.text, textAr: row.textAr,
+        // The bank's own four, copied with the rest: a question that
+        // cannot be asked, or is about nothing, is a hole in a layer
+        // that reports itself as full
+        ask: row.ask, pick: row.pick, right: row.right,
+        track: row.track, type: row.type,
+        about: (row.about || []).filter(a => !a.deleted).map(a => ({ row: a.row, sheet: a.sheet })),
         links: (chapters().linksOf(row.id) || []).map(l => ({ src: l.src, page: l.page, anchor: l.anchor })),
         words: explains().of(row.id)
       }))
@@ -241,6 +247,51 @@
     } catch { /* an unbuilt chapter has no record, and that is not a fault */ }
     seen.bank = bank;
 
+    // ============================================================
+    // # 🏦 🧾  THE BANK IS A LAYER AND IS CHECKED LIKE ONE
+    // # 🔤 JavaScript
+    // # 🎯 Every question sorted into a folder, answerable, and about
+    // #    something that is still there
+    // # 🔗 A BANK REPORTS ITS SIZE AND NOTHING ELSE, AND SIZE IS THE
+    // #    ONE THING THAT WAS NEVER WRONG. Eleven hundred questions
+    // #    were carried over in one afternoon; two chapters came out
+    // #    with their folders stripped, one came out holding another
+    // #    chapter's questions, and every count on every screen stayed
+    // #    exactly as green as before. These three say what the count
+    // #    cannot: what a question is for, whether it can be asked at
+    // #    all, and whether the thing it tests still exists.
+    // #
+    // #    A chapter with no bank says nothing here — it is not a
+    // #    fault to be a course without one
+    // ============================================================
+    const liveRows = new Set();
+    taken.forEach(s => s.rows.forEach(r => liveRows.add(r.id)));
+    const cards = new Set();
+    taken.filter(s => s.kind === 'rules').forEach(s => {
+      const stack = sheets()?.of?.(s.group) || [];
+      stack.forEach((one, at) => { if (one) cards.add(s.group + '#' + at); });
+    });
+
+    for (const section of taken.filter(s => s.kind === 'tb')) {
+      for (const q of section.rows) {
+        seen.asks++;
+        const where = 'q' + (q.no || '?');
+        if (q.track && q.type) seen.sorted++;
+        else bad.bank.push(where + ' is in no folder');
+
+        const picks = (q.pick || []).filter(p => String(p || '').replace(/<[^>]*>/g, '').trim()).length;
+        if (!(picks >= 2 && q.right >= 0)) bad.bank.push(where + ' cannot be asked');
+
+        const about = q.about || [];
+        if (!about.length) bad.bank.push(where + ' is about nothing');
+        else seen.joined++;
+        about.forEach(a => {
+          if (a.row && !liveRows.has(a.row)) bad.bank.push(where + ' points at a row that is gone');
+          if (a.sheet && cards.size && !cards.has(a.sheet)) bad.bank.push(where + ' points at ' + a.sheet + ', which is not there');
+        });
+      }
+    }
+
     const wrong = Object.keys(bad).reduce((sum, k) => sum + bad[k].length, 0);
     return { course: courseName, chapter: chapterName, seen, bad, wrong, passed: wrong === 0 };
   };
@@ -251,6 +302,8 @@
     (got.passed ? 'PASS ' : 'FAIL ') + got.course + ' ' + got.chapter +
     ' | rows=' + got.seen.rows + ' anchors=' + got.seen.anchors +
     ' bank=' + got.seen.bank + ' figures=' + got.seen.figures + ' sheets=' + got.seen.sheets +
+    (got.seen.asks ? ' asks=' + got.seen.asks + ' sorted=' + got.seen.sorted
+                   + ' joined=' + got.seen.joined : '') +
     ' | wrong=' + got.wrong +
     Object.keys(got.bad).filter(k => got.bad[k].length)
       .map(k => ' ' + k + '=' + got.bad[k].length).join('');

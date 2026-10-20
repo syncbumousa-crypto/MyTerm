@@ -1,0 +1,194 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · the sheets are brought nearer, and nothing written moves</title>
+<style>
+  /* ONLY THE DESK. Not one rule here touches `.msheet`, the slot, the
+     notebook or the bar: a guard that styles what it measures measures
+     its own stylesheet, and this project has already had a runaway
+     canvas pass a check for exactly that reason */
+  #host { width: 460px; height: 520px; }
+</style>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermInkPad.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermSheetPaper.js"></script>
+<script>
+  // THE READER ASKED FOR THIS BACK BY NAME: the law and card sheets were
+  // held at "whatever fits the column, never larger", and he wants to be
+  // able to come nearer than 100% as he can on the summary.
+  //
+  // AND IT IS THE MOST DANGEROUS THING THAT COULD BE DONE TO THESE
+  // PAGES, for one reason: every point of handwriting stored in a
+  // notebook on these sheets means "this far across a pad of THIS
+  // LAYOUT SIZE". Change that layout and every stroke already written
+  // means somewhere else — the old writing ends up small in a corner,
+  // and whatever is written after lands at coordinates that fall outside
+  // the smaller pad and is lost on the way out. It is not recoverable,
+  // and it is not visible until he opens an old card.
+  //
+  // So the measurement that matters is not that the sheets got bigger.
+  // It is that THE PAD'S LAYOUT SIZE DID NOT MOVE while they did, and
+  // that what was written is where it was, to the byte, after a zoom in
+  // and back out again.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const host = document.getElementById('host');
+    const faults = [], out = [];
+    const S = window.MyTermInkStore, P = window.MyTermInkPad, SP = window.MyTermSheetPaper;
+    if (!S || !P || !SP) { o.textContent = 'FAIL the three modules did not load'; return; }
+    if (!SP.zoom || !SP.zoomNow) { o.textContent = 'FAIL the sheets answer no zoom at all'; return; }
+
+    // The real stylesheets, fetched — not a copy, and not of this page's
+    // making. The slot's width, the sheet's transform and the notebook's
+    // stretch all live in them
+    for (const u of ['TermSheet.css', 'TermBoard.css']) {
+      const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/' + u + '?t=' + Date.now())).text();
+      const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+    }
+
+    const bin = new Map();
+    S.useShelf({ name: 'the guard own shelf',
+      get: async k => (bin.has(k) ? JSON.parse(bin.get(k)) : null),
+      put: async (k, v) => { bin.set(k, JSON.stringify(v)); return true; } });
+    S.useCloud({ name: 'no cloud', ready: () => false, list: async () => [], find: async () => null,
+                 folder: async () => '', make: async () => null, read: async () => null, write: async () => false });
+    await S.open('c-zoom', 'h-zoom');
+
+    // A stack as the sheets' own paper builds it: the slot carries the
+    // drawn width, and the page inside it is 800 and is scaled
+    const holder = document.createElement('div');
+    holder.className = 'csheets';
+    holder.innerHTML =
+        '<div class="msheet-slot"><div class="msheet msheet-card" data-group="rules1" data-at="0">'
+      +   '<div class="qcard">a question with room under it</div>'
+      + '</div></div>';
+    host.append(holder);
+    SP.arm(holder, () => {});
+    P.arm(holder);
+    await P.mount();
+    // ★ FITTED BY HAND, because this runner serves neither frames nor a
+    //   ResizeObserver: `arm` only watches for a change of size, the
+    //   first fit comes from `draw`, and `MyTermInkPad.refit` books
+    //   itself on a frame that never arrives. All three are asked
+    //   outright instead — the same decisions, taken on demand
+    const settle = () => {
+      SP.refit();
+      P.refitNow();
+      P.light.flush(cv0());
+    };
+
+    const sheet = holder.querySelector('.msheet');
+    const box = holder.querySelector('.inkBox');
+    if (!box) { o.textContent = 'FAIL no notebook was put on the card'; return; }
+    const cv = box.querySelector('.inkDry');
+    const cv0 = () => cv;
+    const key = box.dataset.key;
+    const read = () => ({
+      drawn: parseFloat(getComputedStyle(holder).getPropertyValue('--sheetW')) || 0,
+      scale: parseFloat(getComputedStyle(holder).getPropertyValue('--sheetScale')) || 0,
+      // THE TWO NUMBERS THAT MUST NOT MOVE. `offsetWidth` is the LAYOUT
+      // size and a transform does not touch it, which is the whole
+      // reason a zoom is safe here where a rebuild would not be
+      padW: cv.offsetWidth, padH: cv.offsetHeight,
+      // and this one is allowed to move: it is only how many device
+      // pixels the ink is painted into
+      store: cv.width + '×' + cv.height
+    });
+
+    // ---- something written at 100%, kept to compare against
+    const ink = { c: '#12141a', w: 5.5,
+                  p: (() => { const p = []; for (let i = 0; i < 24; i++) p.push(40 + i * 11, 70 + (i % 5) * 9, 170); return p; })() };
+    settle();
+    P.light.fit(cv);
+    S.add(key, ink);
+    P.light.chunk(cv); P.light.flush(cv);
+    const wrote = JSON.stringify(S.strokes(key)[0].p);
+    const inked = () => {
+      try {
+        const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++;
+        return n;
+      } catch (e) { return -1; }
+    };
+
+    const at1 = read(), px1 = inked();
+    out.push('at 100%: the page drawn ' + at1.drawn.toFixed(0) + 'px of 800 (scale '
+             + at1.scale.toFixed(3) + ') · the pad ' + at1.padW + '×' + at1.padH
+             + ' · its store ' + at1.store + ' · ink ' + px1 + 'px');
+    if (!(at1.scale > 0 && at1.scale <= 1.001)) faults.push('a fresh stack opens at a scale of ' + at1.scale);
+    if (!(px1 > 0)) faults.push('nothing was drawn at 100% — the rest of this guard would prove nothing');
+
+    // ---- 1 · it comes nearer, and that is visible in the drawing
+    const got = SP.zoom(1.6);
+    P.refitNow(); P.light.flush(cv);
+    const at16 = read(), px16 = inked();
+    out.push('asked for 1.6: it reports ' + SP.zoomNow().toFixed(2) + ' · the page drawn '
+             + at16.drawn.toFixed(0) + 'px (scale ' + at16.scale.toFixed(3) + ') · the pad '
+             + at16.padW + '×' + at16.padH + ' · its store ' + at16.store + ' · ink ' + px16 + 'px');
+    if (Math.abs(got - 1.6) > 0.001 || Math.abs(SP.zoomNow() - 1.6) > 0.001) {
+      faults.push('it says it is at ' + SP.zoomNow() + ' and not at 1.6');
+    }
+    if (!(at16.scale > at1.scale * 1.5)) {
+      faults.push('asking for 1.6 moved the drawing from ' + at1.scale.toFixed(3) + ' to ' + at16.scale.toFixed(3));
+    }
+    if (!(at16.drawn > at1.drawn)) faults.push('the page is drawn no wider than it was');
+
+    // ---- 2 · ★ AND THE PAD'S LAYOUT SIZE DID NOT MOVE. The one thing
+    //          here that would quietly spoil every notebook in a chapter
+    if (at16.padW !== at1.padW || at16.padH !== at1.padH) {
+      faults.push('THE ZOOM CHANGED THE PAD LAYOUT SIZE from ' + at1.padW + '×' + at1.padH
+        + ' to ' + at16.padW + '×' + at16.padH + ' — every point already written now means somewhere else');
+    }
+    if (JSON.stringify(S.strokes(key)[0].p) !== wrote) {
+      faults.push('the zoom rewrote the stored handwriting');
+    }
+    if (!(px16 > 0)) faults.push('the writing vanished from the page at 1.6');
+    // The ONE thing that is meant to move: how many device pixels the
+    // ink is painted into. A page brought nearer and painted at the old
+    // density is a page of soft edges, which is what `refit` is for
+    if (at16.store === at1.store) {
+      faults.push('the notebook is still painted into ' + at1.store
+        + ' device pixels at 1.6 — the writing is brought nearer and left soft');
+    }
+
+    // ---- 3 · and back again, to the byte
+    SP.zoom(1);
+    P.refitNow(); P.light.flush(cv);
+    const back = read(), pxBack = inked();
+    out.push('and back to 100%: the page ' + back.drawn.toFixed(0) + 'px (scale ' + back.scale.toFixed(3)
+             + ') · the pad ' + back.padW + '×' + back.padH + ' · ink ' + pxBack + 'px');
+    if (back.padW !== at1.padW || back.padH !== at1.padH) {
+      faults.push('coming back left the pad at ' + back.padW + '×' + back.padH + ' instead of ' + at1.padW + '×' + at1.padH);
+    }
+    if (Math.abs(back.scale - at1.scale) > 0.002) faults.push('coming back left the page at ' + back.scale.toFixed(3));
+    if (JSON.stringify(S.strokes(key)[0].p) !== wrote) faults.push('a zoom in and out rewrote the handwriting');
+    if (!(pxBack > 0)) faults.push('the writing did not come back');
+
+    // ---- 4 · the limits, both of them, and asked for nonsense
+    SP.zoom(99); const hi = SP.zoomNow();
+    SP.zoom(0.001); const lo = SP.zoomNow();
+    SP.zoom('nonsense'); const junk = SP.zoomNow();
+    SP.zoom(1);
+    out.push('the limits: ' + lo.toFixed(2) + ' … ' + hi.toFixed(2) + ' · and nonsense reads ' + junk.toFixed(2));
+    if (!(hi > 1 && hi <= 3.001)) faults.push('it grew to ' + hi + ', past any page');
+    if (!(lo >= 0.5 - 0.001 && lo < 1)) faults.push('it shrank to ' + lo);
+    if (!(junk > 0)) faults.push('nonsense left the stack at ' + junk + ' — an unreadable page with no way back');
+
+    // ---- 5 · the sheet is still the 800 it was composed at
+    out.push('the page in its own layout: ' + sheet.offsetWidth + 'px');
+    if (sheet.offsetWidth !== 800) {
+      faults.push('the sheet itself is laid out at ' + sheet.offsetWidth
+        + 'px and not 800 — every equation on it was composed against that frame');
+    }
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

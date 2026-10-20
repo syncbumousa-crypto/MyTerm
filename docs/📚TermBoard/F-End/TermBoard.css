@@ -2685,6 +2685,7 @@ body.reading .build { bottom: 46px; }
 /* #    the saved tick and fullscreen */
 /* ============================================================ */
 .banking .conly-paper,
+.banking .conly-zoom,
 .banking #course-lang,
 .banking #course-dark { display: none; }
 
@@ -2702,11 +2703,19 @@ body.reading .build { bottom: 46px; }
 /* #    same breath -- a press with no effect, or an effect the   */
 /* #    page undoes while you watch.                              */
 /* #                                                              */
-/* #    A framed painting is zoomed into, not enlarged. What      */
-/* #    stays is all that still means something: the language,    */
-/* #    the paper colour, the sources, fullscreen                 */
+/* #                                                              */
+/* # 🔗 BUT THE NEARNESS STAYS, AND IT WAS WRONG TO TAKE IT.      */
+/* #    "A framed painting is zoomed into, not enlarged" was the  */
+/* #    reason written here for taking it away, and the sentence  */
+/* #    is true -- it simply argues the other way. ENLARGING is   */
+/* #    what a type button would do, and the page would undo it   */
+/* #    in the same breath; a ZOOM brings the whole framed page   */
+/* #    nearer and not one letter of it changes place. The        */
+/* #    reader came back for it by name. So the reading stays     */
+/* #    for a stack of sheets (`conly-zoom`), and what goes is    */
+/* #    only what would rebuild a page: the type size, the eye,   */
+/* #    and the tick-everything                                   */
 /* ============================================================ */
-.sheeting .conly-paper,
 .sheeting #course-type,
 .sheeting #course-eye,
 .sheeting #course-all { display: none; }

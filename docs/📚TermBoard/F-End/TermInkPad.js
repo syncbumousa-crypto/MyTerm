@@ -90,7 +90,17 @@
       +       '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"'
       +       ' stroke-width="2.2" stroke-linecap="round" stroke-dasharray="4 3">'
       +       '<rect x="3.5" y="3.5" width="17" height="17" rx="2"/></svg></button>'
-      +     '<button class="inkBtn" data-ink="erase" title="Rub out whole strokes">⌫</button>'
+            // A RUBBER, DRAWN. What stood here was U+232B, a keyboard's
+            // backspace: it reads as "delete the last thing" and this
+            // button rubs out whatever the nib passes over. The reader
+            // could not tell what it was, which is the whole of the fault
+      +     '<button class="inkBtn inkEraseBtn" data-ink="erase" title="Rub out whole strokes">'
+      +       '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"'
+      +       ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+      +       '<path d="M9 20h12"/>'
+      +       '<path d="M13.4 4.9l5.7 5.7a1.7 1.7 0 0 1 0 2.4l-6.6 6.6a1.7 1.7 0 0 1-2.4 0'
+      +       'l-5.7-5.7a1.7 1.7 0 0 1 0-2.4l6.6-6.6a1.7 1.7 0 0 1 2.4 0z"/>'
+      +       '<path d="M7.2 11.1l5.7 5.7"/></svg></button>'
       +     '<button class="inkBtn" data-ink="undo" title="Take back the last stroke">↶</button>'
       +     '<button class="inkBtn" data-ink="clear" title="Empty this page">✕</button>'
       +   '</span>'
@@ -988,11 +998,18 @@
   const tools = () => {
     if (!where) return;
     where.querySelectorAll('.inkBox').forEach(box => {
+      // `mode === 'pen'` and not "not the rubber": with a third tool on
+      // the bar, "not erasing" lit the ink and the nib while the pen was
+      // not what the hand held
       box.querySelectorAll('[data-ink="color"]').forEach(b =>
-        b.classList.toggle('on', b.dataset.c === colour && mode !== 'erase'));
+        b.classList.toggle('on', b.dataset.c === colour && mode === 'pen'));
       box.querySelectorAll('[data-ink="width"]').forEach(b =>
-        b.classList.toggle('on', +b.dataset.i === slot && mode !== 'erase'));
+        b.classList.toggle('on', +b.dataset.i === slot && mode === 'pen'));
       box.querySelectorAll('[data-ink="erase"]').forEach(b => b.classList.toggle('on', mode === 'erase'));
+      // AND THE SELECT TOOL SAYS SO. It was the only tool on the bar
+      // that looked the same armed as not, so the only way to know
+      // whether a drag would draw a line or a box was to try it
+      box.querySelectorAll('[data-ink="select"]').forEach(b => b.classList.toggle('on', mode === 'select'));
     });
   };
 
@@ -1075,6 +1092,22 @@
     return Math.max(SEL_MIN, Math.min(6, pad.w / w, pad.h / h));
   };
 
+  // WHERE THE BOX IS *NOW*, not where the model last left it. The model
+  // is written once, at the lift, so `sel.x0...y1` do not move during a
+  // drag at all -- and the frame drawn from them stood still while the
+  // writing slid out from under it, then jumped to catch up when the
+  // hand came off. Reported in exactly those words. The rectangle is
+  // computed from the same snapshot, by the same arithmetic the picture
+  // is placed with, so the box and the ink are one thing moving
+  const liveRect = () => {
+    if (!sel.live) return { x0: sel.x0, y0: sel.y0, x1: sel.x1, y1: sel.y1 };
+    const s = sel.snap0, f = sel.scale;
+    return { x0: sel.fx + (s.x0 - sel.fx) * f + sel.dx,
+             y0: sel.fy + (s.y0 - sel.fy) * f + sel.dy,
+             x1: sel.fx + (s.x1 - sel.fx) * f + sel.dx,
+             y1: sel.fy + (s.y1 - sel.fy) * f + sel.dy };
+  };
+
   const overlay = () => {
     if (!sel) return;
     const pad = sel.box.querySelector('.inkPad');
@@ -1085,11 +1118,11 @@
       m.innerHTML = '<i class="inkSelGrip" title="Drag to make it smaller or larger"></i>';
       pad.appendChild(m);
     }
-    const k = 1 / SC;
-    m.style.left = (sel.x0 * k) + 'px';
-    m.style.top = (sel.y0 * k) + 'px';
-    m.style.width = Math.max(6, (sel.x1 - sel.x0) * k) + 'px';
-    m.style.height = Math.max(6, (sel.y1 - sel.y0) * k) + 'px';
+    const k = 1 / SC, r = liveRect();
+    m.style.left = (r.x0 * k) + 'px';
+    m.style.top = (r.y0 * k) + 'px';
+    m.style.width = Math.max(6, (r.x1 - r.x0) * k) + 'px';
+    m.style.height = Math.max(6, (r.y1 - r.y0) * k) + 'px';
   };
 
   const selBegin = (key, cv, x0, y0, x1, y1) => {
@@ -1223,6 +1256,13 @@
   const selSync = () => {
     if (!sel || !sel.live) return;
     liveDraws++;
+    // ★ THE FRAME IS MOVED AT ONCE AND THE PICTURE ON THE NEXT FRAME.
+    //   Four style writes cost nothing and read no layout, while the
+    //   picture is a canvas full of ink — so the one thing that CAN keep
+    //   up with the hand is not made to wait for the one that cannot.
+    //   And it is the difference between "it follows me" and "it jumps
+    //   when I let go", which is how this was reported
+    overlay();
     // Correctness before coalescing: with no frames to be had the drawing
     // happens at once, exactly as the chunked repaint does. A guard runs
     // where `requestAnimationFrame` never fires, and a draw that waits

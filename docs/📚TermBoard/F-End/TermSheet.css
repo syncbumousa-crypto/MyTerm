@@ -522,3 +522,14 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
 /* The open one wears the paper's own colour and its bottom edge with it,
    so the tab opens onto the box */
 .inkTab.on { background: #fff; color: #2b2e35; border-bottom-color: #fff; font-weight: 700; }
+
+/* Said only while it is true: ink that has not left this device. The
+   reader cannot tell by looking at the page, and a word that appears
+   only when something is actually owed is the opposite of the badge that
+   used to flash on his own machine with every letter he wrote */
+.inkState {
+  flex: 0 0 auto; align-self: center;
+  font-size: 10px; font-weight: 700; letter-spacing: .2px;
+  color: #a4552f; background: #fdf1e7; border: 1px solid #f0cdb0;
+  border-radius: 999px; padding: 1px 8px 2px;
+}

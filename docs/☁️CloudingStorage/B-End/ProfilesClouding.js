@@ -193,6 +193,30 @@
     return (await r.json().catch(() => ({}))).files?.[0]?.id || null;
   };
 
+  // ============================================================
+  // # 📜 📁  EVERY CHILD OF ONE FOLDER, IN ONE CALL
+  // # 🔤 JavaScript
+  // # 🎯 Names and ids of what is in a folder
+  // # 🔗 ASKED FOR BY THE HANDWRITING, AND IT IS THE DIFFERENCE BETWEEN
+  // #    ONE CALL AND SEVENTY-FOUR. A notebook's ink lives in a file of
+  // #    its own per card — small, and written only when that one card
+  // #    changes — so a part of seventy-four cards would need
+  // #    seventy-four `findChild` calls just to learn which of them have
+  // #    anything, and most would answer "nothing". The folder already
+  // #    knows; it is simply never asked.
+  // #
+  // #    And a listing is the only index worth keeping: a file holding
+  // #    "key → id" beside the folder is a second source of truth that
+  // #    can disagree with it, and the disagreement surfaces as ink that
+  // #    is in Drive and invisible
+  // ============================================================
+  const listChildren = async (parentId, limit) => {
+    const q = encodeURIComponent(`'${parentId}' in parents and trashed=false`);
+    const r = await drive(`${DRIVE}?q=${q}&fields=files(id,name,size)&pageSize=${Math.min(1000, limit || 1000)}`);
+    if (!r.ok) return null;
+    return (await r.json().catch(() => ({}))).files || [];
+  };
+
   async function makeFolder(name, parentId) {
     const made = await drive(DRIVE, json('POST', { name, mimeType: FOLDER_TYPE, parents: [parentId] }));
     if (!made.ok) throw new Error(`Drive folder failed: ${made.status}`);
@@ -393,7 +417,7 @@
     unlink: () => server('unlink'),
     findOrMakeFolder, createJson, fileAlive, readFile, writeFile,
     uploadBlob, readBlob, fileFacts, dropFile,
-    parentOf, makeFolder, findChild, rename,
+    parentOf, makeFolder, findChild, listChildren, rename,
     pickFolder, probePicker,
     loadProfile, savePlace, forgetPlace
   };

@@ -1,0 +1,25 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · the modules still load</title>
+<pre id="o">pending</pre>
+<script>
+  window.__broke = [];
+  window.onerror = (m, s, l, c) => { window.__broke.push(m + ' @' + (s||'').split('/').pop() + ':' + l + ':' + c); return true; };
+</script>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermChapterStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermGuard.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermChapterQuiz.js"></script>
+<script>
+  const want = { MyTermChapterStore: ['open','editRow','setChoices','saidAll','aboutSheet'],
+                 MyTermGuard: ['check','line'], MyTermQuiz: ['paint'] };
+  const lines = [], faults = [];
+  Object.entries(want).forEach(([name, api]) => {
+    const it = window[name];
+    if (!it) { faults.push(name + ' did not load'); lines.push(name + ': MISSING'); return; }
+    const gone = api.filter(k => typeof it[k] !== 'function');
+    if (gone.length) faults.push(name + ' lost ' + gone.join(','));
+    lines.push(name + ': ' + Object.keys(it).length + ' in its face' + (gone.length ? ' MISSING ' + gone.join(',') : ''));
+  });
+  if (window.__broke.length) faults.push('threw on load: ' + window.__broke.join(' | '));
+  document.getElementById('o').textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + lines.join('\n');
+</script>

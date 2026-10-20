@@ -1,0 +1,108 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · a written question is asked</title>
+<pre id="o">pending</pre>
+<div id="desk"></div>
+<script>
+  // A QUESTION IN A FOLDER THAT THE RUN SKIPS IS A LIE THE FOLDER TELLS.
+  // Three hundred and thirty-eight written questions were sorted,
+  // counted and shown, and the run passed over every one of them
+  // because "answerable" meant "has choices". So: a written question
+  // with the answer it came with is asked, is marked by the reader, and
+  // the mark reaches the store the same way a chosen answer does.
+  window.onerror = (m, src, line, col) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + src + ':' + line + ':' + col;
+    return true;
+  };
+  const KEY = 'Total materials variance = $3,640 U.';
+  const rows = [
+    { id: 'e1', ask: 'Compute the variances.', text: KEY, pick: [], right: -1,
+      track: 'practical', type: 'essay', about: [] },
+    { id: 'e2', ask: 'An essay nobody wrote an answer for.', text: '', pick: [], right: -1,
+      track: 'practical', type: 'essay', about: [] },
+    { id: 'e3', ask: 'A standard is a unit amount.', text: '', pick: ['True', 'False'], right: 0,
+      track: 'theory', type: 'tf', about: [] },
+    // Typed as written on the reader's own machine, with four answers
+    // under it all the same. Asked by choosing, or its answers are
+    // hidden for no reason
+    { id: 'e4', ask: 'Which is the standard cost?', text: 'a stray note', pick: ['$6', '$8', '$14', '$21'],
+      right: 2, track: 'practical', type: 'essay', about: [] }
+  ];
+  const said = [];
+  window.MyTermChapterStore = {
+    rows: () => rows,
+    openId: () => 'h-test',
+    isOn: () => false,
+    linksOf: () => [],
+    saidAll: () => new Map(),
+    said: () => null,
+    addRow: () => null,
+    setChoices: () => true,
+    editRow: () => {},
+    answered: (id, ok) => said.push(id + ':' + (ok ? 'ok' : 'no'))
+  };
+  try { localStorage.removeItem('myterm.bankfolders.h-test'); } catch {}
+</script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermChapterQuiz.js"></script>
+<script>
+  const o = document.getElementById('o');
+  if (o.textContent === 'pending') {
+    const out = [], faults = [];
+    const desk = document.getElementById('desk');
+    const q = sel => desk.querySelector(sel);
+    const all = sel => [...desk.querySelectorAll(sel)];
+    window.MyTermQuiz.paint(desk);
+
+    const says = q('.qtop-says').textContent;
+    out.push('says: ' + says);
+    if (!/3 of 4 ready to ask/.test(says)) faults.push('the written question is not counted ready: ' + says);
+
+    q('.qstart').click();
+
+    // FIRST CARD: the written one. Nothing to press but the way in
+    const show = q('.qrun-show');
+    out.push('card 1: ' + (show ? 'asked by reading' : 'asked by choosing'));
+    if (!show) faults.push('a question with no choices was asked by choosing');
+    if (q('.qrun-key') && !q('.qrun-key').hidden) faults.push('the answer was there before it was asked for');
+    if (all('.qrun-mark .qrun-pick').some(b => !b.offsetParent && false)) faults.push('unreachable');
+
+    if (show) show.click();
+    const key = q('.qrun-key');
+    out.push('revealed: ' + (key && !key.hidden ? key.textContent.slice(0, 34) : 'NOTHING'));
+    if (!key || key.hidden || key.textContent.indexOf('3,640') < 0) faults.push('the answer did not come up');
+    const marks = all('.qrun-mark .qrun-pick').map(b => b.textContent);
+    out.push('marks: ' + marks.join(' , '));
+    if (marks.length !== 2) faults.push('there are ' + marks.length + ' ways to mark it, expected 2');
+
+    // Marked WRONG, on purpose: the score and the list afterwards both
+    // have to read it as a miss, and say what the answer was
+    const no = all('.qrun-mark .qrun-pick').find(b => /wrong/i.test(b.textContent));
+    if (no) no.click();
+    else faults.push('there was no way to mark it wrong');
+
+    // SECOND AND THIRD: both have choices, so both are asked by choosing
+    for (let n = 2; n <= 3; n++) {
+      const picks = all('.qrun-picks .qrun-pick');
+      out.push('card ' + n + ': ' + (q('.qrun-show') ? 'asked by reading' : picks.length + ' choices'));
+      if (q('.qrun-show')) faults.push('card ' + n + ' hid its choices behind a reveal');
+      if (!picks.length) faults.push('card ' + n + ' offered nothing to press');
+      else picks[0].click();          // the first one: right on e3, wrong on e4
+    }
+
+    out.push('told the store: ' + said.join(' '));
+    if (said.join(' ') !== 'e1:no e3:ok e4:no') faults.push('what reached the store was ' + said.join(' '));
+
+    const score = q('.qscore') ? q('.qscore').textContent : 'NO SCORE';
+    out.push('score: ' + score);
+    if (!/1 of 3 right/.test(score)) faults.push('the score reads ' + score);
+
+    const mine = all('.qmissed-said').map(p => p.textContent);
+    const was = all('.qmissed-was').map(p => p.textContent);
+    out.push('missed: ' + mine.join(' | '));
+    out.push('answers: ' + was.map(s => s.slice(0, 30)).join(' | '));
+    if (!mine.some(s => /You marked it wrong/.test(s))) faults.push('a hand-marked miss is reported as a chosen one');
+    if (!was.some(s => s.indexOf('3,640') >= 0)) faults.push('the written answer is not shown afterwards');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  }
+</script>

@@ -774,7 +774,7 @@
   const doneIn = s => {
     if (!open) return 0;
     if (s.kind === 'rules') {
-      const head = 's-' + (s.group || ' ') + ':';
+      const head = 's-' + (s.group || '') + ':';
       return Object.keys(open.state.marks)
         .filter(k => k.indexOf(head) === 0 && open.state.marks[k]?.on === true).length;
     }
@@ -1082,11 +1082,32 @@
       // ============================================================
       await push().catch(() => {});
 
+      // ============================================================
+      // AND IF THAT WRITE FAILED, THE WORK IS NOT LET GO OF
+      //
+      // The wait above closed the door on work that was still waiting
+      // for its moment. It did nothing for work whose write was
+      // REFUSED: the marks that say "not yet sent" were then cleared on
+      // the next two lines, and the chapter they belonged to was
+      // replaced — so a refused write became a silent deletion, which
+      // is the one outcome the sending is built to avoid. Forty-two
+      // answers went that way in one afternoon, and the only reason
+      // they came back is that they still existed somewhere else.
+      //
+      // So: tried once more, and if Drive refuses twice the chapter is
+      // not let go of. The screen stays where it is with the work in
+      // it, which is a plain fault the reader can see and act on
+      // ============================================================
+      if (contentDirty || stateDirty) {
+        await new Promise(done => setTimeout(done, 400));
+        await push().catch(() => {});
+      }
+      if (contentDirty || stateDirty) return null;
+
       board = wholeBoard;
       open = null;
       chosen = null;
       clearTimeout(timer);
-      contentDirty = stateDirty = false;
 
       if (!(await settle(course, chapter).catch(() => false))) return null;
 
@@ -1801,6 +1822,42 @@
         const doc = await cloud().readFile(open.chapter.contentId).catch(() => null);
         if (doc) {
           const incoming = shapeContent(doc);
+          // ============================================================
+          // WHAT THE MERGE KEEPS, DRIVE HAS NOT GOT YET
+          //
+          // THIS IS WHERE WORK WENT TO DIE. The fold is a union: a row
+          // this device holds and the incoming copy does not survives it
+          // — and then the merged copy was stamped with THEIR version
+          // and put in the cache, with nothing marked unsent. Drive was
+          // never told, and the cache now answers every later open,
+          // because the version it carries is the one the board records.
+          // So the rows lived on this one machine, looked present on
+          // every screen, and were one cleared cache from gone: 241
+          // questions read as written for an hour, and Drive held none.
+          //
+          // So the fold is WEIGHED. Anything of mine the incoming copy
+          // does not have — a whole part, a row, or a row of mine with
+          // the newer clock — means this device owes Drive a write, and
+          // saying so is enough: the ordinary sending does the rest and
+          // re-caches what it actually wrote.
+          //
+          // Weighed and not assumed, because marking every refresh
+          // unsent would have two devices writing at each other for as
+          // long as both were open
+          // ============================================================
+          let owed = false;
+          const theirRows = new Map();
+          incoming.sections.forEach(s => (s.rows || []).forEach(r => theirRows.set(r.id, r)));
+          open.content.sections.forEach(mine => {
+            if (!incoming.sections.some(s => s.id === mine.id)) { owed = true; return; }
+            (mine.rows || []).forEach(r => {
+              const theirs = theirRows.get(r.id);
+              if (!theirs) { owed = true; return; }
+              if ((r.updatedAt || '') > (theirs.updatedAt || '')) owed = true;
+              if ((r.movedAt || '') > (theirs.movedAt || '')) owed = true;
+            });
+          });
+
           incoming.sections.forEach(section => {
             const mine = open.content.sections.find(s => s.id === section.id);
             if (!mine) { open.content.sections.push(section); return; }
@@ -1823,6 +1880,10 @@
           });
           open.content.version = incoming.version;
           cacheWrite(open.chapter.id, open.content);
+          // Said AFTER the cache, so a copy that never reaches Drive is
+          // at least on the shelf under the version the board records —
+          // and the sending, when it lands, writes the shelf again
+          if (owed) wrote();
         }
       }
       return open;

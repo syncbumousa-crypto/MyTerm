@@ -2840,12 +2840,25 @@ body.reading .build { bottom: 46px; }
   word-break: break-word;
 }
 
-.qcard-ask:empty::before, .qpick-words:empty::before {
+.qcard-ask:empty::before, .qpick-words:empty::before, .qcard-key:empty::before {
   content: attr(data-empty);
   color: var(--dim2);
 }
 
-.qcard-ask:focus, .qpick-words:focus { box-shadow: 0 1px 0 0 var(--blue); }
+.qcard-ask:focus, .qpick-words:focus, .qcard-key:focus { box-shadow: 0 1px 0 0 var(--blue); }
+
+/* The written answer sits where the answers would be -- indented to the
+   same line as the choices, in the quieter ink of something that is the
+   answer rather than the question */
+.qcard-key {
+  margin: 7px 0 0 22px;
+  font-size: .84em;
+  line-height: 1.7;
+  color: var(--dim);
+  outline: none;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
 
 .qcard-off, .qpick-off {
   flex: none;
@@ -2979,6 +2992,39 @@ body.reading .build { bottom: 46px; }
 
 .qrun-pick:hover { background: #2c2d34; border-color: var(--dim2); }
 .qrun-pick.on { border-color: var(--blue); background: #26303f; color: #ffffff; }
+
+/* A WRITTEN QUESTION: ASKED, THEN ANSWERED, THEN MARKED BY HAND.
+   The way in is plainly a way in and not one of the answers -- dashed,
+   because what is behind it is deliberately not here yet. The answer
+   itself is a quotation and not a button: it is read, not pressed, so
+   it wears the panel without the border and the hand of a control */
+.qrun-show {
+  width: 100%;
+  font: inherit;
+  font-size: .92em;
+  padding: 10px 14px;
+  border: 1px dashed var(--dim2);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.qrun-show:hover { color: #ffffff; border-color: var(--blue); }
+
+.qrun-key {
+  font-size: .92em;
+  line-height: 1.75;
+  padding: 12px 14px;
+  border-radius: 9px;
+  border-left: 2px solid var(--blue);
+  background: var(--panel);
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.qrun-mark { display: flex; gap: 7px; }
+.qrun-mark .qrun-pick { text-align: center; }
 
 .qrun-feet { display: flex; gap: 8px; }
 

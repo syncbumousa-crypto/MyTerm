@@ -206,7 +206,31 @@
     feet.append(more);
     if (!row.pick.length) feet.append(yesno);
 
+    // ============================================================
+    // THE WRITTEN ANSWER, WHERE THE QUESTION IS
+    //
+    // A question with nothing to choose between is answered against the
+    // answer it came with, and that answer has to be readable and
+    // correctable in the same place the question is — otherwise the one
+    // field the run depends on is the one field the bank cannot show,
+    // and a wrong answer key can only be fixed in the sheet, three
+    // screens away from the question it belongs to.
+    //
+    // Shown only where there is nothing to choose: under four answers
+    // with one of them marked it would be a second answer to the same
+    // question, and the run would have to guess which was meant
+    // ============================================================
+    const written = document.createElement('div');
+    if (picksOf(row).length < 2) {
+      written.className = 'qcard-key';
+      written.contentEditable = 'true';
+      written.innerHTML = row.text;
+      written.dataset.empty = 'The answer, to mark your own working against';
+      written.oninput = () => store().editRow(row.id, 'text', written.innerHTML);
+    }
+
     card.append(head, list, feet);
+    if (written.className) card.append(written);
     return card;
   };
 
@@ -221,13 +245,34 @@
   // #    It is all told at the end, where it can be read against what
   // #    you actually chose
   // ============================================================
-  // Words, two answers to choose between, and one of them marked. All
-  // three, because a question missing any one of them cannot be asked:
-  // with no words there is nothing to read, with one answer there is
-  // nothing to choose, and with none marked there is no way to be right
-  const ready = rows => rows.filter(
-    r => plain(r.ask) && r.pick.filter(p => plain(p)).length >= 2 && r.right >= 0
-  );
+  // ============================================================
+  // TWO WAYS TO BE ANSWERABLE, AND THE CHOICE COMES FIRST
+  //
+  // A question with two answers and one of them marked is asked by
+  // CHOOSING. A written question — work it out, show your working — has
+  // no choices at all and is asked by READING: the question, then the
+  // answer it came with, then your own word on whether you had it.
+  //
+  // Three hundred and thirty-eight of those sat in the folders unasked,
+  // because "can this be asked" meant "has it got choices". A whole
+  // kind of question was classified, counted, shown in its folder, and
+  // silently skipped by the only thing the folder is for.
+  //
+  // The choice comes first where a row has both, which is not a
+  // contradiction but a mislabelled row: some arrived from the reader's
+  // own file typed as written questions with four answers under them.
+  // Asked by choosing, such a row is asked properly; asked by reading,
+  // its answers would be hidden for no reason
+  // ============================================================
+  const picksOf = row => row.pick.filter(p => plain(p));
+  const byChoice = row => picksOf(row).length >= 2 && row.right >= 0;
+  const byHand = row => Boolean(plain(row.text));
+  const ready = rows => rows.filter(r => plain(r.ask) && (byChoice(r) || byHand(r)));
+
+  // What counts as having had it right, in whichever way it was asked
+  const wasRight = row => (byChoice(row)
+    ? run.said[row.id] === row.right
+    : run.said[row.id] === 'ok');
 
   const runView = () => {
     const wrap = document.createElement('div');
@@ -255,18 +300,66 @@
 
     const picks = document.createElement('div');
     picks.className = 'qrun-picks';
-    row.pick.forEach((one, at) => {
-      const button = document.createElement('button');
-      button.className = 'qrun-pick' + (run.said[row.id] === at ? ' on' : '');
-      button.type = 'button';
-      button.innerHTML = one;
-      button.onclick = () => {
-        run.said[row.id] = at;
-        store().answered(row.id, at === row.right);
-        onward();
-      };
-      picks.append(button);
-    });
+    if (byChoice(row)) {
+      row.pick.forEach((one, at) => {
+        const button = document.createElement('button');
+        button.className = 'qrun-pick' + (run.said[row.id] === at ? ' on' : '');
+        button.type = 'button';
+        button.innerHTML = one;
+        button.onclick = () => {
+          run.said[row.id] = at;
+          store().answered(row.id, at === row.right);
+          onward();
+        };
+        picks.append(button);
+      });
+    } else {
+      // ============================================================
+      // A WRITTEN ANSWER IS MARKED BY THE ONE WHO WROTE IT
+      //
+      // The answer comes AFTER it is asked for and not before, or the
+      // question is not a question. And the two words that follow are
+      // the reader's own: nothing here can tell whether a page of
+      // working arrives at the same place as the answer in the book.
+      //
+      // It is the same mark as a chosen answer — the square beside the
+      // thing it tests goes green or red the same way — because what
+      // the square says is "do you have this now", and that question is
+      // answered as honestly by someone marking their own working as by
+      // someone pressing one of four buttons
+      // ============================================================
+      const show = document.createElement('button');
+      show.className = 'qrun-show';
+      show.type = 'button';
+      show.textContent = 'Show the answer';
+
+      const key = document.createElement('div');
+      key.className = 'qrun-key';
+      key.hidden = true;
+      key.innerHTML = row.text;
+
+      const mark = document.createElement('div');
+      mark.className = 'qrun-mark';
+      mark.hidden = true;
+      [['I had it right', true], ['I had it wrong', false]].forEach(([words, ok]) => {
+        const button = document.createElement('button');
+        button.className = 'qrun-pick' + (run.said[row.id] === (ok ? 'ok' : 'no') ? ' on' : '');
+        button.type = 'button';
+        button.textContent = words;
+        button.onclick = () => {
+          run.said[row.id] = ok ? 'ok' : 'no';
+          store().answered(row.id, ok);
+          onward();
+        };
+        mark.append(button);
+      });
+
+      show.onclick = () => { show.hidden = true; key.hidden = false; mark.hidden = false; };
+      // Already marked once and come back to: the answer is not hidden
+      // again, because it has been seen
+      if (run.said[row.id] !== undefined) show.onclick();
+      picks.append(show, key, mark);
+    }
 
     const feet = document.createElement('div');
     feet.className = 'qrun-feet';
@@ -295,13 +388,13 @@
   };
 
   const scoreView = wrap => {
-    const right = run.rows.filter(r => run.said[r.id] === r.right).length;
+    const right = run.rows.filter(wasRight).length;
 
     const score = document.createElement('p');
     score.className = 'qscore';
     score.textContent = right + ' of ' + run.rows.length + ' right';
 
-    const missed = run.rows.filter(r => run.said[r.id] !== r.right);
+    const missed = run.rows.filter(r => !wasRight(r));
 
     const list = document.createElement('div');
     list.className = 'qmissed';
@@ -315,13 +408,15 @@
 
       const said = document.createElement('p');
       said.className = 'qmissed-said';
-      said.textContent = run.said[r.id] === undefined
-        ? 'You did not answer'
-        : 'You said: ' + plain(r.pick[run.said[r.id]]);
+      said.textContent = run.said[r.id] === undefined ? 'You did not answer'
+        : byChoice(r) ? 'You said: ' + plain(r.pick[run.said[r.id]])
+        : 'You marked it wrong';
 
       const was = document.createElement('p');
       was.className = 'qmissed-was';
-      was.textContent = 'The answer: ' + plain(r.pick[r.right]);
+      // The written answer in full, and not a line of it: it is the
+      // whole of what there is to look at afterwards
+      was.textContent = 'The answer: ' + (byChoice(r) ? plain(r.pick[r.right]) : plain(r.text));
 
       one.append(ask, said, was);
       list.append(one);
@@ -385,7 +480,7 @@
     start.textContent = 'Start';
     start.disabled = !asked.length;
     start.title = !set.length
-      ? 'A question needs words, two answers, and one of them marked right'
+      ? 'A question needs words, and either two answers with one marked right, or an answer to mark your own working against'
       : asked.length ? 'Go through them one at a time' : 'Choose a folder first';
     start.onclick = () => {
       run = { rows: asked, at: 0, said: {} };

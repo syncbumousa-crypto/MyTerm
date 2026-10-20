@@ -919,6 +919,82 @@
 
   const later = () => { clearTimeout(timer); timer = setTimeout(push, QUIET); };
 
+  // ============================================================
+  // # 🔄 ⬇️  READING DRIVE AGAIN, AND FOLDING WHAT CAME IN
+  // # 🔤 JavaScript
+  // # 🎯 Reads the chapter's file, folds anything new into what is open,
+  // #    and says whether anything changed
+  // # 🔗 IT ASKS DRIVE FOR ITS VERSION INSTEAD OF BELIEVING THE BOARD'S
+  // #    NOTE OF IT. The fold used to run only when the number written
+  // #    beside the chapter differed from the copy in hand — and that
+  // #    note is written by whichever tab last wrote the board, so it
+  // #    can sit a version behind what Drive actually holds. The shelf
+  // #    is keyed by that same note, so the two agreed with each other
+  // #    and both were wrong: 54 answers sat in Drive while every open
+  // #    served a copy without them, the guard read that copy, and the
+  // #    only honest-looking thing on the screen was the fault it
+  // #    reported. Drive is the only copy that matters, so Drive is
+  // #    what is asked.
+  // #
+  // #    And the note is corrected on the way past, or the next open
+  // #    reaches for the same stale copy on the shelf again
+  // ============================================================
+  async function foldFromDrive() {
+    if (!open) return false;
+    const mine = open.chapter.id;
+    const doc = await cloud().readFile(open.chapter.contentId).catch(() => null);
+    // Every await is a window in which the reader opened something else
+    if (!doc || !open || open.chapter.id !== mine) return false;
+
+    const incoming = shapeContent(doc);
+    if (Number(incoming.version) === Number(open.content.version)) return false;
+
+    // What the fold keeps that Drive has not got — weighed before
+    // anything is merged, for the reason written at the sending
+    let owed = false;
+    const theirRows = new Map();
+    incoming.sections.forEach(s => (s.rows || []).forEach(r => theirRows.set(r.id, r)));
+    open.content.sections.forEach(ours => {
+      if (!incoming.sections.some(s => s.id === ours.id)) { owed = true; return; }
+      (ours.rows || []).forEach(r => {
+        const theirs = theirRows.get(r.id);
+        if (!theirs) { owed = true; return; }
+        if ((r.updatedAt || '') > (theirs.updatedAt || '')) owed = true;
+        if ((r.movedAt || '') > (theirs.movedAt || '')) owed = true;
+      });
+    });
+
+    incoming.sections.forEach(section => {
+      const ours = open.content.sections.find(s => s.id === section.id);
+      if (!ours) { open.content.sections.push(section); return; }
+
+      ours.rows = mergeRows(ours.rows, section.rows);
+      // THE PART'S OWN FIELDS FOLLOW ITS OWN CLOCK, like a row's.
+      // Merging only the rows was quietly dropping everything else the
+      // other device had done to it: a part renamed on the phone, its
+      // pace set there, or the part taken out there, all reached this
+      // device and were thrown away
+      const newer = section.updatedAt &&
+                    (!ours.updatedAt || section.updatedAt > ours.updatedAt);
+      if (!newer) return;
+      ours.name = section.name;
+      ours.kind = section.kind;
+      ours.per = section.per;
+      ours.each = section.each;
+      ours.deleted = section.deleted;
+      ours.updatedAt = section.updatedAt;
+    });
+
+    open.content.version = incoming.version;
+    open.chapter.contentVersion = incoming.version;
+    cacheWrite(open.chapter.id, open.content);
+    // Said AFTER the cache, so a copy that never reaches Drive is at
+    // least on the shelf under the version the board records — and the
+    // sending, when it lands, writes the shelf again
+    if (owed) wrote();
+    return true;
+  }
+
   const wrote = () => { contentDirty = true; tellStatus('waiting'); later(); };
 
   // Every position change ends here: positions are renumbered from where
@@ -1112,6 +1188,7 @@
       if (!(await settle(course, chapter).catch(() => false))) return null;
 
       let content = await cacheRead(chapter.id, chapter.contentVersion);
+      const fromShelf = Boolean(content);
       if (!content) {
         const doc = await cloud().readFile(chapter.contentId).catch(() => null);
         if (!doc) return null;
@@ -1170,6 +1247,25 @@
         window.MyTermBoardStore?.touchCourse?.(course.id);
         window.MyTermBoardStore?.change?.(board);
       }
+
+      // ============================================================
+      // A COPY OFF THE SHELF IS SHOWN, THEN CHECKED AGAINST DRIVE
+      //
+      // The shelf is keyed by the version the BOARD records, and that
+      // note is written by whichever tab last wrote the board — so it
+      // can be a version behind what Drive holds, and then the shelf
+      // and the note agree with each other and both are wrong. That is
+      // how a chapter whose answers were safely in Drive opened without
+      // them, again and again, on the one machine that had written them.
+      //
+      // Not awaited: the shelf exists so that opening a chapter again
+      // costs nothing, and a read of Drive on the way in would spend
+      // exactly what the shelf saves. The fold merges row by row and
+      // marks anything Drive has not got as unsent, so arriving a
+      // moment later costs nothing and loses nothing
+      // ============================================================
+      if (fromShelf) foldFromDrive().catch(() => {});
+
       return open;
     },
 
@@ -1817,75 +1913,10 @@
         open.state.covers = mergeMarks(open.state.covers || {}, theirs.covers);
       }
 
-      const theirVersion = Number(open.chapter.contentVersion) || 1;
-      if (theirVersion !== open.content.version) {
-        const doc = await cloud().readFile(open.chapter.contentId).catch(() => null);
-        if (doc) {
-          const incoming = shapeContent(doc);
-          // ============================================================
-          // WHAT THE MERGE KEEPS, DRIVE HAS NOT GOT YET
-          //
-          // THIS IS WHERE WORK WENT TO DIE. The fold is a union: a row
-          // this device holds and the incoming copy does not survives it
-          // — and then the merged copy was stamped with THEIR version
-          // and put in the cache, with nothing marked unsent. Drive was
-          // never told, and the cache now answers every later open,
-          // because the version it carries is the one the board records.
-          // So the rows lived on this one machine, looked present on
-          // every screen, and were one cleared cache from gone: 241
-          // questions read as written for an hour, and Drive held none.
-          //
-          // So the fold is WEIGHED. Anything of mine the incoming copy
-          // does not have — a whole part, a row, or a row of mine with
-          // the newer clock — means this device owes Drive a write, and
-          // saying so is enough: the ordinary sending does the rest and
-          // re-caches what it actually wrote.
-          //
-          // Weighed and not assumed, because marking every refresh
-          // unsent would have two devices writing at each other for as
-          // long as both were open
-          // ============================================================
-          let owed = false;
-          const theirRows = new Map();
-          incoming.sections.forEach(s => (s.rows || []).forEach(r => theirRows.set(r.id, r)));
-          open.content.sections.forEach(mine => {
-            if (!incoming.sections.some(s => s.id === mine.id)) { owed = true; return; }
-            (mine.rows || []).forEach(r => {
-              const theirs = theirRows.get(r.id);
-              if (!theirs) { owed = true; return; }
-              if ((r.updatedAt || '') > (theirs.updatedAt || '')) owed = true;
-              if ((r.movedAt || '') > (theirs.movedAt || '')) owed = true;
-            });
-          });
-
-          incoming.sections.forEach(section => {
-            const mine = open.content.sections.find(s => s.id === section.id);
-            if (!mine) { open.content.sections.push(section); return; }
-
-            mine.rows = mergeRows(mine.rows, section.rows);
-            // THE PART'S OWN FIELDS FOLLOW ITS OWN CLOCK, like a row's.
-            // Merging only the rows was quietly dropping everything else
-            // the other device had done to it: a part renamed on the
-            // phone, its pace set there, or the part taken out there,
-            // all reached this device and were thrown away
-            const newer = section.updatedAt &&
-                          (!mine.updatedAt || section.updatedAt > mine.updatedAt);
-            if (!newer) return;
-            mine.name = section.name;
-            mine.kind = section.kind;
-            mine.per = section.per;
-            mine.each = section.each;
-            mine.deleted = section.deleted;
-            mine.updatedAt = section.updatedAt;
-          });
-          open.content.version = incoming.version;
-          cacheWrite(open.chapter.id, open.content);
-          // Said AFTER the cache, so a copy that never reaches Drive is
-          // at least on the shelf under the version the board records —
-          // and the sending, when it lands, writes the shelf again
-          if (owed) wrote();
-        }
-      }
+      // The content is folded by the one place that asks Drive for its
+      // own version, because the number written beside the chapter is
+      // not evidence of what Drive holds
+      await foldFromDrive();
       return open;
     },
 

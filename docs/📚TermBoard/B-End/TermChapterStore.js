@@ -581,17 +581,70 @@
   // #    anything simply reads from Drive every time, which is slower and
   // #    still correct — nothing here may ever be the only copy
   // ============================================================
+  // ============================================================
+  // # 🗄️ 🔑  KEPT IN THE BROWSER'S DATABASE, NOT IN ITS SMALL BOX
+  // # 🔗 THE COPIES FILLED THE BOX THE SIGN IN LIVES IN. They used to go
+  // #    to localStorage — a few megabytes for the whole site — one whole
+  // #    chapter at a time and never taken out again. Two languages, a
+  // #    bank and the long explanations put a chapter in the hundreds of
+  // #    kilobytes, and some dozens of chapters filled the box. Then the
+  // #    sign in could not write its renewed key into it: the renewal
+  // #    worked for the page that was open, the box kept the OLD key,
+  // #    which the service had already spent — and the next reload
+  // #    showed that spent key, was refused, and was signed out. Every
+  // #    write here failed in silence the whole time.
+  // #
+  // #    So the copies live in IndexedDB, which is made for this and
+  // #    holds far more, and the ones left in localStorage by earlier
+  // #    versions are taken out on the way in. Drive is still the only
+  // #    copy that matters: a browser that refuses both just reads from
+  // #    Drive every time
+  // ============================================================
   const cacheKey = id => 'myterm.chapter.' + id;
 
-  const cacheRead = (id, version) => {
-    try {
-      const kept = JSON.parse(localStorage.getItem(cacheKey(id)) || 'null');
-      return kept && kept.version === version ? shapeContent(kept) : null;
-    } catch { return null; }
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.indexOf('myterm.chapter.') === 0)
+      .forEach(k => localStorage.removeItem(k));
+  } catch {}
+
+  let shelf = null;
+  const openShelf = () => {
+    if (!shelf) {
+      shelf = new Promise((done, fail) => {
+        const ask = indexedDB.open('myterm', 1);
+        ask.onupgradeneeded = () => ask.result.createObjectStore('chapters');
+        ask.onsuccess = () => done(ask.result);
+        ask.onerror = () => fail(ask.error);
+      }).catch(() => null);
+    }
+    return shelf;
   };
 
+  const onShelf = async (how, run) => {
+    const db = await openShelf();
+    if (!db) return null;
+    return new Promise(done => {
+      try {
+        const deal = db.transaction('chapters', how);
+        const ask = run(deal.objectStore('chapters'));
+        deal.oncomplete = () => done(ask ? ask.result : null);
+        deal.onerror = deal.onabort = () => done(null);
+      } catch { done(null); }
+    });
+  };
+
+  const cacheRead = async (id, version) => {
+    const kept = await onShelf('readonly', s => s.get(cacheKey(id)));
+    return kept && kept.version === version ? shapeContent(kept) : null;
+  };
+
+  // A copy taken NOW, as text: the content goes on being typed into
+  // while the database writes, and what is kept must be what was saved
   const cacheWrite = (id, content) => {
-    try { localStorage.setItem(cacheKey(id), JSON.stringify(content)); } catch {}
+    let copy = null;
+    try { copy = JSON.parse(JSON.stringify(content)); } catch { return; }
+    onShelf('readwrite', s => s.put(copy, cacheKey(id)));
   };
 
   // ============================================================
@@ -992,7 +1045,7 @@
 
       if (!(await settle(course, chapter).catch(() => false))) return null;
 
-      let content = cacheRead(chapter.id, chapter.contentVersion);
+      let content = await cacheRead(chapter.id, chapter.contentVersion);
       if (!content) {
         const doc = await cloud().readFile(chapter.contentId).catch(() => null);
         if (!doc) return null;

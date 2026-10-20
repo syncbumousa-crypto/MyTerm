@@ -334,6 +334,34 @@
   let readLang = 'en';
   try { if (localStorage.getItem(PREF.lang) === 'ar') readLang = 'ar'; } catch {}
 
+  // ============================================================
+  // # 🌐 📌  THE LANGUAGE BELONGS TO THE PART ON THE DESK
+  // # 🔗 IT USED TO BE ONE SWITCH FOR THE WHOLE SITE. Turning one part to
+  // #    Arabic turned every part of every course, so a reader who reads
+  // #    one course in Arabic and another in English turned the globe
+  // #    every time they changed course. Now each part keeps its own,
+  // #    under its chapter and its own name, and is found that way when
+  // #    it is opened again. A part never set starts from the old single
+  // #    switch, so nothing turns over on its own the day this arrives
+  // ============================================================
+  const siteLang = readLang;
+  const partLangKey = () => {
+    const ch = window.MyTermChapterStore?.openId?.();
+    const part = window.MyTermChapterStore?.openSection?.();
+    return ch && part ? 'myterm.read.lang.' + ch + '.' + part : null;
+  };
+  const langOfPart = () => {
+    const key = partLangKey();
+    try {
+      const kept = key && localStorage.getItem(key);
+      if (kept === 'ar' || kept === 'en') return kept;
+    } catch {}
+    return siteLang;
+  };
+  const paintLang = () => {
+    langBtn.title = readLang === 'ar' ? 'Arabic — press for English' : 'English — press for Arabic';
+  };
+
   // Dark paper is the reader's too, and it is one word on the body
   // rather than a second set of colours — the sheet is turned over
   // whole, so nothing written on it has to know
@@ -354,7 +382,7 @@
     // The globe says it by itself. A label beside it said the same thing
     // twice, and the only thing the second one added was the question of
     // whether it meant the language now or the one it would turn to
-    langBtn.title = readLang === 'ar' ? 'Arabic — press for English' : 'English — press for Arabic';
+    paintLang();
     document.body.classList.toggle('darkpaper', darkPaper);
     darkBtn.innerHTML = darkPaper ? ICONS.sun : ICONS.moon;
     darkBtn.title = darkPaper ? 'White paper' : 'Dark paper';
@@ -479,7 +507,10 @@
   // type is now, and not what size pressing it would make it
   langBtn.onclick = () => {
     readLang = readLang === 'ar' ? 'en' : 'ar';
-    writePref(PREF.lang, readLang);
+    // Kept for this part alone; with no part open there is nothing to
+    // keep it for, and the next part opened says its own
+    const key = partLangKey();
+    if (key) writePref(key, readLang);
     applyRead();
   };
 
@@ -1334,6 +1365,10 @@
   // holding the same box at once was never going to end well
   const drawRows = () => {
     if (!window.MyTermChapterStore?.content()) return;
+    // Every part opened is drawn through here, so this is where it is
+    // given back the language it was last read in
+    readLang = langOfPart();
+    paintLang();
     const parts = window.MyTermChapterStore.sections();
     const here = window.MyTermChapterStore.openSection();
     const part = parts.find(p => p.id === here);

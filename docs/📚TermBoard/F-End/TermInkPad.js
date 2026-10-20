@@ -90,8 +90,48 @@
       +     '<button class="inkBtn" data-ink="clear" title="Empty this page">✕</button>'
       +   '</span>'
       + '</div>'
+      // ★ The attempts strip is its OWN element and not a child of the
+      //   toolbar: a guard counts the toolbar's children — four inks and
+      //   three nibs — so a button added inside it would fail a standing
+      //   check. And it sits between the toolbar and the paper, stuck to
+      //   the top edge of the paper as a browser's tabs are stuck to
+      //   their page: the tab is "attached to the box itself", not a row
+      //   floating above it
+      + '<div class="inkTabs">'
+      +   '<button class="inkBtn inkSaveBtn" data-ink="seal"'
+      +     ' title="Seal this attempt with today\'s date and open an empty one">Save</button>'
+      +   '<span class="inkTabStrip"></span>'
+      + '</div>'
       + '<div class="inkPad"><canvas class="inkDry"></canvas><canvas class="inkWet"></canvas></div>';
     return box;
+  };
+
+  // ============================================================
+  // # 📑 🏷️  THE STRIP OF ATTEMPTS
+  // # 🔤 JavaScript
+  // # 🎯 A tab for each attempt: its number, and the moment it was
+  // #    sealed once it has been
+  // # 🔗 THE WHOLE NAME IS THE IDENTITY OF THE ATTEMPT, so it is never
+  // #    cut: the strip scrolls sideways instead, and the open tab is
+  // #    brought into view. A clipped name is a thing the reader cannot
+  // #    tell from another thing.
+  // ============================================================
+  const tabsOf = key => {
+    const list = store().sheets(key);
+    return list.map((s, i) => {
+      const words = String(i + 1) + (s.ts ? ' · ' + store().stamp(s.ts) : '');
+      return '<button class="inkTab' + (s.open ? ' on' : '') + '" data-sheet="' + i + '"'
+        + ' title="' + (s.ts ? 'An attempt sealed at ' + store().stamp(s.ts) : 'The attempt in hand')
+        + ' — right-press to delete it">' + words + '</button>';
+    }).join('');
+  };
+
+  const syncTabs = box => {
+    const strip = box.querySelector('.inkTabStrip');
+    if (!strip) return;
+    strip.innerHTML = tabsOf(box.dataset.key);
+    const on = strip.querySelector('.inkTab.on');
+    if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   };
 
   // ============================================================
@@ -362,7 +402,15 @@
 
   ['pointerover', 'pointermove', 'pointerdown', 'pointerup', 'pointerrawupdate'].forEach(t => {
     try {
-      document.addEventListener(t, ev => { if (ev.pointerType === 'pen') penLast = Date.now(); },
+      document.addEventListener(t, ev => {
+        if (ev.pointerType !== 'pen') return;
+        penLast = Date.now();
+        // THE TOUCH THAT CAME FIRST IS TAKEN BACK. The hard case is the
+        // palm landing BEFORE the nib: by the time the pen is seen, a
+        // scroll may already have been performed. So any scroll younger
+        // than 450 ms is undone the instant the pen appears
+        retract();
+      },
         { capture: true, passive: true });
     } catch {}
   });
@@ -425,12 +473,81 @@
     draw.done = a.length;
   };
 
+  // ============================================================
+  // # ✋ 📜  THE FINGER SCROLLS THE PAGE, BY HAND
+  // # 🔤 JavaScript
+  // # 🎯 Moves the scrolling box under the pad when a finger drags on
+  // #    it, and refuses to when that finger is really a resting palm
+  // # 🔗 THE WEB DOES NOT TELL US ABOUT PALMS. The browser reports a
+  // #    palm leaning on the glass as an ordinary touch, and on Windows
+  // #    the system does not suppress it while the pen is writing — the
+  // #    probe on this very machine counted 726 touch events arriving
+  // #    while the pen drew. So the policy is the one every project
+  // #    that has solved this uses: DO NOT CLASSIFY THE TOUCH, OWN THE
+  // #    PEN. While the pen is in range, touches over the pad do
+  // #    nothing.
+  // #
+  // # 🔗 And because the pad needs `touch-action:none` for the pen, the
+  // #    scrolling it would otherwise do has to be done here — which
+  // #    turns out to be the feature, not the cost: a scroll performed
+  // #    by hand can be WITHHELD until the touch proves itself, and
+  // #    taken back if the pen arrives after it. A resting palm meets
+  // #    the time and never the distance.
+  // #
+  // # 🔗 The two numbers are the platform's own: Windows delays touch
+  // #    on inking surfaces by 250 ms "to allow additional time for pen
+  // #    detection", and says rejection works best when the pen is seen
+  // #    before the palm lands. Measured here, hover leads the nib by
+  // #    106 ms — thinner than the 1698 ms on the machine this came
+  // #    from, which is exactly why the 250 ms delay carries the weight.
+  // ============================================================
+  const ARM_MS = 250, ARM_PX = 12, RETRACT_MS = 450;
+  const touches = new Set();
+  let pan = null;
+
+  document.addEventListener('pointerdown', ev => {
+    if (ev.pointerType === 'touch') touches.add(ev.pointerId);
+  }, { capture: true, passive: true });
+  ['pointerup', 'pointercancel'].forEach(t => {
+    document.addEventListener(t, ev => { touches.delete(ev.pointerId); }, { capture: true, passive: true });
+  });
+
+  // The box that actually scrolls under this pad, found rather than
+  // assumed: the sheets live in one on the course screen and in another
+  // in full screen later, and a name written here would be wrong in one
+  // of them
+  const scrollerOf = el => {
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      const s = getComputedStyle(n);
+      if (/(auto|scroll)/.test(s.overflowY) && n.scrollHeight > n.clientHeight + 2) return n;
+    }
+    return document.scrollingElement || document.documentElement;
+  };
+
+  const rejected = ev => penNear() || isPalm(ev) || touches.size > 1;
+
+  // The scroll that a touch turned out not to deserve, given back
+  const retract = () => {
+    if (!pan) return;
+    if (pan.armed && (Date.now() - pan.t) < RETRACT_MS) pan.box.scrollTop = pan.top0;
+    pan = null;
+  };
+
   document.addEventListener('pointerdown', ev => {
     const cv = ev.target.closest && ev.target.closest('.inkDry');
     if (!cv) return;
     const box = cv.closest('.inkBox');
     const key = box.dataset.key;
-    if (ev.pointerType === 'touch') return;          // the finger is left to the page
+    if (ev.pointerType === 'touch') {
+      // Not acted on now: written down, and left to prove itself by
+      // staying 250 ms AND travelling 12 pixels. The first scroll
+      // position is kept so it can be given back if the pen appears
+      if (rejected(ev)) return;
+      const sc = scrollerOf(cv);
+      pan = { id: ev.pointerId, y0: ev.clientY, y: ev.clientY, t: Date.now(),
+              box: sc, top0: sc.scrollTop, armed: false };
+      return;
+    }
     if (ev.pointerType !== 'pen' && ev.pointerType !== 'mouse') return;
     if (draw) return;                                // one stroke is not cut by another
     ev.preventDefault();
@@ -455,6 +572,21 @@
   });
 
   document.addEventListener('pointermove', ev => {
+    if (pan && ev.pointerId === pan.id) {
+      if (rejected(ev)) { retract(); return; }
+      if (!pan.armed) {
+        // BOTH GATES, and the palm is caught by the second: it rests for
+        // as long as you like and it does not travel
+        if (Date.now() - pan.t < ARM_MS) return;
+        if (Math.abs(ev.clientY - pan.y0) < ARM_PX) return;
+        pan.armed = true;
+        pan.y = ev.clientY;        // scrolling starts from here, so it does not jump by the gathered distance
+        return;
+      }
+      pan.box.scrollTop -= (ev.clientY - pan.y);
+      pan.y = ev.clientY;
+      return;
+    }
     if (!draw || ev.pointerId !== draw.id || ev.pointerType === 'touch') return;
     if (draw.erase) {
       const p = spot(draw.cv, ev);
@@ -483,6 +615,9 @@
   });
 
   const lift = ev => {
+    // The finger that was scrolling has let go: that is the end of the
+    // scroll and of nothing else
+    if (pan && ev && ev.pointerId === pan.id) { pan = null; return; }
     if (!draw) return;
     if (ev && ev.pointerType === 'touch') return;     // a finger lifting ends nothing
     if (ev && ev.pointerId !== draw.id) return;
@@ -507,6 +642,19 @@
 
   // ---------- the toolbar ----------
   document.addEventListener('click', ev => {
+    // A tab is NOT an `.inkBtn`, deliberately: it must not be counted
+    // among the inks and nibs, must not pass through the nib handler,
+    // and must not fall into the tail of this one
+    const tb = ev.target.closest && ev.target.closest('.inkTab');
+    if (tb) {
+      ev.stopPropagation();
+      const box = tb.closest('.inkBox');
+      if (store().go(box.dataset.key, +tb.dataset.sheet)) {
+        repaint(box.querySelector('.inkDry'));
+        syncTabs(box);
+      }
+      return;
+    }
     const b = ev.target.closest && ev.target.closest('.inkBtn');
     if (!b) return;
     ev.stopPropagation();                             // a press on a tool is not a press on the card
@@ -522,7 +670,31 @@
       if (store().has(key) && !confirm('Empty this page? The attempts kept beside it are not touched.')) return;
       if (store().clear(key)) repaint(cv);
     }
+    else if (what === 'seal') {
+      // An empty page is refused by the store, and the reader is told
+      // why rather than left pressing a button that does nothing
+      if (!store().seal(key)) { b.title = 'Write something first — an empty page is not sealed'; return; }
+      repaint(cv);                                    // the new page is empty, so this clears it
+      syncTabs(box);
+    }
     tools();
+  });
+
+  // Deleted by the press that means "do something unusual to this", and
+  // it says what it is about to take away. There is no undoing it, and
+  // keeping quiet about that would be a cheat
+  document.addEventListener('contextmenu', ev => {
+    const tb = ev.target.closest && ev.target.closest('.inkTab');
+    if (!tb) return;
+    ev.preventDefault();
+    const box = tb.closest('.inkBox');
+    const key = box.dataset.key;
+    const i = +tb.dataset.sheet;
+    const list = store().sheets(key);
+    if (list.length < 2) { tb.title = 'The last attempt is not deleted — the box needs a page to write on'; return; }
+    const name = String(i + 1) + (list[i] && list[i].ts ? ' · ' + store().stamp(list[i].ts) : '');
+    if (!confirm('Delete attempt ' + name + '? It cannot be brought back.')) return;
+    if (store().drop(key, i)) { repaint(box.querySelector('.inkDry')); syncTabs(box); }
   });
 
   const tools = () => {
@@ -559,6 +731,7 @@
         card.appendChild(box);
         made++;
         await store().load(box.dataset.key);
+        syncTabs(box);
         const cv = box.querySelector('.inkDry');
         if (fit(cv) === 1) repaint(cv);
       }

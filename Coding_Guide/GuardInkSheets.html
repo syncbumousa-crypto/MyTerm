@@ -1,0 +1,174 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · the attempts, and the name on each</title>
+<style>
+  #host { width: 420px; --sheetScale: 1; }
+  .msheet { width: 400px; border: 1px solid #ccc; margin: 6px 0; }
+  .qcard { height: 60px; }
+</style>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermInkPad.js"></script>
+<script>
+  // "I GO BACK A TAB TO MY SOLUTIONS AND SOLVE IT AGAIN." That is the
+  // whole of this feature, and three things can take it away quietly:
+  //
+  //   1  AN ATTEMPT THAT LOSES ITS STROKES. Each sheet must keep its own
+  //      ink, so going back a tab brings back what was drawn on it — not
+  //      what is on the page now.
+  //   2  A SEAL THAT LIES. Save must refuse an empty page, or the reader
+  //      is told "saved" and handed a blank one with nothing kept.
+  //   3  A NAME THAT DRIFTS. The record keeps a NUMBER, and the words are
+  //      built when shown. A stored string freezes the format of the day
+  //      it was written, and the strip then reads in two formats at once.
+  //      And the date must be Gregorian and the clock twelve-hour with AM
+  //      or PM, because that is what was asked for — measured on the
+  //      machine this came from, a locale formatter put out 1448/4/19 for
+  //      2026/9/30 and ١٢:٠٠ ص for 12:00 AM.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const host = document.getElementById('host');
+    const faults = [], out = [];
+    const S = window.MyTermInkStore, P = window.MyTermInkPad;
+    if (!S || !P) { o.textContent = 'FAIL the two modules did not load'; return; }
+
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
+
+    // The runner cannot run IndexedDB, so the store is handed a shelf
+    const box0 = new Map();
+    S.useShelf({ name: 'the guard’s own shelf',
+      get: async k => (box0.has(k) ? JSON.parse(box0.get(k)) : null),
+      put: async (k, v) => { box0.set(k, JSON.stringify(v)); return true; } });
+    await S.open('c-test', 'h-sheets');
+
+    const card = document.createElement('div');
+    card.className = 'msheet msheet-card';
+    card.dataset.group = 'rules1'; card.dataset.at = '0';
+    card.innerHTML = '<div class="qcard">a question</div>';
+    host.append(card);
+    P.arm(host);
+    await P.mount();
+    const key = 'rules1#0';
+    const boxEl = host.querySelector('.inkBox');
+    const pad = boxEl.querySelector('.inkDry');
+    const strip = () => [...boxEl.querySelectorAll('.inkTab')].map(t => t.textContent);
+    const wait = ms => new Promise(r => setTimeout(r, ms || 0));
+
+    const stroke = (x0, n) => {
+      const r = pad.getBoundingClientRect();
+      const ev = (type, x, y, press) => pad.dispatchEvent(new PointerEvent(type, {
+        bubbles: true, cancelable: true, pointerId: 1, pointerType: 'pen', pressure: press,
+        clientX: r.left + x, clientY: r.top + y, isPrimary: true, buttons: type === 'pointerup' ? 0 : 1 }));
+      ev('pointerdown', x0, 30, 0.4);
+      for (let i = 1; i <= n; i++) ev('pointermove', x0 + i * 4, 30 + (i % 4) * 6, 0.5);
+      ev('pointerup', x0 + n * 4, 30, 0.5);
+    };
+    const press = (sel, how) => {
+      const el = boxEl.querySelector(sel);
+      if (!el) { faults.push('there is no ' + sel + ' in the box'); return false; }
+      el.dispatchEvent(new MouseEvent(how || 'click', { bubbles: true, cancelable: true }));
+      return true;
+    };
+
+    // ---- it starts with one attempt, bare of any date
+    out.push('at the start: ' + JSON.stringify(strip()));
+    if (strip().length !== 1 || strip()[0] !== '1') faults.push('a fresh card opens with ' + JSON.stringify(strip()));
+
+    // ---- write, then seal
+    stroke(40, 20);
+    await wait();
+    const before = S.strokes(key).length;
+    press('[data-ink="seal"]');
+    await wait();
+    const sheets = S.sheets(key);
+    out.push('after Save: ' + JSON.stringify(strip()));
+    if (sheets.length !== 2) faults.push('Save made ' + sheets.length + ' attempts out of one');
+    if (!(sheets[0].ts > 0)) faults.push('the sealed attempt carries no moment');
+    if (typeof sheets[0].ts !== 'number') faults.push('the moment is stored as ' + typeof sheets[0].ts + ', not a number');
+    if (sheets[0].strokes !== before) faults.push('the sealed attempt kept ' + sheets[0].strokes + ' strokes of ' + before);
+    if (!sheets[1].open) faults.push('Save did not move to the new attempt');
+    if (S.strokes(key).length !== 0) faults.push('the new attempt opened with ' + S.strokes(key).length + ' strokes on it');
+    if (!/^1 · \d{4}\/\d{1,2}\/\d{1,2} \d{1,2}:\d{2} (AM|PM)$/.test(strip()[0])) {
+      faults.push('the attempt is named "' + strip()[0] + '"');
+    }
+
+    // ---- the empty one is not sealed, and says so rather than lying
+    const n0 = S.sheets(key).length;
+    press('[data-ink="seal"]');
+    await wait();
+    if (S.sheets(key).length !== n0) faults.push('Save sealed an empty page and bred another');
+
+    // ---- going back a tab brings back what was drawn there
+    const inked = () => {
+      try {
+        const d = pad.getContext('2d').getImageData(0, 0, pad.width, pad.height).data;
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++;
+        return n;
+      } catch (e) { return -1; }
+    };
+    const onEmpty = inked();
+    boxEl.querySelector('.inkTab[data-sheet="0"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await wait();
+    const onFirst = inked();
+    out.push('ink on the empty attempt: ' + onEmpty + ' px · on the first: ' + onFirst + ' px');
+    if (onEmpty !== 0) faults.push('the new attempt was drawn with ' + onEmpty + ' pixels of the old one');
+    if (!(onFirst > 0)) faults.push('going back a tab drew nothing — the attempt lost its ink');
+    if (S.openAt(key) !== 0) faults.push('pressing a tab did not open it');
+
+    // ---- deleting: never the last one, and it says what it takes
+    const asked = [];
+    window.confirm = q => { asked.push(q); return true; };
+    boxEl.querySelector('.inkTab[data-sheet="1"]').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    await wait();
+    out.push('after deleting one: ' + JSON.stringify(strip()));
+    if (S.sheets(key).length !== 1) faults.push('the delete left ' + S.sheets(key).length + ' attempts');
+    if (!asked.length || !/cannot be brought back/.test(asked[0])) faults.push('the delete did not say that it cannot be undone');
+    const last = S.sheets(key).length;
+    boxEl.querySelector('.inkTab[data-sheet="0"]').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    await wait();
+    if (S.sheets(key).length !== last) faults.push('the LAST attempt was deleted — the box has no page to write on');
+    // ★ AND ASKED OF THE STORE DIRECTLY, not only through the strip.
+    // "The last attempt is not deleted" is written in TWO places — the
+    // handler and the store — and the first negative test of this broke
+    // the store alone and PASSED, because the handler stood in front of
+    // it. A refusal written twice needs a check for each place, and this
+    // is the third time that rule has earned itself in this project.
+    //
+    // Asked on a record OF ITS OWN, so that a store which does delete it
+    // cannot take the rest of this page down with it and turn a named
+    // fault into a stray exception
+    const solo = 'rules9#9';
+    await S.load(solo);
+    const refused = S.drop(solo, 0);
+    const left = S.sheets(solo).length;
+    out.push('asked of the store directly: ' + (refused === false ? 'refused' : 'DELETED') + ', ' + left + ' left');
+    if (refused !== false) faults.push('the store itself deleted the last attempt when asked directly');
+    if (left !== 1) faults.push('the store left ' + left + ' attempts on a record that had one');
+
+    // ---- and the clock, at the four hours that break a naive conversion
+    const read = (h, m) => S.stamp(new Date(2026, 9, 20, h, m, 0).getTime());
+    const clock = [read(0, 0), read(11, 59), read(12, 0), read(23, 59)];
+    out.push('the clock: ' + clock.join(' · '));
+    const want = ['2026/10/20 12:00 AM', '2026/10/20 11:59 AM', '2026/10/20 12:00 PM', '2026/10/20 11:59 PM'];
+    clock.forEach((got, i) => { if (got !== want[i]) faults.push('the clock reads "' + got + '" where it should read "' + want[i] + '"'); });
+    if (/[؀-ۿ]/.test(clock.join(''))) faults.push('the name came out of a locale formatter, not from the code');
+
+    // ---- the record itself keeps numbers and no words
+    await S.flush();
+    const kept = await S.onShelfNow(key);
+    const text = JSON.stringify(kept || {});
+    if (/AM|PM/.test(text)) faults.push('the stored record carries the words of the clock, which freezes the format');
+    out.push('the record: ' + (kept ? kept.sh.length + ' attempt(s), ts ' + typeof kept.sh[0].ts : 'MISSING'));
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

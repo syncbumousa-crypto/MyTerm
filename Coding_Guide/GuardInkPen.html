@@ -1,0 +1,158 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · the hand that rests on the glass</title>
+<style>
+  #scroller { width: 440px; height: 300px; overflow-y: auto; border: 1px solid #999; }
+  #host { width: 420px; --sheetScale: 1; }
+  .msheet { width: 400px; border: 1px solid #ccc; margin: 6px 0; }
+  .qcard { height: 40px; }
+  .inkBox { min-height: 400px; }
+  #tall { height: 1200px; }
+</style>
+<pre id="o">pending</pre>
+<div id="scroller"><div id="host"></div><div id="tall"></div></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermInkPad.js"></script>
+<script>
+  // THE WEB NEVER SAYS "THIS IS A PALM". The browser reports a hand
+  // leaning on the glass as an ordinary touch, and on Windows the system
+  // does not hold those back while the pen writes — the probe on this
+  // machine counted hundreds arriving mid-stroke. So the policy is to OWN
+  // THE PEN rather than classify the touch, and the page's scrolling —
+  // which the pad has to perform by hand, since the pen needs
+  // `touch-action:none` — is WITHHELD until a touch proves itself and
+  // TAKEN BACK if the pen turns up after it.
+  //
+  // Half of this guard is therefore negative by nature: the danger is not
+  // that it fails to scroll, it is that it scrolls when a hand was only
+  // resting — and the opposite danger, which is worse, that it refuses a
+  // real finger and kills scrolling on the page altogether.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const host = document.getElementById('host');
+    const sc = document.getElementById('scroller');
+    const faults = [], out = [];
+    const S = window.MyTermInkStore, P = window.MyTermInkPad;
+    if (!S || !P) { o.textContent = 'FAIL the two modules did not load'; return; }
+
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
+
+    const bin = new Map();
+    S.useShelf({ name: 'the guard’s own shelf',
+      get: async k => (bin.has(k) ? JSON.parse(bin.get(k)) : null),
+      put: async (k, v) => { bin.set(k, JSON.stringify(v)); return true; } });
+    await S.open('c-test', 'h-pen');
+
+    const card = document.createElement('div');
+    card.className = 'msheet msheet-card';
+    card.dataset.group = 'rules1'; card.dataset.at = '0';
+    card.innerHTML = '<div class="qcard">a question</div>';
+    host.append(card);
+    P.arm(host);
+    await P.mount();
+    const key = 'rules1#0';
+    const pad = host.querySelector('.inkDry');
+    const wait = ms => new Promise(r => setTimeout(r, ms || 0));
+
+    const send = (type, kind, x, y, opt) => {
+      const r = pad.getBoundingClientRect();
+      const ev = new PointerEvent(type, Object.assign({
+        bubbles: true, cancelable: true, pointerId: 1, pointerType: kind,
+        pressure: type === 'pointerup' ? 0 : 0.5,
+        clientX: r.left + x, clientY: r.top + y, isPrimary: true,
+        buttons: type === 'pointerup' ? 0 : 1, width: kind === 'touch' ? 20 : 1, height: 1
+      }, opt || {}));
+      (opt && opt.onDoc ? document : pad).dispatchEvent(ev);
+      return ev;
+    };
+    // A touch gesture, with the delay before the move under the guard's
+    // control: that delay is the whole of the palm policy
+    const touchDrag = async (opt) => {
+      const o2 = opt || {};
+      sc.scrollTop = 0;
+      await wait(0);
+      const id = o2.id || 5;
+      const w = o2.w || 20;
+      send('pointerdown', 'touch', 60, 60, { pointerId: id, width: w, height: w, onDoc: false });
+      if (o2.second) send('pointerdown', 'touch', 200, 60, { pointerId: id + 1, width: w, height: w });
+      await wait(o2.hold === undefined ? 320 : o2.hold);
+      send('pointermove', 'touch', 60, 60 - (o2.travel === undefined ? 40 : o2.travel), { pointerId: id, width: w, height: w });
+      send('pointermove', 'touch', 60, 60 - (o2.travel === undefined ? 60 : o2.travel), { pointerId: id, width: w, height: w });
+      const moved = sc.scrollTop;
+      if (!o2.keep) {
+        send('pointerup', 'touch', 60, 0, { pointerId: id, width: w, height: w });
+        if (o2.second) send('pointerup', 'touch', 200, 60, { pointerId: id + 1 });
+      }
+      return moved;
+    };
+    const penTick = () => send('pointerover', 'pen', 10, 10, { onDoc: true });
+
+    // ---- 1 · a touch on the pad draws nothing at all
+    send('pointerdown', 'touch', 50, 50, { pointerId: 9 });
+    send('pointermove', 'touch', 90, 90, { pointerId: 9 });
+    send('pointerup', 'touch', 90, 90, { pointerId: 9 });
+    await wait();
+    out.push('a finger drew ' + S.strokes(key).length + ' strokes');
+    if (S.strokes(key).length) faults.push('a finger drew on the pad');
+
+    // ---- 2 · a finger that stays and travels DOES scroll
+    // (and this is the one that matters most: refusing it would kill
+    //  scrolling over an area that fills the page)
+    await wait(1200);                       // past the pen's grace from test 1's events
+    const good = await touchDrag({});
+    out.push('a finger that stayed 320 ms and travelled 60 px scrolled ' + good + ' px');
+    if (!(good > 0)) faults.push('a real finger did not scroll the page — the page cannot be scrolled over a notebook');
+
+    // ---- 3 · too quick: under the 250 ms the platform itself waits
+    const quick = await touchDrag({ hold: 40 });
+    out.push('a finger that moved after 40 ms scrolled ' + quick + ' px');
+    if (quick !== 0) faults.push('a touch acted on before it proved itself: scrolled ' + quick + ' px');
+
+    // ---- 4 · a palm rests as long as you like and does not travel
+    const still = await touchDrag({ travel: 4 });
+    out.push('a hand that rested and travelled 4 px scrolled ' + still + ' px');
+    if (still !== 0) faults.push('a resting hand scrolled the page by ' + still + ' px');
+
+    // ---- 5 · and a contact the size of a palm is refused outright
+    const palm = await touchDrag({ w: 120 });
+    out.push('a contact 120 px wide scrolled ' + palm + ' px');
+    if (palm !== 0) faults.push('a palm-sized contact scrolled the page by ' + palm + ' px');
+
+    // ---- 6 · two contacts are not a scroll
+    const two = await touchDrag({ second: true });
+    out.push('two contacts scrolled ' + two + ' px');
+    if (two !== 0) faults.push('two contacts scrolled the page by ' + two + ' px');
+
+    // ---- 7 · while the pen is in range, no touch moves anything
+    penTick();
+    const withPen = await touchDrag({});
+    out.push('with the pen in range, a finger scrolled ' + withPen + ' px');
+    if (withPen !== 0) faults.push('the pen was in range and a touch still scrolled ' + withPen + ' px');
+
+    // ---- 8 · the scroll a palm has performed is GIVEN BACK when the pen
+    //          appears — the hard case, where the hand lands first
+    await wait(1200);
+    const done = await touchDrag({ keep: true });
+    if (!(done > 0)) faults.push('the fixture for the retraction did not scroll in the first place');
+    penTick();
+    await wait(10);
+    const back = sc.scrollTop;
+    out.push('a scroll of ' + done + ' px, then the pen arrives: ' + back + ' px');
+    if (back !== 0) faults.push('the scroll a palm caused was not given back when the pen arrived: ' + back + ' px');
+    send('pointerup', 'touch', 60, 0, { pointerId: 5 });
+
+    // ---- and the numbers in force are the measured ones
+    const t = P.tool();
+    out.push('in force: palm ' + t.palm + 'px · pressure ' + t.pressure.join('–'));
+    if (t.palm !== 90) faults.push('the palm threshold is ' + t.palm + ', not the measured 90');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

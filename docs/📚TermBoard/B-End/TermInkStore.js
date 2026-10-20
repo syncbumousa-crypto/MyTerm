@@ -323,6 +323,89 @@
     },
     openAt: key => at(key),
 
+    // ============================================================
+    // # 📑 🗓️  THE ATTEMPTS — "I GO BACK A TAB AND SOLVE IT AGAIN"
+    // # 🔤 JavaScript
+    // # 🎯 Seals the page in hand with the moment it was sealed, and
+    // #    opens an empty one after it
+    // # 🔗 EVERY SHEET KEEPS ITS OWN STROKES. The reader's own machine
+    // #    had to keep the open sheet's strokes in a field of their own
+    // #    and everything else in the list, because seven places in its
+    // #    code read that one field — and the rule that followed (a
+    // #    sheet is never in two places) had to be stated and guarded.
+    // #    Nothing here reads strokes except through the open sheet, so
+    // #    the list holds them all and there is no rule to break.
+    // #
+    // # 🔗 AND THE NUMBER IS A NUMBER. What is stored is `ts` in
+    // #    milliseconds and never the words: a stored date freezes the
+    // #    way it was written on the day it was written, so the day the
+    // #    reader asks for a different clock the old sheets keep the old
+    // #    shape and the strip reads in two formats at once. The words
+    // #    are built at the moment of showing, from the number.
+    // ============================================================
+    seal: key => {
+      const d = pads.get(key);
+      if (!d) return false;
+      const i = at(key);
+      // An empty page is not sealed and does not breed another: the
+      // reader would be told "saved" and handed a blank page, with
+      // nothing having been saved at all
+      if (!d.sh[i].s.length) return false;
+      d.sh[i].ts = Date.now();
+      d.sh[i].at = now();
+      d.sh.push({ id: newId(), by: me, ts: 0, at: now(), s: [] });
+      openSheet.set(key, d.sh.length - 1);
+      wrote(key);
+      return true;
+    },
+    go: (key, i) => {
+      const d = pads.get(key);
+      if (!d || !(i >= 0) || i >= d.sh.length) return false;
+      openSheet.set(key, i);
+      return true;
+    },
+    // Taken away for good, and said so when asked. Three conditions,
+    // and the first is the one that keeps the notebook usable at all
+    drop: (key, i) => {
+      const d = pads.get(key);
+      if (!d) return false;
+      if (d.sh.length < 2) return false;        // the last page is not deleted: the box needs one to write on
+      if (!(i >= 0) || i >= d.sh.length) return false;
+      d.sh.splice(i, 1);
+      const now_ = at(key);
+      openSheet.set(key, Math.min(now_ > i ? now_ - 1 : now_, d.sh.length - 1));
+      wrote(key);
+      return true;
+    },
+
+    // ============================================================
+    // THE NAME OF AN ATTEMPT — GREGORIAN AND TWELVE-HOUR, BY HAND
+    //
+    // Built from getFullYear/getMonth/getDate and a comparison, NEVER
+    // from a locale formatter. This is measured, not feared: on the
+    // reader's own machine the negative test of this very function put
+    // out `1448/4/19` for `2026/9/30` when the locale was allowed to
+    // choose a calendar, and `١٢:٠٠ ص` when it was allowed to choose
+    // the digits and the period. The two letters wanted are AM and PM,
+    // so they are written in the code and not borrowed.
+    //
+    // And the two hours that break the naive conversion are handled
+    // openly: `h % 12` alone makes midnight "0 AM" and noon "0 PM", so
+    // `|| 12` returns them to 12; and the period comes from the
+    // twenty-four-hour value, because after the conversion noon and
+    // midnight are the same number and neither can be told from the
+    // other.
+    // ============================================================
+    stamp: ts => {
+      if (!ts) return '';
+      const t = new Date(ts);
+      const h24 = t.getHours();
+      const h12 = (h24 % 12) || 12;
+      return t.getFullYear() + '/' + (t.getMonth() + 1) + '/' + t.getDate()
+        + ' ' + h12 + ':' + String(t.getMinutes()).padStart(2, '0')
+        + ' ' + (h24 < 12 ? 'AM' : 'PM');
+    },
+
     flush,
     owed: () => owed.size,
     watch: fn => { tellStatus = fn || (() => {}); },

@@ -1,0 +1,155 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · a part of many notebooks stays light</title>
+<style>
+  #host { width: 420px; --sheetScale: 1; }
+  .msheet { width: 400px; height: 420px; border: 1px solid #ccc; margin: 4px 0; }
+  .qcard { height: 50px; }
+</style>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermInkPad.js"></script>
+<script>
+  // A PART IS NOT ONE NOTEBOOK, IT IS SEVENTY-FOUR. They are all built
+  // the moment the part is opened, and a live canvas for each of them at
+  // screen density is hundreds of megabytes — so three things have to
+  // hold, and none of them can be read off the source:
+  //
+  //   1  A FULL REPAINT IS SPLIT. Measured on the machine this came
+  //      from, one pass over a part froze for 605 ms in eight stalls —
+  //      and the first cure was worse: clearing and refilling in front
+  //      of the reader, who said the drawings "reload in front of me".
+  //      So it is drawn in a buffer and swapped in once.
+  //   2  THE PIXELS ARE BOUNDED, and what goes is the oldest seen — but
+  //      it leaves a thumbnail, so coming back shows the page at once
+  //      instead of a blank.
+  //   3  REFITS ARE GATHERED. The sheet paper refits twice per draw and
+  //      a pinch would refit dozens of times a second; a canvas already
+  //      at the right size must cost nothing at all.
+  //
+  // AND NEITHER `requestAnimationFrame` NOR `IntersectionObserver` RUNS
+  // in the browser this is measured in, so what is measured is the
+  // DECISION the pad makes — a job queued, a canvas freed, a thumbnail
+  // kept — and never the browser's delivery of a frame.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const host = document.getElementById('host');
+    const faults = [], out = [];
+    const S = window.MyTermInkStore, P = window.MyTermInkPad;
+    if (!S || !P || !P.light) { o.textContent = 'FAIL the pad did not load, or its memory is not open to measurement'; return; }
+
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
+
+    const bin = new Map();
+    S.useShelf({ name: 'the guard’s own shelf',
+      get: async k => (bin.has(k) ? JSON.parse(bin.get(k)) : null),
+      put: async (k, v) => { bin.set(k, JSON.stringify(v)); return true; } });
+    await S.open('c-test', 'h-light');
+
+    // ---- a part of twenty cards, each with ink already on it
+    const N = 20;
+    for (let i = 0; i < N; i++) {
+      const d = document.createElement('div');
+      d.className = 'msheet msheet-card';
+      d.dataset.group = 'rules1'; d.dataset.at = String(i);
+      d.innerHTML = '<div class="qcard">a question</div>';
+      host.append(d);
+      const key = 'rules1#' + i;
+      await S.load(key);
+      // thirty strokes a page — past the point where a repaint is split
+      for (let s = 0; s < 30; s++) {
+        const p = [];
+        for (let k = 0; k < 12; k++) p.push(30 + s * 4 + k * 3, 40 + k * 5, 150);
+        S.add(key, { c: '#12141a', w: 5.5, p });
+      }
+    }
+    P.arm(host);
+    await P.mount();
+    const boxes = [...host.querySelectorAll('.inkBox')];
+    const pads = boxes.map(b => b.querySelector('.inkDry'));
+    out.push('notebooks: ' + boxes.length);
+    if (boxes.length !== N) faults.push('mount made ' + boxes.length + ' notebooks for ' + N + ' cards');
+
+    // ---- 1 · a full repaint of a written page is SPLIT, not done at once
+    const cv = pads[0];
+    P.light.fit(cv);
+    P.light.chunk(cv);
+    const queued = P.light.pending(cv);
+    out.push('a page of 30 strokes: ' + (queued ? 'queued in pieces' : 'DRAWN ALL AT ONCE'));
+    if (!queued) faults.push('a page of thirty strokes was drawn in one go — the frame it lands in freezes');
+    // and finishing it on demand completes it, for the pen coming down
+    P.light.flush(cv);
+    if (P.light.pending(cv)) faults.push('a flush left the repaint unfinished');
+    const inkOn = c => {
+      try {
+        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++;
+        return n;
+      } catch (e) { return -1; }
+    };
+    const after = inkOn(cv);
+    out.push('and after the flush: ' + after + ' px of ink');
+    if (!(after > 0)) faults.push('the page was flushed and nothing is drawn on it');
+
+    // ---- 2 · the pixels are bounded, and the oldest seen is what goes
+    pads.forEach(c => P.light.fit(c));
+    boxes.forEach(b => { b.dataset.near = '0'; });
+    pads.forEach((c, i) => P.light.touch(c));          // seen in order: 0 oldest
+    const before = P.light.px();
+    const freed = P.light.evict();
+    const left = P.light.px();
+    out.push('pixels: ' + (before / 1e6).toFixed(1) + 'M → ' + (left / 1e6).toFixed(1) + 'M by freeing ' + freed);
+    if (before <= P.light.budget) {
+      out.push('(the fixture never passed the budget of ' + (P.light.budget / 1e6) + 'M — nothing to evict)');
+    } else {
+      if (!freed) faults.push('the budget was passed and nothing was evicted');
+      if (left > P.light.budget) faults.push('after evicting, ' + (left / 1e6).toFixed(1) + 'M is still live');
+      if (pads[0].width) faults.push('the oldest-seen notebook was kept and a newer one went instead');
+      if (!pads[N - 1].width) faults.push('the newest notebook was evicted');
+      // ---- and what went left a picture behind, so the return is not blank
+      // Only if one actually went: with eviction broken there is nothing
+      // to bring back, and reaching into an empty result would turn a
+      // named fault into a stray exception
+      const gone = pads.find(c => !c.width);
+      if (!gone) out.push('nothing was evicted, so the return could not be measured');
+      else {
+        P.light.fit(gone);
+        const shown = P.light.thumb(gone);
+        out.push('an evicted notebook came back: ' + (shown ? 'as a picture at once' : 'BLANK'));
+        if (!shown) faults.push('an evicted notebook comes back blank — the reader sees it reload');
+      }
+    }
+
+    // ---- 3 · a notebook in sight is never evicted, however old
+    pads.forEach(c => P.light.fit(c));
+    boxes[0].dataset.near = '1';
+    P.light.touch(pads[0]);
+    pads.forEach((c, i) => { if (i) P.light.touch(c); });
+    P.light.touch(pads[0]);                             // oldest again by rank below
+    boxes.forEach((b, i) => { if (i) b.dataset.near = '0'; });
+    pads[0].dataset.seen = '0';                         // the very oldest
+    P.light.evict();
+    if (!pads[0].width) faults.push('a notebook in sight was evicted');
+
+    // ---- 4 · refits are gathered, and an unchanged size costs nothing
+    pads.forEach(c => P.light.fit(c));
+    const firstPass = P.refitNow();
+    const secondPass = P.refitNow();
+    out.push('refit: ' + firstPass + ' redrawn on the settling pass, ' + secondPass + ' after it');
+    if (secondPass !== 0) faults.push('a refit that changed no size redrew ' + secondPass + ' canvases');
+    const booked = P.refit();
+    out.push('a refit asked for during a frame returns ' + booked + ' (gathered)');
+    if (booked !== -1) faults.push('refits are not gathered: a pinch would run one pass per event');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

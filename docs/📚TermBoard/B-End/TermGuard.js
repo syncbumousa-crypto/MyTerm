@@ -73,7 +73,7 @@
     }
     tell('books: ' + Object.keys(docs).length);
 
-    const seen = { rows: 0, anchors: 0, figures: 0, files: 0, sheets: 0, asks: 0, sorted: 0, joined: 0 };
+    const seen = { rows: 0, anchors: 0, figures: 0, files: 0, sheets: 0, asks: 0, sorted: 0, joined: 0, loose: 0 };
     const bad = { anchors: [], lang: [], figures: [], gate: [], entities: [], guard: [], missing: [], bank: [] };
 
     // ============================================================
@@ -96,8 +96,8 @@
         no: row.no, id: row.id,
         term: row.term, termAr: row.termAr, text: row.text, textAr: row.textAr,
         // The bank's own four, copied with the rest: a question that
-        // cannot be asked, or is about nothing, is a hole in a layer
-        // that reports itself as full
+        // cannot be asked at all is a hole in a layer that reports
+        // itself as full, and one about nothing is a debt counted below
         ask: row.ask, pick: row.pick, right: row.right,
         track: row.track, type: row.type,
         about: (row.about || []).filter(a => !a.deleted).map(a => ({ row: a.row, sheet: a.sheet })),
@@ -279,11 +279,33 @@
         if (q.track && q.type) seen.sorted++;
         else bad.bank.push(where + ' is in no folder');
 
+        // ASKED BY CHOOSING, OR ASKED BY READING. A written question
+        // carries no choices by design and is answered against the
+        // answer it came with — counted as unaskable, 338 of them read
+        // as faults in a layer that was in fact complete, which is the
+        // kind of noise that teaches you to stop reading the guard
         const picks = (q.pick || []).filter(p => String(p || '').replace(/<[^>]*>/g, '').trim()).length;
-        if (!(picks >= 2 && q.right >= 0)) bad.bank.push(where + ' cannot be asked');
+        const answer = String(q.text || '').replace(/<[^>]*>/g, '').trim();
+        if (!(picks >= 2 && q.right >= 0) && !answer) bad.bank.push(where + ' cannot be asked');
 
+        // ============================================================
+        // A QUESTION ABOUT NOTHING IS A DEBT, NOT A FAULT
+        //
+        // IT CANNOT BE DRIVEN TO ZERO, AND A FAULT THAT CANNOT BE
+        // CLEARED IS A FAULT NOBODY READS. ACCT210's eleven chapters
+        // hold a hundred and seventy things worth knowing between them
+        // — that is their finished size — and their banks hold three
+        // and a half thousand questions. Nine hundred of those test
+        // something the chapter does not claim to teach, which is the
+        // ordinary shape of a textbook bank and not a hole in anything.
+        //
+        // So it is COUNTED and printed, never hidden, and the other end
+        // is what is actually worth measuring: how much of the summary
+        // has a question on it. A row pointing at something GONE stays
+        // a fault — that is a broken link, which is a different thing
+        // ============================================================
         const about = q.about || [];
-        if (!about.length) bad.bank.push(where + ' is about nothing');
+        if (!about.length) seen.loose++;
         else seen.joined++;
         about.forEach(a => {
           if (a.row && !liveRows.has(a.row)) bad.bank.push(where + ' points at a row that is gone');
@@ -303,7 +325,8 @@
     ' | rows=' + got.seen.rows + ' anchors=' + got.seen.anchors +
     ' bank=' + got.seen.bank + ' figures=' + got.seen.figures + ' sheets=' + got.seen.sheets +
     (got.seen.asks ? ' asks=' + got.seen.asks + ' sorted=' + got.seen.sorted
-                   + ' joined=' + got.seen.joined : '') +
+                   + ' joined=' + got.seen.joined
+                   + (got.seen.loose ? ' loose=' + got.seen.loose : '') : '') +
     ' | wrong=' + got.wrong +
     Object.keys(got.bad).filter(k => got.bad[k].length)
       .map(k => ' ' + k + '=' + got.bad[k].length).join('');

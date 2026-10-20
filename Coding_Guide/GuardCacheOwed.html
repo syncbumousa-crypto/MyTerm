@@ -1,0 +1,100 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · a cached copy Drive has not got</title>
+<pre id="o">pending</pre>
+<script>
+  // A COPY PUT ON THE SHELF AND NOT SENT IS A COPY ON ONE MACHINE ONLY.
+  // The shelf is keyed by the version the board records, so a cached
+  // copy that is RICHER than Drive answers every later open and looks
+  // present on every screen -- while Drive holds the poorer one and the
+  // store, being clean, never tries again. That is how 241 questions
+  // read as written for an hour with none of them in Drive.
+  //
+  // So: every cacheWrite outside the sending must be accompanied by the
+  // work being marked unsent. The sending is the one place allowed to
+  // cache without saying anything, because it caches what it just wrote.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const text = await (await fetch('../docs/%F0%9F%93%9ATermBoard/B-End/TermChapterStore.js?t=' + Date.now())).text();
+    const lines = text.split('\n');
+
+    // The sending's own stretch: from its head to the next declaration
+    // after it, so a renamed neighbour cannot quietly widen it
+    const spanOf = (from, stop) => {
+      const a = text.indexOf(from);
+      if (a < 0) return [-1, -1];
+      const b = text.indexOf(stop, a + from.length);
+      return [a, b < 0 ? text.length : b];
+    };
+    const [pushA, pushB] = spanOf('async function push()', '\n  const later =');
+    const [refA, refB] = spanOf('refresh: async () =>', '\n    shut:');
+
+    // Call sites only -- never the definition, or the check passes on a
+    // file in which nothing calls it at all
+    const sites = [];
+    const want = /cacheWrite\(/g;
+    for (let m; (m = want.exec(text));) {
+      const at = m.index;
+      if (/const cacheWrite\s*=\s*$/.test(text.slice(Math.max(0, at - 30), at))) continue;
+      sites.push(at);
+    }
+
+    const MARK = /wrote\(\)|contentDirty\s*=\s*true/;
+    const lineOf = at => text.slice(0, at).split('\n').length;
+    // A copy that is PURELY what Drive just handed over needs no mark:
+    // it is not news. One with anything of ours folded into it is, and
+    // the fold is the whole danger -- so what is asked is the REASON
+    // and not the line number: read from Drive just above, with nothing
+    // merged into it on the way to the shelf
+    const FRESH = at => {
+      const n = lineOf(at);
+      const before = lines.slice(Math.max(0, n - 16), n).join('\n');
+      return /readFile\(/.test(before) && !/merge/i.test(before);
+    };
+    const loose = [];
+    let sending = 0, fresh = 0;
+    sites.forEach(at => {
+      if (at >= pushA && at <= pushB) { sending++; return; }
+      if (FRESH(at)) { fresh++; return; }
+      const n = lineOf(at);                      // 1-based
+      const after = lines.slice(n - 1, n + 11).join('\n');
+      if (!MARK.test(after)) loose.push('line ' + n);
+    });
+
+    // And the one that cost the questions, named: the fold reads Drive,
+    // keeps what Drive has not got, and must say so
+    const refOwes = refA >= 0 && /cacheWrite\(/.test(text.slice(refA, refB)) && MARK.test(text.slice(refA, refB));
+
+    // THE OTHER WAY A WRITE BECOMES A DELETION. Opening another chapter
+    // sends what is unsent first -- and used to clear the two marks
+    // whatever came of it, so a REFUSED write was discarded along with
+    // the chapter it belonged to. Between that send and the new
+    // chapter's files there must be a refusal, and no blanket clearing
+    const [leaveA, leaveB] = spanOf('await push().catch', 'await settle(');
+    const leaving = leaveA < 0 ? '' : text.slice(leaveA, leaveB);
+    const refuses = /if \(contentDirty \|\| stateDirty\) return/.test(leaving);
+    const blanket = /contentDirty = stateDirty = false/.test(leaving);
+
+    const faults = [];
+    if (leaveA < 0) faults.push('the handover to the next chapter was not found');
+    if (leaveA >= 0 && !refuses) faults.push('a refused write is let go of when the chapter changes');
+    if (blanket) faults.push('the handover clears the unsent marks whatever came of the write');
+    if (sites.length < 2) faults.push('the file was not read: ' + sites.length + ' call sites');
+    if (pushA < 0) faults.push('the sending was not found');
+    if (refA < 0) faults.push('the fold was not found');
+    if (sending !== 1) faults.push('the sending caches ' + sending + ' times, expected 1');
+    if (sites.length - sending - fresh < 1) faults.push('no fold was weighed: every site excused');
+    if (loose.length) faults.push('cached without being marked unsent: ' + loose.join(', '));
+    if (refA >= 0 && !refOwes) faults.push('the fold caches a copy it never marks unsent');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK')
+      + '\ncall sites: ' + sites.length + ' (sending ' + sending + ', just read ' + fresh
+      + ', weighed ' + (sites.length - sending - fresh) + ')'
+      + '\nunmarked:   ' + loose.length
+      + '\nfold marks: ' + (refOwes ? 'yes' : 'no');
+  })();
+</script>

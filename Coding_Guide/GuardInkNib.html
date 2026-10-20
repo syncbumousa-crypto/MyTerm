@@ -1,0 +1,168 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · the nib, and what it must still be able to do</title>
+<pre id="o">pending</pre>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermInkPad.js"></script>
+<script>
+  // THREE THINGS ABOUT THIS PEN CANNOT BE READ OFF ITS SOURCE, AND ALL
+  // THREE ARE WHY IT WAS CHOSEN OUT OF EIGHTEEN:
+  //
+  //   1  PRESSURE — how much of the width a hand actually commands, and
+  //      whether a light touch really comes out a hair. An older curve
+  //      was sensitive where nobody writes and dull where everybody
+  //      does: 2.9× of range, 73% of it spent on the lightest half.
+  //   2  DIRECTION — the whole promise of a flat nib. A stroke across it
+  //      must lay down visibly more ink than one along it, and the one
+  //      ALONG it must not break into beads, which it did on the real
+  //      screen and was reported by eye.
+  //   3  THE LIVE FRAME — whether writing gets heavier the longer the
+  //      line. Redrawing the stroke each frame makes the total cost
+  //      quadratic, and that is felt only after a few words.
+  //
+  // So the engine is RUN here and the ink is counted. The numbers below
+  // are the same gates the reader's own machine holds its pen to.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (() => {
+    const o = document.getElementById('o');
+    const P = window.MyTermInkPad;
+    if (!P || !P.engine) { o.textContent = 'FAIL the pad did not load, or its engine is not open to measurement'; return; }
+    const E = P.engine, SC = E.consts.SC, W = E.consts.WIDTHS[1];
+    const faults = [], out = [];
+
+    const sheet = (w, h) => {
+      const cv = document.createElement('canvas');
+      cv.width = w * SC; cv.height = h * SC;
+      const c = cv.getContext('2d');
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      return { cv, c };
+    };
+    const inked = cv => {
+      const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+      let n = 0;
+      for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++;
+      return n;
+    };
+    // A stroke of N points along one direction, every point the same
+    // pressure and the same distance from the last — so that two
+    // directions can be compared with nothing else differing
+    const runTo = (x0, y0, dx, dy, n, pr) => {
+      const p = [];
+      for (let i = 0; i < n; i++) p.push(Math.round(x0 + dx * i), Math.round(y0 + dy * i), pr);
+      return { c: '#000000', w: W, p };
+    };
+
+    // ---- 1 · pressure ------------------------------------------------
+    const at = pr => E.nominal(W, pr);
+    const lo = at(0.02), hi = at(1), mid = at(0.5);
+    const range = hi / Math.max(0.0001, lo);
+    const hairShare = lo / hi;
+    const upperHalf = (hi - mid) / Math.max(0.0001, hi - lo);
+    out.push('pressure: range ' + range.toFixed(1) + '× · lightest ' + (hairShare * 100).toFixed(0)
+             + '% of the thickest · the upper half carries ' + (upperHalf * 100).toFixed(0) + '%');
+    if (!(range >= 4.5)) faults.push('the width range is ' + range.toFixed(1) + '×, under 4.5 — the pen is dull');
+    if (!(hairShare <= 0.12)) faults.push('the lightest touch is ' + (hairShare * 100).toFixed(0) + '% of the thickest, over 12% — there is no hair line');
+    if (!(upperHalf >= 0.22)) faults.push('the upper half of the pressure carries only ' + (upperHalf * 100).toFixed(0) + '% — it is flat where the hand writes');
+
+    // ---- 2 · direction, and no beads along the nib -------------------
+    // The nib is cut at 45°, so ACROSS it is 135° and ALONG it is 45°.
+    // Measured at TWO hand speeds, and only one of them is a gate:
+    //
+    //   ORDINARY — 2.2 store pixels between reports, which is a normal
+    //   writing pace at 240 reports a second. This is where the nib's
+    //   promise has to hold, and it is the gate.
+    //
+    //   FULL SPEED — 6.7, the top speed the engine knows (INK_VSPAN
+    //   itself). Reported, never failed on. In the direction ALONG the
+    //   nib the swept quadrilateral has NO AREA, so the gap is filled
+    //   with whole nib prints; spaced far apart those lay down a band as
+    //   wide as the nib is long and the hair thickens — measured 0.89×
+    //   where an ordinary pace gives 1.42×. That is the engine's own
+    //   declared trade: continuity bought with hairline, made because
+    //   the beads had been SEEN on the screen and reported. A guard that
+    //   failed on it would be demanding the fault back.
+    const strokeAt = (gap, pr, up) => runTo(30, up ? 170 : 30, gap, up ? -gap : gap, 40, pr);
+    const inkOf = st => { const S2 = sheet(200, 200); E.drawStroke(S2.c, st); return { n: inked(S2.cv), cv: S2.cv }; };
+    const ord = [inkOf(strokeAt(2.2, 160, true)).n, inkOf(strokeAt(2.2, 160, false)).n];
+    const fast = [inkOf(strokeAt(6.7, 160, true)).n, inkOf(strokeAt(6.7, 160, false)).n];
+    const ratio = ord[0] / Math.max(1, ord[1]);
+    out.push('direction at an ordinary pace: across ' + ord[0] + ' px · along ' + ord[1]
+             + ' px · ratio ' + ratio.toFixed(2) + '×');
+    out.push('direction at full speed (reported, not a gate): ratio '
+             + (fast[0] / Math.max(1, fast[1])).toFixed(2) + '×');
+    if (!(ratio >= 1.25)) faults.push('the width does not follow the direction: ratio ' + ratio.toFixed(2) + '×, under 1.25');
+
+    // and the hair must still be CONTINUOUS — measured where it is
+    // thinnest and most spread out, which is a LIGHT touch at full speed
+    // along the nib. Walked on the SMOOTHED path and not the raw points:
+    // the smoothing moves the line, and a gap measured off the raw path
+    // is a gap that is not there
+    const hair = strokeAt(6.7, 30, false);
+    const H = inkOf(hair);
+    const a = E.prep(hair.p);
+    const bd = H.cv.getContext('2d').getImageData(0, 0, H.cv.width, H.cv.height).data;
+    const hasInk = (x, y) => {
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const px = Math.round(x) + dx, py = Math.round(y) + dy;
+        if (px < 0 || py < 0 || px >= H.cv.width || py >= H.cv.height) continue;
+        if (bd[(py * H.cv.width + px) * 4 + 3] > 8) return true;
+      }
+      return false;
+    };
+    // SAMPLED BETWEEN THE POINTS, NOT ON THEM. A print is laid at every
+    // point by construction, so a check that looks where the points are
+    // can never find a gap — it reported zero breaks even with the stamp
+    // step multiplied by eight, which is the very fault it exists for.
+    // The gaps live in the middle of a segment, so that is where it looks
+    let breaks = 0, looked = 0;
+    for (let i = 1; i < a.length; i++) {
+      for (const u of [0.25, 0.5, 0.75]) {
+        looked++;
+        const x = a[i - 1].x + (a[i].x - a[i - 1].x) * u;
+        const y = a[i - 1].y + (a[i].y - a[i - 1].y) * u;
+        if (!hasInk(x, y)) breaks++;
+      }
+    }
+    out.push('breaks in a hair line along the nib: ' + breaks + ' of ' + looked + ' places looked at between the points');
+    if (breaks) faults.push('the stroke along the nib is broken in ' + breaks + ' places');
+
+    // ---- 3 · a deliberate dot leaves a mark --------------------------
+    const D = sheet(60, 60);
+    E.drawStroke(D.c, { c: '#000000', w: W, p: [60, 60, 200] });
+    const dot = inked(D.cv);
+    out.push('a single touch: ' + dot + ' px');
+    if (!(dot >= 40)) faults.push('a deliberate touch leaves ' + dot + ' pixels — under forty it is not seen');
+
+    // ---- 4 · the live frame does not grow with the stroke ------------
+    // Counted in FILLS, which is the work itself: reading pixels would
+    // measure the result and say nothing about what it cost
+    const counted = (long) => {
+      const S = sheet(900, 900);
+      let fills = 0;
+      const spy = { fillStyle: '#000',
+        beginPath: () => S.c.beginPath(), closePath: () => S.c.closePath(),
+        moveTo: (x, y) => S.c.moveTo(x, y), lineTo: (x, y) => S.c.lineTo(x, y),
+        arc: (...v) => S.c.arc(...v),
+        fill: () => { fills++; S.c.fill(); } };
+      const st = runTo(20, 450, 2.2, 0.4, long, 150);
+      let pts = E.prep(st.p), done = 0, carry = 0;
+      carry = E.paintRun(spy, st, pts, 0, 0, carry);   // the stroke so far
+      done = pts.length;
+      fills = 0;                                       // and now one frame's worth
+      for (let i = 0; i < 8; i++) st.p.push(Math.round(20 + 2.2 * (long + i)), Math.round(450 + 0.4 * (long + i)), 150);
+      pts = E.prep(st.p, pts);
+      E.paintRun(spy, st, pts, done, 0, carry);
+      return fills;
+    };
+    const early = counted(30), late = counted(300);
+    out.push('one live frame: ' + early + ' fills after 30 points, ' + late + ' after 300');
+    if (!(late <= early * 2 + 8)) {
+      faults.push('the frame grows with the stroke: ' + early + ' then ' + late + ' fills — the cost is quadratic in the writing');
+    }
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })();
+</script>

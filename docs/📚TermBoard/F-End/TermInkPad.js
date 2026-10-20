@@ -375,10 +375,249 @@
 
   const repaint = cv => {
     if (!cv.width) return;
+    cancelJob(cv);
     const box = cv.closest('.inkBox');
     const c = ctxOf(cv);
     c.clearRect(0, 0, cv.width * SC, cv.height * SC);
     store().strokes(box.dataset.key).forEach(st => drawStroke(c, st));
+    delete cv.dataset.soft;
+    thumbDrop(cv);              // the content changed: the old thumbnail is now a lie
+  };
+
+  // ============================================================
+  // # 🧩 ⏱️  A FULL REPAINT, IN PIECES — AND NOBODY WATCHES IT DRAW
+  // # 🔤 JavaScript
+  // # 🎯 Draws a notebook's strokes in bites of six milliseconds, in a
+  // #    buffer nobody can see, and swaps it in once
+  // # 🔗 MEASURED ON THE MACHINE THIS CAME FROM: one pass over a part
+  // #    cost 19 · 43 · 49 · 90 · 95 · 99 · 104 · 106 ms — SIX HUNDRED
+  // #    MILLISECONDS of freeze in eight separate stalls, and it
+  // #    happened again on every scroll up and down, because leaving a
+  // #    notebook used to empty its canvas and coming back rebuilt the
+  // #    picture from the strokes.
+  // #
+  // # 🔗 AND THE FIRST ATTEMPT AT THE CURE WAS WORSE THAN THE DISEASE:
+  // #    clearing the canvas and filling it over several frames made the
+  // #    page blanch and redraw itself in front of the reader, who
+  // #    reported it in those words. A stall is felt and not seen; that
+  // #    was seen. So the bites are drawn into a BUFFER and the visible
+  // #    canvas is touched exactly once, at the end — from one complete
+  // #    picture to another, with no half-drawn state ever shown.
+  // #
+  // # 🔗 One job at a time: two buffers at once would double the memory
+  // #    this whole mechanism exists to save, and a queue means the
+  // #    notebook you are actually looking at finishes first.
+  // ============================================================
+  const BUDGET_MS = 6;
+  let queue = [], active = null;
+
+  const freeJob = job => {
+    if (job.raf) cancelAnimationFrame(job.raf);
+    job.raf = 0;
+    if (job.buf) { job.buf.width = 0; job.buf.height = 0; job.buf = null; }
+    if (active === job) active = null;
+  };
+  const cancelJob = cv => {
+    const j = cv.__job;
+    if (!j) return;
+    cv.__job = null;
+    const k = queue.indexOf(j);
+    if (k >= 0) queue.splice(k, 1);
+    freeJob(j);
+    pump();
+  };
+  // Copied with a NEUTRAL transform and not with the drawing one: that
+  // one is multiplied by the density, and a copy made through it comes
+  // out at the wrong size
+  const blit = (cv, buf) => {
+    const c = raw(cv);
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, cv.width, cv.height);
+    c.drawImage(buf, 0, 0);
+  };
+  const jobDone = job => {
+    const cv = job.cv;
+    if (cv.__job === job && cv.width && job.buf) blit(cv, job.buf);
+    if (cv.__job === job) cv.__job = null;
+    delete cv.dataset.soft;
+    freeJob(job);
+    pump();
+  };
+  function pump() {
+    if (active || !queue.length) return;
+    const job = queue.shift();
+    const cv = job.cv;
+    if (cv.__job !== job || !cv.width) { freeJob(job); return pump(); }
+    try {
+      job.buf = document.createElement('canvas');
+      job.buf.width = cv.width; job.buf.height = cv.height;
+      job.buf.dataset.ratio = cv.dataset.ratio;
+      job.ctx = ctxOf(job.buf);
+    } catch (e) {                    // no buffer to be had: draw straight away
+      const c = ctxOf(cv);
+      c.clearRect(0, 0, cv.width * SC, cv.height * SC);
+      job.list.forEach(st => drawStroke(c, st));
+      cv.__job = null; freeJob(job); return pump();
+    }
+    active = job;
+    job.raf = requestAnimationFrame(job.step);
+  }
+  const repaintChunked = cv => {
+    if (!cv.width) return;
+    cancelJob(cv);
+    const list = store().strokes(cv.closest('.inkBox').dataset.key);
+    // With no frames to be had, or little to draw, it is drawn at once:
+    // correctness first, and the splitting is an improvement and not a
+    // condition for the ink to appear
+    if (typeof requestAnimationFrame !== 'function' || list.length < 24) return repaint(cv);
+    const job = { cv, i: 0, raf: 0, list, buf: null, ctx: null };
+    job.step = () => {
+      job.raf = 0;
+      if (cv.__job !== job || !cv.width) { freeJob(job); return pump(); }
+      const t0 = performance.now();
+      while (job.i < job.list.length) {
+        drawStroke(job.ctx, job.list[job.i++]);
+        if (performance.now() - t0 >= BUDGET_MS) break;
+      }
+      if (job.i < job.list.length) job.raf = requestAnimationFrame(job.step);
+      else jobDone(job);
+    };
+    cv.__job = job;
+    queue.push(job);
+    pump();
+  };
+  // Finished NOW: called before anything that assumes the page is whole
+  // — the pen coming down, and the guards. Without it a stroke is
+  // written over a page that is still half drawn
+  const repaintFlush = cv => {
+    const j = cv && cv.__job;
+    if (!j) return;
+    if (j.raf) { cancelAnimationFrame(j.raf); j.raf = 0; }
+    if (!j.ctx) {                    // its turn in the queue had not come
+      const k = queue.indexOf(j);
+      if (k >= 0) queue.splice(k, 1);
+      cv.__job = null; freeJob(j);
+      return repaint(cv);
+    }
+    while (j.i < j.list.length) drawStroke(j.ctx, j.list[j.i++]);
+    jobDone(j);
+  };
+
+  // ============================================================
+  // # 🧠 🗃️  THE PIXELS ARE THE MEMORY, AND THEY ARE NOT THROWN AWAY
+  // # 🔤 JavaScript
+  // # 🎯 Keeps the drawn canvases of notebooks that have scrolled off,
+  // #    within a budget, and leaves a small picture behind when one
+  // #    has to go
+  // # 🔗 EMPTYING A CANVAS ON THE WAY OUT MEANS REBUILDING THE PICTURE
+  // #    ON THE WAY BACK — 419 strokes in a hundred milliseconds, on
+  // #    every scroll past, for a notebook in which nothing changed.
+  // #    The reader put it exactly: "it makes no sense that it is
+  // #    summoned again with every zoom and every scroll up and down."
+  // #    So the canvas IS the memory: it keeps its content after it
+  // #    leaves, and coming back costs nothing at all.
+  // #
+  // # 🔗 Bounded in PIXELS and not in canvases: notebooks differ in
+  // #    height, and a fixed count reserves twice what it thinks. What
+  // #    is over the budget is evicted OLDEST-SEEN first, which is the
+  // #    one least likely to be wanted next — and it leaves a third-size
+  // #    thumbnail behind (a ninth of the memory), so a return shows the
+  // #    page at once, softly, and is sharpened in the background.
+  // ============================================================
+  const CACHE_PX = 12e6;
+  const THUMB = 1 / 3;
+  let seenTick = 0;
+  const touch = cv => { cv.dataset.seen = String(++seenTick); };
+
+  const thumbDrop = cv => {
+    const box = cv && cv.closest('.inkBox');
+    if (!box || !box.__thumb) return;
+    box.__thumb.width = 0; box.__thumb.height = 0;
+    box.__thumb = null;
+  };
+  const thumbKeep = cv => {
+    if (!cv.width || !cv.height) return;
+    const box = cv.closest('.inkBox');
+    if (!box) return;
+    try {
+      const t = box.__thumb || document.createElement('canvas');
+      t.width = Math.max(1, Math.round(cv.width * THUMB));
+      t.height = Math.max(1, Math.round(cv.height * THUMB));
+      const c = t.getContext('2d');
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.clearRect(0, 0, t.width, t.height);
+      c.drawImage(cv, 0, 0, t.width, t.height);
+      box.__thumb = t;
+    } catch (e) { /* without one, the old behaviour: drawn from the strokes */ }
+  };
+  const thumbShow = cv => {
+    const box = cv.closest('.inkBox');
+    const t = box && box.__thumb;
+    if (!t || !t.width || !cv.width) return false;
+    try {
+      const c = raw(cv);
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.clearRect(0, 0, cv.width, cv.height);
+      c.drawImage(t, 0, 0, cv.width, cv.height);
+      cv.dataset.soft = '1';
+      return true;
+    } catch (e) { return false; }
+  };
+  const freeCanvas = cv => {
+    thumbKeep(cv);                   // the picture is taken BEFORE the store is emptied
+    cancelJob(cv);
+    cv.width = 0; cv.height = 0;
+    const wet = wetOf(cv.closest('.inkBox'));
+    if (wet) { wet.width = 0; wet.height = 0; }
+  };
+  const livePx = () => {
+    let px = 0;
+    if (where) where.querySelectorAll('.inkDry').forEach(c => { px += c.width * c.height; });
+    return px;
+  };
+  const evict = () => {
+    let px = livePx();
+    if (px <= CACHE_PX) return 0;
+    const cold = [];
+    if (where) where.querySelectorAll('.inkBox').forEach(b => {
+      const cv = b.querySelector('.inkDry');
+      if (!cv || !cv.width) return;
+      if (draw && draw.cv === cv) return;            // never the one under the pen
+      if (b.dataset.near === '1') return;            // nor one in sight
+      cold.push(cv);
+    });
+    cold.sort((a, b) => (+a.dataset.seen || 0) - (+b.dataset.seen || 0));
+    let n = 0;
+    for (let i = 0; i < cold.length && px > CACHE_PX; i++) {
+      px -= cold[i].width * cold[i].height;
+      freeCanvas(cold[i]);
+      n++;
+    }
+    return n;
+  };
+
+  // Switched on and off by how near the screen it is. A part builds all
+  // of its pages at once — seventy-four in one course — and a live
+  // canvas for each is hundreds of megabytes
+  let obs = null, refitSoon = 0;
+  const watch = () => {
+    if (obs || typeof IntersectionObserver !== 'function' || !where) return;
+    obs = new IntersectionObserver(es => {
+      es.forEach(e => {
+        const cv = e.target.querySelector('.inkDry');
+        if (!cv) return;
+        e.target.dataset.near = e.isIntersecting ? '1' : '0';
+        if (!e.isIntersecting) return;
+        touch(cv);
+        // 2 = its store is already what it should be and its ink is
+        // still on it: NO WORK AT ALL. That is the whole saving
+        if (fit(cv) === 1) {
+          thumbShow(cv);             // a picture in its place at once, then sharpened
+          repaintChunked(cv);
+        }
+      });
+      evict();                       // once after the batch, not once per entry
+    }, { root: where, rootMargin: '150% 0px' });
   };
 
   const wetOf = box => box.querySelector('.inkWet');
@@ -552,6 +791,8 @@
     if (draw) return;                                // one stroke is not cut by another
     ev.preventDefault();
     if (!cv.width && fit(cv)) repaint(cv);
+    repaintFlush(cv);        // never a stroke written over a page still being drawn
+    touch(cv);
     try { cv.setPointerCapture(ev.pointerId); } catch {}
 
     const p = spot(cv, ev);
@@ -710,7 +951,11 @@
 
   window.MyTermInkPad = {
     // Told where the sheets are drawn, once
-    arm: spotEl => { where = typeof spotEl === 'string' ? document.getElementById(spotEl) : spotEl; return Boolean(where); },
+    arm: spotEl => {
+      where = typeof spotEl === 'string' ? document.getElementById(spotEl) : spotEl;
+      if (where) watch();
+      return Boolean(where);
+    },
 
     // ============================================================
     // CALLED AFTER EVERY DRAW, AND ITS COST IS ONE PASS
@@ -733,20 +978,74 @@
         await store().load(box.dataset.key);
         syncTabs(box);
         const cv = box.querySelector('.inkDry');
-        if (fit(cv) === 1) repaint(cv);
+        // Switched on by nearness where the browser will tell us, and
+        // straight away where it will not: a part of seventy-four pages
+        // must not hold seventy-four live canvases, but a page with no
+        // ink shown at all is worse than one that costs memory
+        if (obs) obs.observe(box);
+        else if (fit(cv) === 1) repaint(cv);
       }
       tools();
+      if (obs) evict();
       return made;
     },
 
     // The page is scaled, not re-laid-out, so the stores need a new
     // density and nothing else. `fit` says whether it actually changed
     // anything, and a canvas whose store is already right is not touched
+    // ============================================================
+    // GATHERED INTO ONE PASS PER FRAME
+    //
+    // The sheet paper refits twice for every draw (at once, and again on
+    // the next frame once the scrollbar has taken its width), the window
+    // refits on resize, and a pinch would refit on every wheel event —
+    // dozens a second. Each pass asks every canvas for its size, and a
+    // size that really changed costs a repaint. So the calls are
+    // gathered: many in one frame become ONE, and `fit` returning 2 for
+    // a canvas already at the right size means that one costs nothing
+    // ============================================================
     refit: () => {
       if (!where) return 0;
+      if (typeof requestAnimationFrame !== 'function') return window.MyTermInkPad.refitNow();
+      if (refitSoon) return -1;                  // already booked for this frame
+      refitSoon = requestAnimationFrame(() => { refitSoon = 0; window.MyTermInkPad.refitNow(); });
+      return -1;
+    },
+
+    // The pass itself — called by the gathering above, and directly by
+    // the guards, which have no frames to wait for
+    refitNow: () => {
+      if (!where) return 0;
       let drawn = 0;
-      where.querySelectorAll('.inkDry').forEach(cv => { if (fit(cv) === 1) { repaint(cv); drawn++; } });
+      where.querySelectorAll('.inkDry').forEach(cv => {
+        const was = fit(cv);
+        if (was !== 1) return;
+        // A canvas whose store has just been resized has been emptied by
+        // that very act, so its ink has to come back — softly first if
+        // there is a thumbnail to show
+        thumbShow(cv);
+        repaintChunked(cv);
+        drawn++;
+      });
+      if (drawn) evict();
       return drawn;
+    },
+
+    // ============================================================
+    // THE MEMORY MACHINERY, OPENED FOR MEASUREMENT
+    //
+    // Neither `requestAnimationFrame` nor `IntersectionObserver` runs in
+    // the browser the guards are run in, so a guard cannot wait for a
+    // frame or for a page to scroll into view. What it CAN do is ask the
+    // pad to make the same decisions by hand and then count them: a job
+    // queued, a canvas freed, a thumbnail kept, a size unchanged. That
+    // is the work itself, and it is what regresses
+    // ============================================================
+    light: {
+      fit, chunk: repaintChunked, flush: repaintFlush,
+      pending: cv => Boolean(cv && cv.__job),
+      touch, px: livePx, evict, thumb: thumbShow, keepThumb: thumbKeep,
+      budget: CACHE_PX
     },
 
     // For the guard and for anything that must know the pen is down

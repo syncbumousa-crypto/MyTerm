@@ -91,8 +91,20 @@
     }
     await S.open('c-test', 'h-test');
     P.arm(host);
+    // ★ `IntersectionObserver` NEVER FIRES IN THIS RUNNER EITHER, and
+    //   the pad now leaves the first drawing to it: a notebook's canvas
+    //   is brought to life when it comes near the screen, which is what
+    //   keeps a part of seventy-four pages affordable. So the guard
+    //   brings them to life ITSELF — fit, draw, finish — exactly where
+    //   the observer would have, and measures from there. Without this
+    //   the page reports "the ink was not drawn again" and the fault is
+    //   the runner's, not the code's
+    const wake = () => host.querySelectorAll('.inkDry').forEach(cv => {
+      if (P.light.fit(cv) !== 0) { P.light.chunk(cv); P.light.flush(cv); }
+    });
     build();
     let made = await P.mount();
+    wake();
     out.push('boxes made: ' + made + ' · on law sheets: ' + host.querySelectorAll('.msheet-law .inkBox').length);
     if (made !== 2) faults.push('mount made ' + made + ' notebooks for two cards');
     if (host.querySelectorAll('.msheet-law .inkBox').length) faults.push('a law page was given a notebook — there is nothing on it to work');
@@ -156,6 +168,7 @@
     // ---- 1 · the sheets are rebuilt under it
     build();
     const after = await P.mount();
+    wake();
     const pad2 = host.querySelector('.inkBox[data-key="' + key + '"] .inkDry');
     await wait();
     const back = pad2 ? inked(pad2) : 0;
@@ -186,8 +199,8 @@
     //
     // What must be free is EVERY REFIT AFTER THAT, because that is the
     // one that happens while the reader pinches and scrolls
-    const settle = P.refit();
-    const again = P.refit();
+    const settle = P.refitNow();
+    const again = P.refitNow();
     out.push('refit redrew: ' + settle + ' on the settling pass, ' + again + ' after that');
     if (again !== 0) faults.push('a refit that changed no size still redrew ' + again + ' canvases');
 

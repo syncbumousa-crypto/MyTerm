@@ -218,7 +218,26 @@
 
   const headHtml = () => '<tr>' + LANGS[lang].head.map(w => `<th>${w}</th>`).join('') + '</tr>';
 
-  const rowHtml = (row, n) => {
+  // ============================================================
+  // # 🟩 🟥  WHAT THE BANK SAID, BESIDE THE THING IT ASKED ABOUT
+  // # 🔤 JavaScript
+  // # 🎯 A small square before the tick: green if the last bank
+  // #    question about this row was answered right, red if wrong,
+  // #    nothing at all if the bank has never asked about it
+  // # 🔗 THE LAST ANSWER AND NOT A TALLY. A row asked four times and
+  // #    missed once is not three quarters known — what matters is
+  // #    whether you have it NOW, so the newest answer wins, which is
+  // #    what the store's own reading does. And a row the bank has
+  // #    never reached wears nothing: an empty square would read as a
+  // #    question answered and not yet marked
+  // ============================================================
+  const bankHtml = was => (was === 'ok' || was === 'no'
+    ? `<span class="cbank ${was}" title="${was === 'ok'
+        ? 'The bank asked about this and you had it right'
+        : 'The bank asked about this and you had it wrong'}"></span>`
+    : '');
+
+  const rowHtml = (row, n, said) => {
     const on = store().isOn(row.id);
     const cls = [row.lead ? 'clead' : '', on ? 'done' : ''].filter(Boolean).join(' ');
     // A gear and not a cross. A cross is one thing only, and the most
@@ -259,7 +278,8 @@
       + ` type="button" data-note="${row.id}" title="Your own note on this row">✎</button></td>`
       + cellOf(row, 'term')
       + cellOf(row, 'text')
-      + `<td class="cbox"><button class="cbx${on ? ' on' : ''}" type="button" data-tick="${row.id}"`
+      + `<td class="cbox">${bankHtml(said && said.get(row.id))}`
+      + `<button class="cbx${on ? ' on' : ''}" type="button" data-tick="${row.id}"`
       + ` title="${on ? 'Learnt' : 'Not learnt yet'}"></button></td>`
       + '</tr>';
   };
@@ -282,6 +302,10 @@
   // #    for. So a sheet carries one header or none — never two
   // ============================================================
   const pageHtml = (list, carry) => {
+    // Read once for the whole sheet. The reading walks every question in
+    // the chapter, and asking it again for each of fifty rows would be
+    // fifty walks for an answer that cannot change between them
+    const said = store().saidAll ? store().saidAll() : new Map();
     let out = '', i = 0, first = true;
     while (i < list.length) {
       const cid = list[i].cid;
@@ -290,7 +314,7 @@
       const cont = first && carry !== null && cid === carry;
       const wears = first && !cont;
       out += `<table class="ctbl${cont ? ' cont' : ''}">${COLS}${wears ? headHtml() : ''}`
-        + run.map(u => rowHtml(u.row, u.n)).join('') + '</table>';
+        + run.map(u => rowHtml(u.row, u.n, said)).join('') + '</table>';
       first = false;
     }
     return out;

@@ -287,10 +287,17 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
                background: #fff; cursor: pointer; padding: 0; }
 .msheet-tick.on { background: #2f7d4f; border-color: #2f7d4f; }
 
-/* What the bank said about this sheet, under the tick and smaller than
-   it: the tick is something the reader presses and this is something
-   they are told. A law page has no tick, so the square sits where the
-   tick would have been and nothing moves */
+/* The bank's last word about this card, ON the card's own box — the
+   same rule as the rows: the colour is the bank's and the tick drawn
+   inside it is the reader's. The green of a tick and the green of a
+   right answer are deliberately the same green; they are not in
+   conflict, and the one worth seeing from across the page is the red */
+.msheet-tick.ok { background: #3f9a52; border-color: #2f7d4f; }
+.msheet-tick.no { background: #c0392b; border-color: #96281b; }
+
+/* A LAW PAGE HAS NO TICK — nothing on it is "done", it is the page you
+   work from — so the one thing that can be said about it gets a square
+   of its own, standing where a card's tick would be */
 .msheet-bank { position: absolute; z-index: 3;
                top: calc(38px / var(--sheetScale, 1));
                inset-inline-end: calc(13px / var(--sheetScale, 1));

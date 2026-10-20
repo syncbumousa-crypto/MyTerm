@@ -2271,11 +2271,13 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
    stands in. It hangs off the number cell, so that cell must not clip */
 .ctbl td.cno { overflow: visible; }
 
-/* Two signals live on one box and neither is allowed to overwrite the
-   other: the tick is what the reader said, and later the border will
-   be what a test said. Their disagreement — "I know this" against
-   "I was asked and got it wrong" — is the most useful thing on the
-   page, so it is drawn as two marks and not reduced to one */
+/* TWO SIGNALS, ONE BOX. The tick inside is what the reader said; the
+   COLOUR is the bank's last word. Their disagreement — "I know this"
+   against "I was asked and got it wrong" — is the most useful thing on
+   the page, and it survives on one box because the two are drawn in
+   different parts of it. It was two separate marks at first, and the
+   reader asked for this instead: the box beside an item is where the
+   eye already goes, so that is where the answer belongs */
 .cbx {
   display: inline-block;
   width: 16px;
@@ -2291,20 +2293,17 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
 
 .cbx.on { background: #cccccc; border-color: #888888; }
 
-/* What the bank said about this row, before the tick. Smaller than the
-   tick and without a border: the tick is something you press and this
-   is something you are told, and a reader must not try to press it */
-.cbank {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  margin-inline-end: 5px;
-  border-radius: 2px;
-  vertical-align: middle;
-}
+/* What the bank said about this row, ON the row's own box. A row the
+   bank has never reached keeps the plain box: an empty colour would
+   read as a question answered and not yet marked. And the LAST answer
+   and not a tally — a row asked four times and missed once is not
+   three quarters known; what matters is whether you have it now */
+.cbx.ok { background: #3f9a52; border-color: #2f7d4f; }
+.cbx.no { background: #c0392b; border-color: #96281b; }
 
-.cbank.ok { background: #3f9a52; }
-.cbank.no { background: #c0392b; }
+/* The reader's own tick, white where the bank has coloured the box
+   under it — grey on grey is not a tick anybody can see */
+.cbx.ok.on::after, .cbx.no.on::after { color: #ffffff; }
 
 .cbx.on::after {
   content: '\2713';

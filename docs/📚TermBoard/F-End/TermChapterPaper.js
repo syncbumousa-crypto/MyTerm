@@ -231,11 +231,27 @@
   // #    never reached wears nothing: an empty square would read as a
   // #    question answered and not yet marked
   // ============================================================
-  const bankHtml = was => (was === 'ok' || was === 'no'
-    ? `<span class="cbank ${was}" title="${was === 'ok'
-        ? 'The bank asked about this and you had it right'
-        : 'The bank asked about this and you had it wrong'}"></span>`
-    : '');
+  // ============================================================
+  // ON THE BOX THE READER ALREADY LOOKS AT, NOT BESIDE IT
+  //
+  // This was drawn as a second small square next to the tick, on the
+  // reasoning that the tick is what the reader said and the verdict is
+  // what a test said, so neither should overwrite the other. The reader
+  // asked for the opposite, and was right: the box beside an item is
+  // the one place the eye already goes, and what he wanted to see there
+  // is whether he has this — grey until the bank has asked, then green
+  // or red. A second square is a second thing to learn to read.
+  //
+  // BOTH SIGNALS STILL FIT ON ONE BOX, because they are drawn in
+  // different parts of it: the COLOUR is the bank's last word, and the
+  // TICK inside it is still the reader's own. A red box with a tick in
+  // it says exactly the useful thing — "you said you know this and the
+  // bank had you wrong" — in one glance instead of two marks
+  // ============================================================
+  const bankClass = was => (was === 'ok' || was === 'no' ? ' ' + was : '');
+
+  const bankWhy = was => (was === 'ok' ? ' · the bank had you right on this'
+                        : was === 'no' ? ' · the bank had you wrong on this' : '');
 
   const rowHtml = (row, n, said) => {
     const on = store().isOn(row.id);
@@ -278,9 +294,10 @@
       + ` type="button" data-note="${row.id}" title="Your own note on this row">✎</button></td>`
       + cellOf(row, 'term')
       + cellOf(row, 'text')
-      + `<td class="cbox">${bankHtml(said && said.get(row.id))}`
-      + `<button class="cbx${on ? ' on' : ''}" type="button" data-tick="${row.id}"`
-      + ` title="${on ? 'Learnt' : 'Not learnt yet'}"></button></td>`
+      + '<td class="cbox">'
+      + `<button class="cbx${on ? ' on' : ''}${bankClass(said && said.get(row.id))}"`
+      + ` type="button" data-tick="${row.id}"`
+      + ` title="${(on ? 'Learnt' : 'Not learnt yet') + bankWhy(said && said.get(row.id))}"></button></td>`
       + '</tr>';
   };
 

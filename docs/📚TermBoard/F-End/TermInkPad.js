@@ -85,6 +85,11 @@
       +   '<span class="inkGrp">' + sw + '</span>'
       +   '<span class="inkGrp">' + wz + '</span>'
       +   '<span class="inkGrp">'
+      +     '<button class="inkBtn inkSelBtn" data-ink="select"'
+      +       ' title="Select what you wrote, then shrink it with the corner or move it from the middle">'
+      +       '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"'
+      +       ' stroke-width="2.2" stroke-linecap="round" stroke-dasharray="4 3">'
+      +       '<rect x="3.5" y="3.5" width="17" height="17" rx="2"/></svg></button>'
       +     '<button class="inkBtn" data-ink="erase" title="Rub out whole strokes">⌫</button>'
       +     '<button class="inkBtn" data-ink="undo" title="Take back the last stroke">↶</button>'
       +     '<button class="inkBtn" data-ink="clear" title="Empty this page">✕</button>'
@@ -98,6 +103,10 @@
       //   their page: the tab is "attached to the box itself", not a row
       //   floating above it
       + '<div class="inkTabs">'
+      +   '<button class="inkBtn inkFullBtn" data-ink="full" title="The whole screen — write, then leave with Esc">'
+      +     '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"'
+      +     ' stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
+      +     '<path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg></button>'
       +   '<button class="inkBtn inkSaveBtn" data-ink="seal"'
       +     ' title="Seal this attempt with today\'s date and open an empty one">Save</button>'
       +   '<span class="inkTabStrip"></span>'
@@ -807,6 +816,18 @@
       if (store().eraseAt(key, p[0], p[1], ERASE_R)) repaint(cv);
       return;
     }
+    // In selecting mode the pen drags a BOX and writes nothing. The box
+    // is an element over the pad, not a drawing on it: the live layer is
+    // the running stroke's and adds without clearing, and the dry page is
+    // wiped on every repaint
+    if (mode === 'select') {
+      selClear();
+      const m = document.createElement('div');
+      m.className = 'inkMarq live';
+      box.querySelector('.inkPad').appendChild(m);
+      draw = { marq: true, id: ev.pointerId, cv, key, ax: p[0], ay: p[1], bx: p[0], by: p[1], m };
+      return;
+    }
     learn(ev.pressure);
     const st = { c: colour, w: WIDTHS[slot], p };
     store().add(key, st);
@@ -835,6 +856,16 @@
       return;
     }
     if (!draw || ev.pointerId !== draw.id || ev.pointerType === 'touch') return;
+    if (draw.marq) {
+      const q = spot(draw.cv, ev);
+      draw.bx = q[0]; draw.by = q[1];
+      const k = 1 / SC;
+      draw.m.style.left = (Math.min(draw.ax, draw.bx) * k) + 'px';
+      draw.m.style.top = (Math.min(draw.ay, draw.by) * k) + 'px';
+      draw.m.style.width = (Math.abs(draw.bx - draw.ax) * k) + 'px';
+      draw.m.style.height = (Math.abs(draw.by - draw.ay) * k) + 'px';
+      return;
+    }
     if (draw.erase) {
       const p = spot(draw.cv, ev);
       if (store().eraseAt(draw.key, p[0], p[1], ERASE_R)) repaint(draw.cv);
@@ -870,6 +901,14 @@
     if (ev && ev.pointerId !== draw.id) return;
     const d = draw; draw = null;
     if (d.raf) cancelAnimationFrame(d.raf);
+    // The box is let go: what it caught becomes the selection. A drag
+    // that caught nothing leaves no trace — which is not a fault but the
+    // natural way to change one's mind
+    if (d.marq) {
+      if (d.m) d.m.remove();
+      selBegin(d.key, d.cv, d.ax, d.ay, d.bx, d.by);
+      return;
+    }
     const box = d.cv.closest('.inkBox');
     if (!d.erase) {
       // The stroke dries onto the page BEFORE the live layer is cleared,
@@ -911,7 +950,9 @@
     const what = b.dataset.ink;
     if (what === 'color') { colour = b.dataset.c; mode = 'pen'; }
     else if (what === 'width') { slot = +b.dataset.i; mode = 'pen'; }
-    else if (what === 'erase') { mode = mode === 'erase' ? 'pen' : 'erase'; }
+    else if (what === 'erase') { mode = mode === 'erase' ? 'pen' : 'erase'; selClear(); }
+    else if (what === 'select') { mode = mode === 'select' ? 'pen' : 'select'; selClear(); }
+    else if (what === 'full') { fullToggle(box); }
     else if (what === 'undo') { if (store().undo(key)) repaint(cv); }
     else if (what === 'clear') {
       if (store().has(key) && !confirm('Empty this page? The attempts kept beside it are not touched.')) return;
@@ -954,6 +995,452 @@
       box.querySelectorAll('[data-ink="erase"]').forEach(b => b.classList.toggle('on', mode === 'erase'));
     });
   };
+
+  // ============================================================
+  // # ⬚ 🔍  SELECTING WHAT WAS WRITTEN, AND MAKING IT SMALLER
+  // # 🔤 JavaScript
+  // # 🎯 A box dragged over the writing, a grip at its corner to scale
+  // #    it, and its middle to move it
+  // # 🔗 ASKED FOR BECAUSE WRITING BY HAND COMES OUT BIGGER THAN ONE
+  // #    EXPECTS: the first half of a solution fills the page and the
+  // #    rest has nowhere to go, and rubbing it out to write it again
+  // #    costs more than shrinking it.
+  // #
+  // # 🔗 AND THE ONE RULE OVER ALL OF IT: **there is no moment in which
+  // #    the reader's ink is invisible.** Selecting lifts the strokes off
+  // #    the dry page to draw them on the live layer, so any path that
+  // #    lifts without drawing — even for a single frame — reads as "my
+  // #    writing is gone". Three separate faults of exactly that kind
+  // #    were reported on the machine this comes from, and each is
+  // #    answered here by name.
+  // ============================================================
+  const SEL_MIN = 0.20;                  // below a fifth the writing is a smudge
+  let sel = null;
+
+  const selClear = () => {
+    if (!sel) return;
+    if (sel.raf) cancelAnimationFrame(sel.raf);
+    const m = sel.box.querySelector('.inkMarq');
+    if (m) m.remove();
+    sel = null;
+  };
+
+  const boundsOf = (list, idx) => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    idx.forEach(i => {
+      const p = list[i].p;
+      for (let k = 0; k < p.length; k += 3) {
+        if (p[k] < x0) x0 = p[k];
+        if (p[k] > x1) x1 = p[k];
+        if (p[k + 1] < y0) y0 = p[k + 1];
+        if (p[k + 1] > y1) y1 = p[k + 1];
+      }
+    });
+    return { x0, y0, x1, y1 };
+  };
+
+  // ★ A stroke is selected when MOST of its points are inside. Demanding
+  //   all of them drops a whole letter because its tail pokes out, and
+  //   half a word is then shrunk; accepting one point takes in a long
+  //   line that merely crosses the box and is no part of it
+  const pick = (list, x0, y0, x1, y1) => {
+    const out = [];
+    list.forEach((st, i) => {
+      const p = st.p, n = p.length / 3;
+      if (!n) return;
+      let inside = 0;
+      for (let k = 0; k < p.length; k += 3) {
+        if (p[k] >= x0 && p[k] <= x1 && p[k + 1] >= y0 && p[k + 1] <= y1) inside++;
+      }
+      if (inside * 2 > n) out.push(i);
+    });
+    return out;
+  };
+
+  // The pad's size in store space. READ FROM MEMORY while dragging:
+  // `offsetWidth` forces the browser to recompute layout, and since the
+  // box's own styles are written in the same breath, every move event
+  // was costing a full layout pass — the last of the three slownesses
+  const padSize = () => {
+    if (sel && sel.drag) return { w: sel.drag.padW, h: sel.drag.padH };
+    const cv = sel.cv;
+    return { w: cv.offsetWidth * SC, h: cv.offsetHeight * SC };
+  };
+  // The limit is THE PAD ITSELF and not an invented number: growing until
+  // the writing fills the page is understood; past that it is cropped in
+  // the drawing and the reader thinks it was lost
+  const maxScale = () => {
+    const s = sel.snap0, pad = padSize();
+    const w = Math.max(1, s.x1 - s.x0), h = Math.max(1, s.y1 - s.y0);
+    return Math.max(SEL_MIN, Math.min(6, pad.w / w, pad.h / h));
+  };
+
+  const overlay = () => {
+    if (!sel) return;
+    const pad = sel.box.querySelector('.inkPad');
+    let m = sel.box.querySelector('.inkMarq');
+    if (!m) {
+      m = document.createElement('div');
+      m.className = 'inkMarq';
+      m.innerHTML = '<i class="inkSelGrip" title="Drag to make it smaller or larger"></i>';
+      pad.appendChild(m);
+    }
+    const k = 1 / SC;
+    m.style.left = (sel.x0 * k) + 'px';
+    m.style.top = (sel.y0 * k) + 'px';
+    m.style.width = Math.max(6, (sel.x1 - sel.x0) * k) + 'px';
+    m.style.height = Math.max(6, (sel.y1 - sel.y0) * k) + 'px';
+  };
+
+  const selBegin = (key, cv, x0, y0, x1, y1) => {
+    selClear();
+    const list = store().strokes(key);
+    const idx = pick(list, Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1), Math.max(y0, y1));
+    if (!idx.length) return false;
+    const b = boundsOf(list, idx);
+    sel = { key, cv, box: cv.closest('.inkBox'), idx, scale: 1, dx: 0, dy: 0,
+            x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1,
+            // The corner that is NOT held stays put: the grip is at the
+            // bottom right, so the top left is the fixed point — which is
+            // what a hand expects of a corner grip. Hold the centre
+            // instead and the selection creeps both ways at once
+            fx: b.x0, fy: b.y0,
+            snap0: { x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1 },
+            // ★ EVERY TRANSFORM IS COMPUTED FROM THIS SNAPSHOT, never from
+            //   the current state. Coordinates are whole numbers, so each
+            //   scaling rounds; multiplying the current state compounds
+            //   the loss and the original never comes back
+            snap: idx.map(i => ({ p: list[i].p.slice(), w: list[i].w })) };
+    overlay();
+    return true;
+  };
+
+  // The model written once, at the end — the dry page redrawn with
+  // everything, and only then is it saved
+  const selApply = () => {
+    if (!sel) return;
+    const list = store().strokes(sel.key), f = sel.scale;
+    sel.idx.forEach((i, k) => {
+      const st = list[i], sp = sel.snap[k];
+      for (let q = 0; q < sp.p.length; q += 3) {
+        st.p[q] = Math.round(sel.fx + (sp.p[q] - sel.fx) * f + sel.dx);
+        st.p[q + 1] = Math.round(sel.fy + (sp.p[q + 1] - sel.fy) * f + sel.dy);
+        st.p[q + 2] = sp.p[q + 2];
+      }
+      // THE NIB SHRINKS WITH THE WRITING. Small writing drawn with a
+      // broad nib is a smudge, not handwriting — and in this engine the
+      // width IS the nib's length, so scaling it scales the nib
+      st.w = Math.max(0.25, Math.min(12, Math.round(sp.w * f * 4) / 4));
+    });
+    const b = boundsOf(list, sel.idx);
+    sel.x0 = b.x0; sel.y0 = b.y0; sel.x1 = b.x1; sel.y1 = b.y1;
+    store().bumped(sel.key);
+    repaint(sel.cv);
+    overlay();
+  };
+
+  // ---------- the live drag: one picture moved, not ink redrawn ----------
+  // The swept nib costs about five fills a point, and a line of writing
+  // is three thousand points — fifteen thousand fills a frame if the
+  // vectors are redrawn. So the selection is rasterised ONCE and the
+  // frame moves a single image; the vectors are redrawn once at the end,
+  // so what is left behind is vectors and not a stretched picture
+  const selRaster = () => {
+    const k = Number(sel.cv.dataset.ratio) || 1;
+    const s = sel.snap0;
+    const pad = 24 * SC;                 // room for the nib's reach past the points
+    const w = Math.max(1, Math.round((s.x1 - s.x0 + pad * 2) * k / SC));
+    const h = Math.max(1, Math.round((s.y1 - s.y0 + pad * 2) * k / SC));
+    const buf = document.createElement('canvas');
+    buf.width = w; buf.height = h;
+    buf.dataset.ratio = String(k);
+    const c = buf.getContext('2d');
+    c.setTransform(k / SC, 0, 0, k / SC, 0, 0);
+    c.translate(-(s.x0 - pad), -(s.y0 - pad));
+    c.lineCap = c.lineJoin = 'round';
+    sel.snap.forEach((sp, i) => drawStroke(c, { c: store().strokes(sel.key)[sel.idx[i]].c, w: sp.w, p: sp.p }));
+    sel.bmp = { buf, x: s.x0 - pad, y: s.y0 - pad, w: s.x1 - s.x0 + pad * 2, h: s.y1 - s.y0 + pad * 2 };
+  };
+
+  const selLiveStart = () => {
+    if (!sel || sel.live) return;
+    sel.live = true;
+    // Everything that has to be measured is measured ONCE, here: the pad,
+    // the canvas, the context. A read of layout inside the move path is
+    // what made fast dragging feel late
+    // ★ SHOWN BEFORE IT IS MEASURED. The live layer is `display:none`
+    //   until the box wears `penDown`, and a hidden element has no size —
+    //   so measured first it got a store of 0×0, every stroke drawn on it
+    //   went nowhere, and the selection was invisible for the whole drag
+    //   while sitting safely in the store. Which is the very fault this
+    //   section exists to prevent, arrived at from a new direction. Its
+    //   own guard caught it
+    sel.box.classList.add('penDown');
+    const wet = wetOf(sel.box);
+    fit(wet);
+    sel.drag = { padW: sel.cv.offsetWidth * SC, padH: sel.cv.offsetHeight * SC,
+                 ctx: ctxOf(wet), wet };
+    // The dry page redrawn WITHOUT the selection, so its place is empty…
+    repaintSkip(sel.cv, sel.idx);
+    selRaster();
+    // …and the selection drawn on the live layer AT ONCE. Scheduled for
+    // the next frame instead, there is a moment with the ink nowhere —
+    // and that moment is what was reported as "it disappears the instant
+    // I touch the grip"
+    selLiveDraw();
+  };
+
+  const repaintSkip = (cv, skip) => {
+    if (!cv.width) return;
+    cancelJob(cv);
+    const c = ctxOf(cv);
+    c.clearRect(0, 0, cv.width * SC, cv.height * SC);
+    const list = store().strokes(cv.closest('.inkBox').dataset.key);
+    const out = new Set(skip);
+    list.forEach((st, i) => { if (!out.has(i)) drawStroke(c, st); });
+    thumbDrop(cv);
+  };
+
+  const selLiveDraw = () => {
+    if (!sel || !sel.live || !sel.bmp || !sel.drag) return;
+    const c = sel.drag.ctx, cv = sel.drag.wet;
+    c.clearRect(0, 0, cv.width * SC, cv.height * SC);
+    const f = sel.scale, b = sel.bmp;
+    // Placed by the same arithmetic the model will use, so what is seen
+    // while dragging is where it lands
+    const x = sel.fx + (b.x - sel.fx) * f + sel.dx;
+    const y = sel.fy + (b.y - sel.fy) * f + sel.dy;
+    c.drawImage(b.buf, x, y, b.w * f, b.h * f);
+    overlay();
+  };
+  // ★ COUNTED AS A DECISION, NOT AS A PAINT. `requestAnimationFrame`
+  //   EXISTS in the browser the guards run in and never calls back, so a
+  //   counter inside the drawing reads zero on perfectly good code — the
+  //   guard said "a move with no displacement drew nothing" about a
+  //   version that decides to draw correctly. What can be measured
+  //   anywhere is the decision
+  let liveDraws = 0;
+  const selSync = () => {
+    if (!sel || !sel.live) return;
+    liveDraws++;
+    // Correctness before coalescing: with no frames to be had the drawing
+    // happens at once, exactly as the chunked repaint does. A guard runs
+    // where `requestAnimationFrame` never fires, and a draw that waits
+    // for a frame there never happens at all
+    if (typeof requestAnimationFrame !== 'function') return selLiveDraw();
+    if (sel.raf) return;
+    sel.raf = requestAnimationFrame(() => { sel.raf = 0; selLiveDraw(); });
+  };
+
+  const clampMove = () => {
+    const s = sel.snap0, f = sel.scale, pad = padSize();
+    const w = (s.x1 - s.x0) * f, h = (s.y1 - s.y0) * f;
+    const left = sel.fx + (s.x0 - sel.fx) * f;
+    const top = sel.fy + (s.y0 - sel.fy) * f;
+    sel.dx = Math.max(-left, Math.min(pad.w - w - left, sel.dx));
+    sel.dy = Math.max(-top, Math.min(pad.h - h - top, sel.dy));
+  };
+
+  const selScale = f => {
+    if (!sel) return;
+    const want = Math.max(SEL_MIN, Math.min(maxScale(), f));
+    // ★ The early exit stops the WRITING and not the drawing. Stopping
+    //   both was the third disappearance: the first report from a grip is
+    //   a move with no displacement at all — a ratio of exactly 1 — and
+    //   the selection had already been lifted off the dry page
+    if (Math.abs(want - sel.scale) < 0.0005) { selSync(); return; }
+    sel.scale = want;
+    clampMove();
+    if (sel.live) selSync(); else selApply();
+  };
+  const selMove = (dx, dy) => {
+    if (!sel) return;
+    sel.dx = dx; sel.dy = dy;
+    clampMove();
+    if (sel.live) selSync(); else selApply();
+  };
+
+  // ★ Called on EVERY lift that began as a drag, even when nothing moved.
+  //   Without that, a press on the box with no movement leaves the
+  //   selection lifted off the dry page and never drawn back — the second
+  //   disappearance, and the ink stays gone until some unrelated redraw
+  const selCommit = () => {
+    if (!sel || !sel.live) return;
+    if (sel.raf) { cancelAnimationFrame(sel.raf); sel.raf = 0; }
+    sel.live = false;
+    if (sel.bmp) { sel.bmp.buf.width = 0; sel.bmp.buf.height = 0; sel.bmp = null; }
+    sel.drag = null;
+    selApply();                          // the dry page, with all of it back
+    const wet = wetOf(sel.box);
+    if (wet) { wet.width = 0; wet.height = 0; }
+    sel.box.classList.remove('penDown');
+    store().flush();
+  };
+
+  // ---------- the overlay's own gestures ----------
+  document.addEventListener('pointerdown', ev => {
+    const grip = ev.target.closest && ev.target.closest('.inkSelGrip');
+    const marq = ev.target.closest && ev.target.closest('.inkMarq');
+    if (!sel || (!grip && !marq)) return;
+    if (ev.pointerType === 'touch' && penNear()) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    try { (grip || marq).setPointerCapture(ev.pointerId); } catch {}
+    const r = sel.cv.getBoundingClientRect();
+    const k = (r.width / sel.cv.offsetWidth) || 1;
+    const at = [(ev.clientX - r.left) / k * SC, (ev.clientY - r.top) / k * SC];
+    selLiveStart();
+    // THE DIAGONAL, not one axis: the ratio between width and height is
+    // kept, so the writing is not squashed
+    const s = sel.snap0;
+    const diag = Math.max(1, Math.hypot((s.x1 - s.x0), (s.y1 - s.y0)));
+    sel.hold = { id: ev.pointerId, grip: Boolean(grip), at, diag,
+                 scale0: sel.scale, dx0: sel.dx, dy0: sel.dy };
+  }, true);
+
+  document.addEventListener('pointermove', ev => {
+    if (!sel || !sel.hold || ev.pointerId !== sel.hold.id) return;
+    const r = sel.cv.getBoundingClientRect();
+    const k = (r.width / sel.cv.offsetWidth) || 1;
+    const x = (ev.clientX - r.left) / k * SC, y = (ev.clientY - r.top) / k * SC;
+    if (sel.hold.grip) {
+      const s = sel.snap0;
+      const was = Math.hypot(sel.hold.at[0] - (s.x0 + sel.dx), sel.hold.at[1] - (s.y0 + sel.dy));
+      const now_ = Math.hypot(x - (s.x0 + sel.dx), y - (s.y0 + sel.dy));
+      selScale(sel.hold.scale0 * (now_ / Math.max(1, was)));
+    } else {
+      selMove(sel.hold.dx0 + (x - sel.hold.at[0]), sel.hold.dy0 + (y - sel.hold.at[1]));
+    }
+  }, true);
+
+  ['pointerup', 'pointercancel'].forEach(t => {
+    document.addEventListener(t, ev => {
+      if (!sel || !sel.hold || ev.pointerId !== sel.hold.id) return;
+      sel.hold = null;
+      selCommit();
+    }, true);
+  });
+
+  // ============================================================
+  // # ⛶ 🖊️  THE WHOLE SCREEN, AND THE PAGE THAT MUST NOT MOVE
+  // # 🔤 JavaScript
+  // # 🔗 ★ THE PAGE IS NOT MADE BIGGER, IT IS BROUGHT NEARER. Every
+  // #    stored coordinate means "this far across a pad of THIS layout
+  // #    size", so a layout that grows changes the meaning of everything
+  // #    already written: the old writing stays small in a corner and
+  // #    the new is written at coordinates that fall outside the small
+  // #    pad and are lost on the way out. So the layout size is pinned
+  // #    and the magnification is visual — the same mechanism the page's
+  // #    own zoom uses, and no new line in the pen's path.
+  // ============================================================
+  const fullToggle = box => {
+    const on = box.classList.contains('inkFull');
+    if (on) {
+      box.classList.remove('inkFull');
+      box.style.removeProperty('--inkFullZoom');
+      box.style.removeProperty('--inkPadW');
+      box.style.removeProperty('--inkPadH');
+      if (document.fullscreenElement === box && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+      window.MyTermInkPad.refitNow();
+      return false;
+    }
+    // ★ THE LAYOUT SIZE IS PINNED TO WHAT IT IS NOW, read BEFORE the
+    //   class goes on. Taken afterwards it would be the full-screen
+    //   measurement — the very number that must not change — and every
+    //   coordinate already written would mean something slightly else:
+    //   the old writing small in a corner, the new written at points
+    //   that fall outside the smaller pad and lost on the way out
+    const pad = box.querySelector('.inkPad');
+    const keepW = pad.offsetWidth || 1, keepH = pad.offsetHeight || 1;
+    box.style.setProperty('--inkPadW', keepW + 'px');
+    box.style.setProperty('--inkPadH', keepH + 'px');
+    box.classList.add('inkFull');
+    if (box.requestFullscreen) box.requestFullscreen().catch(() => {});
+    const k = Math.max(0.5, Math.min(4,
+      Math.min((window.innerWidth - 24) / keepW, (window.innerHeight - 90) / keepH)));
+    box.style.setProperty('--inkFullZoom', k.toFixed(3));
+    window.MyTermInkPad.refitNow();
+    return true;
+  };
+
+  // ============================================================
+  // # 🤏 📱  TWO FINGERS ON THE GLASS
+  // # 🔤 JavaScript
+  // # 🎯 Pinching a full-screen notebook brings it nearer
+  // # 🔗 TOUCH EVENTS AND NOT POINTER EVENTS, for three reasons and the
+  // #    third decides it: a touch event carries BOTH contacts at once
+  // #    (with pointers each finger is a separate event and a parallel
+  // #    record has to be kept, which breaks the moment one `up` is
+  // #    missed); a touch move can be cancelled, and cancelling it is
+  // #    what stops the browser doing its own gesture; and if the
+  // #    browser decides the sequence is a scroll it fires
+  // #    `pointercancel` and the pointer path simply ends mid-pinch,
+  // #    while the touch events run to the end.
+  // #
+  // # 🔗 AND THE RATIO, not the accumulated difference: the nearness
+  // #    follows the fingers, so one pinch reaches what is wanted.
+  // #
+  // # 🔗 THREE REFUSALS, AND ALL THREE ARE PALM REJECTION rather than
+  // #    fussiness — the worst of them being the first: a hand resting
+  // #    while writing reports two or three contacts that drift together
+  // #    and apart with every letter, and taken for a pinch the zoom
+  // #    would wobble as he writes
+  // ============================================================
+  const PINCH_ARM = 12;
+  let pinch = null;
+  const gap = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+
+  document.addEventListener('touchstart', ev => {
+    const box = ev.target.closest && ev.target.closest('.inkBox.inkFull');
+    if (!box || ev.touches.length !== 2) { pinch = null; return; }
+    if (penNear()) return;                            // the pen is in range: not a pinch
+    const t = [ev.touches[0], ev.touches[1]];
+    if (t.some(x => (x.radiusX || 0) * 2 > PALM_PX)) return;   // a palm-sized contact
+    pinch = { box, from: gap(t), was: parseFloat(box.style.getPropertyValue('--inkFullZoom')) || 1, armed: false };
+  }, { passive: true });
+
+  document.addEventListener('touchmove', ev => {
+    if (!pinch || ev.touches.length !== 2) return;
+    const now_ = gap([ev.touches[0], ev.touches[1]]);
+    if (!pinch.armed) {
+      // Not cancelled before it is certainly a pinch: cancelling the
+      // start of every two-finger touch would kill two-finger SCROLLING,
+      // which Windows allows and people use far more often
+      if (Math.abs(now_ - pinch.from) < PINCH_ARM) return;
+      pinch.armed = true;
+      pinch.from = now_;                              // measured from here, so it does not jump
+      return;
+    }
+    ev.preventDefault();
+    const k = Math.max(0.5, Math.min(4, pinch.was * (now_ / Math.max(1, pinch.from))));
+    pinch.box.style.setProperty('--inkFullZoom', k.toFixed(3));
+  }, { passive: false });
+
+  ['touchend', 'touchcancel'].forEach(t => {
+    document.addEventListener(t, () => {
+      // Saved on the LIFT and not on every move: the nearness is written
+      // on the box itself, and a hundred writes a second for a value
+      // nobody reads until the end is work for nothing
+      if (pinch && pinch.armed) window.MyTermInkPad.refitNow();
+      pinch = null;
+    }, { passive: true });
+  });
+
+  document.addEventListener('keydown', ev => {
+    if (ev.key !== 'Escape') return;
+    if (sel) { selClear(); return; }
+    const full = where && where.querySelector('.inkBox.inkFull');
+    if (full) fullToggle(full);
+  });
+  // The browser's own exit (Esc, or the system gesture) must leave the box
+  // as it was, or the reader comes back to a page that is still zoomed
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) return;
+    const full = where && where.querySelector('.inkBox.inkFull');
+    if (full) { full.classList.remove('inkFull');
+      full.style.removeProperty('--inkFullZoom');
+      full.style.removeProperty('--inkPadW'); full.style.removeProperty('--inkPadH'); window.MyTermInkPad.refitNow(); }
+  });
 
   window.MyTermInkPad = {
     // Told where the sheets are drawn, once
@@ -1091,6 +1578,22 @@
       touch, px: livePx, evict, thumb: thumbShow, keepThumb: thumbKeep,
       budget: CACHE_PX
     },
+
+    // ---------- selecting and the whole screen, opened for measurement ----------
+    // The dangerous one is the first: scaling writes into the coordinates
+    // of particular strokes, and choosing the wrong ones disfigures a
+    // solution nobody asked to change — and it is not noticed for weeks
+    select: {
+      from: (key, cv, x0, y0, x1, y1) => selBegin(key, cv, x0, y0, x1, y1),
+      scale: selScale, move: selMove, commit: selCommit, clear: selClear,
+      live: () => Boolean(sel && sel.live),
+      draws: () => liveDraws,
+      hold: () => { if (sel) selLiveStart(); },
+      now: () => (sel ? { idx: sel.idx.slice(), scale: sel.scale, dx: sel.dx, dy: sel.dy,
+                          box: { x0: sel.x0, y0: sel.y0, x1: sel.x1, y1: sel.y1 } } : null),
+      min: SEL_MIN
+    },
+    full: box => fullToggle(box || (where && where.querySelector('.inkBox'))),
 
     // For the guard and for anything that must know the pen is down
     writing: () => Boolean(draw),

@@ -1,0 +1,221 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · selecting, shrinking, and never losing sight of the ink</title>
+<style>
+  #host { width: 460px; --sheetScale: 1; }
+  .msheet { width: 440px; border: 1px solid #ccc; margin: 6px 0; }
+  .qcard { height: 50px; }
+</style>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermInkPad.js"></script>
+<script>
+  // THE MOST DANGEROUS THING IN THIS WHOLE FEATURE IS HERE. Shrinking
+  // writes into the coordinates of particular strokes, so choosing the
+  // wrong ones disfigures a solution nobody asked to change — and it is
+  // not noticed for weeks. That is the first thing measured.
+  //
+  // The second is the rule the reader reported three separate times on
+  // his own machine, each with a different cause: **there must be no
+  // moment in which his ink is invisible.** Selecting lifts strokes off
+  // the dry page to draw them on the live layer, so a path that lifts
+  // without drawing reads as "my writing is gone" — and the ink is still
+  // safe in the store, which is what makes it so frightening.
+  //
+  // And the third is cost: a dragged selection must move ONE PICTURE,
+  // not redraw thousands of nib prints, and must not write to storage
+  // while the hand is moving.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const host = document.getElementById('host');
+    const faults = [], out = [];
+    const S = window.MyTermInkStore, P = window.MyTermInkPad;
+    if (!S || !P || !P.select) { o.textContent = 'FAIL the pad did not load, or selecting is not open to measurement'; return; }
+
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
+
+    const bin = new Map();
+    let writes = 0;
+    S.useShelf({ name: 'the guard’s own shelf',
+      get: async k => (bin.has(k) ? JSON.parse(bin.get(k)) : null),
+      put: async (k, v) => { writes++; bin.set(k, JSON.stringify(v)); return true; } });
+    S.useCloud({ name: 'no cloud', ready: () => false, list: async () => [], find: async () => null,
+                 folder: async () => '', make: async () => null, read: async () => null, write: async () => false });
+    await S.open('c-sel', 'h-sel');
+
+    const card = document.createElement('div');
+    card.className = 'msheet msheet-card';
+    card.dataset.group = 'rules1'; card.dataset.at = '0';
+    card.innerHTML = '<div class="qcard">a question</div>';
+    host.append(card);
+    P.arm(host);
+    await P.mount();
+    const key = 'rules1#0';
+    const box = host.querySelector('.inkBox');
+    const cv = box.querySelector('.inkDry');
+    P.light.fit(cv);
+
+    // ---- three strokes: two close together on the left, one far right
+    const run = (x, y, n) => {
+      const p = [];
+      for (let i = 0; i < n; i++) p.push(x + i * 6, y + (i % 3) * 5, 170);
+      return { c: '#12141a', w: 5.5, p };
+    };
+    S.add(key, run(60, 60, 12));     // 0 — inside the box to come
+    S.add(key, run(60, 120, 12));    // 1 — inside
+    S.add(key, run(600, 300, 12));   // 2 — far away, must not be touched
+    // 3 — a long line that CROSSES the box: a few of its points are inside
+    // and most are not. Without it the majority rule cannot be told apart
+    // from "any point inside" — the first negative test of this guard broke
+    // the rule and the guard still passed, because every stroke in the
+    // fixture was either wholly in or wholly out
+    // A line straight across at y = 120: twelve of its forty points fall
+    // in the box (x 40…300) and twenty-eight do not. Thirty per cent —
+    // so the majority rule leaves it out and "any point inside" takes it
+    S.add(key, { c: '#12141a', w: 5.5,
+      p: (() => { const p = []; for (let i = 0; i < 40; i++) p.push(i * 22, 120, 170); return p; })() });
+    const before = S.strokes(key).map(st => ({ p: st.p.slice(), w: st.w }));
+    P.light.chunk(cv); P.light.flush(cv);
+
+    const inked = () => {
+      try {
+        const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++;
+        return n;
+      } catch (e) { return -1; }
+    };
+    const wetInk = () => {
+      const w = box.querySelector('.inkWet');
+      if (!w || !w.width) return 0;
+      try {
+        const d = w.getContext('2d').getImageData(0, 0, w.width, w.height).data;
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++;
+        return n;
+      } catch (e) { return -1; }
+    };
+    const whole = inked();
+    out.push('three strokes drawn: ' + whole + ' px');
+
+    // ---- 1 · only what was caught is taken
+    const got = P.select.from(key, cv, 40, 40, 300, 200);
+    const now = P.select.now();
+    out.push('selected: ' + (got ? now.idx.join(',') : 'NOTHING'));
+    if (!got) faults.push('a box drawn over two strokes caught nothing');
+    else if (now.idx.join(',') !== '0,1') faults.push('the box caught strokes ' + now.idx.join(',') + ' instead of 0,1 — a line that merely crosses it is not part of it');
+
+    // ---- 2 · and the one left out is left ALONE, to the byte
+    P.select.hold();
+    P.select.scale(0.5);
+    P.select.commit();
+    const after = S.strokes(key);
+    if (JSON.stringify(after[2].p) !== JSON.stringify(before[2].p) || after[2].w !== before[2].w) {
+      faults.push('a stroke that was NOT selected was changed — a solution nobody asked to touch');
+    }
+    const shrank = (after[0].p[0] !== before[0].p[0]) || (after[0].p.slice(-2)[0] !== before[0].p.slice(-2)[0]);
+    out.push('after shrinking by half: nib ' + before[0].w + ' → ' + after[0].w
+             + ' · the far stroke ' + (JSON.stringify(after[2].p) === JSON.stringify(before[2].p) ? 'untouched' : 'CHANGED'));
+    if (!shrank) faults.push('the selection did not move at all');
+    // THE NIB SHRINKS WITH IT, or small writing is a smudge
+    if (!(after[0].w < before[0].w)) faults.push('the nib did not shrink with the writing: ' + before[0].w + ' → ' + after[0].w);
+
+    // ---- 3 · computed from the snapshot: a half then a double returns
+    P.select.clear();
+    P.select.from(key, cv, 20, 20, 300, 200);
+    P.select.hold();
+    P.select.scale(0.5);
+    P.select.scale(1);
+    P.select.commit();
+    const back = S.strokes(key);
+    const same = JSON.stringify(back[0].p) === JSON.stringify(after[0].p);
+    out.push('a half then a whole again: ' + (same ? 'back to where it was' : 'DRIFTED'));
+    if (!same) faults.push('scaling is computed from the current state, so the rounding accumulates and the original never comes back');
+
+    // ---- 4 · the floor, and the pad as the ceiling
+    P.select.clear();
+    P.select.from(key, cv, 20, 20, 300, 200);
+    P.select.hold();
+    P.select.scale(0.001);
+    const low = P.select.now().scale;
+    P.select.scale(99);
+    const high = P.select.now().scale;
+    const pad = { w: cv.offsetWidth * 2, h: cv.offsetHeight * 2 };
+    const b = P.select.now().box;
+    out.push('the limits: scale ' + low.toFixed(2) + ' … ' + high.toFixed(2)
+             + ' · and it stays inside the pad: ' + (b.x1 <= pad.w + 1 && b.y1 <= pad.h + 1));
+    if (low < P.select.min - 0.001) faults.push('it shrank past the floor of ' + P.select.min + ': ' + low);
+    if (b.x1 > pad.w + 1 || b.y1 > pad.h + 1) faults.push('the selection was grown out of the pad, where it is cropped and looks lost');
+
+    // ---- 5 · NO MOMENT WITHOUT INK, measured at the three reported ones
+    P.select.commit();
+    P.select.clear();
+    P.select.from(key, cv, 20, 20, 300, 200);
+    const atHold = (() => { P.select.hold(); return wetInk(); })();          // touched, nothing moved
+    const drew0 = P.select.draws();
+    P.select.scale(1);                                   // a move with NO displacement
+    const atNil = wetInk(), drewNil = P.select.draws() - drew0;
+    P.select.scale(0.8);
+    const atReal = wetInk();
+    P.select.commit();
+    const atLift = inked();
+    out.push('ink in sight — on touching the grip ' + atHold + ' px · on a move of nothing ' + atNil
+             + ' px · while shrinking ' + atReal + ' px · after the lift ' + atLift + ' px');
+    if (!(atHold > 0)) faults.push('the ink vanished the instant the grip was touched');
+    if (!(atNil > 0)) faults.push('the ink vanished on a move with no displacement');
+    // And the no-op move must still DRAW: the ink left over on the live
+    // layer from the moment before would hide a redraw that never happened
+    if (drewNil < 1) faults.push('a move with no displacement drew nothing — the early exit is stopping the drawing and not only the writing');
+    if (!(atReal > 0)) faults.push('nothing is drawn while shrinking');
+    if (!(atLift > 0)) faults.push('nothing is on the page after the lift');
+
+    // ---- 6 · a press with no movement at all, then let go
+    P.select.clear();
+    P.select.from(key, cv, 20, 20, 300, 200);
+    P.select.hold();
+    P.select.commit();
+    const afterStill = inked();
+    out.push('a press with no movement, then let go: ' + afterStill + ' px');
+    if (!(afterStill > 0)) faults.push('a press that moved nothing left the writing lifted off the page and never drawn back');
+
+    // ---- 7 · and the drag writes nothing to storage
+    P.select.clear();
+    P.select.from(key, cv, 20, 20, 300, 200);
+    const w0 = writes;
+    P.select.hold();
+    for (let i = 0; i < 20; i++) P.select.scale(1 - i * 0.02);
+    const during = writes - w0;
+    P.select.commit();
+    await S.flush();
+    out.push('storage writes: ' + during + ' during twenty moves, ' + (writes - w0 - during) + ' after the lift');
+    if (during !== 0) faults.push('the shelf was written ' + during + ' times while the hand was moving');
+
+    // ---- 8 · the whole screen does not change the LAYOUT size
+    P.select.clear();
+    const padEl = box.querySelector('.inkPad');
+    const was = [cv.offsetWidth, cv.offsetHeight];
+    P.full(box);
+    const inFull = [cv.offsetWidth, cv.offsetHeight];
+    const zoom = parseFloat(box.style.getPropertyValue('--inkFullZoom')) || 0;
+    P.full(box);
+    const out1 = [cv.offsetWidth, cv.offsetHeight];
+    out.push('full screen: pad ' + was.join('×') + ' → ' + inFull.join('×') + ' → ' + out1.join('×')
+             + ' · zoom ' + zoom);
+    if (!(zoom > 0)) faults.push('full screen set no visual zoom at all');
+    if (inFull.join() !== was.join()) {
+      faults.push('full screen CHANGED the layout size of the pad to ' + inFull.join('×')
+        + ' — every coordinate already written then means something else');
+    }
+    if (out1.join() !== was.join()) faults.push('leaving full screen left the pad at ' + out1.join('×') + ' instead of ' + was.join('×'));
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

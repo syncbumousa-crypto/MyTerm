@@ -214,6 +214,89 @@
     }
     if (out1.join() !== was.join()) faults.push('leaving full screen left the pad at ' + out1.join('×') + ' instead of ' + was.join('×'));
 
+    // ---- 9 · THE BLUE FRAME FOLLOWS THE HAND, it does not wait for the lift
+    //
+    // Reported in these words: "when I select something and start
+    // moving it, the blue box does not move with me", and of shrinking,
+    // that it "moves over" only once the hand is off. The cause was that
+    // the frame was placed from the MODEL — and the model is written
+    // once, at the lift, on purpose.
+    //
+    // ★ MEASURED FROM THE ELEMENT'S OWN STYLE and not from the module's
+    //   bookkeeping. What was wrong was never the numbers it held; it
+    //   was the rectangle on the glass, and only the glass can say.
+    const marq = () => {
+      const m = box.querySelector('.inkMarq');
+      if (!m) return null;
+      return { x: parseFloat(m.style.left) || 0, y: parseFloat(m.style.top) || 0,
+               w: parseFloat(m.style.width) || 0, h: parseFloat(m.style.height) || 0 };
+    };
+    P.select.clear();
+    P.select.from(key, cv, 20, 20, 300, 200);
+    const mRest = marq();
+    if (!mRest) faults.push('there is no frame on the pad after a selection');
+    P.select.hold();
+    P.select.scale(0.5);
+    const mHalf = marq();
+    P.select.move(80, 40);
+    const mMoved = marq();
+    P.select.commit();
+    const mAfter = marq();
+    out.push('the frame — at rest ' + mRest.w.toFixed(0) + 'px wide at x' + mRest.x.toFixed(0)
+             + ' · halved ' + mHalf.w.toFixed(0) + 'px at x' + mHalf.x.toFixed(0)
+             + ' · moved to x' + mMoved.x.toFixed(0)
+             + ' · and on the lift x' + mAfter.x.toFixed(0) + ' ' + mAfter.w.toFixed(0) + 'px');
+    if (Math.abs(mHalf.w - mRest.w / 2) > 2) {
+      faults.push('the frame did not shrink WITH the hand: ' + mRest.w.toFixed(0)
+                  + 'px → ' + mHalf.w.toFixed(0) + 'px, expected about ' + (mRest.w / 2).toFixed(0));
+    }
+    if (!(mMoved.x > mHalf.x + 20)) {
+      faults.push('the frame did not move with the hand: x' + mHalf.x.toFixed(0) + ' → x' + mMoved.x.toFixed(0));
+    }
+    if (Math.abs(mMoved.w - mHalf.w) > 2) faults.push('moving it changed its size');
+    // ★ AND THE LIFT MOVES NOTHING. This is the reported fault itself:
+    //   a frame that stands still through the whole drag and then snaps
+    //   into place is a frame whose numbers were right all along
+    if (Math.abs(mAfter.x - mMoved.x) > 2 || Math.abs(mAfter.w - mMoved.w) > 2) {
+      faults.push('the frame JUMPED when the hand came off: x' + mMoved.x.toFixed(0) + ' ' + mMoved.w.toFixed(0)
+                  + 'px → x' + mAfter.x.toFixed(0) + ' ' + mAfter.w.toFixed(0) + 'px');
+    }
+
+    // ---- 10 · and the bar says which tool is in the hand
+    //
+    // Two reports in one breath: the rubber's icon could not be read as
+    // a rubber (it was U+232B, a keyboard's backspace — "delete the last
+    // thing", which is the undo button beside it), and the select tool
+    // looked identical armed and unarmed, so the only way to know what a
+    // drag would do was to try it
+    P.select.clear();
+    const selBtn = box.querySelector('[data-ink="select"]');
+    const eraBtn = box.querySelector('[data-ink="erase"]');
+    const inkBtn = box.querySelector('[data-ink="color"]');
+    if (!selBtn || !eraBtn || !inkBtn) faults.push('a tool is missing from the bar');
+    out.push('the rubber: ' + (eraBtn.querySelector('svg') ? 'drawn'
+             : 'the glyph "' + eraBtn.textContent.trim() + '"'));
+    if (!eraBtn.querySelector('svg')) faults.push('the rubber is a text glyph, not a drawn rubber');
+    if (/[\u2300-\u23FF\u2190-\u21FF]/.test(eraBtn.textContent || '')) {
+      faults.push('the rubber still carries a keyboard glyph in its label');
+    }
+    selBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const armed = selBtn.classList.contains('on');
+    const fill = getComputedStyle(selBtn.querySelector('rect')).fill;
+    const lit = inkBtn.classList.contains('on');
+    out.push('select pressed: marked ' + armed + ' · its square filled "' + fill
+             + '" · an ink well still lit ' + lit + ' · the tool in hand "' + P.tool().mode + '"');
+    if (P.tool().mode !== 'select') faults.push('pressing select did not arm it: the tool is ' + P.tool().mode);
+    if (!armed) faults.push('the armed select button wears no mark — it looks the same as unarmed');
+    if (/none/.test(fill) || /rgba\(0, 0, 0, 0\)/.test(fill)) {
+      faults.push('the armed select button is an outline and not filled: fill is "' + fill + '"');
+    }
+    if (lit) faults.push('an ink well stayed lit while the select tool was armed');
+    selBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    if (P.tool().mode !== 'pen' || selBtn.classList.contains('on')) {
+      faults.push('pressing it a second time did not put the pen back');
+    }
+
     o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
   })().catch(e => {
     document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;

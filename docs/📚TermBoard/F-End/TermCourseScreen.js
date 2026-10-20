@@ -196,16 +196,29 @@
   // #    changes how large that sheet is DRAWN
   // ============================================================
   const ZOOM_PREF = 'myterm.read.zoom';
+  // ★ THE SHEETS KEEP THEIR OWN NEARNESS, UNDER THEIR OWN NAME. A
+  //   summary read at 140% and a stack of law sheets zoomed into are two
+  //   readings of two different kinds of page; one number for both would
+  //   have each throw the other away every time the tab changed
+  const SHEET_ZOOM_PREF = 'myterm.sheet.zoom';
+
+  // Whichever paper is on the desk is the one that answers. ASKED OF THE
+  // PAGE rather than kept in a variable of its own: the class is already
+  // the single truth of which drawer is open, and a copy of that fact is
+  // one more thing that can fall out of step with it
+  const zoomer = () => (page.classList.contains('sheeting')
+    ? window.MyTermSheetPaper : window.MyTermPaper);
+  const zoomKey = () => (page.classList.contains('sheeting') ? SHEET_ZOOM_PREF : ZOOM_PREF);
 
   const paintZoom = () => {
-    zoomNow.textContent = Math.round((window.MyTermPaper?.zoomNow() ?? 1) * 100) + '%';
+    zoomNow.textContent = Math.round((zoomer()?.zoomNow?.() ?? 1) * 100) + '%';
   };
 
   const zoomTo = (next, keep) => {
-    const got = window.MyTermPaper?.zoom(next);
+    const got = zoomer()?.zoom?.(next);
     if (got === undefined) return;
     paintZoom();
-    if (keep) writePref(ZOOM_PREF, got);
+    if (keep) writePref(zoomKey(), got);
   };
 
   document.addEventListener('wheel', event => {
@@ -214,7 +227,7 @@
     // Held to small steps. A trackpad sends these in a flood, and one
     // unclamped report from a fast pinch jumps the whole range at once
     const step = Math.max(-0.08, Math.min(0.08, -event.deltaY * 0.01));
-    zoomTo((window.MyTermPaper?.zoomNow() ?? 1) + step, true);
+    zoomTo((zoomer()?.zoomNow?.() ?? 1) + step, true);
   }, { passive: false });
 
   // ============================================================
@@ -245,7 +258,7 @@
   document.addEventListener('touchstart', event => {
     if (!openId || event.touches.length !== 2) { pinch = null; return; }
     pinch = { from: spanOf(event.touches[0], event.touches[1]),
-              was: window.MyTermPaper?.zoomNow() ?? 1, armed: false };
+              was: zoomer()?.zoomNow?.() ?? 1, armed: false };
   }, { passive: true });
 
   document.addEventListener('touchmove', event => {
@@ -278,7 +291,7 @@
     if (!pinch || event.touches.length >= 2) return;
     const armed = pinch.armed;
     pinch = null;
-    if (armed) writePref(ZOOM_PREF, window.MyTermPaper?.zoomNow() ?? 1);
+    if (armed) writePref(zoomKey(), zoomer()?.zoomNow?.() ?? 1);
   }, { passive: true }));
 
   const now = () => new Date().toISOString();
@@ -334,34 +347,6 @@
   let readLang = 'en';
   try { if (localStorage.getItem(PREF.lang) === 'ar') readLang = 'ar'; } catch {}
 
-  // ============================================================
-  // # 🌐 📌  THE LANGUAGE BELONGS TO THE PART ON THE DESK
-  // # 🔗 IT USED TO BE ONE SWITCH FOR THE WHOLE SITE. Turning one part to
-  // #    Arabic turned every part of every course, so a reader who reads
-  // #    one course in Arabic and another in English turned the globe
-  // #    every time they changed course. Now each part keeps its own,
-  // #    under its chapter and its own name, and is found that way when
-  // #    it is opened again. A part never set starts from the old single
-  // #    switch, so nothing turns over on its own the day this arrives
-  // ============================================================
-  const siteLang = readLang;
-  const partLangKey = () => {
-    const ch = window.MyTermChapterStore?.openId?.();
-    const part = window.MyTermChapterStore?.openSection?.();
-    return ch && part ? 'myterm.read.lang.' + ch + '.' + part : null;
-  };
-  const langOfPart = () => {
-    const key = partLangKey();
-    try {
-      const kept = key && localStorage.getItem(key);
-      if (kept === 'ar' || kept === 'en') return kept;
-    } catch {}
-    return siteLang;
-  };
-  const paintLang = () => {
-    langBtn.title = readLang === 'ar' ? 'Arabic — press for English' : 'English — press for Arabic';
-  };
-
   // Dark paper is the reader's too, and it is one word on the body
   // rather than a second set of colours — the sheet is turned over
   // whole, so nothing written on it has to know
@@ -382,7 +367,7 @@
     // The globe says it by itself. A label beside it said the same thing
     // twice, and the only thing the second one added was the question of
     // whether it meant the language now or the one it would turn to
-    paintLang();
+    langBtn.title = readLang === 'ar' ? 'Arabic — press for English' : 'English — press for Arabic';
     document.body.classList.toggle('darkpaper', darkPaper);
     darkBtn.innerHTML = darkPaper ? ICONS.sun : ICONS.moon;
     darkBtn.title = darkPaper ? 'White paper' : 'Dark paper';
@@ -507,10 +492,7 @@
   // type is now, and not what size pressing it would make it
   langBtn.onclick = () => {
     readLang = readLang === 'ar' ? 'en' : 'ar';
-    // Kept for this part alone; with no part open there is nothing to
-    // keep it for, and the next part opened says its own
-    const key = partLangKey();
-    if (key) writePref(key, readLang);
+    writePref(PREF.lang, readLang);
     applyRead();
   };
 
@@ -1365,10 +1347,6 @@
   // holding the same box at once was never going to end well
   const drawRows = () => {
     if (!window.MyTermChapterStore?.content()) return;
-    // Every part opened is drawn through here, so this is where it is
-    // given back the language it was last read in
-    readLang = langOfPart();
-    paintLang();
     const parts = window.MyTermChapterStore.sections();
     const here = window.MyTermChapterStore.openSection();
     const part = parts.find(p => p.id === here);
@@ -1407,6 +1385,9 @@
       repaper();
     }
     paintAll();
+    // The reading in the strip belongs to whatever is now on the desk,
+    // and the two papers are at two different nearnesses
+    paintZoom();
   };
 
   // The sheets are fetched the way the explanations are: on the first
@@ -1421,6 +1402,11 @@
     holder.className = 'csheets';
     body.append(holder);
     paper.arm(holder, afterPaper);
+    // Whatever nearness he left these sheets at, put back BEFORE the
+    // first one is drawn -- after, and the stack arrives at one size and
+    // jumps to another while he watches
+    paper.zoom?.(readPref(SHEET_ZOOM_PREF, 1));
+    paintZoom();
 
     const c = course();
     const ch = alive(c).find(h => h.id === openChapter);

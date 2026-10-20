@@ -582,7 +582,12 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
   margin-bottom: calc(var(--inkPadH, 980px) * (var(--inkFullZoom, 1) - 1));
 }
 .inkFullBtn.on { background: #3a6bb0; border-color: #3a6bb0; color: #fff; }
-.inkFullBtn svg, .inkSelBtn svg { display: block; }
+.inkFullBtn svg, .inkSelBtn svg, .inkEraseBtn svg { display: block; }
+/* FILLED WHEN IT IS ARMED, not merely outlined. A dashed outline on the
+   blue ground says "there is a select button here" and not "you are in
+   it", and the reader had to drag once to find out which tool he held */
+.inkSelBtn.on { box-shadow: 0 0 0 2px rgba(58, 107, 176, .32); }
+.inkSelBtn.on svg rect { fill: rgba(255, 255, 255, .38); stroke-dasharray: none; }
 /* ★ AND THE DARK PAGE IS REAPPLIED HERE. The dark look is a filter on
    `.msheet`, and an element raised into the top layer is NOT touched by
    its ancestors' filters — so the notebook came out light while the rest

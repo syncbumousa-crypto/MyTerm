@@ -334,13 +334,28 @@
   // #    just measured, which was fifteen pixels of page hanging off
   // ============================================================
   const PAGE_W = 800;
-  let scale = 1;
+  // ★ TWO NUMBERS AND NOT ONE. `scale` is how small the page had to be
+  //   drawn to fit the desk, which the window decides; `zoom` is how
+  //   near the reader asked to be brought, which only he decides. Kept
+  //   as one number, every resize of the window threw his zoom away.
+  //
+  //   AND NEITHER OF THEM RE-LAYS-OUT THE PAGE. The sheet is 800 pixels
+  //   wide in its own layout whatever happens here -- this is a
+  //   transform and nothing else -- which is what keeps a notebook's
+  //   stored ink meaning what it meant: every point in it is "this far
+  //   across a pad of THIS layout size", and that size does not move.
+  //   Only the canvas's density follows, which is what `refit` is for
+  const ZOOM_MIN = 0.5, ZOOM_MAX = 3;
+  let scale = 1, zoom = 1;
 
   const fitOnce = () => {
     const cs = getComputedStyle(where);
     const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
     const room = Math.max(240, (where.clientWidth || PAGE_W) - pad);
-    const drawn = Math.min(PAGE_W, room);
+    // Fitted to the desk first, then brought nearer by as much as was
+    // asked. Past the room it has, the stack simply scrolls -- which is
+    // what zooming into a framed painting does
+    const drawn = Math.min(PAGE_W, room) * zoom;
     scale = drawn / PAGE_W;
     where.style.setProperty('--sheetW', Math.round(drawn) + 'px');
     where.style.setProperty('--sheetScale', scale.toFixed(4));
@@ -580,6 +595,29 @@
     },
 
     refit,
+
+    // ============================================================
+    // # 🔍 📐  HOW NEAR THE SHEETS ARE BROUGHT
+    // # 🔤 JavaScript
+    // # 🎯 The same bargain the summary's paper strikes, so one pinch
+    // #    and one reading in the strip serve both kinds of page
+    // # 🔗 ASKED FOR BACK: these sheets were once held at "whatever
+    // #    fits, never larger", on the reasoning that a page which
+    // #    measures itself to its frame cannot be enlarged. That is
+    // #    true of ENLARGING and not of ZOOMING: a framed painting is
+    // #    moved nearer without a brush stroke changing. So nothing
+    // #    here re-lays-out anything -- the number is handed to a
+    // #    transform, and the sheet stays the 800 it was composed at
+    // ============================================================
+    zoom: next => {
+      const want = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Number(next) || 1));
+      if (Math.abs(want - zoom) < 0.0005) return zoom;
+      zoom = want;
+      refit();
+      return zoom;
+    },
+    zoomNow: () => zoom,
+
     showing: () => group,
     // Every card's tick, re-read — for a redraw that must not lose them
     repaint: () => {

@@ -9,9 +9,12 @@
 <script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermChapterStore.js"></script>
 <script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermGuard.js"></script>
 <script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermChapterQuiz.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermChapterPaper.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermSheetPaper.js"></script>
 <script>
   const want = { MyTermChapterStore: ['open','editRow','setChoices','saidAll','aboutSheet'],
-                 MyTermGuard: ['check','line'], MyTermQuiz: ['paint'] };
+                 MyTermGuard: ['check','line'], MyTermQuiz: ['paint'],
+                 MyTermPaper: ['paint'], MyTermSheetPaper: ['repaint', 'refit'] };
   const lines = [], faults = [];
   Object.entries(want).forEach(([name, api]) => {
     const it = window[name];

@@ -439,7 +439,14 @@
     // #    question answered and not yet marked
     // ============================================================
     const bankWas = chapters()?.saidSheet?.(one.group + '#' + one.at);
-    if (bankWas === 'ok' || bankWas === 'no') {
+    const said = bankWas === 'ok' || bankWas === 'no';
+
+    // A LAW PAGE HAS NO BOX OF ITS OWN, so the answer about it is a
+    // square of its own, where the card's tick would have been. A CARD
+    // has one, and wears the answer on it — see the note in the rows'
+    // own sheet: the box the reader already looks at is where this
+    // belongs, and a second mark beside it is a second thing to read
+    if (said && one.kind !== 'card') {
       const mark = document.createElement('span');
       mark.className = 'msheet-bank ' + bankWas;
       mark.title = bankWas === 'ok'
@@ -451,10 +458,12 @@
     if (one.kind === 'card') {
       const tick = document.createElement('button');
       tick.type = 'button';
-      tick.className = 'msheet-tick';
+      tick.className = 'msheet-tick' + (said ? ' ' + bankWas : '');
       const key = keyOf(one.group, one.at);
       tick.classList.toggle('on', chapters()?.isOn?.(key) === true);
-      tick.title = 'I can do this one';
+      tick.title = 'I can do this one'
+        + (bankWas === 'ok' ? ' · the bank had you right on it'
+         : bankWas === 'no' ? ' · the bank had you wrong on it' : '');
       tick.onclick = () => {
         const on = !tick.classList.contains('on');
         tick.classList.toggle('on', on);
@@ -559,8 +568,16 @@
     repaint: () => {
       where?.querySelectorAll('.msheet-card').forEach(box => {
         const tick = box.querySelector('.msheet-tick');
-        if (tick) tick.classList.toggle('on',
+        if (!tick) return;
+        tick.classList.toggle('on',
           chapters()?.isOn?.(keyOf(box.dataset.group, box.dataset.at)) === true);
+        // AND THE BANK'S LAST WORD WITH IT, because that one changes
+        // without anything on this page being pressed: a run ends in
+        // the bank and the card must wear the colour of the newest
+        // answer, not of the one it happened to be drawn with
+        const was = chapters()?.saidSheet?.(box.dataset.group + '#' + box.dataset.at);
+        tick.classList.toggle('ok', was === 'ok');
+        tick.classList.toggle('no', was === 'no');
       });
     }
   };

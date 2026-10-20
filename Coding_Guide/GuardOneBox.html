@@ -1,0 +1,141 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · one box, not two marks</title>
+<pre id="o">pending</pre>
+<script>
+  // THE ANSWER RIDES ON THE BOX THE READER ALREADY LOOKS AT.
+  //
+  // It was built as a second small square beside the tick, and the
+  // reader asked for the opposite in plain words: the box next to the
+  // item is the one he reads, and it should go from grey to green or
+  // red itself. So this watches three things that are easy to undo by
+  // accident later:
+  //
+  //   1  the verdict is on the row's OWN tick, and no second square is
+  //      drawn beside it
+  //   2  the mapping from a verdict to what is drawn is the real one,
+  //      cut out of the file and run here -- not restated
+  //   3  a card wears it on its tick too, while a LAW page, which has
+  //      no tick at all, keeps a square of its own
+  //
+  // And every colour it needs exists in the stylesheet, including the
+  // white tick over a coloured box: grey on green is not a tick anybody
+  // can see, and that is the kind of thing that passes a source check
+  // and fails on the page.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const F = '../docs/%F0%9F%93%9ATermBoard/F-End/';
+    const grab = async name => (await fetch(F + name + '?t=' + Date.now())).text();
+    const [paper, board, sheet, sheetCss] =
+      await Promise.all(['TermChapterPaper.js', 'TermBoard.css', 'TermSheetPaper.js', 'TermSheet.css'].map(grab));
+
+    const faults = [], out = [];
+    const read = (name, text) => {
+      if (text.length < 1000) faults.push(name + ' was not read: ' + text.length + ' chars');
+      return text;
+    };
+    read('TermChapterPaper.js', paper); read('TermBoard.css', board);
+    read('TermSheetPaper.js', sheet);   read('TermSheet.css', sheetCss);
+
+    // ---- 2: the mapping, cut out and RUN. A guard that restates the
+    // ---- rule proves only that two copies of one idea agree
+    const cut = (text, head) => {
+      const a = text.indexOf('const ' + head + ' =');
+      if (a < 0) return null;
+      const b = text.indexOf(';', text.indexOf('=>', a));
+      return b < 0 ? null : text.slice(a, b + 1);
+    };
+    const klass = cut(paper, 'bankClass'), why = cut(paper, 'bankWhy');
+    let bankClass = null, bankWhy = null;
+    if (!klass || !why) faults.push('the verdict-to-mark rule was not found in the sheet');
+    else {
+      bankClass = eval('(' + klass.replace(/^const bankClass =\s*/, '').replace(/;$/, '') + ')');
+      bankWhy = eval('(' + why.replace(/^const bankWhy =\s*/, '').replace(/;$/, '') + ')');
+      const table = [['ok', ' ok'], ['no', ' no'], [null, ''], ['', ''], ['maybe', '']];
+      table.forEach(([was, want]) => {
+        const got = bankClass(was);
+        if (got !== want) faults.push('a verdict of ' + JSON.stringify(was) + ' puts "' + got + '" on the box, expected "' + want + '"');
+      });
+      out.push('mapping: ok->"' + bankClass('ok') + '" no->"' + bankClass('no') + '" none->"' + bankClass(null) + '"');
+      if (!/right/i.test(bankWhy('ok')) || !/wrong/i.test(bankWhy('no')) || bankWhy(null) !== '') {
+        faults.push('what the box SAYS when hovered does not follow the verdict');
+      }
+    }
+
+    // ---- 1: on the tick itself, and nothing else beside it
+    const cellAt = paper.indexOf('<td class="cbox">');
+    const cell = cellAt < 0 ? '' : paper.slice(cellAt, paper.indexOf('</td>', cellAt));
+    if (!cell) faults.push('the row\'s box was not found');
+    const buttons = (cell.match(/<button/g) || []).length;
+    const spans = (cell.match(/<span/g) || []).length;
+    out.push('row box: ' + buttons + ' button, ' + spans + ' span beside it');
+    if (buttons !== 1) faults.push('the row box holds ' + buttons + ' pressables, expected 1');
+    if (spans !== 0) faults.push('a second mark is drawn beside the row\'s own box');
+    if (!/bankClass\(/.test(cell)) faults.push('the row\'s own box does not carry the verdict');
+    if (!/bankWhy\(/.test(cell)) faults.push('the row\'s own box does not say what the verdict was');
+    if (/cbank/.test(paper) || /\.cbank/.test(board)) faults.push('the old second square is still there');
+
+    // ---- 3: cards wear it, law pages keep their own square
+    const tickLine = sheet.match(/className = 'msheet-tick'[^\n]*/);
+    out.push('card tick: ' + (tickLine ? tickLine[0].slice(0, 64) : 'NOT FOUND'));
+    if (!tickLine) faults.push('the card tick was not found');
+    else if (!/bankWas/.test(tickLine[0])) faults.push('a card does not wear the verdict on its tick');
+    const lawAt = sheet.indexOf("className = 'msheet-bank '");
+    const lawWhen = lawAt < 0 ? '' : sheet.slice(Math.max(0, lawAt - 400), lawAt);
+    if (lawAt < 0) faults.push('a law page has nothing to show the verdict on');
+    else if (!/kind !== 'card'/.test(lawWhen)) faults.push('the separate square is drawn for cards too, not only law pages');
+    // The redraw after a run in the bank: a card drawn before the run
+    // must change colour when it ends, or the newest answer is invisible
+    // until something else happens to rebuild the page
+    const rep = sheet.indexOf('repaint: () =>');
+    const repSpan = rep < 0 ? '' : sheet.slice(rep, rep + 900);
+    if (!/saidSheet\?\.\(/.test(repSpan)) faults.push('a redraw does not re-read the bank, so a card keeps an old colour');
+
+    // ---- the colours themselves
+    [['.cbx.ok', board], ['.cbx.no', board], ['.cbx.ok.on::after', board],
+     ['.msheet-tick.ok', sheetCss], ['.msheet-tick.no', sheetCss]].forEach(([sel, where]) => {
+      if (where.indexOf(sel) < 0) faults.push('no colour is given for ' + sel);
+    });
+
+    // ---- AND WHAT IS ACTUALLY DRAWN. A selector present in the file
+    // ---- is not a colour on the screen: one rule of equal weight
+    // ---- further down undoes it, and nothing in the source says so.
+    // ---- So the real stylesheet is put on this page and the boxes are
+    // ---- measured, including the tick's own colour over a filled box
+    const style = document.createElement('style');
+    style.textContent = board;
+    document.head.appendChild(style);
+    const rgb = s => (s.match(/\d+/g) || []).map(Number);
+    const boxOf = cls => {
+      const b = document.createElement('button');
+      b.className = cls;
+      document.body.appendChild(b);
+      const face = getComputedStyle(b), tick = getComputedStyle(b, '::after');
+      return { fill: rgb(face.backgroundColor), ink: rgb(tick.color) };
+    };
+    const plain = boxOf('cbx'), onBox = boxOf('cbx on');
+    const okBox = boxOf('cbx ok'), noBox = boxOf('cbx no');
+    const okTick = boxOf('cbx on ok'), noTick = boxOf('cbx on no');
+    const same = (a, b) => a.join() === b.join();
+    const green = c => c[1] > c[0] + 20 && c[1] > c[2] + 20;
+    const red = c => c[0] > c[1] + 40 && c[0] > c[2] + 40;
+    const white = c => c[0] > 240 && c[1] > 240 && c[2] > 240;
+
+    out.push('drawn: plain ' + plain.fill.join(',') + ' · ticked ' + onBox.fill.join(',')
+             + ' · right ' + okBox.fill.join(',') + ' · wrong ' + noBox.fill.join(','));
+    out.push('tick over colour: right ' + okTick.ink.join(',') + ' · wrong ' + noTick.ink.join(','));
+    if (!green(okBox.fill)) faults.push('a right answer does not draw green: ' + okBox.fill.join(','));
+    if (!red(noBox.fill)) faults.push('a wrong answer does not draw red: ' + noBox.fill.join(','));
+    if (same(okBox.fill, plain.fill) || same(okBox.fill, onBox.fill)) faults.push('a right answer looks like an unasked box');
+    if (same(noBox.fill, plain.fill) || same(noBox.fill, onBox.fill)) faults.push('a wrong answer looks like an unasked box');
+    if (!white(okTick.ink) || !white(noTick.ink)) faults.push('the tick is not readable over a coloured box');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

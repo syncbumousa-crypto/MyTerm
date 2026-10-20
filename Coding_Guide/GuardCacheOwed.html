@@ -3,27 +3,46 @@
 <title>Guard · a cached copy Drive has not got</title>
 <pre id="o">pending</pre>
 <script>
-  // A COPY PUT ON THE SHELF AND NOT SENT IS A COPY ON ONE MACHINE ONLY.
-  // The shelf is keyed by the version the board records, so a cached
-  // copy that is RICHER than Drive answers every later open and looks
-  // present on every screen -- while Drive holds the poorer one and the
-  // store, being clean, never tries again. That is how 241 questions
-  // read as written for an hour with none of them in Drive.
+  // A COPY PUT ON THE SHELF AND NOT SENT IS A COPY ON ONE MACHINE ONLY,
+  // AND A COPY TAKEN OFF THE SHELF UNCHECKED IS A COPY DRIVE HAS MOVED
+  // PAST. Both halves of that cost real work in one afternoon:
   //
-  // So: every cacheWrite outside the sending must be accompanied by the
-  // work being marked unsent. The sending is the one place allowed to
-  // cache without saying anything, because it caches what it just wrote.
+  //   WRITE SIDE  the fold is a union, so a row this device holds and
+  //               the incoming copy does not survives it -- and the
+  //               merged copy was shelved under THEIR version with
+  //               nothing marked unsent. 241 questions read as written
+  //               for an hour and Drive held none.
+  //   READ SIDE   the shelf is keyed by the version the BOARD records,
+  //               and that note is written by whichever tab last wrote
+  //               the board. It can sit behind Drive -- and then the
+  //               shelf and the note agree with each other and both are
+  //               wrong. 54 answers were safely in Drive while every
+  //               open on the machine that wrote them served a copy
+  //               without them, and the guard believed that copy.
+  //   HANDOVER    opening another chapter sent what was unsent, then
+  //               cleared the two marks whatever came of the write --
+  //               so a REFUSED write became a silent deletion. 42
+  //               answers went that way.
+  //
+  // So: the sending may shelve without saying anything (it shelves what
+  // it just wrote), and so may a copy read straight from Drive (it is
+  // not news). Everything else must mark the work unsent, the fold must
+  // ask DRIVE for its version rather than believe the board's note, a
+  // copy served off the shelf must be checked against Drive, and the
+  // handover must refuse to let a failed write go.
   window.onerror = (m, s, l, c) => {
     document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
     return true;
   };
   (async () => {
     const o = document.getElementById('o');
-    const text = await (await fetch('../docs/%F0%9F%93%9ATermBoard/B-End/TermChapterStore.js?t=' + Date.now())).text();
+    const SRC = '../docs/%F0%9F%93%9ATermBoard/B-End/TermChapterStore.js';
+    const text = await (await fetch(SRC + '?t=' + Date.now())).text();
     const lines = text.split('\n');
 
-    // The sending's own stretch: from its head to the next declaration
-    // after it, so a renamed neighbour cannot quietly widen it
+    // Up to the NEXT declaration, whatever it is: an end marker named by
+    // hand is an end marker that moves when the file is edited, and the
+    // block then measures nothing while still reporting a pass
     const spanOf = (from, stop) => {
       const a = text.indexOf(from);
       if (a < 0) return [-1, -1];
@@ -31,7 +50,14 @@
       return [a, b < 0 ? text.length : b];
     };
     const [pushA, pushB] = spanOf('async function push()', '\n  const later =');
-    const [refA, refB] = spanOf('refresh: async () =>', '\n    shut:');
+    const [foldA, foldB] = spanOf('async function foldFromDrive()', '\n    refresh:');
+    const [bellA, bellB] = spanOf('refresh: async () =>', '\n    shut:');
+    const [shelfA, shelfB] = spanOf('cacheRead(chapter.id', '\n      return open;');
+    const [leaveA, leaveB] = spanOf('await push().catch', 'await settle(');
+    const FOLD = foldA < 0 ? '' : text.slice(foldA, foldB);
+    const BELL = bellA < 0 ? '' : text.slice(bellA, bellB);
+    const SHELF = shelfA < 0 ? '' : text.slice(shelfA, shelfB);
+    const LEAVING = leaveA < 0 ? '' : text.slice(leaveA, leaveB);
 
     // Call sites only -- never the definition, or the check passes on a
     // file in which nothing calls it at all
@@ -60,41 +86,49 @@
     sites.forEach(at => {
       if (at >= pushA && at <= pushB) { sending++; return; }
       if (FRESH(at)) { fresh++; return; }
-      const n = lineOf(at);                      // 1-based
+      const n = lineOf(at);
       const after = lines.slice(n - 1, n + 11).join('\n');
       if (!MARK.test(after)) loose.push('line ' + n);
     });
 
-    // And the one that cost the questions, named: the fold reads Drive,
-    // keeps what Drive has not got, and must say so
-    const refOwes = refA >= 0 && /cacheWrite\(/.test(text.slice(refA, refB)) && MARK.test(text.slice(refA, refB));
-
-    // THE OTHER WAY A WRITE BECOMES A DELETION. Opening another chapter
-    // sends what is unsent first -- and used to clear the two marks
-    // whatever came of it, so a REFUSED write was discarded along with
-    // the chapter it belonged to. Between that send and the new
-    // chapter's files there must be a refusal, and no blanket clearing
-    const [leaveA, leaveB] = spanOf('await push().catch', 'await settle(');
-    const leaving = leaveA < 0 ? '' : text.slice(leaveA, leaveB);
-    const refuses = /if \(contentDirty \|\| stateDirty\) return/.test(leaving);
-    const blanket = /contentDirty = stateDirty = false/.test(leaving);
+    const foldOwes = /cacheWrite\(/.test(FOLD) && MARK.test(FOLD);
+    const foldAsksDrive = /readFile\(open\.chapter\.contentId\)/.test(FOLD)
+                       && /Number\(incoming\.version\)/.test(FOLD);
+    const bellFolds = /foldFromDrive\(\)/.test(BELL);
+    const shelfChecked = /foldFromDrive\(\)/.test(SHELF);
+    // The trigger that was the bug: the fold run only when the board's
+    // note differs from the copy in hand, which is two readings of the
+    // same stale number agreeing with each other
+    const believesTheNote = /const theirVersion = Number\(open\.chapter\.contentVersion\)/.test(text);
+    const refuses = /if \(contentDirty \|\| stateDirty\) return/.test(LEAVING);
+    const blanket = /contentDirty = stateDirty = false/.test(LEAVING);
 
     const faults = [];
-    if (leaveA < 0) faults.push('the handover to the next chapter was not found');
-    if (leaveA >= 0 && !refuses) faults.push('a refused write is let go of when the chapter changes');
-    if (blanket) faults.push('the handover clears the unsent marks whatever came of the write');
     if (sites.length < 2) faults.push('the file was not read: ' + sites.length + ' call sites');
     if (pushA < 0) faults.push('the sending was not found');
-    if (refA < 0) faults.push('the fold was not found');
+    if (foldA < 0) faults.push('the fold was not found where both sides can reach it');
+    if (bellA < 0) faults.push('the bell was not found');
+    if (shelfA < 0) faults.push('the shelf read was not found');
+    if (leaveA < 0) faults.push('the handover to the next chapter was not found');
     if (sending !== 1) faults.push('the sending caches ' + sending + ' times, expected 1');
-    if (sites.length - sending - fresh < 1) faults.push('no fold was weighed: every site excused');
     if (loose.length) faults.push('cached without being marked unsent: ' + loose.join(', '));
-    if (refA >= 0 && !refOwes) faults.push('the fold caches a copy it never marks unsent');
+    if (foldA >= 0 && !foldOwes) faults.push('the fold caches a copy it never marks unsent');
+    if (foldA >= 0 && !foldAsksDrive) faults.push('the fold does not ask Drive for its own version');
+    if (bellA >= 0 && !bellFolds) faults.push('the bell keeps a fold of its own instead of the shared one');
+    if (shelfA >= 0 && !shelfChecked) faults.push('a copy off the shelf is never checked against Drive');
+    if (believesTheNote) faults.push('the fold is still triggered by the version the board records');
+    if (leaveA >= 0 && !refuses) faults.push('a refused write is let go of when the chapter changes');
+    if (blanket) faults.push('the handover clears the unsent marks whatever came of the write');
 
     o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK')
       + '\ncall sites: ' + sites.length + ' (sending ' + sending + ', just read ' + fresh
       + ', weighed ' + (sites.length - sending - fresh) + ')'
       + '\nunmarked:   ' + loose.length
-      + '\nfold marks: ' + (refOwes ? 'yes' : 'no');
+      + '\nfold:       ' + (foldOwes ? 'marks unsent' : 'SILENT')
+      + ', ' + (foldAsksDrive ? 'asks Drive' : 'BELIEVES THE NOTE')
+      + '\nshelf:      ' + (shelfChecked ? 'checked against Drive' : 'TRUSTED BLINDLY')
+      + '\nbell:       ' + (bellFolds ? 'uses the shared fold' : 'HAS ITS OWN')
+      + '\nhandover:   ' + (refuses ? 'refuses a failed write' : 'LETS IT GO')
+      + (blanket ? ', clears the marks blindly' : '');
   })();
 </script>

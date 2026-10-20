@@ -1108,6 +1108,18 @@
   // #    about, because that is where the reader looks: nobody opens a
   // #    bank to ask how the bank is going
   // ============================================================
+  // How many of ONE stack of sheets the bank has had you right (or
+  // wrong) on. The keys are 'sheet:<group>#<at>', so a stack is a
+  // prefix — and a part with no group would otherwise match every
+  // sheet key there is, which is why the empty group matches nothing
+  const saidOn = (said, section, want) => {
+    const head = 'sheet:' + (section.group || '') + '#';
+    if (!section.group) return 0;
+    let n = 0;
+    said.forEach((was, key) => { if (was === want && key.indexOf(head) === 0) n++; });
+    return n;
+  };
+
   const bankSaid = () => {
     const said = new Map();
     const say = (id, was) => { if (said.get(id) !== 'no') said.set(id, was); };
@@ -1391,8 +1403,23 @@
                  : living.filter(r => hasWords(r.term || r.termAr) && hasWords(r.text || r.textAr)).length,
           learnt: sheets ? doneIn(s)
                 : living.filter(r => open.state.marks[r.id]?.on === true).length,
-          good: living.filter(r => said.get(r.id) === 'ok').length,
-          bad: living.filter(r => said.get(r.id) === 'no').length
+          // ============================================================
+          // AND ITS VERDICTS ARE KEYED BY SHEET, NOT BY ROW
+          //
+          // The same hole one line further down: a rules part was asked
+          // how many of its ROWS the bank had right, it has none, so
+          // the second line of the heaviest part in both numerical
+          // courses was grey for ever — the reader said so plainly:
+          // "the mastery line doesn't work with the Rules parts".
+          //
+          // What the bank says about a sheet is kept under
+          // 'sheet:<group>#<at>', so that is what is counted. Counted
+          // off the KEYS and not off a list of cards, because the cards
+          // live in a file of their own that this store never reads:
+          // the part knows how many it has and nothing more
+          // ============================================================
+          good: sheets ? saidOn(said, s, 'ok') : living.filter(r => said.get(r.id) === 'ok').length,
+          bad: sheets ? saidOn(said, s, 'no') : living.filter(r => said.get(r.id) === 'no').length
         };
       });
     },

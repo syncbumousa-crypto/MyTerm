@@ -382,7 +382,22 @@
     return wrap;
   };
 
+  // ============================================================
+  // THE STRIP IS TOLD AT EVERY ANSWER, NOT AT THE END OF THE RUN
+  //
+  // Painting the run returns before the line that tells whoever is
+  // listening, so the readings above — the part's green-and-red line,
+  // the chapter's, the board's — sat exactly as they were until the
+  // reader came back out of the bank. Answer thirty questions and
+  // nothing moves; the reader reported it as the line "not reflecting
+  // the real state".
+  //
+  // Said HERE, where an answer has just been recorded, and it costs a
+  // redraw of the strip and not of the page: the listener re-reads the
+  // counts and redraws the tabs, and the question in hand is untouched
+  // ============================================================
   const onward = () => {
+    told();
     run.at++;
     paint(host, told);
   };

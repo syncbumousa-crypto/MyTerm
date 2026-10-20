@@ -1,0 +1,132 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · the two lines under a part</title>
+<pre id="o">pending</pre>
+<script>
+  // THE SECOND LINE IS THE ONE THAT SAYS WHETHER YOU ACTUALLY HAVE IT,
+  // AND IT WAS GREY FOR A WHOLE KIND OF PART.
+  //
+  // A rules part keeps its work in CARDS, which are not rows and live in
+  // a file of their own. Asked how many of its rows the bank had right
+  // it answered none — truthfully and uselessly — so the heaviest part
+  // of both numerical courses showed a grey rail for ever. And the
+  // readings were told nothing while a run was going, so answering
+  // thirty questions moved no line until the reader left the bank.
+  //
+  // Both are measured here by RUNNING the real code: the counter cut out
+  // of the store, the rail cut out of the screen. A guard that restates
+  // the rule proves only that two copies of one idea agree.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const B = '../docs/%F0%9F%93%9ATermBoard/B-End/';
+    const F = '../docs/%F0%9F%93%9ATermBoard/F-End/';
+    const grab = async p => (await fetch(p + '?t=' + Date.now())).text();
+    const [store, screen, quiz] = await Promise.all([
+      grab(B + 'TermChapterStore.js'), grab(F + 'TermCourseScreen.js'), grab(F + 'TermChapterQuiz.js')]);
+
+    const faults = [], out = [];
+    [['TermChapterStore.js', store], ['TermCourseScreen.js', screen], ['TermChapterQuiz.js', quiz]]
+      .forEach(([name, text]) => {
+        if (text.length < 1000) faults.push(name + ' was not read: ' + text.length + ' chars');
+      });
+
+    // Cut a declaration out whole, from its head to the line that closes
+    // it at the same indent -- named ends move when a file is edited
+    const cut = (text, head) => {
+      const a = text.indexOf(head);
+      if (a < 0) return null;
+      const pad = ' '.repeat(text.slice(0, a).length - text.lastIndexOf('\n', a) - 1);
+      const end = text.indexOf('\n' + pad + '};', a);
+      return end < 0 ? null : text.slice(a, end + pad.length + 3);
+    };
+
+    // ---- 1: the counter, run against keys of both shapes
+    const counter = cut(store, 'const saidOn =');
+    if (!counter) faults.push('the sheet counter was not found in the store');
+    else {
+      const saidOn = eval('(' + counter.replace(/^const saidOn =\s*/, '').replace(/;$/, '') + ')');
+      const said = new Map([['sheet:rules1#0', 'ok'], ['sheet:rules1#3', 'no'],
+                            ['sheet:rules2#0', 'ok'], ['sheet:rules2#1', 'ok'],
+                            ['r-arow', 'ok'], ['r-brow', 'no']]);
+      const table = [
+        ['rules1 right', { group: 'rules1' }, 'ok', 1],
+        ['rules1 wrong', { group: 'rules1' }, 'no', 1],
+        ['rules2 right', { group: 'rules2' }, 'ok', 2],
+        ['a part with no group', { group: '' }, 'ok', 0]
+      ];
+      table.forEach(([what, part, want, expect]) => {
+        const got = saidOn(said, part, want);
+        if (got !== expect) faults.push(what + ' counted ' + got + ', expected ' + expect);
+      });
+      out.push('sheet verdicts: rules1 ' + saidOn(said, { group: 'rules1' }, 'ok') + ' right / '
+               + saidOn(said, { group: 'rules1' }, 'no') + ' wrong · rules2 '
+               + saidOn(said, { group: 'rules2' }, 'ok') + ' right · rows are not counted as sheets');
+    }
+
+    // ---- 2: and it is WIRED to the rules branch, not merely present
+    const mapAt = store.indexOf('rows: sheets ?');
+    const mapping = mapAt < 0 ? '' : store.slice(mapAt, store.indexOf('};', mapAt));
+    if (!mapping) faults.push('what a part reports was not found');
+    else {
+      ['good', 'bad'].forEach(which => {
+        const line = (mapping.match(new RegExp(which + ':[^\\n]*')) || [''])[0];
+        if (!/sheets \?/.test(line) || !/saidOn\(/.test(line)) {
+          faults.push('a rules part still counts its ' + which + ' off rows: ' + line.trim().slice(0, 60));
+        }
+      });
+    }
+
+    // ---- 3: the rail itself, built by the screen's own code
+    const mix = cut(screen, 'const mixOf =');
+    if (!mix) faults.push('the green-and-red rail was not found');
+    else {
+      const mixOf = eval('(' + mix.replace(/^const mixOf =\s*/, '').replace(/;$/, '') + ')');
+      const line = mixOf(3, 1, 10, '3/4');
+      const rail = line.querySelector('.ctab-bar');
+      const fills = [...line.querySelectorAll('i')];
+      const widths = fills.map(f => f.style.width);
+      out.push('rail: ' + (rail ? rail.className : 'NONE') + ' · fills ' + widths.join(' + ')
+               + ' · reading "' + (line.querySelector('.ctab-count')?.textContent || '') + '"');
+      if (!rail || !/\bmix\b/.test(rail.className)) faults.push('the two fills do not share one rail');
+      if (fills.length !== 2) faults.push('the rail carries ' + fills.length + ' fills, expected 2');
+      if (widths[0] !== '30%' || widths[1] !== '10%') faults.push('3 right and 1 wrong of 10 drew ' + widths.join(' + '));
+      if (!fills[0]?.classList.contains('good') || !fills[1]?.classList.contains('bad')) {
+        faults.push('right and wrong are not told apart on the rail');
+      }
+      // Nothing asked yet must be an EMPTY rail and not a full one: a
+      // division by zero that lands on 100% would read as mastery
+      const none = mixOf(0, 0, 0, null);
+      const empty = [...none.querySelectorAll('i')].map(f => f.style.width);
+      if (empty.some(w => w !== '0%')) faults.push('a part the bank never asked draws ' + empty.join(' + '));
+      if (none.querySelector('.ctab-count')) faults.push('a reading was drawn where none was given');
+    }
+
+    // ---- 4: and the words under the pointer follow the same numbers
+    const words = cut(screen, 'const readingOf =');
+    if (!words) faults.push('the words of the reading were not found');
+    else {
+      const readingOf = eval('(' + words.replace(/^const readingOf =\s*/, '').replace(/;$/, '') + ')');
+      const nothing = readingOf('Terms', 0, 0, 0, 0);
+      const unasked = readingOf('Terms', 10, 4, 0, 0);
+      const asked = readingOf('Terms', 10, 4, 3, 1);
+      out.push('words: "' + asked + '"');
+      if (!/nothing in it yet/.test(nothing)) faults.push('an empty part does not say so: ' + nothing);
+      if (!/not asked you any/.test(unasked)) faults.push('an unasked part does not say so: ' + unasked);
+      if (!/3 right and 1 wrong of 4/.test(asked)) faults.push('the words do not match the rail: ' + asked);
+    }
+
+    // ---- 5: the strip is told at every answer, not at the end
+    const onward = cut(quiz, 'const onward =') || (quiz.match(/const onward = \(\) => \{[\s\S]*?\n  \};/) || [''])[0];
+    out.push('after an answer: ' + (onward ? onward.replace(/\s+/g, ' ').slice(0, 72) : 'NOT FOUND'));
+    if (!onward) faults.push('what happens after an answer was not found');
+    else if (!/told\(\)/.test(onward)) faults.push('an answer does not tell the strip, so the lines stand still through a run');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

@@ -1,0 +1,208 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · the notebook keeps what was written in it</title>
+<!-- ★ THE REAL STYLESHEET, NOT A SKETCH OF IT.
+     This harness first drew the box with rules of its own, and the ink
+     pad grew without bound in the real browser from a rule the harness
+     did not have — the guard measured a shape nobody ships. A guard
+     that styles its own fixture is checking its own stylesheet. -->
+<!-- fetched with a stamp in the script below, not linked: a linked
+     stylesheet comes out of the cache, and the first run of this guard
+     measured a shape that had already been fixed on disk -->
+
+<style>
+  /* The only thing the harness supplies is the PAGE's size, which in the
+     app comes from the stored markup of the card itself */
+  #host { width: 420px; --sheetScale: 1; }
+  .msheet { width: 400px; height: 460px; border: 1px solid #ccc; margin: 6px 0; }
+  .qcard { height: 60px; }
+</style>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermInkPad.js"></script>
+<script>
+  // THE ONE PROMISE THIS FEATURE MAKES IS THAT A SOLUTION YOU WROTE IS
+  // NOT LOST. Everything else about handwriting — how smooth the line
+  // is, how closely the width follows the hand — is a matter of degree.
+  // This is not: a page wiped by switching parts, or ink that is in
+  // memory and nowhere else, is the whole feature failing while every
+  // counter on the screen stays green.
+  //
+  // So this measures the four ways it could be lost, and it measures
+  // them ON THE DRAWN PIXELS where it can, not on the model alone:
+  //
+  //   1  the sheets are rebuilt under it (a part switch does this to all
+  //      thirty-five of them) and the ink comes back
+  //   2  the shelf holds what memory holds, so a reload keeps it
+  //   3  a finger neither draws nor joins a stroke the pen is drawing
+  //   4  a scroll past a notebook that has not changed redraws nothing
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const host = document.getElementById('host');
+    const faults = [], out = [];
+    const S = window.MyTermInkStore, P = window.MyTermInkPad;
+    if (!S || !P) { o.textContent = 'FAIL the two modules did not load'; return; }
+
+    // The shipped stylesheet, read now and put on this page. The pad's
+    // size comes from these rules, and a fixture with rules of its own
+    // measures a notebook nobody ships
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    if (css.length < 2000) faults.push('the stylesheet was not read: ' + css.length + ' chars');
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+
+    // ---- a part of two cards and one law page, as the paper builds them
+    const cards = [['rules1', 0], ['rules1', 1]];
+    const build = () => {
+      host.textContent = '';
+      cards.forEach(([g, at]) => {
+        const d = document.createElement('div');
+        d.className = 'msheet msheet-card';
+        d.dataset.group = g; d.dataset.at = String(at);
+        d.innerHTML = '<div class="qcard">a question</div>';
+        host.append(d);
+      });
+      const law = document.createElement('div');
+      law.className = 'msheet msheet-law';
+      law.dataset.group = 'rules1'; law.dataset.at = '9';
+      host.append(law);
+    };
+
+    // THE RUNNER CANNOT RUN IndexedDB AT ALL — measured on 2026-10-20:
+    // the open request calls back neither success nor error, so anything
+    // awaiting it waits for ever and this page reports "pending" with no
+    // fault named. So unless it is opened with ?real=1 the guard hands
+    // the store a shelf of its own and measures the PROTOCOL: what is
+    // written, when, and whether the shelf and memory agree. Which shelf
+    // was used is printed below, so the two runs are never confused
+    if (!/[?&]real=1/.test(location.search)) {
+      const box = new Map();
+      S.useShelf({
+        name: 'the guard’s own shelf',
+        get: async k => (box.has(k) ? JSON.parse(box.get(k)) : null),
+        put: async (k, v) => { box.set(k, JSON.stringify(v)); return true; }
+      });
+    }
+    await S.open('c-test', 'h-test');
+    P.arm(host);
+    build();
+    let made = await P.mount();
+    out.push('boxes made: ' + made + ' · on law sheets: ' + host.querySelectorAll('.msheet-law .inkBox').length);
+    if (made !== 2) faults.push('mount made ' + made + ' notebooks for two cards');
+    if (host.querySelectorAll('.msheet-law .inkBox').length) faults.push('a law page was given a notebook — there is nothing on it to work');
+    if (await P.mount() !== 0) faults.push('a second mount built the boxes again instead of leaving them');
+
+    // ---- a stroke, written as the pen writes it
+    const key = 'rules1#0';
+    const pad = host.querySelector('.inkBox[data-key="' + key + '"] .inkDry');
+    if (!pad) { o.textContent = 'FAIL the first card has no canvas'; return; }
+    const ink = (type, kind, x, y, press, id) => {
+      const r = pad.getBoundingClientRect();
+      const ev = new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id || 1,
+        pointerType: kind, pressure: press, clientX: r.left + x, clientY: r.top + y,
+        isPrimary: true, buttons: type === 'pointerup' ? 0 : 1, width: kind === 'touch' ? 20 : 1, height: 1 });
+      pad.dispatchEvent(ev);
+      return ev;
+    };
+    // NOT requestAnimationFrame: it is never executed in a browser run
+    // under a virtual time budget, so a harness that waits on a frame
+    // waits for ever and reports nothing at all. Timers do run — and the
+    // only thing being waited for here is a task, not a paint
+    const wait = () => new Promise(r => setTimeout(r, 0));
+
+    ink('pointerdown', 'pen', 40, 40, 0.3);
+    for (let i = 1; i <= 24; i++) ink('pointermove', 'pen', 40 + i * 6, 40 + (i % 5) * 7, 0.2 + i * 0.03);
+    // A FINGER MOVING WHILE THE PEN IS DOWN. This is the interleaving
+    // that single-case tests miss: the reported fault was a line running
+    // from the nib to the resting palm and back, and it needs both at
+    // once to appear at all
+    ink('pointermove', 'touch', 380, 300, 0.5, 7);
+    ink('pointerup', 'pen', 40 + 24 * 6, 40, 0.5);
+    await wait();
+
+    const pts = () => (S.strokes(key)[0] || { p: [] }).p.length / 3;
+    out.push('strokes: ' + S.strokes(key).length + ' · points: ' + pts());
+    if (S.strokes(key).length !== 1) faults.push('one stroke of the pen made ' + S.strokes(key).length + ' strokes');
+    if (pts() < 20) faults.push('the stroke kept ' + pts() + ' points of twenty-five — points are being dropped');
+    const far = (S.strokes(key)[0] || { p: [] }).p.some((n, i) => i % 3 === 0 && n > 500);
+    if (far) faults.push('a finger added its own position to the pen\'s stroke');
+
+    // ---- the finger alone draws nothing
+    ink('pointerdown', 'touch', 100, 100, 0.5, 9);
+    ink('pointermove', 'touch', 140, 140, 0.5, 9);
+    ink('pointerup', 'touch', 140, 140, 0, 9);
+    if (S.strokes(key).length !== 1) faults.push('a finger drew a stroke of its own');
+
+    // ---- and it is on the page, in ink, not only in the model
+    const inked = cv => {
+      try {
+        const c = cv.getContext('2d');
+        const d = c.getImageData(0, 0, cv.width, cv.height).data;
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++;
+        return n;
+      } catch (e) { return -1; }
+    };
+    const drawn = inked(pad);
+    out.push('ink drawn on the page: ' + drawn + ' pixels');
+    if (drawn === 0) faults.push('the stroke is in the store and NOTHING is drawn on the page');
+
+    // ---- 1 · the sheets are rebuilt under it
+    build();
+    const after = await P.mount();
+    const pad2 = host.querySelector('.inkBox[data-key="' + key + '"] .inkDry');
+    await wait();
+    const back = pad2 ? inked(pad2) : 0;
+    out.push('after a rebuild: boxes ' + after + ' · points ' + pts() + ' · pixels ' + back);
+    if (after !== 2) faults.push('the rebuild left ' + after + ' notebooks');
+    if (pts() < 20) faults.push('the rebuild lost the stroke');
+    if (drawn > 0 && back === 0) faults.push('the ink survived in the store and was not drawn again');
+
+    // ---- 2 · the shelf holds what memory holds
+    await S.flush();
+    const kept = await S.onShelfNow(key);
+    const keptPts = kept && kept.sh && kept.sh[0] && kept.sh[0].s[0]
+      ? kept.sh[0].s[0].p.length / 3 : 0;
+    out.push('on the shelf: ' + keptPts + ' points · rev ' + (kept ? kept.rev : '—'));
+    if (!kept) faults.push('nothing reached the shelf — a reload would lose everything written');
+    else if (keptPts !== pts()) faults.push('the shelf holds ' + keptPts + ' points and memory holds ' + pts());
+    if (S.owed() !== 0) faults.push(S.owed() + ' cards are still marked unsent after a flush');
+
+    // ---- 3 · a scroll past an unchanged notebook redraws nothing
+    //
+    // THE FIRST REFIT AFTER A MOUNT IS ALLOWED TO WORK, and measuring it
+    // as though it were not cost a false fault here: the canvases are
+    // first fitted the instant their box is appended, and the layout has
+    // not settled then — the scrolling bar the sheets bring takes width
+    // that was just measured, which is the same trap the sheet paper
+    // guards against by reading the room twice. So the store legitimately
+    // changes once and the ink is redrawn once.
+    //
+    // What must be free is EVERY REFIT AFTER THAT, because that is the
+    // one that happens while the reader pinches and scrolls
+    const settle = P.refit();
+    const again = P.refit();
+    out.push('refit redrew: ' + settle + ' on the settling pass, ' + again + ' after that');
+    if (again !== 0) faults.push('a refit that changed no size still redrew ' + again + ' canvases');
+
+    // ---- 4 · and what is taken back is taken back
+    S.undo(key);
+    if (S.strokes(key).length !== 0) faults.push('undo left ' + S.strokes(key).length + ' strokes');
+    await S.flush();
+    const empty = await S.onShelfNow(key);
+    if (empty && empty.sh[0].s.length) faults.push('undo did not reach the shelf');
+
+    out.push('shelf: ' + S.shelfName());
+    out.push('pen numbers in use: pressure ' + P.tool().pressure.join('–') + ' · palm ' + P.tool().palm + 'px');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

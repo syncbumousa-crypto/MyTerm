@@ -376,3 +376,96 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
 .w5Steps kbd{font-family:ui-monospace,Consolas,monospace;font-size:10.5px;background:#2f3138;color:#e8eaee;border-radius:4px;padding:1px 5px;margin:0 1px;direction:ltr;display:inline-block}
 .w5CalcMsg{font-size:11.5px;line-height:1.7;color:#2d3038;background:#eef3fb;border:1px solid #c9d6ee;border-radius:8px;padding:7px 9px;margin-top:9px}
 .w5CalcMsg b{color:#1c4e9c}
+
+/* ============================================================ */
+/* # 🖊️ 📐  THE NOTEBOOK UNDER A PRACTICE CARD                  */
+/* # 🔤 CSS                                                      */
+/* # 🎯 The writing area, its toolbar, and the two canvases       */
+/* # 🔗 MEASURED BEFORE IT WAS DRAWN (2026-10-20): the card is a  */
+/* #    page of 800 × 1131 whose question is 160 tall, so the     */
+/* #    room under it runs 825–979 with a median of 963 — within  */
+/* #    two per cent of the same measurement on the reader's own  */
+/* #    machine. So the box FILLS what is left rather than being  */
+/* #    given a height of its own: the page already has the room, */
+/* #    and a number written here would be a second opinion about */
+/* #    a thing the layout already knows.                        */
+/* ============================================================ */
+.msheet-card { display: flex; flex-direction: column; }
+
+.inkBox {
+  flex: 1 1 auto; min-height: 220px; margin-top: 10px;
+  display: flex; flex-direction: column; min-width: 0;
+}
+
+/* The bar sits ABOVE the area and not on it: floating in a corner it
+   would eat the place you write, and on a page of plain white there is
+   no hover to bring it back */
+.inkBar {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 0 2px 6px;
+}
+.inkGrp { display: flex; align-items: center; gap: 4px; }
+.inkGrp + .inkGrp { border-inline-start: 1px solid #dcdfe5; padding-inline-start: 10px; }
+
+.inkBtn {
+  font: inherit; font-size: 12px; line-height: 1;
+  min-width: 24px; height: 24px; padding: 0 6px;
+  border: 1px solid #d4d7de; border-radius: 6px;
+  background: #f4f5f8; color: #4a4d55; cursor: pointer;
+}
+.inkBtn:hover { background: #e7e9ef; }
+.inkBtn.on { background: #3a6bb0; border-color: #3a6bb0; color: #fff; }
+.inkSw { width: 22px; height: 22px; min-width: 22px; padding: 0; border-radius: 50%;
+         border: 1px solid rgba(0, 0, 0, .25); }
+.inkSw.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3a6bb0; }
+/* The number is ON the slot, because a nib you cannot read is a nib you
+   cannot choose — and these three are meant to be adjusted later */
+.inkWz { font-variant-numeric: tabular-nums; }
+
+/* Squared paper, as the working is done on squared paper: 24px to the
+   square, which is also the figure the dot cursor was sized against */
+.inkPad {
+  flex: 1 1 auto; min-height: 0; position: relative;
+  border: 1px solid #dfe2e8; border-radius: 8px; background: #fff;
+  background-image: repeating-linear-gradient(to bottom, transparent 0 23px, #e9ecf1 23px 24px),
+                    repeating-linear-gradient(to left,   transparent 0 23px, #e9ecf1 23px 24px);
+}
+
+/* ★ LAID OUT BY ITS BOX, NOT BY ITS OWN SIZE.
+   With `height:100%` inside a flex item whose height is not definite,
+   the percentage falls back to the canvas's INTRINSIC size — so every
+   time the store was set to `offsetHeight × density` the layout grew by
+   the density, and the next pass grew it again: measured 1597 → 3513 →
+   7729 pixels in three passes, which on a pinch is a notebook growing
+   without bound until the memory runs out. Absolutely positioned, the
+   size comes from the pad's box alone and nothing feeds back.
+   Caught by `GuardInkAlive` in a REAL browser: the headless runner
+   settled both readings identically and showed nothing */
+.inkDry {
+  /* AND THE TWO PERCENTAGES STAY. `inset:0` alone does not stretch a
+     REPLACED element — a canvas with `width:auto` takes its intrinsic
+     size and the opposite inset is simply ignored, which is the same
+     3194-pixel runaway by another road. Absolute positioning is what
+     makes the percentages resolve against the pad's box instead of
+     against an indefinite flex height; the percentages are what make
+     them apply at all. Measured both ways */
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  /* The pen needs this or the browser reads its drag as a scroll. The
+     FINGER is deliberately left alone: a page you cannot scroll with
+     your thumb because an area fills it is worse than no notebook */
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* The live stroke, above the dry page and catching nothing — every event
+   belongs to the canvas underneath.
+   AND IT IS NOT DISPLAYED UNLESS THE PEN IS DOWN: this is a low-latency
+   surface, and emptying its store frees memory without committing a
+   frame — so the last stroke drawn on it can stay visible above the dry
+   page as a ghost. The reader's own machine met exactly that ("I erased
+   the line and it stayed until I drew something else"), and the cure is
+   not to bet on compositor semantics: an element that is not displayed
+   is not composited at all */
+.inkWet { position: absolute; inset: 0; display: none; width: 100%; height: 100%;
+          pointer-events: none; }
+.inkBox.penDown .inkWet { display: block; }

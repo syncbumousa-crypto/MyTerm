@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>قياسُ القلم — م٠ قبل سطرٍ واحدٍ من الحبر</title>
+<!-- ============================================================
+     # 📏 🖊️  مَا يُقَاسُ عَلَى الجِهَازِ قَبْلَ أَنْ يُكْتَبَ فِي الشِّفْرَة
+     # 🔤 HTML + JavaScript
+     # 🎯 يُكتب في المساحة بالقلم وبالإصبع، فتُقرأ الأرقامُ التي تَحكم نقلَ
+     #    الحبر إلى MyTerm: مدى الضغط · جمعُ النقاط · سبقُ التحويم ·
+     #    حجمُ التماسّ · وهل تَصل أحداثُ اللمس والقلمُ يَخطّ.
+     # 🔗 عتبةٌ مخمَّنةٌ واحدةٌ أسقطت ميزةً كاملةً صامتةً في النسخة المحليّة:
+     #    حدُّ الكفّ كان مكتوبًا 40 بكسلًا، والمقيسُ على هذا اللوح أنّ الإصبعَ
+     #    نفسَه 43–115. فأربعون كانت سترفض إصبعَه وتَقتل التمريرَ باللمس.
+     #    فالقياسُ على الجهاز ليس تحسينًا، بل هو الفرقُ بين ميزةٍ تعمل
+     #    وميزةٍ تبدو أنها تعمل. ولا رقمَ من هذي الصفحة يُخمَّن في الشفرة.
+     # 🔗 ولا تُصلح هذي الصفحةُ شيئًا ولا تَكتب في مخزنٍ ولا تَمسّ درايف:
+     #    تُقرأ وتُغلَق. ومخرَجُها سطرٌ واحدٌ يُنسَخ ويُرسَل.
+     ============================================================ -->
+<style>
+  :root { color-scheme: light; }
+  body { margin:0; font:14px/1.7 "Segoe UI", system-ui, sans-serif;
+         background:#f3f4f7; color:#23252b; padding:14px; }
+  h1 { font-size:17px; margin:0 0 2px; }
+  p.lead { margin:0 0 12px; color:#5b5f69; font-size:13px; }
+  .wrap { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start; }
+  .padBox { flex:1 1 420px; min-width:300px; }
+  .side { flex:1 1 320px; min-width:280px; }
+  /* المساحةُ شبكةُ مربّعاتٍ كمساحة الحبر نفسِها، فالإحساسُ هو الإحساس */
+  #pad { display:block; width:100%; height:360px; touch-action:none; cursor:crosshair;
+         border:1px solid #dfe2e8; border-radius:8px; background:#fff;
+         background-image:repeating-linear-gradient(to bottom, transparent 0 23px, #e9ecf1 23px 24px),
+                          repeating-linear-gradient(to left,   transparent 0 23px, #e9ecf1 23px 24px); }
+  pre { margin:0; background:#fff; border:1px solid #dfe2e8; border-radius:8px;
+        padding:10px 12px; font:12px/1.65 ui-monospace, Consolas, monospace;
+        white-space:pre-wrap; direction:ltr; text-align:left; }
+  #line { background:#101218; color:#e8eaf0; border-color:#101218; font-weight:600; }
+  .btn { font:inherit; font-size:13px; padding:5px 12px; margin:8px 6px 0 0;
+         border:1px solid #c9ccd4; border-radius:7px; background:#fff; cursor:pointer; }
+  .btn:hover { background:#e9ebf0; }
+  ol { margin:6px 0 10px; padding-inline-start:22px; color:#45484f; font-size:13px; }
+  b.ok { color:#1d8a5a; } b.no { color:#c0392b; }
+</style>
+</head>
+<body>
+<h1>قياسُ القلم — المرحلة ٠</h1>
+<p class="lead">اكتبْ في المساحة بالقلم سطرين أو ثلاثة (اضغطْ خفيفًا جدًّا مرّةً وبكلّ
+قوّتك مرّةً)، واتّكئْ بكفّك عليها وأنت تكتب، ثمّ مرّرِ الصفحةَ بإصبعٍ واحد، ثمّ
+بإصبعين، ثمّ اقلبِ القلمَ وامسحْ بذيله. ثمّ انسخِ السطرَ الأسود.</p>
+
+<div class="wrap">
+  <div class="padBox">
+    <canvas id="pad"></canvas>
+    <ol>
+      <li>القلمُ أوّلًا — ولا تَلمسِ المساحةَ بإصبعك قبل أن تكتب به مرّة.</li>
+      <li>اتّكئْ بكفّك والقلمُ يَخطّ (هذا هو القياسُ الأهمّ).</li>
+      <li>ثمّ الإصبعُ وحدَه، ثمّ إصبعان، ثمّ ذيلُ القلم.</li>
+    </ol>
+    <button class="btn" id="copy">انسخِ السطر</button>
+    <button class="btn" id="reset">ابدأْ من جديد</button>
+  </div>
+  <div class="side">
+    <pre id="line">—</pre>
+    <pre id="o">لم يُقَسْ شيءٌ بعد.</pre>
+  </div>
+</div>
+
+<script>
+(() => {
+  const pad = document.getElementById('pad');
+  const out = document.getElementById('o');
+  const one = document.getElementById('line');
+
+  // ---- الحالةُ المقيسة -------------------------------------------------
+  const S = {
+    dpr: window.devicePixelRatio || 1,
+    types: {},                  // pointerType → عددُ الأحداث
+    prLo: 1, prHi: 0, prZero: 0,
+    coal: [], predict: 0,
+    widths: [], heights: [],
+    hoverAt: 0, hoverLead: -1,
+    touchDuringPen: 0, touchTotal: 0,
+    concurrent: 0, tiltLo: 90, tiltHi: -90,
+    buttons: {},
+    strokes: 0, points: 0,
+    rawUpdate: 0, desync: null,
+    penDown: false
+  };
+  const live = new Set();
+  const bump = o => { const t = String(o); S.types[t] = (S.types[t] || 0) + 1; };
+
+  // ---- رسمٌ ساذجٌ بلا محرّك: المطلوبُ أثرٌ يُطمئنك أنك تكتب، لا جمالُ خطّ
+  const fit = () => {
+    const r = pad.getBoundingClientRect();
+    pad.width = Math.round(r.width * S.dpr);
+    pad.height = Math.round(r.height * S.dpr);
+    const c = pad.getContext('2d');
+    S.desync = (() => { try { return Boolean(pad.getContext('2d', { desynchronized:true })); }
+                        catch(e){ return false; } })();
+    c.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+    c.lineCap = c.lineJoin = 'round';
+    c.strokeStyle = '#12141a';
+    return c;
+  };
+  let ctx = fit();
+  addEventListener('resize', () => { ctx = fit(); });
+
+  const at = ev => {
+    const r = pad.getBoundingClientRect();
+    return [ev.clientX - r.left, ev.clientY - r.top];
+  };
+  let last = null;
+
+  // ---- القياسُ في طور الأسر، فيسبق كلَّ شيءٍ وما يُلغى يُحصى ---------
+  const seePen = ev => {
+    bump(ev.pointerType);
+    if (ev.pointerType !== 'pen') return;
+    if (ev.buttons) S.buttons[ev.buttons] = (S.buttons[ev.buttons] || 0) + 1;
+    if (ev.pressure > 0) { S.prLo = Math.min(S.prLo, ev.pressure); S.prHi = Math.max(S.prHi, ev.pressure); }
+    else S.prZero++;
+    if (typeof ev.tiltX === 'number' && (ev.tiltX || ev.tiltY)) {
+      const t = Math.max(Math.abs(ev.tiltX), Math.abs(ev.tiltY));
+      S.tiltLo = Math.min(S.tiltLo, t); S.tiltHi = Math.max(S.tiltHi, t);
+    }
+  };
+
+  ['pointerover','pointermove','pointerdown','pointerup','pointerrawupdate'].forEach(t => {
+    try {
+      document.addEventListener(t, ev => {
+        if (t === 'pointerrawupdate' && ev.pointerType === 'pen') S.rawUpdate++;
+        seePen(ev);
+        // سبقُ التحويم: أوّلُ تحويمِ قلمٍ ثمّ أوّلُ ملامسةٍ — الفرقُ بينهما هو
+        // ما يَجعل قفلَ الكفّ يُغلق قبل أن تَخطّ، لا بعدَه
+        if (t === 'pointerover' && ev.pointerType === 'pen' && !S.hoverAt) S.hoverAt = Date.now();
+        if (ev.pointerType === 'touch') {
+          S.touchTotal++;
+          if (S.penDown) S.touchDuringPen++;            // ★ القياسُ الأهمّ
+          if (ev.width > 0) { S.widths.push(ev.width); S.heights.push(ev.height); }
+          if (t === 'pointerdown') { live.add(ev.pointerId); S.concurrent = Math.max(S.concurrent, live.size); }
+          if (t === 'pointerup') live.delete(ev.pointerId);
+        }
+        show();
+      }, { capture:true, passive:true });
+    } catch(e) {}
+  });
+  ['pointercancel','pointerout','pointerleave'].forEach(t => {
+    document.addEventListener(t, ev => { if (ev.pointerType === 'touch') live.delete(ev.pointerId); },
+      { capture:true, passive:true });
+  });
+
+  pad.addEventListener('pointerdown', ev => {
+    if (ev.pointerType === 'touch') return;             // الإصبعُ لا يَخطّ هنا كما لا يَخطّ هناك
+    ev.preventDefault();
+    if (ev.pointerType === 'pen') {
+      S.penDown = true;
+      if (S.hoverAt && S.hoverLead < 0) S.hoverLead = Date.now() - S.hoverAt;
+    }
+    S.strokes++;
+    last = at(ev);
+    try { pad.setPointerCapture(ev.pointerId); } catch(e) {}
+    show();
+  });
+
+  pad.addEventListener('pointermove', ev => {
+    if (!last || ev.pointerType === 'touch') return;
+    // طولُ قائمةِ الجمع هو الرقمُ المقصود: بدونه تضيع أربعةُ أخماس النقاط،
+    // ويُقاس الطولُ لا الوجود (القائمةُ تعود فارغةً أحيانًا، والفارغُ صادق)
+    let evs = (ev.getCoalescedEvents && ev.getCoalescedEvents()) || [];
+    if (evs.length) S.coal.push(evs.length); else evs = [ev];
+    if (ev.getPredictedEvents) { try { S.predict = Math.max(S.predict, ev.getPredictedEvents().length); } catch(e) {} }
+    ctx.beginPath();
+    for (let i = 0; i < evs.length; i++) {
+      const p = at(evs[i]);
+      ctx.lineWidth = 0.6 + 5 * (evs[i].pressure || 0.5);
+      ctx.moveTo(last[0], last[1]); ctx.lineTo(p[0], p[1]);
+      ctx.stroke(); ctx.beginPath();
+      last = p; S.points++;
+    }
+    show();
+  });
+
+  const up = ev => {
+    if (ev.pointerType === 'pen') S.penDown = false;
+    last = null;
+    show();
+  };
+  pad.addEventListener('pointerup', up);
+  pad.addEventListener('pointercancel', up);
+
+  // ---- العرض ----------------------------------------------------------
+  const mid = a => { if (!a.length) return 0; const b = a.slice().sort((x,y)=>x-y); return Math.round(b[b.length>>1]); };
+  const lo  = a => a.length ? Math.round(Math.min.apply(null, a)) : 0;
+  const hi  = a => a.length ? Math.round(Math.max.apply(null, a)) : 0;
+  const n2  = v => Math.round(v * 100) / 100;
+
+  function show() {
+    const coalMax = S.coal.length ? Math.max.apply(null, S.coal) : 0;
+    const coalMid = mid(S.coal);
+    const btns = Object.keys(S.buttons).sort().join(',') || '—';
+    const press = S.prHi > 0 ? n2(S.prLo) + '–' + n2(S.prHi) : '—';
+
+    one.textContent =
+      'PEN probe · dpr=' + n2(S.dpr) +
+      ' · press=' + press +
+      ' · coal=' + coalMid + '/' + coalMax +
+      ' · predict=' + S.predict +
+      ' · raw=' + (S.rawUpdate ? 'yes' : 'no') +
+      ' · desync=' + (S.desync ? 'yes' : 'no') +
+      ' · hoverLead=' + (S.hoverLead >= 0 ? S.hoverLead + 'ms' : '—') +
+      ' · touchDuringPen=' + S.touchDuringPen + '/' + S.touchTotal +
+      ' · contact=' + lo(S.widths) + '/' + mid(S.widths) + '/' + hi(S.widths) +
+      ' · concurrent=' + S.concurrent +
+      ' · tilt=' + (S.tiltHi >= 0 ? S.tiltLo + '–' + S.tiltHi : '—') +
+      ' · buttons=' + btns +
+      ' · strokes=' + S.strokes + ' pts=' + S.points;
+
+    out.textContent = [
+      'كثافةُ الشاشة            ' + n2(S.dpr) + '   ← مخزنُ اللوحة يُضرب فيها وإلّا خرج الخطُّ مشوّشًا',
+      'مدى الضغط              ' + press + (S.prZero ? '  (و' + S.prZero + ' حدثًا بضغطٍ صفر)' : '') +
+        '   ← يُمدّ إلى 0..1 وإلّا ضاع خُمساه',
+      'جمعُ النقاط (وسيط/أقصى) ' + coalMid + ' / ' + coalMax + '   ← دون 2 يَخرج الخطُّ مضلّعًا',
+      'التنبّؤُ بالنقاط          ' + (S.predict || '—') + '   ← يُقلّص الكمونَ إن وُجد',
+      'pointerrawupdate        ' + (S.rawUpdate ? 'يَصل' : 'لا يَصل'),
+      'لوحةٌ غيرُ متزامنة        ' + (S.desync ? 'مُتاحة' : 'غيرُ مُتاحة'),
+      'سبقُ التحويم للملامسة    ' + (S.hoverLead >= 0 ? S.hoverLead + ' مللي' : '—') +
+        '   ← به يُغلق قفلُ الكفّ قبل أن تَخطّ',
+      'لمسٌ والقلمُ يَخطّ        ' + S.touchDuringPen + ' من ' + S.touchTotal +
+        '   ← إن زاد على صفرٍ فالنظامُ لا يَرفض كفَّك، والرفضُ علينا',
+      'عرضُ التماسّ (أدنى/وسيط/أقصى) ' + lo(S.widths) + ' / ' + mid(S.widths) + ' / ' + hi(S.widths) +
+        '   ← منه يُحسب حدُّ الكفّ، ولا يُخمَّن',
+      'أكثرُ تماسٍّ معًا          ' + S.concurrent,
+      'الميل                   ' + (S.tiltHi >= 0 ? S.tiltLo + '–' + S.tiltHi + '°' : '—'),
+      'أزرارُ القلم             ' + btns + '   ← 32 ذيلُ الممحاة · 2 زرُّ الجَنب · 1 السنّ',
+      'شرطاتٌ / نقاط           ' + S.strokes + ' / ' + S.points,
+      '',
+      (S.strokes ? '' : '⚠ لم تُكتب شرطةٌ بعد — اكتبْ بالقلم أوّلًا.'),
+      (S.touchTotal ? '' : '⚠ لم تُسجَّل لمسةٌ — اتّكئْ بكفّك ومرّرْ بإصبعك.')
+    ].filter(s => s !== '').join('\n');
+  }
+  show();
+
+  document.getElementById('copy').onclick = async () => {
+    try { await navigator.clipboard.writeText(one.textContent); document.getElementById('copy').textContent = 'نُسخ ✓'; }
+    catch(e) {
+      const r = document.createRange(); r.selectNodeContents(one);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+  };
+  document.getElementById('reset').onclick = () => location.reload();
+})();
+</script>
+</body>
+</html>

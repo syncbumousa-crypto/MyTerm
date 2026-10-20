@@ -378,6 +378,10 @@
     });
 
     seatSlots();
+    // The pages are scaled and not re-laid-out, so a notebook's canvas
+    // needs a new density and nothing more — and one whose store is
+    // already right is not touched, which is what keeps a pinch cheap
+    window.MyTermInkPad?.refit?.();
   };
 
   // ============================================================
@@ -532,6 +536,7 @@
       where = typeof spot === 'string' ? document.getElementById(spot) : spot;
       if (!where) return false;
       told = onTick || (() => {});
+      window.MyTermInkPad?.arm?.(where);
       where.addEventListener('click', pressed);
       watchSize();
       return true;
@@ -550,6 +555,18 @@
       // first sheets bring takes width that was just measured
       refit();
       requestAnimationFrame(refit);
+      // ============================================================
+      // AND THE NOTEBOOKS ARE PUT BACK
+      //
+      // Every sheet here was just built out of its stored markup, so
+      // any writing area that was in the old ones died with them. The
+      // ink itself is not in the markup — it is in its own store — so
+      // the boxes are injected again and filled from there. THIS IS THE
+      // ONLY PLACE IT IS NEEDED: measured on 2026-10-20, a part switch
+      // rebuilds all thirty-five sheets while a refit, a language
+      // switch and a tick rebuild none
+      // ============================================================
+      window.MyTermInkPad?.mount?.();
       return stack.length;
     },
 

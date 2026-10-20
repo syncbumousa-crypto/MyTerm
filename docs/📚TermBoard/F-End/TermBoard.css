@@ -2291,6 +2291,21 @@ body.darkpaper .cpaper { filter: invert(1) hue-rotate(180deg); }
 
 .cbx.on { background: #cccccc; border-color: #888888; }
 
+/* What the bank said about this row, before the tick. Smaller than the
+   tick and without a border: the tick is something you press and this
+   is something you are told, and a reader must not try to press it */
+.cbank {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-inline-end: 5px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.cbank.ok { background: #3f9a52; }
+.cbank.no { background: #c0392b; }
+
 .cbx.on::after {
   content: '\2713';
   position: absolute;
@@ -2745,6 +2760,54 @@ body.reading .build { bottom: 46px; }
 
 .qstart:hover:not(:disabled) { background: #4176c0; }
 .qstart:disabled { opacity: .4; cursor: default; }
+
+/* ============================================================
+   THE FOLDERS OF A BANK, ABOVE THE QUESTIONS
+
+   Chips and not a list of checkboxes: the strip has to read as one
+   line a reader skims before pressing Start, and a column of boxes
+   pushes the bank itself off the screen. A folder that is in the
+   sitting is filled; one left out keeps its outline, so the number
+   beside its name can still be read while it is off
+   ============================================================ */
+.qfolders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.qfolder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 11.5px;
+  padding: 5px 10px;
+  border: 1px solid #3a3b42;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dim, #9a9ca4);
+  cursor: pointer;
+}
+
+.qfolder:hover { border-color: #55565f; }
+
+.qfolder.on {
+  border-color: #3a6bb0;
+  background: rgba(58, 107, 176, .18);
+  color: var(--ink, #e9eaee);
+}
+
+.qfolder-n {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(127, 127, 127, .22);
+}
+
+.qfolder-all { font-weight: 700; }
 
 .qcard {
   border: 1px solid var(--line);

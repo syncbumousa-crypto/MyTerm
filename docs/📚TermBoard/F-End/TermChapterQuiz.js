@@ -32,6 +32,70 @@
   };
 
   // ============================================================
+  // # 🗂️ 🎚️  THE FOLDERS OF A BANK
+  // # 🔤 JavaScript
+  // # 🎯 The ready questions gathered into folders — what it asks of
+  // #    you crossed with how it asks — so a sitting can be one folder,
+  // #    several, or the whole bank
+  // # 🔗 BUILT FROM WHAT IS THERE, NOT FROM A LIST OF WHAT COULD BE.
+  // #    A bank of a hundred true-or-false questions should show one
+  // #    folder and not six, five of them empty; and a bank nobody has
+  // #    sorted yet shows a single UNSORTED folder holding all of it,
+  // #    so the reader is never told there is nothing to sit for.
+  // #
+  // #    The choice is remembered per chapter and in this browser only:
+  // #    which folders you practised last night is a convenience, not a
+  // #    fact about the course, and it has no business in Drive
+  // ============================================================
+  const TRACKS = { theory: 'Theory', practical: 'Practical' };
+  const TYPES = { mcq: 'Multiple choice', tf: 'True / false', essay: 'Essay' };
+
+  const folderOf = row => (row.track || '') + '|' + (row.type || '');
+
+  const folderName = key => {
+    const [track, type] = key.split('|');
+    const words = [TRACKS[track], TYPES[type]].filter(Boolean);
+    return words.length ? words.join(' · ') : 'Unsorted';
+  };
+
+  const foldersOf = set => {
+    const seen = new Map();
+    set.forEach(row => {
+      const key = folderOf(row);
+      seen.set(key, (seen.get(key) || 0) + 1);
+    });
+    // Sorted so the folders do not jump about as answers are written:
+    // theory before practical, and inside each the way the types are
+    // listed above, with the unsorted pile last
+    const rank = key => {
+      const [track, type] = key.split('|');
+      const t = Object.keys(TRACKS).indexOf(track);
+      const y = Object.keys(TYPES).indexOf(type);
+      return (t < 0 ? 9 : t) * 10 + (y < 0 ? 9 : y);
+    };
+    return [...seen.entries()].map(([key, n]) => ({ key, n, name: folderName(key) }))
+                              .sort((a, b) => rank(a.key) - rank(b.key));
+  };
+
+  const memoryKey = () => 'myterm.bankfolders.' + (store()?.openId() || '-');
+
+  const remembered = folders => {
+    let kept = null;
+    try { kept = JSON.parse(localStorage.getItem(memoryKey()) || 'null'); } catch { kept = null; }
+    const here = new Set(folders.map(f => f.key));
+    // A chapter never chosen for means the WHOLE bank — which is what a
+    // reader pressing Start expects. A chapter chosen for keeps what was
+    // chosen, even if that is nothing: a reader who cleared the folders
+    // and came back should find them cleared, not quietly all on again
+    if (!Array.isArray(kept)) return new Set(folders.map(f => f.key));
+    return new Set(kept.filter(k => here.has(k)));
+  };
+
+  const remember = chosen => {
+    try { localStorage.setItem(memoryKey(), JSON.stringify([...chosen])); } catch { /* a private window */ }
+  };
+
+  // ============================================================
   // # 🗃️ ✍️  THE BANK, AND WRITING IN IT
   // # 🔤 JavaScript
   // # 🎯 A card per question: what is asked, the answers offered, and
@@ -304,27 +368,68 @@
     const top = document.createElement('div');
     top.className = 'qtop';
 
+    const folders = foldersOf(set);
+    const chosen = remembered(folders);
+    const asked = set.filter(row => chosen.has(folderOf(row)));
+
     const says = document.createElement('span');
     says.className = 'qtop-says';
-    says.textContent = rows.length
-      ? set.length + ' of ' + rows.length + ' ready to ask'
-      : 'No questions in this bank yet';
+    says.textContent = !rows.length ? 'No questions in this bank yet'
+      : folders.length > 1 && asked.length !== set.length
+        ? asked.length + ' chosen of ' + set.length + ' ready'
+        : set.length + ' of ' + rows.length + ' ready to ask';
 
     const start = document.createElement('button');
     start.className = 'qstart';
     start.type = 'button';
     start.textContent = 'Start';
-    start.disabled = !set.length;
-    start.title = set.length
-      ? 'Go through them one at a time'
-      : 'A question needs words, two answers, and one of them marked right';
+    start.disabled = !asked.length;
+    start.title = !set.length
+      ? 'A question needs words, two answers, and one of them marked right'
+      : asked.length ? 'Go through them one at a time' : 'Choose a folder first';
     start.onclick = () => {
-      run = { rows: set, at: 0, said: {} };
+      run = { rows: asked, at: 0, said: {} };
       paint(host, told);
     };
 
     top.append(says, start);
     desk.append(top);
+
+    // One folder is no choice at all, and a strip of one button saying
+    // the obvious is in the way of the only thing the reader came for
+    if (folders.length > 1) {
+      const strip = document.createElement('div');
+      strip.className = 'qfolders';
+
+      folders.forEach(folder => {
+        const one = document.createElement('button');
+        one.className = 'qfolder' + (chosen.has(folder.key) ? ' on' : '');
+        one.type = 'button';
+        one.innerHTML = '<span class="qfolder-name"></span><span class="qfolder-n"></span>';
+        one.querySelector('.qfolder-name').textContent = folder.name;
+        one.querySelector('.qfolder-n').textContent = folder.n;
+        one.title = chosen.has(folder.key) ? 'In this sitting' : 'Left out of this sitting';
+        one.onclick = () => {
+          if (chosen.has(folder.key)) chosen.delete(folder.key); else chosen.add(folder.key);
+          remember(chosen);
+          paint(host, told);
+        };
+        strip.append(one);
+      });
+
+      const all = document.createElement('button');
+      all.className = 'qfolder qfolder-all';
+      all.type = 'button';
+      all.textContent = chosen.size === folders.length ? 'None' : 'All';
+      all.title = chosen.size === folders.length ? 'Leave them all out' : 'Take them all';
+      all.onclick = () => {
+        remember(chosen.size === folders.length ? new Set() : new Set(folders.map(f => f.key)));
+        paint(host, told);
+      };
+      strip.append(all);
+
+      desk.append(strip);
+    }
 
     rows.forEach((row, i) => desk.append(askCard(row, i + 1, set)));
 

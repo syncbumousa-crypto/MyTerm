@@ -229,10 +229,19 @@
   // #    to keep in step — and they would part on the first question
   // #    written on the other device
   // ============================================================
+  // A question is about a ROW or about a SHEET CARD, and both are kept
+  // in the one list. The practical half of a bank asks the very thing a
+  // rules page teaches — often the same numbers — so the answer has to
+  // be able to point at a card the way it points at a term. The card is
+  // named by its group and its place in it, 'cvp#3', because a card has
+  // no id of its own: it is a position on a page, and the position is
+  // what the reader sees
   const shapeAbout = list => Array.isArray(list)
-    ? list.filter(a => a && typeof a === 'object' && typeof a.row === 'string').map(a => ({
+    ? list.filter(a => a && typeof a === 'object'
+                    && (typeof a.row === 'string' || typeof a.sheet === 'string')).map(a => ({
         id: typeof a.id === 'string' ? a.id : 'a-' + Math.random().toString(36).slice(2, 8),
-        row: a.row,
+        row: typeof a.row === 'string' ? a.row : '',
+        sheet: typeof a.sheet === 'string' ? a.sheet : '',
         at: typeof a.at === 'string' ? a.at : null,
         deleted: a.deleted === true
       }))
@@ -266,6 +275,21 @@
         // without anything being converted
         ask: clean(r.ask),
         pick: Array.isArray(r.pick) ? r.pick.map(clean) : [],
+        // ============================================================
+        // WHICH FOLDER OF THE BANK A QUESTION IS IN
+        //
+        // Two words and not one: the TRACK is what the question wants
+        // of you — to know a thing (theory) or to work one out
+        // (practical) — and the TYPE is how it asks. A reader sitting
+        // down to practise picks by both: twenty numerical multiple
+        // choice, or every true-or-false there is.
+        //
+        // Empty is a real state and not a missing one: a bank that has
+        // never been sorted asks all of itself, and the folders show it
+        // as one unsorted pile rather than hiding it
+        // ============================================================
+        track: r.track === 'theory' || r.track === 'practical' ? r.track : '',
+        type: r.type === 'mcq' || r.type === 'tf' || r.type === 'essay' ? r.type : '',
         // ============================================================
         // THE READER'S OWN NOTE ON THIS ROW
         //
@@ -1003,7 +1027,13 @@
         const was = open.state.marks[q.id]?.was;
         if (was !== 'ok' && was !== 'no') return;
         say(q.id, was);
-        q.about.forEach(a => { if (!a.deleted) say(a.row, was); });
+        q.about.forEach(a => {
+          if (a.deleted) return;
+          if (a.row) say(a.row, was);
+          // A card is said about under a name of its own so that a row
+          // and a card can never collide in the one map
+          if (a.sheet) say('sheet:' + a.sheet, was);
+        });
       });
     });
     return said;
@@ -1370,6 +1400,26 @@
       later();
     },
 
+    // ============================================================
+    // # 🟩 🟥  WHAT THE BANK SAID ABOUT ONE THING
+    // # 🔤 JavaScript
+    // # 🎯 'ok', 'no' or nothing — for a row, for a sheet card, or for
+    // #    everything at once
+    // # 🔗 THE CHAPTER ALREADY KNEW THIS AND COULD NOT SAY IT. The
+    // #    reading was worked out inside the store for the counters on
+    // #    the strip, so a part could say "nine right, two wrong" while
+    // #    the row that was wrong looked exactly like the row that was
+    // #    right. These three let the paper mark the row itself.
+    // #
+    // #    saidAll is the one to call when marking a whole sheet: the
+    // #    map is built by walking every question in the chapter, and
+    // #    building it again for each of fifty rows is fifty walks for
+    // #    an answer that does not change between them
+    // ============================================================
+    saidAll: () => bankSaid(),
+    said: rowId => bankSaid().get(rowId) || null,
+    saidSheet: key => bankSaid().get('sheet:' + key) || null,
+
     // The whole chapter, every part of it — this is what the chapter's
     // own tab on the strip shows, and what is written beside the chapter
     // so the other chapters' tabs can show it without being opened
@@ -1393,7 +1443,7 @@
       const living = livingRows();
       const row = {
         id: newRowId(), no: '', term: '', text: '', termAr: '', textAr: '', outside: false, tint: '',
-        ask: '', pick: [], right: -1, srcs: [], about: [], note: '', noteDir: '',
+        ask: '', pick: [], right: -1, track: '', type: '', srcs: [], about: [], note: '', noteDir: '',
         // It joins the table at the end rather than starting a new one:
         // a reader adding a row is carrying on, not opening a chapter
         cid: living.length ? living[living.length - 1].cid : 1,
@@ -1516,7 +1566,26 @@
         const same = q.about.find(a => !a.deleted && a.row === rowId);
         if (same) return { ...same };
         const made = { id: 'a-' + Math.random().toString(36).slice(2, 8),
-                       row: rowId, at: now(), deleted: false };
+                       row: rowId, sheet: '', at: now(), deleted: false };
+        q.about.push(made);
+        wrote();
+        return { ...made };
+      }
+      return null;
+    },
+
+    // The same joining, to a card on a rules page instead of a row. The
+    // key is the one the sheets are kept under — group and place, as in
+    // 'cvp#3' — so nothing here needs to know how a sheet is stored
+    aboutSheet: (questionId, key) => {
+      if (!open || typeof key !== 'string' || !key) return null;
+      for (const section of open.content.sections) {
+        const q = section.rows.find(r => r.id === questionId);
+        if (!q) continue;
+        const same = q.about.find(a => !a.deleted && a.sheet === key);
+        if (same) return { ...same };
+        const made = { id: 'a-' + Math.random().toString(36).slice(2, 8),
+                       row: '', sheet: key, at: now(), deleted: false };
         q.about.push(made);
         wrote();
         return { ...made };

@@ -310,6 +310,9 @@
   const cloudOwed = new Set();
   let pushing = false;
 
+  // The record as it goes up: its own version marked as the one that
+  // reached Drive, which is true of the copy that is in Drive
+  const sent = d => Object.assign({}, d, { pr: Number(d.rev) || 1 });
   const fileName = key => 'ink-' + String(key).replace(/[^A-Za-z0-9#-]/g, '') .replace('#', '-') + '.json';
 
   // Found once per chapter: one listing tells which cards have ink and
@@ -388,10 +391,18 @@
       // inside the file rather than on anything remembered elsewhere
       if (there && Number(there.rev) !== baseRev.get(key)) fold(d, there);
       else d.rev = (Number(d.rev) || 1) + 1;
-      const ok = await cloud.write(id, d).then(() => true, () => false);
+      // ★ THE COPY THAT GOES UP CARRIES `pr` EQUAL TO ITS OWN VERSION,
+      //   because for the copy that IS in Drive that is simply true. Set
+      //   only in memory after the write, the stored file said of itself
+      //   "this version never reached Drive" — and any OTHER device that
+      //   read it would believe it, mark the card owed and write it
+      //   straight back. One needless write per card per device, and a
+      //   field that contradicts the file it sits in. Seen in the carried
+      //   files right after the first transfer: rev 2, reached 0
+      const ok = await cloud.write(id, sent(d)).then(() => true, () => false);
       if (!ok) return false;
     } else {
-      const made = await cloud.make(folder, fileName(key), d).catch(() => null);
+      const made = await cloud.make(folder, fileName(key), sent(d)).catch(() => null);
       if (!made) return false;
       fileOf.set(key, made);
     }

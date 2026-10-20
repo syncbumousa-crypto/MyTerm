@@ -740,6 +740,11 @@
       return strokes;
     },
 
+    // The record changed in place — points rewritten by a transform, not
+    // a stroke added — so it needs the same marks a stroke gets: a new
+    // version, the shelf, and Drive
+    bumped: key => { if (pads.has(key)) wrote(key); },
+
     flush,
     owed: () => owed.size,
     watch: fn => { tellStatus = fn || (() => {}); },

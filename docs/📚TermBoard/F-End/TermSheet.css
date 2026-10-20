@@ -533,3 +533,59 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
   color: #a4552f; background: #fdf1e7; border: 1px solid #f0cdb0;
   border-radius: 999px; padding: 1px 8px 2px;
 }
+
+/* ═══ SELECTING WHAT WAS WRITTEN ═══
+   An ELEMENT over the pad and not a drawing on it: the live canvas is
+   the running stroke's and adds without clearing, and the dry one is
+   wiped by every repaint — a box drawn on either would fight them. Over
+   the pad it also follows the page's own scaling with no arithmetic */
+.inkMarq {
+  position: absolute; z-index: 4; box-sizing: border-box;
+  border: 1.5px dashed #3a6bb0; border-radius: 3px;
+  background: rgba(58, 107, 176, .07);
+  cursor: move; touch-action: none;
+}
+/* While it is still being dragged out it catches nothing and shows no
+   grip: there is nothing to grip yet */
+.inkMarq.live { border-style: solid; pointer-events: none; }
+.inkMarq.live .inkSelGrip { display: none; }
+/* The grip is at the bottom right BECAUSE the fixed corner is the top
+   left: the corner a hand is not holding is the one that should stay put */
+.inkSelGrip {
+  position: absolute; inset-inline-end: -7px; bottom: -7px;
+  width: 15px; height: 15px; box-sizing: border-box;
+  border: 1.5px solid #3a6bb0; border-radius: 50%;
+  background: #fff; cursor: nwse-resize; touch-action: none;
+}
+
+/* ═══ THE WHOLE SCREEN ═══
+   ★ The LAYOUT size is untouched — only a transform — because every
+   stored coordinate means "this far across a pad of this layout size".
+   And the bottom margin gives back the room the transform does not take
+   from the flow, or the page is cut off at the bottom */
+.inkBox.inkFull {
+  position: fixed; inset: 0; z-index: 9000; margin: 0;
+  background: #f3f4f7; padding: 10px 12px;
+  overflow: auto; display: flex; flex-direction: column; align-items: center;
+}
+.inkBox.inkFull .inkBar, .inkBox.inkFull .inkTabs { flex: 0 0 auto; }
+.inkBox.inkFull .inkPad {
+  /* The size it had OUTSIDE full screen, pinned in pixels by the script
+     before the class went on — not a size of this stylesheet's choosing.
+     Every stored coordinate means "this far across a pad of this layout
+     size", so this is the one number that must not move */
+  flex: 0 0 auto;
+  width: var(--inkPadW, 760px); height: var(--inkPadH, 980px);
+  transform: scale(var(--inkFullZoom, 1)); transform-origin: top center;
+  /* and the room the transform does not take from the flow, given back,
+     or the bottom of the page is cut off */
+  margin-bottom: calc(var(--inkPadH, 980px) * (var(--inkFullZoom, 1) - 1));
+}
+.inkFullBtn.on { background: #3a6bb0; border-color: #3a6bb0; color: #fff; }
+.inkFullBtn svg, .inkSelBtn svg { display: block; }
+/* ★ AND THE DARK PAGE IS REAPPLIED HERE. The dark look is a filter on
+   `.msheet`, and an element raised into the top layer is NOT touched by
+   its ancestors' filters — so the notebook came out light while the rest
+   of the page was dark. Put back on the box itself, and only when it is
+   full-screen, so nothing is inverted twice */
+body.darkpaper .inkBox.inkFull { filter: invert(1) hue-rotate(180deg); }

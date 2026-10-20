@@ -427,6 +427,27 @@
       }
     });
 
+    // ============================================================
+    // # 🟩 🟥  WHAT THE BANK SAID ABOUT THIS SHEET
+    // # 🔤 JavaScript
+    // # 🎯 The same small square the rows wear, on the card or the law
+    // #    page a bank question was about
+    // # 🔗 THE PRACTICAL HALF OF A BANK ASKS WHAT A RULES PAGE TEACHES
+    // #    — often the same numbers — so the answer belongs beside the
+    // #    page, not only beside a term. A sheet the bank has never
+    // #    reached wears nothing: an empty square would read as a
+    // #    question answered and not yet marked
+    // ============================================================
+    const bankWas = chapters()?.saidSheet?.(one.group + '#' + one.at);
+    if (bankWas === 'ok' || bankWas === 'no') {
+      const mark = document.createElement('span');
+      mark.className = 'msheet-bank ' + bankWas;
+      mark.title = bankWas === 'ok'
+        ? 'The bank asked about this and you had it right'
+        : 'The bank asked about this and you had it wrong';
+      box.prepend(mark);
+    }
+
     if (one.kind === 'card') {
       const tick = document.createElement('button');
       tick.type = 'button';

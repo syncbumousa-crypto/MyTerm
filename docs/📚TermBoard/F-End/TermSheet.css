@@ -286,6 +286,20 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
                border: calc(1.5px / var(--sheetScale, 1)) solid #8a8d96;
                background: #fff; cursor: pointer; padding: 0; }
 .msheet-tick.on { background: #2f7d4f; border-color: #2f7d4f; }
+
+/* What the bank said about this sheet, under the tick and smaller than
+   it: the tick is something the reader presses and this is something
+   they are told. A law page has no tick, so the square sits where the
+   tick would have been and nothing moves */
+.msheet-bank { position: absolute; z-index: 3;
+               top: calc(38px / var(--sheetScale, 1));
+               inset-inline-end: calc(13px / var(--sheetScale, 1));
+               width: calc(16px / var(--sheetScale, 1));
+               height: calc(16px / var(--sheetScale, 1));
+               border-radius: calc(4px / var(--sheetScale, 1)); }
+.msheet-law .msheet-bank { top: calc(10px / var(--sheetScale, 1)); }
+.msheet-bank.ok { background: #3f9a52; }
+.msheet-bank.no { background: #c0392b; }
 /* A TICK HAS ONE SHORT ARM AND ONE LONG ONE. Drawn inside a box as wide
    as it is tall, the two arms come out equal and what the reader sees
    is a chevron — an arrow pointing down, which reads as "open this",

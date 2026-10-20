@@ -1195,7 +1195,26 @@
     // which is the one reading you do not give yourself
     sections: () => {
       const said = bankSaid();
-      return livingSections().map(s => {
+
+      // ============================================================
+      // # 🏁 🏦  THE BANK IS THE LAST PART, WHEREVER IT WAS ADDED
+      // # 🔤 JavaScript
+      // # 🎯 Puts a part of kind 'tb' after every other part, and
+      // #    leaves the order of all the rest exactly as it was
+      // # 🔗 THE ORDER IS A READING ORDER, NOT A RECORD OF WHEN A PART
+      // #    WAS MADE. The bank was added to the eleven ACCT210
+      // #    chapters before their rules pages were, so it sat in the
+      // #    middle of the strip — terms, questions, bank, then the
+      // #    formulas — and the reader met the questions that test him
+      // #    before the pages that teach him. Sorting HERE rather than
+      // #    in the strip is what makes it true everywhere the parts
+      // #    are listed: the tabs, the printed paper, the note, the
+      // #    explain layer. The stored order is left untouched, so
+      // #    nothing is written to Drive for a thing that is only a
+      // #    matter of how the parts are read
+      // ============================================================
+      const last = s => (s.kind === 'tb' ? 1 : 0);
+      return [...livingSections()].sort((a, b) => last(a) - last(b)).map(s => {
         const living = s.rows.filter(r => !r.deleted);
         // A rules part counts its CARDS, which are not rows and not
         // here. Reported as rows it had none, so every measurement

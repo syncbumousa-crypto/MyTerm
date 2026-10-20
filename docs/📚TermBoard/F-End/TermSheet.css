@@ -469,3 +469,56 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
 .inkWet { position: absolute; inset: 0; display: none; width: 100%; height: 100%;
           pointer-events: none; }
 .inkBox.penDown .inkWet { display: block; }
+
+/* ═══ THE ATTEMPTS: A TAB FOR EACH, AND SAVE SEALS THE ONE IN HAND ═══
+   ★ Save sits at the RIGHT end and the tabs run leftwards from it, the
+   way the reader asked for it on his own machine ("a Save button above
+   the box on the right, and a tab to its left named 1"). The board's own
+   direction is left-to-right, so the strip declares its own: DOM order
+   then IS the visual order from the right — Save first, then 1, then 2.
+   Written as a direction rather than as `margin-inline-start:auto`, so
+   it stays true if the board ever turns around.
+   ★ And the fit is on the CONTAINER, not the tab: `margin-bottom:-1px`
+   drops the strip a pixel onto the paper's edge and the open tab's own
+   background covers that pixel of it, so the tab opens onto the page as
+   a browser's does. On the tab itself it would be CLIPPED — a tab lives
+   inside a strip that scrolls, and overflow out of a scrolling box is
+   cut and does not float. */
+.inkTabs {
+  flex: 0 0 auto; direction: rtl; position: relative; z-index: 1;
+  margin-bottom: -1px;
+  display: flex; align-items: flex-end; gap: 8px; min-width: 0; padding: 0 2px;
+}
+.inkSaveBtn {
+  flex: 0 0 auto; height: 22px; padding: 0 10px;
+  background: #3a6bb0; border-color: #3a6bb0; color: #fff; font-weight: 700;
+}
+.inkSaveBtn:hover { background: #315c99; border-color: #315c99; }
+/* The whole name is the identity of an attempt, so the overflow is
+   SCROLLED and never cut — and the scrollbar is hidden on purpose: with
+   `align-items:flex-end` its eleven pixels come off the bottom of the
+   box and lift the tabs off the paper, which breaks the join at the
+   exact moment the attempts become many. Finger and wheel still scroll
+   it, and a tab clipped at the edge is what says there are more */
+.inkTabStrip {
+  flex: 1 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden;
+  display: flex; align-items: flex-end; gap: 4px;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.inkTabStrip::-webkit-scrollbar { display: none; }
+/* And a tab's own text reads left-to-right inside the right-to-left
+   strip: "2 · 2026/10/20 4:38 PM" is numbers and separators, and the
+   opposite direction would turn their order around under the reader */
+.inkTab {
+  flex: 0 0 auto; direction: ltr; unicode-bidi: isolate;
+  padding: 2px 9px 3px;
+  background: #eceef2; border: 1px solid #dfe2e8; border-bottom-color: transparent;
+  border-radius: 7px 7px 0 0;
+  color: #6a6e77; font: inherit; font-size: 11px; font-weight: 600; line-height: 1.55;
+  white-space: nowrap; cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.inkTab:hover { background: #e3e6ec; color: #4a4d55; }
+/* The open one wears the paper's own colour and its bottom edge with it,
+   so the tab opens onto the box */
+.inkTab.on { background: #fff; color: #2b2e35; border-bottom-color: #fff; font-weight: 700; }

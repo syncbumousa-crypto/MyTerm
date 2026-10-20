@@ -527,6 +527,21 @@
       // reads English drag the Arabic back with it
       term: w.term, text: w.text, termAr: w.termAr, textAr: w.textAr,
       outside: w.outside, tint: w.tint, ask: w.ask, pick: w.pick, right: w.right,
+      // ============================================================
+      // EVERY FIELD THE ROW CARRIES IS NAMED HERE OR IT IS LOST
+      //
+      // This fold is not a patch over the other side's row: it BUILDS a
+      // row out of named fields, so a field nobody named is gone the
+      // first time two readings of a chapter are folded together --
+      // which happens on an ordinary reopen, not only between devices.
+      //
+      // It cost once and in the open: a bank of eleven hundred
+      // questions was sorted into folders, and the sorting of two
+      // chapters was gone by the time it was read back, because track
+      // and type were not in this list. The reader's own note was not
+      // in it either, and that is older than today
+      // ============================================================
+      track: w.track, type: w.type, note: w.note, noteDir: w.noteDir,
       cid: p.cid, order: p.order, lead: p.lead, movedAt: p.movedAt,
       // EACH LINK BY ITS OWN CLOCK, not by the row's. A reader who adds
       // one place in the book on the laptop and another on the phone

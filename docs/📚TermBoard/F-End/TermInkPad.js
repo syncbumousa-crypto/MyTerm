@@ -101,6 +101,12 @@
       +   '<button class="inkBtn inkSaveBtn" data-ink="seal"'
       +     ' title="Seal this attempt with today\'s date and open an empty one">Save</button>'
       +   '<span class="inkTabStrip"></span>'
+      // Shown ONLY while something is still owed. A badge that lights up
+      // on every letter is noise — the reader had one removed from his
+      // own machine for exactly that — but ink that has not left the
+      // device is a thing he must be able to see, since he cannot tell
+      // by looking at the page
+      +   '<span class="inkState" hidden>not sent yet</span>'
       + '</div>'
       + '<div class="inkPad"><canvas class="inkDry"></canvas><canvas class="inkWet"></canvas></div>';
     return box;
@@ -953,8 +959,16 @@
     // Told where the sheets are drawn, once
     arm: spotEl => {
       where = typeof spotEl === 'string' ? document.getElementById(spotEl) : spotEl;
-      if (where) watch();
-      return Boolean(where);
+      if (!where) return false;
+      watch();
+      // The one thing the reader is told, and only while it is true
+      if (store() && store().watch) {
+        store().watch(() => {
+          const owing = store().cloudOwed() > 0;
+          where.querySelectorAll('.inkState').forEach(s => { s.hidden = !owing; });
+        });
+      }
+      return true;
     },
 
     // ============================================================
@@ -967,6 +981,36 @@
     // ============================================================
     mount: async () => {
       if (!where || !store()) return 0;
+      // ============================================================
+      // WHICH CHAPTER'S INK THIS IS, AND WHERE IN DRIVE IT GOES
+      //
+      // Worked out here rather than asked of the course screen: the
+      // chapter store already knows which chapter is open and the board
+      // already holds its folder, so a third place to keep the same fact
+      // is a third place for it to go stale. And a notebook whose scope
+      // was never set would write its ink under the wrong chapter — the
+      // mistake this project has made before, with explanations landing
+      // in a chapter nobody had open
+      // ============================================================
+      const C = window.MyTermChapterStore, B = window.MyTermBoardStore;
+      const chId = C && C.openId && C.openId();
+      if (chId) {
+        let course = null, chapter = null;
+        const live = B && B.live && B.live();
+        (live && live.courses || []).some(c =>
+          (c.chapters || []).some(h => (h.id === chId ? (course = c, chapter = h, true) : false)));
+        if (chapter) {
+          await store().open(course.id, chapter.id);
+          store().attach(chapter.folderId || '');
+          store().onPull(key => {
+            const b = where.querySelector('.inkBox[data-key="' + key + '"]');
+            if (!b) return;
+            syncTabs(b);
+            const cv = b.querySelector('.inkDry');
+            if (cv && cv.width) { repaintChunked(cv); }
+          });
+        }
+      }
       const cards = [...where.querySelectorAll('.msheet-card')];
       let made = 0;
       for (const card of cards) {

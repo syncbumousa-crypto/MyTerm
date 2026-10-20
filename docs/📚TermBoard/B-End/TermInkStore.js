@@ -2,8 +2,9 @@
 // # 🖊️ 🗄️  THE HANDWRITTEN SOLUTIONS — WHAT THEY ARE AND WHERE THEY LIVE
 // # 🔤 JavaScript
 // # 🎯 Holds the ink of every practice card as VECTORS, keeps it on the
-// #    browser's own shelf so a reload loses nothing, and hands it to
-// #    whoever draws. Drive comes later and is not pretended at here.
+// #    browser's own shelf so a reload loses nothing, carries it to the
+// #    reader's own Drive so his other machine has it, and hands it to
+// #    whoever draws
 // # 🔗 A STROKE IS `{c, w, p:[x, y, pressure, …]}` AND NOTHING ELSE —
 // #    the exact shape the reader's own machine already writes, so the
 // #    notebooks he has filled there port across with a copy and not a
@@ -40,7 +41,7 @@
   // #    one per machine, which is exactly what attempt sheets are for.
   // ============================================================
   const WHO = 'myterm.ink.who';
-  const me = (() => {
+  let me = (() => {
     let id = null;
     try { id = localStorage.getItem(WHO); } catch {}
     if (!id) {
@@ -139,6 +140,7 @@
   const owed = new Set();     // keys written to but not yet on the shelf
   let timer = 0;
   let tellStatus = () => {};
+  let told = () => {};              // said when another machine's work lands
 
   const shelfKey = key => scope + '/' + key;
 
@@ -161,7 +163,14 @@
         }))
     }));
     if (!sheets.length) sheets.push({ id: newId(), by: me, ts: 0, at: '', s: [] });
-    return { v: VER, sc: SC, rev: Number(d.rev) > 0 ? Number(d.rev) : 1, sh: sheets };
+    return { v: VER, sc: SC, rev: Number(d.rev) > 0 ? Number(d.rev) : 1,
+             // `pr` is the version that actually REACHED Drive. It lives in
+             // the record, so a device that failed to send and was then
+             // closed still knows, on its next open, that it is holding ink
+             // nobody else has — a debt kept only in memory is a debt that
+             // a reload forgives, and the ink then stays on one machine for
+             // ever with every counter green
+             pr: Number(d.pr) > 0 ? Number(d.pr) : 0, sh: sheets };
   };
 
   // Which sheet this machine is looking at. LOCAL, never in the record:
@@ -181,11 +190,27 @@
     return d;
   };
 
+  // The shelf hears about it after nine tenths of a second of quiet, and
+  // Drive after four. TWO CLOCKS ON PURPOSE: the shelf is local and
+  // instant and exists so that a reload loses nothing, so it is written
+  // eagerly; Drive is a network call for a file that is rewritten whole,
+  // so it waits until the hand has really stopped. Four seconds of a
+  // reader's attention is nothing; forty Drive writes while he works out
+  // one problem is rude
+  const CLOUD_QUIET = 4000;
+  let cloudTimer = 0;
+
   const wrote = key => {
+    // The content changed, so the version moves — here and nowhere else
+    const d = pads.get(key);
+    if (d) d.rev = (Number(d.rev) || 1) + 1;
     owed.add(key);
+    cloudOwed.add(key);
     tellStatus('waiting');
     clearTimeout(timer);
     timer = setTimeout(flush, QUIET);
+    clearTimeout(cloudTimer);
+    cloudTimer = setTimeout(() => pushAll(), CLOUD_QUIET);
   };
 
   // ============================================================
@@ -210,7 +235,14 @@
     for (const key of keys) {
       const d = pads.get(key);
       if (!d) continue;
-      d.rev = (Number(d.rev) || 1) + 1;
+      // ★ THE SHELF DOES NOT ADVANCE THE VERSION. It did at first, and
+      //   the debt then chased its own tail: every push set "reached
+      //   Drive = the current version", the shelf write that followed
+      //   bumped the version again, and the record read as unsent for
+      //   ever. The counter belongs to the CONTENT — it moves when a
+      //   stroke is drawn, erased or sealed, and when a push gives the
+      //   other machines a new version to notice — never when the same
+      //   content is merely saved again. Found by its own guard
       let copy = null;
       try { copy = JSON.parse(JSON.stringify(d)); } catch { copy = null; }
       if (!copy) { bad++; continue; }
@@ -225,8 +257,225 @@
     return bad === 0;
   }
 
+  // ============================================================
+  // # ☁️ 🤝  CARRYING IT TO DRIVE — AND WHY NOTHING CAN COLLIDE
+  // # 🔤 JavaScript
+  // # 🎯 One small file per card under the chapter's own folder, read
+  // #    when first wanted and written when that card changes
+  // # 🔗 THE READER'S OWN MACHINE DOES NOT DO THIS AT ALL, and says so
+  // #    in its plan: "not synced with Google — the ink is local like
+  // #    the rest of your progress, and its size forbids it." That size
+  // #    was the browser's five-megabyte box, which the whole origin
+  // #    shares. Drive is not that box: a dense page of writing is under
+  // #    sixty kilobytes, so a chapter of twenty written cards is some
+  // #    three and a half megabytes — nothing, in a Drive folder.
+  // #
+  // # 🔗 ONE FILE PER CARD and not one per chapter: a chapter can hold
+  // #    two hundred cards, and a single file means every stroke rewrites
+  // #    all of them. And not inside `state.json`, which is written on
+  // #    every tick and every verdict: ink there would make a tick cost
+  // #    a megabyte.
+  // #
+  // # 🔗 AND THE MERGE CANNOT CONFLICT, BY CONSTRUCTION. An attempt
+  // #    belongs to the machine that started it (`by`), a machine writes
+  // #    only its own, and the fold is a UNION: their sheets that I do
+  // #    not own, plus mine. No stroke can lose a race. The worst case
+  // #    is two attempts side by side — one begun on the tablet, one on
+  // #    the laptop — which is exactly what attempts are for.
+  // #
+  // # 🔗 AND THE FRESHNESS COUNTER LIVES INSIDE THE FILE. This project
+  // #    has already paid for the other arrangement twice in one week:
+  //  #   a version noted somewhere else went stale, the shelf agreed with
+  // #    the note, and 241 questions read as written for an hour with
+  // #    Drive holding none of them. So `rev` is read out of the record
+  // #    itself, and a push that finds a newer `rev` folds before it
+  // #    writes instead of overwriting.
+  // ============================================================
+  const liveCloud = {
+    name: 'Drive',
+    ready: () => Boolean(window.MyTermCloud && window.MyTermCloud.hasToken && window.MyTermCloud.hasToken()),
+    list: parentId => window.MyTermCloud.listChildren(parentId),
+    find: (parentId, name) => window.MyTermCloud.findChild(parentId, name),
+    folder: (name, parentId) => window.MyTermCloud.makeFolder(name, parentId),
+    make: (parentId, name, body) => window.MyTermCloud.createJson(parentId, name, body),
+    read: id => window.MyTermCloud.readFile(id),
+    write: (id, body) => window.MyTermCloud.writeFile(id, body)
+  };
+  let cloud = liveCloud;
+
+  let chapterFolder = '';      // the open chapter's own folder in Drive
+  let inkFolder = '';          // the `ink` folder inside it
+  const fileOf = new Map();    // key → Drive file id, for the open chapter
+  const baseRev = new Map();   // key → the `rev` this device last saw in Drive
+  const cloudOwed = new Set();
+  let pushing = false;
+
+  const fileName = key => 'ink-' + String(key).replace(/[^A-Za-z0-9#-]/g, '') .replace('#', '-') + '.json';
+
+  // Found once per chapter: one listing tells which cards have ink and
+  // what their file ids are. Seventy-four `find` calls would say the
+  // same thing and ask seventy-four times
+  const reachFolder = async make => {
+    if (inkFolder) return inkFolder;
+    if (!chapterFolder || !cloud.ready()) return '';
+    let id = await cloud.find(chapterFolder, 'ink').catch(() => null);
+    if (!id && make) id = await cloud.folder('ink', chapterFolder).catch(() => null);
+    if (!id) return '';
+    inkFolder = id;
+    const kids = await cloud.list(id).catch(() => null);
+    (kids || []).forEach(f => {
+      const m = /^ink-(.+)-(\d+)\.json$/.exec(f.name || '');
+      if (m) fileOf.set(m[1] + '#' + m[2], f.id);
+    });
+    return inkFolder;
+  };
+
+  // Their sheets and mine, with nothing arbitrated: a sheet is written
+  // only by the machine that owns it
+  // ============================================================
+  // NOTHING IS DROPPED FOR WANT OF AN OWNER
+  //
+  // The first shape of this kept "my own sheets from memory" and brought
+  // over only sheets belonging to somebody else — and its own guard
+  // caught the hole on the first run: a machine whose shelf had been
+  // cleared, or which read the card before it had written anything,
+  // would see its OWN attempts in Drive as "mine" and keep the empty
+  // memory copy instead. Its sealed work would vanish on the next push.
+  //
+  // So the rule is by IDENTITY first and ownership second: a sheet not
+  // here is taken, and where both sides have the same sheet the one who
+  // writes it wins — my copy for my own, theirs for theirs. Then nothing
+  // can be lost by either end, and there is still nothing to arbitrate.
+  // ============================================================
+  const fold = (mine, theirs) => {
+    if (!theirs || !Array.isArray(theirs.sh)) return mine;
+    const here = new Map(mine.sh.map(s => [s.id, s]));
+    const out = [];
+    theirs.sh.forEach(s => {
+      if (!s || !s.id) return;
+      const ours = here.get(s.id);
+      if (!ours) { out.push(s); return; }          // not here at all: taken
+      out.push(ours.by === me ? ours : s);         // the writer of a sheet wins it
+      here.delete(s.id);
+    });
+    // And everything of mine that Drive has never seen, at the end —
+    // where the reader left it
+    mine.sh.forEach(s => { if (here.has(s.id)) out.push(s); });
+    mine.sh = out.length ? out : [{ id: newId(), by: me, ts: 0, at: now(), s: [] }];
+    mine.rev = Math.max(Number(theirs.rev) || 1, Number(mine.rev) || 1) + 1;
+    return mine;
+  };
+
+  async function pushOne(key) {
+    const d = pads.get(key);
+    if (!d) return true;
+    if (!cloud.ready()) return false;
+    const folder = await reachFolder(true);
+    if (!folder) return false;
+
+    let id = fileOf.get(key);
+    if (!id) {
+      id = await cloud.find(folder, fileName(key)).catch(() => null);
+      if (id) fileOf.set(key, id);
+    }
+    // Nothing of ours yet, and nothing worth a file: an empty card does
+    // not litter the folder
+    if (!id && !d.sh.some(s => s.s.length)) return true;
+
+    if (id) {
+      const there = await cloud.read(id).catch(() => null);
+      // THE FOLD BEFORE THE PUSH, and the decision made on the `rev`
+      // inside the file rather than on anything remembered elsewhere
+      if (there && Number(there.rev) !== baseRev.get(key)) fold(d, there);
+      else d.rev = (Number(d.rev) || 1) + 1;
+      const ok = await cloud.write(id, d).then(() => true, () => false);
+      if (!ok) return false;
+    } else {
+      const made = await cloud.make(folder, fileName(key), d).catch(() => null);
+      if (!made) return false;
+      fileOf.set(key, made);
+    }
+    baseRev.set(key, Number(d.rev) || 1);
+    // IT REACHED DRIVE, and the record says so from now on. The shelf is
+    // told as well, so the fact survives being closed: `rev > pr` is how
+    // the next session knows this card is still owed
+    d.pr = Number(d.rev) || 1;
+    owed.add(key);
+    clearTimeout(timer);
+    timer = setTimeout(flush, QUIET);
+    return true;
+  }
+
+  async function pushAll() {
+    if (pushing || !cloudOwed.size) return true;
+    pushing = true;
+    tellStatus('sending');
+    const keys = [...cloudOwed];
+    let bad = 0;
+    for (const key of keys) {
+      const ok = await pushOne(key);
+      // A refused push KEEPS ITS MARK — the lesson this project paid for
+      // twice: a write that failed and was quietly forgotten, with every
+      // counter on the screen still green
+      if (ok) cloudOwed.delete(key); else bad++;
+    }
+    pushing = false;
+    tellStatus(bad ? 'unsent' : 'sent');
+    return bad === 0;
+  }
+
+  // What Drive holds for one card, folded into what is here. Called when
+  // a card is first read on this device, so another machine's attempts
+  // are there before the reader looks for them
+  async function pullOne(key) {
+    if (!cloud.ready()) return false;
+    const folder = await reachFolder(false);
+    if (!folder) return false;
+    let id = fileOf.get(key);
+    if (!id) {
+      id = await cloud.find(folder, fileName(key)).catch(() => null);
+      if (!id) return false;
+      fileOf.set(key, id);
+    }
+    const there = await cloud.read(id).catch(() => null);
+    if (!there) return false;
+    const d = pads.get(key) || shape(null);
+    const had = d.sh.reduce((n, s) => n + s.s.length, 0);
+    fold(d, shape(there));
+    pads.set(key, d);
+    baseRev.set(key, Number(there.rev) || 1);
+    // Only written back if this device is actually holding something the
+    // other end has not got; otherwise reading would cause a write, and
+    // two devices reading would write at each other for ever
+    if (d.sh.some(s => s.by === me && s.s.length)) { owed.add(key); cloudOwed.add(key); }
+    return had !== d.sh.reduce((n, s) => n + s.s.length, 0) || true;
+  }
+
   window.MyTermInkStore = {
     VER, SC, who: () => me,
+
+    // ---------- the cloud side, and a seam for measuring it ----------
+    cloudName: () => cloud.name || 'given',
+    // ★ WHO THIS MACHINE IS, as a seam. A guard cannot stand in for two
+    //   devices otherwise: it runs in ONE browser, so its "second
+    //   machine" would carry this one's identity and the sheets it pulled
+    //   would be counted as this one's own. Its first run said exactly
+    //   that — "reading left this machine owing a card" — and the fault
+    //   was in the fixture and not in the fold
+    useWho: id => { if (id) me = String(id); return me; },
+    useCloud: impl => {
+      cloud = impl || liveCloud;
+      inkFolder = ''; fileOf.clear(); baseRev.clear();
+      return true;
+    },
+    // Told the chapter's own folder, so the ink folder can be found
+    // inside it. Without it the store still works and simply stays local
+    attach: folderId => { chapterFolder = String(folderId || ''); inkFolder = ''; fileOf.clear(); baseRev.clear(); },
+    push: pushAll,
+    pull: pullOne,
+    cloudOwed: () => cloudOwed.size,
+    fileIdOf: key => fileOf.get(key) || '',
+    revOf: key => (pads.get(key) || {}).rev || 0,
 
     // The chapter whose cards are being read. Opening another one writes
     // out what is owed FIRST: everything else in this project that let
@@ -235,10 +484,16 @@
     open: async (courseId, chapterId) => {
       const next = String(courseId || '') + '/' + String(chapterId || '');
       if (next === scope) return true;
+      // EVERYTHING OWED IS SENT BEFORE THE SCOPE CHANGES — to the shelf
+      // and to Drive both. This project has lost work at exactly this
+      // line twice: a chapter switch that walked away from an unsent
+      // write, and the marks cleared behind it
       await flush();
+      await pushAll();
       scope = next;
       pads.clear();
       openSheet.clear();
+      inkFolder = ''; fileOf.clear(); baseRev.clear();
       return true;
     },
     scopeNow: () => scope,
@@ -252,8 +507,24 @@
       const kept = await onShelf('readonly', s => s.get(shelfKey(key)));
       const d = shape(kept);
       pads.set(key, d);
+      // ★ A DEBT CARRIED OVER FROM A PREVIOUS SESSION. If the record says
+      //   its newest version never reached Drive, it is owed again the
+      //   moment it is read — so ink written while the network was down,
+      //   or while the reader was signed out, goes up by itself the next
+      //   time he opens that part. Without this the shelf keeps it and
+      //   nothing ever sends it
+      if (Number(d.rev) > Number(d.pr || 0) && d.sh.some(s => s.s.length)) cloudOwed.add(key);
+      // And what the OTHER machine wrote, fetched behind this — not
+      // awaited, because a card must appear with its own ink at once and
+      // an attempt made on the tablet arriving a moment later is no loss
+      if (cloud.ready() && chapterFolder) {
+        pullOne(key).then(changed => { if (changed) told(key); }).catch(() => {});
+      }
       return d;
     },
+    // Whoever draws the card wants to know when another machine's
+    // attempts have landed in it
+    onPull: fn => { told = typeof fn === 'function' ? fn : () => {}; },
     ready: key => pads.has(key),
 
     // The strokes of the sheet this machine has open on that card

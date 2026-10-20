@@ -1,0 +1,155 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · two machines, and nothing arbitrated</title>
+<pre id="o">pending</pre>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script>
+  // THE WHOLE CLAIM OF THIS SYNC IS THAT NOTHING CAN COLLIDE, and it
+  // rests on one rule: an attempt belongs to the machine that started it,
+  // and a machine writes only its own. So the fold is a UNION — their
+  // sheets I do not own, plus mine — and no stroke can lose a race.
+  //
+  // What could still go wrong is exactly what this measures:
+  //
+  //   1  THEIR WORK DISCARDED. A push that writes my record over theirs
+  //      loses every attempt made on the other machine, silently, and
+  //      the reader only learns of it when he looks for a solution he
+  //      wrote last night.
+  //   2  MY WORK DISCARDED. A fold that keeps theirs and drops mine is
+  //      the same fault wearing the other coat.
+  //   3  A PUSH DECIDED ON A STALE NUMBER. The freshness counter must be
+  //      read out of the file in Drive, never from anything remembered
+  //      elsewhere — this project has paid for the other arrangement
+  //      twice in one week, and the second time it cost 241 questions
+  //      that read as written for an hour with Drive holding none.
+  //   4  A READ THAT CAUSES A WRITE. Two machines that write back merely
+  //      because they read would write at each other for ever.
+  //
+  // The cloud here is the guard's own: Drive itself is not a thing a
+  // guard may touch — the reader's own ink is in it.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const S = window.MyTermInkStore;
+    if (!S || !S.useCloud) { o.textContent = 'FAIL the store did not load, or its cloud is not a seam'; return; }
+    const faults = [], out = [];
+
+    // ---- a cloud of files, and a count of every call made to it
+    const sky = new Map();            // id → record
+    const names = new Map();          // name → id
+    let reads = 0, writes = 0, makes = 0;
+    const cloud = {
+      name: 'the guard’s own cloud',
+      ready: () => true,
+      list: async () => [...names].map(([name, id]) => ({ id, name })),
+      // The folder itself is a child too — a fixture that only knows
+      // file names makes a reading machine find nowhere to read, and the
+      // fault reads like the code's
+      find: async (parent, name) => (name === 'ink' ? 'folder-ink' : (names.get(name) || null)),
+      folder: async () => 'folder-ink',
+      make: async (parent, name, body) => {
+        makes++;
+        const id = 'f' + (sky.size + 1);
+        names.set(name, id);
+        sky.set(id, JSON.parse(JSON.stringify(body)));
+        return id;
+      },
+      read: async id => { reads++; const v = sky.get(id); return v ? JSON.parse(JSON.stringify(v)) : null; },
+      write: async (id, body) => { writes++; sky.set(id, JSON.parse(JSON.stringify(body))); return true; }
+    };
+    const bin = new Map();
+    const shelf = { name: 'the guard’s own shelf',
+      get: async k => (bin.has(k) ? JSON.parse(bin.get(k)) : null),
+      put: async (k, v) => { bin.set(k, JSON.stringify(v)); return true; } };
+
+    const key = 'rules1#3';
+    const strokeOf = x => ({ c: '#12141a', w: 5.5, p: [x, 20, 150, x + 10, 40, 180, x + 20, 60, 200] });
+
+    // ---- machine one writes an attempt and sends it
+    S.useShelf(shelf); S.useCloud(cloud);
+    await S.open('c-1', 'h-1');
+    S.attach('folder-chapter');
+    await S.load(key);
+    const mine = S.who();
+    S.add(key, strokeOf(30));
+    await S.flush();
+    let ok = await S.push();
+    out.push('machine one pushed: ' + (ok ? 'yes' : 'NO') + ' · created ' + makes + ' file(s)');
+    if (!ok) faults.push('the first push failed');
+    if (S.cloudOwed() !== 0) faults.push('after a good push, ' + S.cloudOwed() + ' cards are still owed');
+
+    // ---- machine two: a DIFFERENT device id, the same card
+    // (the store takes its identity from the browser's own box, so the
+    //  second machine is made by handing it a cloud whose file already
+    //  holds a sheet owned by somebody else)
+    const theirSheet = { id: 's-other', by: 'd-other', ts: Date.now(), at: new Date().toISOString(),
+                         s: [strokeOf(200), strokeOf(260)] };
+    const fid = names.get('ink-rules1-3.json');
+    const there = sky.get(fid);
+    there.sh = there.sh.concat([theirSheet]);
+    there.rev = (there.rev || 1) + 7;              // they wrote after us, several times
+    sky.set(fid, there);
+
+    // ---- machine one writes again: it must FOLD, not overwrite
+    S.add(key, strokeOf(90));
+    await S.flush();
+    ok = await S.push();
+    const after = sky.get(fid);
+    const byMe = after.sh.filter(s => s.by === mine).length;
+    const byThem = after.sh.filter(s => s.by === 'd-other').length;
+    out.push('in the cloud after the second push: ' + after.sh.length + ' attempt(s) — '
+             + byMe + ' mine, ' + byThem + ' theirs · rev ' + after.rev);
+    if (!ok) faults.push('the second push failed');
+    if (!byThem) faults.push('the push wrote over the other machine\'s attempt — it is gone');
+    if (!byMe) faults.push('the push dropped this machine\'s own attempt');
+    if (after.sh.filter(s => s.by === mine).reduce((n, s) => n + s.s.length, 0) !== 2) {
+      faults.push('this machine\'s strokes did not all survive the fold');
+    }
+    if (!(after.rev > 8)) faults.push('the freshness counter did not pass the one that was in the file: ' + after.rev);
+
+    // ---- and the counter is read from the FILE, not from memory
+    const sawRead = reads;
+    S.add(key, strokeOf(140));
+    await S.flush();
+    await S.push();
+    out.push('reads of the file before writing it: ' + (reads - sawRead));
+    if (reads - sawRead < 1) faults.push('the push wrote without reading what is there — the decision is being made on a remembered number');
+
+    // ---- a second device reading the same card keeps both, and does not
+    //      write merely because it read
+    S.useShelf({ name: 'a second machine’s shelf',
+      get: async () => null, put: async () => true });
+    // A DIFFERENT MACHINE IN EARNEST. Without this the "second machine"
+    // carries the first one's identity — one browser, one id — so the
+    // sheets it pulls count as its own and it ends up owing a write for
+    // work it merely read. The guard said so on its first run, and the
+    // fault was the fixture's
+    S.useWho('d-second');
+    S.useCloud(cloud);
+    await S.open('c-1', 'h-2');          // a fresh scope: nothing of its own
+    S.attach('folder-chapter');
+    const w0 = writes;
+    await S.load(key);
+    // Asked for OUTRIGHT rather than waiting on the background fetch the
+    // load kicks off: that one is several calls deep, and a guard that
+    // waits a tick for it measures how fast a fake cloud answers
+    await S.pull(key);
+    const got = S.sheets(key);
+    out.push('a machine that only read sees ' + got.length + ' attempt(s) and wrote ' + (writes - w0) + ' time(s)');
+    if (got.length < 2) faults.push('a machine that read the card sees only ' + got.length + ' attempt(s) of three');
+    if (writes - w0 !== 0) faults.push('reading caused a write: two machines reading would write at each other for ever');
+    // AND IT MUST NOT EVEN OWE ONE. The mark does not write by itself, so
+    // counting writes right after a read measures nothing — the debt is
+    // what turns into a write at the next push, and a machine that only
+    // read owes nothing at all
+    out.push('and owes ' + S.cloudOwed() + ' card(s) after reading');
+    if (S.cloudOwed() !== 0) faults.push('reading left this machine owing ' + S.cloudOwed() + ' card(s) — the next push writes back what it only read');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

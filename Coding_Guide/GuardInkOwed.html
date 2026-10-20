@@ -1,0 +1,127 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · what is owed is still owed tomorrow</title>
+<pre id="o">pending</pre>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script>
+  // THE FAULT THIS PROJECT KEEPS PAYING FOR IS A WRITE THAT FAILED AND
+  // WAS QUIETLY FORGOTTEN — twice in one week, and the second time it
+  // cost 241 questions that read as written for an hour with Drive
+  // holding none of them. Handwriting is worse than questions: the
+  // reader cannot tell by looking whether his solution went anywhere.
+  //
+  // So four things are measured, and all four are about the DEBT:
+  //
+  //   1  A REFUSED SEND KEEPS ITS MARK. The card is still owed, and
+  //      nothing in memory or on the shelf pretends otherwise.
+  //   2  THE SHELF IS WRITTEN FIRST. With the network refusing, the ink
+  //      must still survive a reload — the local copy is not a cache of
+  //      the remote one, it is the first place the work lands.
+  //   3  THE DEBT OUTLIVES THE SESSION. The record itself says which
+  //      version reached Drive (`pr`) and which is current (`rev`), so a
+  //      browser that was closed while unsent knows it on the next open
+  //      and sends it then. A debt held only in memory is forgiven by a
+  //      reload, and the ink stays on one machine for ever.
+  //   4  NOTHING IS WRITTEN WHILE THE HAND IS MOVING. Not to the shelf
+  //      and not to the network: a save inside the drawing loop is what
+  //      made dragging heavy on the machine this came from.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const S = window.MyTermInkStore;
+    if (!S || !S.useCloud) { o.textContent = 'FAIL the store did not load, or its cloud is not a seam'; return; }
+    const faults = [], out = [];
+
+    const bin = new Map();
+    let shelfWrites = 0;
+    const shelf = { name: 'the guard’s own shelf',
+      get: async k => (bin.has(k) ? JSON.parse(bin.get(k)) : null),
+      put: async (k, v) => { shelfWrites++; bin.set(k, JSON.stringify(v)); return true; } };
+
+    let refuse = true, calls = 0;
+    const sky = new Map(), names = new Map();
+    const cloud = {
+      name: 'a cloud that refuses',
+      ready: () => true,
+      list: async () => [],
+      find: async (p, name) => (name === 'ink' ? 'folder-ink' : (names.get(name) || null)),
+      folder: async () => 'folder-ink',
+      make: async (p, name, body) => {
+        calls++;
+        if (refuse) throw new Error('refused');
+        const id = 'f' + (sky.size + 1); names.set(name, id); sky.set(id, JSON.parse(JSON.stringify(body)));
+        return id;
+      },
+      read: async id => { calls++; const v = sky.get(id); return v ? JSON.parse(JSON.stringify(v)) : null; },
+      write: async (id, body) => { calls++; if (refuse) return false; sky.set(id, JSON.parse(JSON.stringify(body))); return true; }
+    };
+
+    const key = 'rules2#5';
+    const strokeOf = x => ({ c: '#12141a', w: 5.5, p: [x, 20, 150, x + 9, 44, 190, x + 18, 61, 210] });
+
+    S.useShelf(shelf); S.useCloud(cloud); S.useWho('d-one');
+    await S.open('c-9', 'h-9');
+    S.attach('folder-chapter');
+    await S.load(key);
+
+    // ---- 4 · nothing written while the hand moves
+    const w0 = shelfWrites, c0 = calls;
+    for (let i = 0; i < 8; i++) S.add(key, strokeOf(20 + i * 12));
+    out.push('during eight strokes: ' + (shelfWrites - w0) + ' shelf writes, ' + (calls - c0) + ' cloud calls');
+    if (shelfWrites - w0 !== 0) faults.push('the shelf was written ' + (shelfWrites - w0) + ' times while the hand was moving');
+    if (calls - c0 !== 0) faults.push('the network was called ' + (calls - c0) + ' times while the hand was moving');
+
+    // ---- 2 · the shelf first, even with the network refusing
+    await S.flush();
+    const kept = await S.onShelfNow(key);
+    const onShelf = kept ? kept.sh.reduce((n, s) => n + s.s.length, 0) : 0;
+    out.push('on the shelf after the hand stopped: ' + onShelf + ' strokes');
+    if (onShelf !== 8) faults.push('the shelf holds ' + onShelf + ' strokes of eight — a reload would lose the rest');
+
+    // ---- 1 · the refused send keeps its mark
+    const sent = await S.push();
+    out.push('the send: ' + (sent ? 'claimed success' : 'refused') + ' · owed ' + S.cloudOwed() + ' card(s)');
+    if (sent) faults.push('a cloud that refuses everything reported a successful send');
+    if (S.cloudOwed() !== 1) faults.push('after a refused send ' + S.cloudOwed() + ' cards are owed, expected 1');
+
+    // ---- 3 · and the record says so, so tomorrow knows
+    await S.flush();
+    const still = await S.onShelfNow(key);
+    out.push('the record: rev ' + (still ? still.rev : '—') + ' · reached Drive ' + (still ? still.pr : '—'));
+    if (!still) faults.push('there is no record on the shelf at all');
+    else if (!(Number(still.rev) > Number(still.pr || 0))) {
+      faults.push('the record does not say it is unsent: rev ' + still.rev + ', pr ' + still.pr);
+    }
+
+    // ---- a browser closed and opened again: the debt comes back by itself
+    S.useCloud(cloud);                       // clears what was remembered
+    await S.open('c-9', 'h-other');          // some other chapter first
+    await S.open('c-9', 'h-9');              // and back to this one
+    S.attach('folder-chapter');
+    await S.load(key);
+    out.push('after being closed and reopened, owed: ' + S.cloudOwed() + ' card(s)');
+    if (S.cloudOwed() !== 1) faults.push('a reopened browser forgot the debt: ' + S.cloudOwed() + ' owed');
+
+    // ---- and when the network comes back, it goes up and the debt clears
+    refuse = false;
+    const ok = await S.push();
+    const there = sky.get(names.get('ink-rules2-5.json'));
+    const up = there ? there.sh.reduce((n, s) => n + s.s.length, 0) : 0;
+    out.push('when the network returned: ' + (ok ? 'sent' : 'STILL REFUSED') + ' · ' + up + ' strokes in the cloud · owed ' + S.cloudOwed());
+    if (!ok) faults.push('the send still failed after the network came back');
+    if (up !== 8) faults.push('the cloud holds ' + up + ' strokes of eight');
+    if (S.cloudOwed() !== 0) faults.push('after a good send ' + S.cloudOwed() + ' cards are still owed');
+    await S.flush();
+    const done = await S.onShelfNow(key);
+    if (done && Number(done.rev) > Number(done.pr || 0)) {
+      faults.push('the record still reads unsent after a good send: rev ' + done.rev + ', pr ' + done.pr);
+    }
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

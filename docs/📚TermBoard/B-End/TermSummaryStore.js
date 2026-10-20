@@ -86,8 +86,39 @@
       // told to draw them again. Without this the first paint keeps the
       // old meaning and nothing ever corrects it
       dispatchEvent(new CustomEvent('myterm:summaries'));
+      reconcile();
     } catch (e) { failed = true; index = null; }
     return index;
+  };
+
+  // ============================================================
+  // # 🔄 📄  THE CHAPTER'S OWN FILE HAS THE LAST WORD
+  // # 🔤 JavaScript
+  // # 🎯 Reads every chapter's own file once the board is up, and puts
+  // #    right any square the one-file summary had wrong
+  // # 🔗 THE ONE FILE IS A COPY, AND A COPY FALLS BEHIND. Seven ACCT210
+  // #    chapters were recorded as finished in their own files and the
+  // #    one file was never written again, so their squares sat empty
+  // #    under work that was done. The one file still paints the board at
+  // #    once; the chapters' own files are then read behind it, and what
+  // #    they say is what the square shows. Nothing has to remember to
+  // #    write the copy for the square to tell the truth
+  // ============================================================
+  const SAID = ['pct', 'cap', 'built', 'parts'];
+
+  const reconcile = async () => {
+    if (!flat) return;
+    let moved = false;
+    await Promise.all(Object.keys(flat).map(async id => {
+      const [code, key] = id.split('/');
+      const own = await chapterData(code, key);
+      if (!own) return;
+      const row = flat[id];
+      if (SAID.every(f => JSON.stringify(own[f]) === JSON.stringify(row[f]))) return;
+      SAID.forEach(f => { if (own[f] !== undefined) row[f] = own[f]; });
+      moved = true;
+    }));
+    if (moved) dispatchEvent(new CustomEvent('myterm:summaries'));
   };
 
   // A course on the board is matched to a course in the tree by its code

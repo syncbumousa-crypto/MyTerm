@@ -453,7 +453,10 @@
   const paintAll = () => {
     if (!allBtn) return;
     const part = partNow();
-    const full = !!part && part.rows > 0 && part.learnt === part.rows;
+    // THE TICKS, not what is done: on a bank they are two different
+    // numbers now, and a button offering to untick forty questions that
+    // carry no tick is a press that does nothing
+    const full = !!part && part.rows > 0 && part.ticked === part.rows;
     allBtn.disabled = !part || part.rows === 0;
     allBtn.classList.toggle('on', full);
     allBtn.innerHTML = full ? ICONS.tickOff : ICONS.tick;
@@ -474,13 +477,13 @@
     // silent nothing the single tick did before it was given a bell.
     // ============================================================
     if (part.kind === 'rules') {
-      const on = part.learnt !== part.rows;
+      const on = part.ticked !== part.rows;
       (window.MyTermSheetStore?.of?.(part.group) || [])
         .filter(one => one.kind === 'card')
         .forEach(one => window.MyTermChapterStore.mark('s-' + one.group + ':' + one.at, on));
       drawRows();
     } else {
-      window.MyTermChapterStore.markAll(part.id, part.learnt !== part.rows);
+      window.MyTermChapterStore.markAll(part.id, part.ticked !== part.rows);
       drawRows();
     }
     afterPaper();
@@ -618,8 +621,13 @@
   // ============================================================
   // # 📊 📏  THE TWO LINES
   // # 🔤 JavaScript
-  // # 🎯 The first is how much of it you have ticked off; the second is
-  // #    what the bank says about the same rows, green and red together
+  // # 🎯 The first is how much of it is DONE; the second is what the
+  // #    bank says about the same rows, green and red together
+  // # 🔗 AND DONE IS NOT ONLY TICKED. A tick is the only way to finish a
+  // #    term or a page, and it is still yours alone to give. A bank
+  // #    question is finished by being ANSWERED -- nobody ticks a
+  // #    question he has just answered, and the reader found the line
+  // #    grey over a bank he had worked right through
   // # 🔗 THE NUMBER BELONGS TO THE PART AND NOT TO THE CHAPTER. A part
   // #    is a thing you work through row by row, and there the exact
   // #    count is the reading — four left is a different evening from
@@ -691,7 +699,12 @@
   const readingOf = (name, rows, learnt, good, bad) => {
     if (!rows) return name + ' · nothing in it yet';
     const asked = good + bad;
-    return name + ' · ' + learnt + ' of ' + rows + ' ticked off · '
+    // "DONE" AND NOT "TICKED OFF". The word was true while a tick was
+    // the only way a thing could be finished; a bank question is now
+    // finished by being answered, and a stack of sheets by its cards.
+    // One word that is true of all three beats three words, and a word
+    // that is true of two of them is worse than either
+    return name + ' · ' + learnt + ' of ' + rows + ' done · '
       + (asked ? good + ' right and ' + bad + ' wrong of ' + asked + ' the bank has asked'
                : 'the bank has not asked you any of it yet');
   };

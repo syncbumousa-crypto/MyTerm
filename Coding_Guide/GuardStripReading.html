@@ -125,6 +125,119 @@
     if (!onward) faults.push('what happens after an answer was not found');
     else if (!/told\(\)/.test(onward)) faults.push('an answer does not tell the strip, so the lines stand still through a run');
 
+    // ---- 6: A BANK QUESTION THAT WAS ANSWERED IS DONE
+    //
+    // The reader: "in the TB, the completion line at the top should fill
+    // when the TB questions are solved." Nobody ticks a question he has
+    // just answered, so the first line stayed grey over a bank he had
+    // worked right through. Run here against the real `doneIn`, which is
+    // the ONE place that knows what finished means -- the hours, the day
+    // record, the chapter bar and the strip all read it, so measuring
+    // the strip alone would not say whether they agree
+    const doneSrc = cut(store, 'const doneIn =');
+    const weighSrc = cut(store, 'const weighToday =');
+    const settled = (store.match(/const TB_SETTLED = '([^']+)'/) || [])[1];
+    if (!doneSrc) faults.push('what counts as done was not found in the store');
+    if (!weighSrc) faults.push('the day weighing was not found in the store');
+    if (!settled) faults.push('the note that the rule has changed has no name in the store');
+    if (doneSrc && weighSrc && settled) {
+      // Two parts with the SAME marks on them, so the only thing that
+      // can make their readings differ is the kind of part
+      const rows = n => [1, 2, 3, 4].map(i => ({ id: n + i }));
+      const parts = [{ id: 's-terms', kind: 'terms', each: 1, rows: rows('r') },
+                     { id: 's-bank', kind: 'tb', each: 2, rows: rows('q') }];
+      const marks = { r1: { on: true }, r2: { was: 'ok' },
+                      q1: { on: true }, q2: { was: 'ok' }, q3: { was: 'no' } };
+      const open = { course: { id: 'c1' }, chapter: { id: 'h1' },
+                     state: { marks: marks, seen: null } };
+      const livingSections = () => parts;
+      // Not under test here and not restated: a flat price, so the
+      // arithmetic of the credit can be read at a glance
+      const rateOf = s => s.each;
+      const doneIn = eval('(' + doneSrc.replace(/^const doneIn =\s*/, '').replace(/;$/, '') + ')');
+      const TB_SETTLED = settled;
+      const weighToday = eval('(' + weighSrc.replace(/^const weighToday =\s*/, '').replace(/;$/, '') + ')');
+
+      const dTerms = doneIn(parts[0]), dBank = doneIn(parts[1]);
+      out.push('done: a terms part with one tick and one verdict reads ' + dTerms
+               + ' · a bank with one tick and two answers reads ' + dBank + ' of 4');
+      if (dBank !== 3) faults.push('a bank with one ticked and two answered questions reads ' + dBank + ' of 4 done');
+      // AND NOT THE OTHER WAY ROUND: on every other kind of part the
+      // tick is still the only word. A verdict on a terms row is what
+      // the bank says ABOUT it, not work the reader finished
+      if (dTerms !== 1) faults.push('a terms part counted a verdict as work done: ' + dTerms + ' of 4');
+
+      // ★ AND THE DAY RECORD IS NOT HANDED THE PAST. Hundreds of
+      //   answers already given would all have become newly finished
+      //   work on one impossible afternoon
+      open.state.seen = { 's-terms': 0, 's-bank': 0 };
+      const first = weighToday();
+      const forBank = first.credits.find(c => c.s === 's-bank');
+      const forTerms = first.credits.find(c => c.s === 's-terms');
+      out.push('the first open after the change: ' + first.credits.length + ' credit(s) · bank '
+               + (forBank ? forBank.n + ' questions' : 'nothing') + ' · terms '
+               + (forTerms ? forTerms.n + ' row(s)' : 'nothing')
+               + ' · the mark re-taken ' + first.rebased + ' · note ' + first.fresh[TB_SETTLED]);
+      if (forBank) {
+        faults.push('the change credited ' + forBank.n + ' already-answered question(s) to today'
+          + ' -- on his own courses that is hundreds of them in one afternoon');
+      }
+      if (!first.rebased) faults.push('the mark was not re-taken, so there is nothing to stop it happening again');
+      if (!(Number(first.fresh[TB_SETTLED]) > 0)) faults.push('nothing was written to say the mark had been re-taken');
+      // and ordinary work is still credited in the same breath: the
+      // re-taking must not swallow the rest of the chapter
+      if (!forTerms || forTerms.n !== 1) {
+        faults.push('a tick put on a terms row was swallowed by the re-taking: '
+                    + (forTerms ? forTerms.n : 'nothing'));
+      }
+
+      // and once the note is there, the next answer counts normally
+      open.state.seen = { 's-terms': 1, 's-bank': 2 };
+      open.state.seen[TB_SETTLED] = 1;
+      const later = weighToday();
+      const now = later.credits.find(c => c.s === 's-bank');
+      out.push('and the next answer: ' + (now ? now.n + ' question for ' + now.m + ' minutes' : 'NOTHING')
+               + ' · re-taken again ' + later.rebased);
+      if (!now || now.n !== 1) faults.push('an answer after the change was not credited: ' + (now ? now.n : 'nothing'));
+      if (later.rebased) faults.push('the mark is re-taken on every open, so only the first answer ever counts');
+
+      // and a tick taken back is still taken back
+      open.state.seen = { 's-bank': 4 };
+      open.state.seen[TB_SETTLED] = 1;
+      const back = weighToday().credits.find(c => c.s === 's-bank');
+      if (!back || back.n !== -1) faults.push('a question un-answered was not taken back: ' + (back ? back.n : 'nothing'));
+    }
+
+    // ---- 7: and every reading of it is wired to that one place
+    const partSrc = mapAt < 0 ? '' : store.slice(mapAt, store.indexOf('};', mapAt));
+    const learntLine = (partSrc.match(/learnt:[^\n]*/) || [''])[0];
+    const tickedLine = (partSrc.match(/ticked:[^\n]*/) || [''])[0];
+    out.push('the part reports: ' + learntLine.trim() + '  |  ' + tickedLine.trim().slice(0, 40));
+    if (!/doneIn\(s\)/.test(learntLine)) {
+      faults.push('what a part says is done is counted a second time instead of asked of doneIn: ' + learntLine.trim());
+    }
+    if (!tickedLine) faults.push('a part does not report how many of it are TICKED, which the tick-all button needs');
+    // the button must read the ticks, or on a bank it offers to take a
+    // tick off forty questions that carry none
+    const btn = screen.indexOf('const paintAll =');
+    const paint = btn < 0 ? '' : screen.slice(btn, btn + 400);
+    if (/part\.learnt === part\.rows/.test(paint)) {
+      faults.push('the tick-all button reads what is DONE, so on an answered bank it offers to untick what was never ticked');
+    }
+    // and the note travels even when nothing was credited
+    if (!/weighed\.rebased/.test(store)) {
+      faults.push('the re-taken mark is not in the condition that writes the state, so it is re-taken for ever');
+    }
+    // and the words say a word that is true of a tick AND of an answer
+    // Read off the reading ITSELF and not off the whole file: asked of
+    // the file it also caught the header comment above the two lines --
+    // which was genuinely out of date and was fixed, but a check that
+    // fails on prose will fail on prose for ever after
+    const wordsSrc = cut(screen, 'const readingOf =') || '';
+    if (/ticked off/.test(wordsSrc)) {
+      faults.push('the reading still says "ticked off" of a bank nobody ticked');
+    }
+
     o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
   })().catch(e => {
     document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;

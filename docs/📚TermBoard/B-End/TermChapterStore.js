@@ -778,7 +778,28 @@
       return Object.keys(open.state.marks)
         .filter(k => k.indexOf(head) === 0 && open.state.marks[k]?.on === true).length;
     }
-    return s.rows.filter(r => !r.deleted && open.state.marks[r.id]?.on === true).length;
+    // ============================================================
+    // ★ A BANK QUESTION IS DONE WHEN IT HAS BEEN ANSWERED
+    //
+    // The reader: "in the TB, the completion line at the top should
+    // fill when the TB questions are solved." It did not, because done
+    // meant TICKED, and nobody ticks a question he has just answered —
+    // answering it IS getting through it. On every other kind of part
+    // the tick is the only word there is, and it stays the only word.
+    //
+    // AND IT IS CHANGED HERE AND NOWHERE ELSE. This one function is
+    // what the hours, the day record, the chapter bar and the line on
+    // the strip all read. Fixed in the strip alone it would have been
+    // a line that fills over hours that stay empty — two numbers on
+    // one card disagreeing, which has happened on this screen before
+    // ============================================================
+    const asked = s.kind === 'tb';
+    return s.rows.filter(r => {
+      if (r.deleted) return false;
+      const m = open.state.marks[r.id];
+      if (m?.on === true) return true;
+      return asked && (m?.was === 'ok' || m?.was === 'no');
+    }).length;
   };
 
   // How many things a part holds: its rows, or — for a part whose work
@@ -803,22 +824,43 @@
   // #    its minutes taken back, or ticking and unticking would be a
   // #    way to inflate a day without doing anything
   // ============================================================
+  // ★ WHEN WHAT COUNTS AS DONE CHANGES, THE MARK IS RE-TAKEN AND NOT
+  //   CREDITED. The day a bank answer began to count as done, every
+  //   answer the reader had ever given became newly finished work: in
+  //   ACCT210 alone that is hundreds of questions, and they would all
+  //   have landed on one impossible afternoon — the very thing the
+  //   mark beside them exists to prevent. So the first open after the
+  //   change re-takes the mark for the bank parts, credits nothing for
+  //   it, and leaves a note that it has been done, so it happens once
+  //   and once only. Which is the reasoning of "null is not empty"
+  //   above, applied to a change in the rule rather than to a new
+  //   chapter
+  const TB_SETTLED = '@tb-answered-counts';
+
   const weighToday = () => {
     if (!open) return null;
     const fresh = {};
     livingSections().forEach(s => { fresh[s.id] = doneIn(s); });
+    fresh[TB_SETTLED] = 1;
 
     const seen = open.state.seen;
-    if (!seen) return { fresh, credits: [], baseline: true };
+    if (!seen) return { fresh, credits: [], baseline: true, rebased: false };
 
+    const settled = (Number(seen[TB_SETTLED]) || 0) > 0;
     const credits = [];
     livingSections().forEach(s => {
-      const d = fresh[s.id] - Math.max(0, Number(seen[s.id]) || 0);
+      // A bank part on a chapter counted under the old rule has no
+      // honest baseline to compare against, so today count IS its
+      // baseline and the difference is zero by construction
+      const base = (!settled && s.kind === 'tb')
+        ? fresh[s.id]
+        : Math.max(0, Number(seen[s.id]) || 0);
+      const d = fresh[s.id] - base;
       if (!d) return;
       credits.push({ c: open.course.id, h: open.chapter.id, s: s.id,
                      n: d, m: Math.round(d * rateOf(s) * 100) / 100 });
     });
-    return { fresh, credits, baseline: false };
+    return { fresh, credits, baseline: false, rebased: !settled };
   };
 
   async function push() {
@@ -833,7 +875,11 @@
     // mark has to travel in the same write as the ticks it counts
     const weighed = weighToday();
     const wasSeen = open.state.seen;
-    const mustState = Boolean(weighed && (weighed.baseline || weighed.credits.length));
+    // AND THE NOTE TRAVELS EVEN WHEN NOTHING WAS CREDITED: a re-taken
+    // mark that is never written would be re-taken on every open, and
+    // the first real answer after it would be the only one ever counted
+    const mustState = Boolean(weighed &&
+      (weighed.baseline || weighed.rebased || weighed.credits.length));
     if (weighed) open.state.seen = weighed.fresh;
 
     try {
@@ -1401,7 +1447,16 @@
           rows: sheets ? unitsOf(s) : living.length,
           written: sheets ? unitsOf(s)
                  : living.filter(r => hasWords(r.term || r.termAr) && hasWords(r.text || r.textAr)).length,
-          learnt: sheets ? doneIn(s)
+          // ASKED OF `doneIn` FOR EVERY KIND, not only for a stack of
+          // sheets. It is the one place that knows what finished means,
+          // and a second copy of it here is how the strip and the hours
+          // came to disagree about a rules part in the first place
+          learnt: doneIn(s),
+          // AND THE TICKS, SEPARATELY. The tick-everything button needs
+          // to know how many are actually TICKED: told the bank`s
+          // `learnt` it would offer to take the tick off forty
+          // questions that carry none, which is a press with no effect
+          ticked: sheets ? doneIn(s)
                 : living.filter(r => open.state.marks[r.id]?.on === true).length,
           // ============================================================
           // AND ITS VERDICTS ARE KEYED BY SHEET, NOT BY ROW
@@ -1585,13 +1640,20 @@
     counts: () => {
       const said = bankSaid();
       let rows = 0, learnt = 0, good = 0, bad = 0;
-      livingSections().forEach(s => s.rows.forEach(r => {
-        if (r.deleted) return;
-        rows++;
-        if (open.state.marks[r.id]?.on === true) learnt++;
-        if (said.get(r.id) === 'ok') good++;
-        else if (said.get(r.id) === 'no') bad++;
-      }));
+      livingSections().forEach(s => {
+        // The same rule as `doneIn`, over the rows this tally walks: a
+        // chapter whose bank is answered must read the same on its own
+        // tab as the part reads on the strip inside it
+        const asked = s.kind === 'tb';
+        s.rows.forEach(r => {
+          if (r.deleted) return;
+          rows++;
+          const m = open.state.marks[r.id];
+          if (m?.on === true || (asked && (m?.was === 'ok' || m?.was === 'no'))) learnt++;
+          if (said.get(r.id) === 'ok') good++;
+          else if (said.get(r.id) === 'no') bad++;
+        });
+      });
       return { rows, learnt, good, bad };
     },
 

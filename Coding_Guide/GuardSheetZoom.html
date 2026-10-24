@@ -51,6 +51,17 @@
       const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
     }
 
+    // AND THE NOTEBOOK IS SHOWN FOR THE LENGTH OF THIS RUN. It was put
+    // away in production on 2026-10-24 and `TermBoard.css` hides it, so
+    // the sheet above fetches the very rule that blanks what this guard
+    // measures - it then read 300x150, the size a canvas has when it was
+    // never laid out, and called the zoom broken. The zoom is not broken;
+    // the pad is merely away. Both rules carry `!important`, so the later
+    // one stands, and the day the notebook returns this line is the proof
+    // it went on working while it was gone.
+    document.head.appendChild(Object.assign(document.createElement('style'),
+      { textContent: '.inkBox{display:block !important}' }));
+
     const bin = new Map();
     S.useShelf({ name: 'the guard own shelf',
       get: async k => (bin.has(k) ? JSON.parse(bin.get(k)) : null),

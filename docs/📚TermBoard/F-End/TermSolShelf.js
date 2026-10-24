@@ -124,23 +124,67 @@
     document.querySelectorAll('.solBtn.on').forEach(b => b.classList.remove('on'));
   };
 
+  // ===== ONE PICTURE, LARGE, AND ARROWS BETWEEN THEM =====
+  // A grid of thumbnails was the first shape, and a worked answer cannot
+  // be read at 118 px - the reader opens this to READ his own working,
+  // not to find it. So the window shows one picture as large as it will
+  // go, and the arrows move between them. The date and the position are
+  // under it, because "which of them is this" is the other half of what
+  // he asked to see.
+  let at = 0;
+
+  const listNow = () => (store().sols(openKey) || []).slice().sort((a, b) => b.ts - a.ts);
+
   const draw = () => {
     const wrap = document.querySelector('.solWrap');
     if (!wrap || !openKey) return;
-    const list = (store().sols(openKey) || []).slice().sort((a, b) => b.ts - a.ts);
+    const list = listNow();
+    if (at >= list.length) at = Math.max(0, list.length - 1);
+    const one = list[at];
     const body = wrap.querySelector('.solBody');
     body.innerHTML = list.length
-      ? list.map(a =>
-          '<figure class="solItem" data-id="' + a.id + '">'
-          + '<a class="solLink" href="' + a.src + '" target="_blank" rel="noopener">'
-          + '<img src="' + a.src + '" alt="" loading="lazy"></a>'
-          + '<figcaption><span class="solWhen">' + when(a.ts) + '</span>'
-          + '<button type="button" class="solDel" title="Remove this picture">&#10005;</button>'
-          + '</figcaption></figure>').join('')
+      ? '<div class="solStage">'
+        + '<button type="button" class="solArrow solPrev" data-step="-1"'
+        + (list.length > 1 ? '' : ' disabled') + ' title="The one before">&#8249;</button>'
+        + '<a class="solBig" href="' + one.src + '" target="_blank" rel="noopener"'
+        + ' title="Open it full size in a tab"><img src="' + one.src + '" alt=""></a>'
+        + '<button type="button" class="solArrow solNext" data-step="1"'
+        + (list.length > 1 ? '' : ' disabled') + ' title="The next one">&#8250;</button>'
+        + '</div>'
+        + '<div class="solFoot">'
+        + '<span class="solWhen">' + when(one.ts) + '</span>'
+        + '<span class="solPos">' + (at + 1) + ' of ' + list.length + '</span>'
+        + '<span class="solGrow"></span>'
+        + '<button type="button" class="solDel" data-id="' + one.id + '"'
+        + ' title="Remove this picture">Remove</button>'
+        + '</div>'
       : '<p class="solNone">Nothing here yet. Add the picture of your worked answer.</p>';
     const n = wrap.querySelector('.solCount');
     if (n) n.textContent = list.length ? String(list.length) : '';
+    // ===== AND WHETHER IT HAS LEFT THIS MACHINE =====
+    // The notebook carried this badge and the notebook is put away, so
+    // the only place that writes pictures now is the only place that can
+    // say so. A picture kept on one device and never sent is exactly the
+    // fault the reader hit, and he cannot tell by looking at it.
+    const st = wrap.querySelector('.solSent');
+    if (st) {
+      const owed = store().cloudOwed ? store().cloudOwed() : 0;
+      const can = store().cloudName && store().cloudName() === 'Drive';
+      st.hidden = false;
+      st.textContent = !list.length ? ''
+        : owed > 0 ? 'not sent to your Drive yet'
+        : can ? 'in your Drive' : 'kept on this device';
+      st.className = 'solSent' + (owed > 0 ? ' owed' : '');
+      st.hidden = !st.textContent;
+    }
     count();
+  };
+
+  const step = d => {
+    const list = listNow();
+    if (list.length < 2) return;
+    at = (at + d + list.length) % list.length;
+    draw();
   };
 
   const open = btn => {
@@ -148,6 +192,7 @@
     if (openKey === key) { shut(); return; }
     shut();
     openKey = key;
+    at = 0;
     btn.classList.add('on');
     // ===== A POP-IN, NOT A PANEL ON THE PAPER =====
     // It was inserted after the question, and a rectangle opening inside
@@ -167,6 +212,7 @@
       +   '</div>'
       +   '<div class="solBody"></div>'
       +   '<p class="solSay" hidden></p>'
+      +   '<p class="solSent" hidden></p>'
       + '</div>';
     document.body.append(wrap);
     draw();
@@ -229,23 +275,30 @@
     // The dark around it closes it, which is what the hand expects of a
     // layer over the page - but only the dark, never the card in it
     if (t.classList && t.classList.contains('solWrap')) { ev.preventDefault(); shut(); return; }
+    const arrow = t.closest && t.closest('.solArrow');
+    if (arrow) { ev.preventDefault(); step(+arrow.dataset.step); return; }
     const del = t.closest && t.closest('.solDel');
     if (del) {
       ev.preventDefault();
-      const item = del.closest('.solItem');
+      const id = del.dataset.id;
       // There is no undoing it, and keeping quiet about that would be a
       // cheat - the same rule the attempt tabs follow
       if (!confirm('Remove this picture? It cannot be brought back.')) return;
-      if (store().dropSol(openKey, item.dataset.id)) draw();
+      if (store().dropSol(openKey, id)) draw();
       return;
     }
   });
 
   document.addEventListener('keydown', ev => {
-    if (ev.key === 'Escape' && openKey) { ev.preventDefault(); shut(); }
+    if (!openKey) return;
+    if (ev.key === 'Escape') { ev.preventDefault(); shut(); return; }
+    // The arrows of the keyboard do what the arrows on the screen do
+    if (ev.key === 'ArrowLeft') { ev.preventDefault(); step(-1); }
+    if (ev.key === 'ArrowRight') { ev.preventDefault(); step(1); }
   });
 
-  window.MyTermSolShelf = { arm, mount, count, draw, when, shut,
+  window.MyTermSolShelf = { arm, mount, count, draw, when, shut, step,
+    at: () => at,
     openKey: () => openKey,
     MAX_CARD, MAX_EDGE };
 })();

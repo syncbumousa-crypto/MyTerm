@@ -42,6 +42,12 @@
       put: async (k, v) => { bin.set(k, JSON.stringify(v)); return true; } });
     S.useCloud({ name: 'no cloud', ready: () => false, list: async () => [], find: async () => null,
                  folder: async () => '', make: async () => null, read: async () => null, write: async () => false });
+    // The pop-in has no geometry without the sheet that styles it, and a
+    // check on a stage with no height measures nothing
+    {
+      const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermBoard.css?t=' + Date.now())).text();
+      document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
+    }
     await S.open('c-sol', 'h-sol');
 
     const card = document.createElement('div');
@@ -55,11 +61,15 @@
     const key = 'rules1#0';
     const say = (ok, txt) => { out.push((ok ? 'PASS ' : 'FAIL ') + txt); if (!ok) faults.push(txt); };
 
-    const tiny = (() => {
+    // A PICTURE PER COLOUR. Three copies of one image cannot prove which
+    // of them the window is showing - the first run of this guard passed
+    // a check that compared an image with itself
+    const shot = col => {
       const c = document.createElement('canvas'); c.width = 30; c.height = 20;
-      const g = c.getContext('2d'); g.fillStyle = '#0a0'; g.fillRect(0, 0, 30, 20);
+      const g = c.getContext('2d'); g.fillStyle = col; g.fillRect(0, 0, 30, 20);
       return c.toDataURL('image/png');
-    })();
+    };
+    const tiny = shot('#0a0'), tiny2 = shot('#a00'), tiny3 = shot('#00a');
 
     // ---- 1 - ONE BUTTON, AND IT IS ON THE QUESTION
     const btn = host.querySelector('.qcard > .solBtn');
@@ -90,8 +100,8 @@
     else { say(true, 'only one attempt, nothing to delete'); }
 
     // ---- 4 - MORE THAN ONE, NEWEST FIRST ON SCREEN
-    S.addSol(key, { src: tiny, w: 30, h: 20 });
-    S.addSol(key, { src: tiny, w: 30, h: 20 });
+    S.addSol(key, { src: tiny2, w: 30, h: 20 });
+    S.addSol(key, { src: tiny3, w: 30, h: 20 });
     say(S.sols(key).length === 3, 'three pictures in the folder');
     btn.click();
     const wrap = document.querySelector('.solWrap');
@@ -100,15 +110,6 @@
     // covers the page, and the dark around it closes it
     say(Boolean(wrap) && wrap.parentElement === document.body && Boolean(wrap.querySelector('.solCard')),
       'it opened as a window over the page, not a rectangle in it');
-    const items = wrap ? wrap.querySelectorAll('.solItem') : [];
-    say(items.length === 3, 'it shows all three: ' + items.length);
-    const stamps = Array.from(wrap ? wrap.querySelectorAll('.solWhen') : []).map(s => s.textContent.trim());
-    say(stamps.length === 3 && stamps.every(s => s.length > 0),
-      'every one carries its date: ' + stamps.join(' | '));
-    // newest first: the ids in the page are the store's order reversed
-    const ids = Array.from(items).map(i => i.dataset.id);
-    const byTime = S.sols(key).slice().sort((x, y) => y.ts - x.ts).map(x => x.id);
-    say(ids.join(',') === byTime.join(','), 'newest at the top');
 
     // ---- 5 - THE COUNT ON THE BUTTON IS READ, NOT GUESSED
     say(btn.querySelector('.solN').textContent === '3',
@@ -121,13 +122,43 @@
     const old = F.when(Date.now() - 40 * day);
     say(!/^today|^yesterday/.test(old) && old.length > 6, 'older reads "' + old + '"');
 
-    // ---- 7 - REMOVING ONE
-    const first = wrap.querySelector('.solItem');
-    const gone = first.dataset.id;
-    S.dropSol(key, gone);
-    F.draw();
-    say(S.sols(key).length === 2 && !wrap.querySelector('.solItem[data-id="' + gone + '"]'),
-      'one removed, two left');
+
+    // ---- ONE PICTURE, LARGE, AND ARROWS BETWEEN THEM
+    // A thumbnail grid cannot be read, and reading his own working is why
+    // he opens this at all. So what is measured is: one picture shown, the
+    // newest of them first, and the arrows moving the position.
+    const bigs = wrap ? wrap.querySelectorAll('.solBig img') : [];
+    say(bigs.length === 1, 'exactly one picture is shown, not a grid: ' + bigs.length);
+    const stage = wrap && wrap.querySelector('.solStage');
+    say(Boolean(stage) && stage.getBoundingClientRect().height > 200,
+      'and it is given real room: ' + Math.round(stage ? stage.getBoundingClientRect().height : 0) + 'px tall');
+    const byTime = S.sols(key).slice().sort((x, y) => y.ts - x.ts);
+    say(F.at() === 0 && wrap.querySelector('.solBig img').src === byTime[0].src,
+      'it opens on the newest of them');
+    say(Boolean(wrap.querySelector('.solPrev')) && Boolean(wrap.querySelector('.solNext')),
+      'both arrows are there');
+    say(/1 of 3/.test(wrap.querySelector('.solPos').textContent),
+      'and it says where you are: ' + wrap.querySelector('.solPos').textContent);
+    wrap.querySelector('.solNext').click();
+    say(F.at() === 1 && wrap.querySelector('.solBig img').src === byTime[1].src,
+      'the right arrow moved to the second');
+    wrap.querySelector('.solPrev').click();
+    wrap.querySelector('.solPrev').click();
+    say(F.at() === 2, 'and the left arrow wraps round to the last: ' + (F.at() + 1));
+    const d1 = wrap.querySelector('.solWhen').textContent.trim();
+    say(d1.length > 0, 'the one on screen carries its date: ' + d1);
+
+    // ---- REMOVING THE ONE ON SCREEN
+    // Removed BY THE BUTTON on the window, which is the path the hand
+    // takes - and `confirm` is answered yes for the length of it
+    const gone = byTime[2].id;
+    const realConfirm = window.confirm;
+    window.confirm = () => true;
+    wrap.querySelector('.solDel').click();
+    window.confirm = realConfirm;
+    const left = S.sols(key).map(x => x.id);
+    say(left.length === 2 && left.indexOf(gone) < 0,
+      'the Remove button took that one away: ' + left.length + ' left, and not the removed one');
 
     // ---- 8 - IT CLOSES, AND PRESSING AGAIN REOPENS
     btn.click();
@@ -159,6 +190,52 @@
     await S.flush();
     say(S.cloudOwed() > 0,
       'a card with a picture and no ink is owed to the cloud (owed=' + S.cloudOwed() + ')');
+
+    // AND HE CAN SEE IT. The notebook carried the `not sent yet` badge and
+    // the notebook is hidden now, so this window is the only place that can
+    // say it. A debt nobody is told about is the fault all over again.
+    F.draw();
+    const st = wrap.querySelector('.solSent');
+    say(st && !st.hidden && /not sent/.test(st.textContent) && st.classList.contains('owed'),
+      'and the window says so: ' + (st ? JSON.stringify(st.textContent) : 'no badge'));
+
+    // ---- 11 - IT GOES TO THE READER'S OWN DRIVE, AND WHERE EXACTLY
+    // The live cloud is `window.MyTermCloud`, which carries HIS token - so
+    // what can be proved here is the PATH and the PAYLOAD: a folder named
+    // `ink` inside the chapter's own folder, one file per card, and the
+    // picture inside it. A fake cloud records what the real one would be
+    // asked to do.
+    const calls = [];
+    let madeFolder = 'ink-folder-id';
+    const files = new Map();
+    S.useCloud({
+      name: 'Drive',
+      ready: () => true,
+      list: async id => { calls.push('list ' + id); return []; },
+      find: async (parent, name) => { calls.push('find ' + parent + '/' + name); return null; },
+      folder: async (name, parent) => { calls.push('folder ' + name + ' in ' + parent); return madeFolder; },
+      make: async (parent, name, body) => {
+        calls.push('make ' + name + ' in ' + parent);
+        files.set(name, body); return 'file-' + name;
+      },
+      read: async id => null,
+      write: async (id, body) => { calls.push('write ' + id); return true; }
+    });
+    S.attach('chapter-folder-id');
+    const k3 = 'rules1#5';
+    await S.load(k3);
+    S.addSol(k3, { src: tiny, w: 30, h: 20 });
+    await S.flush();
+    await S.push();
+    const name = 'ink-rules1-5.json';
+    say(calls.some(c => c === 'folder ink in chapter-folder-id'),
+      'it asked for an `ink` folder inside the chapter folder');
+    say(files.has(name), 'and wrote one file for the card: ' + name);
+    const body = files.get(name) || {};
+    const sent = ((body.sol || [])[0] || {});
+    say(sent.src === tiny, 'the picture itself is in what went up');
+    say(Number(body.pr) > 0 && Number(body.pr) === Number(body.rev),
+      'and it is marked as having reached Drive (rev ' + body.rev + ' = pr ' + body.pr + ')');
 
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK') + '\n' + out.join('\n');
   }).call(null).catch(e => { document.getElementById('o').textContent = 'THREW ' + (e && e.stack || e); });

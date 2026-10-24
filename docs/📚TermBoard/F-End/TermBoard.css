@@ -4452,11 +4452,49 @@ body.darkpaper .cep-note { color: #9a9ca4; }
 /* A grid and not a column: two or three pages of a worked answer are
    read side by side, and a column of full-width photographs buries the
    next question under them */
-.solBody {
-  display: grid; gap: 8px; padding: 9px 10px;
-  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+/* ONE PICTURE, AS LARGE AS THE WINDOW ALLOWS. A grid of 118 px thumbs was
+   the first shape and a worked answer cannot be read at that size - the
+   reader opens this to READ his own working. The arrows move between
+   them, and the date and position sit under it. */
+.solBody { display: block; padding: 0; overflow: hidden; flex: 1 1 auto; min-height: 0; }
+.solStage {
+  display: flex; align-items: center; gap: 4px;
+  height: calc(86vh - 108px); min-height: 220px; padding: 6px;
+  background: #000;
 }
-.solItem { margin: 0; border: 1px solid var(--line, #3a3b42); border-radius: 8px; overflow: hidden; }
+.solBig {
+  flex: 1 1 auto; min-width: 0; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+.solBig img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+/* The arrows are tall and thin against the edges: a round button in the
+   middle of a picture covers the working it is there to show */
+.solArrow {
+  flex: none; width: 34px; align-self: stretch; cursor: pointer;
+  font: inherit; font-size: 22px; line-height: 1;
+  border: 0; border-radius: 8px;
+  background: rgba(255, 255, 255, .07); color: var(--ink, #e9eaee);
+}
+.solArrow:hover:not(:disabled) { background: rgba(255, 255, 255, .16); }
+.solArrow:disabled { opacity: .25; cursor: default; }
+.solFoot {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px; border-top: 1px solid var(--line, #3a3b42);
+  font-size: 11.5px; color: var(--dim, #9a9ca4);
+}
+.solPos { font-variant-numeric: tabular-nums; }
+.solDel {
+  font: inherit; font-size: 11px; padding: 3px 9px; cursor: pointer;
+  border: 1px solid var(--line, #3a3b42); border-radius: 7px;
+  background: transparent; color: var(--dim, #9a9ca4);
+}
+.solDel:hover { border-color: #b1302a; color: #ff8f87; }
+/* Whether it has left this machine. The notebook carried this badge and
+   the notebook is away, so the only place that writes pictures says it. */
+.solSent { margin: 0; padding: 0 12px 9px; font-size: 11px; color: var(--dim, #9a9ca4); }
+.solSent.owed { color: #e0a33a; }
+
+
 .solLink { display: block; }
 .solItem img { display: block; width: 100%; height: 92px; object-fit: cover; background: #000; }
 .solItem figcaption {

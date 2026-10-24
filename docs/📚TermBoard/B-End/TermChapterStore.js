@@ -698,6 +698,12 @@
   // ============================================================
   let board = null, open = null, timer = null, dirty = false, sending = false;
   let tellStatus = () => {};
+  // AND A SECOND WORD, FOR WHAT ARRIVED RATHER THAN HOW THE SENDING
+  // WENT. `tellStatus` says saving/saved, which is this device's own
+  // writing; nothing said that Drive had handed over content this
+  // device did not have. So a part made on another machine reached
+  // the store and the strip went on showing the parts it drew first
+  let toldFold = () => {};
 
   async function settle(course, chapter) {
     if (!course?.folderId) return false;
@@ -1038,6 +1044,21 @@
     // least on the shelf under the version the board records — and the
     // sending, when it lands, writes the shelf again
     if (owed) wrote();
+    // ============================================================
+    // SAID OUT LOUD, OR A SCREEN DRAWN BEFORE THIS KNOWS NONE OF IT
+    //
+    // The strip of parts is built from `sections()` once, as the chapter
+    // opens - and the open serves the SHELF first and asks Drive after,
+    // which is the whole point of the shelf. So everything this fold
+    // brings in arrives after the strip is already painted: on
+    // 2026-10-24 a part added from another device sat in the store and
+    // in Drive while the strip showed five parts, and only a click
+    // somewhere else repainted it. The reader would have called it lost.
+    //
+    // The counts on those same squares come out of this fold too, so it
+    // is said for any fold that applied, not for a new part alone
+    // ============================================================
+    toldFold();
     return true;
   }
 
@@ -1190,6 +1211,11 @@
 
   window.MyTermChapterStore = {
     watch: fn => { tellStatus = fn || (() => {}); },
+
+    // Whoever drew the chapter wants to know when Drive handed over
+    // something this device did not have - a part made on another
+    // machine, or rows that change what the squares count
+    onFold: fn => { toldFold = typeof fn === 'function' ? fn : () => {}; },
 
     hold: on => { penHeld = on !== false; },
 

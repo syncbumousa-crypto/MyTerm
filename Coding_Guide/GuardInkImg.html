@@ -5,6 +5,12 @@
   #host { width: 460px; --sheetScale: 1; }
   .msheet { width: 440px; border: 1px solid #ccc; margin: 6px 0; }
   .qcard { height: 50px; }
+  /* THE NOTEBOOK IS PUT AWAY IN PRODUCTION, by request on 2026-10-24 -
+     `TermBoard.css` hides `.inkBox`. The feature itself is untouched, so
+     this guard goes on measuring it and simply shows it for the length of
+     its own run. The day it is brought back, this line is the proof it
+     still worked while it was away. */
+  .inkBox { display: block !important; }
 </style>
 <pre id="o">pending</pre>
 <div id="host"></div>
@@ -44,6 +50,11 @@
     document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
     const bcss = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermBoard.css?t=' + Date.now())).text();
     document.head.appendChild(Object.assign(document.createElement('style'), { textContent: bcss }));
+    // AND LAST OF ALL, so it wins on order: the sheet above hides the
+    // notebook in production, and this guard measures the notebook. Both
+    // rules carry `!important`, so the later one stands.
+    document.head.appendChild(Object.assign(document.createElement('style'),
+      { textContent: '.inkBox{display:block !important}' }));
 
     const bin = new Map();
     S.useShelf({ name: 'the guard’s own shelf',

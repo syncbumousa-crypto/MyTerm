@@ -96,8 +96,10 @@
     btn.click();
     const wrap = document.querySelector('.solWrap');
     say(Boolean(wrap), 'pressing the button opened the folder');
-    say(Boolean(wrap) && wrap.previousElementSibling === btn.closest('.qcard'),
-      'and it opened under the question itself');
+    // A POP-IN now, not a panel in the sheet: it hangs off the body and
+    // covers the page, and the dark around it closes it
+    say(Boolean(wrap) && wrap.parentElement === document.body && Boolean(wrap.querySelector('.solCard')),
+      'it opened as a window over the page, not a rectangle in it');
     const items = wrap ? wrap.querySelectorAll('.solItem') : [];
     say(items.length === 3, 'it shows all three: ' + items.length);
     const stamps = Array.from(wrap ? wrap.querySelectorAll('.solWhen') : []).map(s => s.textContent.trim());
@@ -145,6 +147,18 @@
       'the second question got its own folder, keyed ' + (btn2 ? btn2.dataset.key : 'none'));
     say(S.ready('rules1#1') ? S.sols('rules1#1').length === 0 : true,
       'and it is empty - a folder is not shared between questions');
+
+    // ---- 10 - AND A PICTURE ALONE IS WORTH SENDING
+    // Reported: a picture added on one machine was not on the laptop. Two
+    // places asked whether a sheet held STROKES before sending anything,
+    // so a card whose whole answer was a photograph never got a file in
+    // Drive at all. This is the check for it.
+    const k2 = 'rules1#7';
+    await S.load(k2);
+    S.addSol(k2, { src: tiny, w: 30, h: 20 });
+    await S.flush();
+    say(S.cloudOwed() > 0,
+      'a card with a picture and no ink is owed to the cloud (owed=' + S.cloudOwed() + ')');
 
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK') + '\n' + out.join('\n');
   }).call(null).catch(e => { document.getElementById('o').textContent = 'THREW ' + (e && e.stack || e); });

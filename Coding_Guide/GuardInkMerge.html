@@ -148,6 +148,73 @@
     out.push('and owes ' + S.cloudOwed() + ' card(s) after reading');
     if (S.cloudOwed() !== 0) faults.push('reading left this machine owing ' + S.cloudOwed() + ' card(s) — the next push writes back what it only read');
 
+    // ================= THE SHELF OF PICTURES CROSSES TOO =================
+    // Reported on 2026-10-24: a picture added on the tablet, with the
+    // window truthfully saying `in your Drive`, was not on the laptop.
+    // It never was a display fault. The fold took `theirs.sh` and
+    // NOTHING ELSE, so a picture could only ever live on the machine
+    // that took it - and worse, the reading machine raised `rev` above
+    // Drive's, so its next push would have written the picture out of
+    // Drive altogether. Three things are measured here.
+    const pic = (() => {
+      const c = document.createElement('canvas'); c.width = 24; c.height = 16;
+      const g = c.getContext('2d'); g.fillStyle = '#c47'; g.fillRect(0, 0, 24, 16);
+      return c.toDataURL('image/png');
+    })();
+
+    // ---- 1  what the tablet put in Drive is on the machine that reads it
+    const fid2 = names.get('ink-rules1-3.json');
+    const tabletCopy = sky.get(fid2);
+    tabletCopy.sol = [{ id: 'p-tablet', src: pic, ts: Date.now(), w: 24, h: 16, by: 'd-tablet' }];
+    tabletCopy.rev = (tabletCopy.rev || 1) + 1;
+    sky.set(fid2, tabletCopy);
+    await S.pull(key);
+    const shelfHere = S.sols(key);
+    out.push('the reading machine sees ' + shelfHere.length + ' picture(s) the tablet added');
+    if (shelfHere.length !== 1 || shelfHere[0].id !== 'p-tablet') {
+      faults.push('a picture sent from the other machine did not arrive: ' + shelfHere.length + ' on the shelf');
+    }
+
+    // ---- 2  and reading it does not write it back out of Drive
+    const w1 = writes;
+    S.add(key, strokeOf(310));          // this machine now owes a write of its own
+    await S.flush();
+    await S.push();
+    const afterPush = sky.get(fid2);
+    const stillThere = (afterPush.sol || []).some(a => a.id === 'p-tablet');
+    out.push('after this machine pushed its own ink, Drive holds '
+             + (afterPush.sol || []).length + ' picture(s) · ' + (writes - w1) + ' write(s)');
+    if (!stillThere) faults.push('THE PUSH ERASED THE OTHER MACHINE\'S PICTURE FROM DRIVE');
+
+    // ---- 3  and a removal travels, where a union alone would undo it
+    // Pictures are never edited, so the fold of two shelves is a union -
+    // and a union would bring back everything either device deleted. So
+    // the removal is written down, and here the machine that still holds
+    // the picture reads the file that says it was taken away
+    S.dropSol(key, 'p-tablet');
+    await S.flush();
+    await S.push();
+    const afterDrop = sky.get(fid2);
+    out.push('after a removal Drive holds ' + (afterDrop.sol || []).length
+             + ' picture(s) and remembers ' + ((afterDrop.rip || []).length) + ' removal(s)');
+    if ((afterDrop.sol || []).length !== 0) faults.push('the removal did not reach Drive');
+    if (!(afterDrop.rip || []).includes('p-tablet')) faults.push('Drive does not carry the removal, so the other machine will put it back');
+
+    S.useShelf({ name: 'the tablet’s own shelf, still holding the picture',
+      get: async () => ({ rev: 2, pr: 2, sol: [{ id: 'p-tablet', src: pic, ts: Date.now(), w: 24, h: 16, by: 'd-tablet' }] }),
+      put: async () => true });
+    S.useWho('d-tablet');
+    S.useCloud(cloud);
+    await S.open('c-1', 'h-3');
+    S.attach('folder-chapter');
+    await S.load(key);
+    const before = S.sols(key).length;
+    await S.pull(key);
+    const afterRead = S.sols(key).length;
+    out.push('the tablet held ' + before + ' picture(s) and after reading the removal holds ' + afterRead);
+    if (before !== 1) faults.push('the fixture failed: the tablet did not start with the picture');
+    if (afterRead !== 0) faults.push('the removal was undone by the fold — the picture came back on the machine that had it');
+
     o.textContent = (faults.length ? 'FAIL ' + faults.join(' | ') : 'OK') + '\n' + out.join('\n');
   })().catch(e => {
     document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;

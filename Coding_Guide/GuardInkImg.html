@@ -1,0 +1,255 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · pictures on an ink sheet</title>
+<style>
+  #host { width: 460px; --sheetScale: 1; }
+  .msheet { width: 440px; border: 1px solid #ccc; margin: 6px 0; }
+  .qcard { height: 50px; }
+</style>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermInkPad.js"></script>
+<script>
+  // THE FIRST THING MEASURED IS THE ONE THAT WOULD HAVE SUNK THIS WHOLE
+  // FEATURE SILENTLY. `shape()` in the store rebuilds a record field by
+  // field and drops what it does not know, so a picture written into a
+  // sheet without being named there is wiped on the next load WITHOUT A
+  // SOUND - the reader would draw, reload, and find a blank page. That
+  // round trip is check one, and it is the reason the store was changed
+  // before a single line of the pad.
+  //
+  // The second is the pen. The picture layers sit over the canvas, so if
+  // they take the pointer while the hand holds the pen, the page stops
+  // taking writing exactly where a diagram was put - and the reader
+  // would call that "I can no longer write on my own answer".
+  //
+  // The third is weight. A screenshot off the clipboard is a 4000-px PNG
+  // of megabytes, `data:` adds a third, and this record is pushed to
+  // Drive on every save. A feature that quietly breaks syncing is worse
+  // than one that refuses a file and says so.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const host = document.getElementById('host');
+    const faults = [], out = [];
+    const S = window.MyTermInkStore, P = window.MyTermInkPad;
+    if (!S || !P) { o.textContent = 'FAIL the pad did not load'; return; }
+    if (!S.addImg || !S.images) { o.textContent = 'FAIL the store knows nothing of pictures'; return; }
+
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
+    const bcss = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermBoard.css?t=' + Date.now())).text();
+    document.head.appendChild(Object.assign(document.createElement('style'), { textContent: bcss }));
+
+    const bin = new Map();
+    S.useShelf({ name: 'the guard’s own shelf',
+      get: async k => (bin.has(k) ? JSON.parse(bin.get(k)) : null),
+      put: async (k, v) => { bin.set(k, JSON.stringify(v)); return true; } });
+    S.useCloud({ name: 'no cloud', ready: () => false, list: async () => [], find: async () => null,
+                 folder: async () => '', make: async () => null, read: async () => null, write: async () => false });
+    await S.open('c-img', 'h-img');
+
+    const card = document.createElement('div');
+    card.className = 'msheet msheet-card';
+    card.dataset.group = 'rules1'; card.dataset.at = '0';
+    card.innerHTML = '<div class="qcard">a question</div>';
+    host.append(card);
+    P.arm(host);
+    await P.mount();
+    const key = 'rules1#0';
+    // `let`, not `const`: check 8 tears the box down and builds it again,
+    // and anything still holding the old one measures a DETACHED node -
+    // zeros and NaN, which read as a broken feature and are a broken test
+    let box = host.querySelector('.inkBox');
+    let cv = box.querySelector('.inkDry');
+    P.light.fit(cv);
+
+    // A real picture, small and known: 40 x 20 of solid red
+    const tiny = (() => {
+      const c = document.createElement('canvas'); c.width = 40; c.height = 20;
+      const g = c.getContext('2d'); g.fillStyle = '#c00'; g.fillRect(0, 0, 40, 20);
+      return c.toDataURL('image/png');
+    })();
+
+    const say = (ok, txt) => { out.push((ok ? 'PASS ' : 'FAIL ') + txt); if (!ok) faults.push(txt); };
+    const R = el => el.getBoundingClientRect();
+
+    // ---- 1 - IT SURVIVES THE ROUND TRIP THROUGH `shape()`
+    const one = S.addImg(key, { src: tiny, x: 100, y: 120, w: 200, h: 100, un: false });
+    say(Boolean(one && one.id), 'the store took a picture');
+    await S.flush();
+    S.forget && S.forget(key);
+    bin.forEach((v, k) => { if (String(k).indexOf('rules1') >= 0) bin.set(k, v); });
+    // Re-read the record the way an open does: through `shape`
+    const again = JSON.parse(bin.get(Array.from(bin.keys()).find(k => String(k).indexOf('rules1') >= 0)));
+    const kept = (((again || {}).sh || [])[0] || {}).im || [];
+    say(kept.length === 1 && kept[0].src === tiny,
+      'it survived the shelf and shape(): ' + kept.length + ' picture(s) kept');
+    say(Number(again.v) >= 5, 'the record says version ' + again.v + ' (5 carries pictures)');
+
+    // ---- 2 - THE LAYERS, MEASURED BY STACKING AND NOT BY CLASS NAME
+    const under = box.querySelector('.inkImgs.is-under');
+    const over  = box.querySelector('.inkImgs.is-over');
+    const zc = n => +getComputedStyle(n).zIndex || 0;
+    say(Boolean(under && over), 'the sheet has both layers');
+    say(under && over && zc(under) < zc(cv) && zc(cv) < zc(over),
+      'under(' + zc(under) + ') < ink(' + zc(cv) + ') < over(' + zc(over) + ')');
+
+    // and a picture lands in the layer its record names
+    S.patchImg(key, one.id, { un: true });
+    P.paintImgs ? P.paintImgs(box) : P.light.fit(cv);
+    let el = box.querySelector('.inkImg[data-id="' + one.id + '"]');
+    say(Boolean(el) && el.closest('.inkImgs').classList.contains('is-under'),
+      'sent under the writing, it is drawn in the under layer');
+    S.patchImg(key, one.id, { un: false });
+    P.paintImgs ? P.paintImgs(box) : P.light.fit(cv);
+    el = box.querySelector('.inkImg[data-id="' + one.id + '"]');
+    say(Boolean(el) && el.closest('.inkImgs').classList.contains('is-over'),
+      'brought back over it, it is drawn in the over layer');
+
+    // ---- 3 - THE PEN COMES FIRST
+    P.mode && P.mode('pen');
+    const inert = getComputedStyle(box.querySelector('.inkImgs.is-over')).pointerEvents;
+    say(inert === 'none', 'with the pen in hand the layers take no pointer (' + inert + ')');
+
+    // ---- 4 - THE FLOOR UNDER A SIZE
+    S.patchImg(key, one.id, { w: 1, h: 1 });
+    const small = S.images(key)[0];
+    say(small.w >= 80 && small.h >= 80,
+      'dragged to nothing it stops at ' + small.w + ' x ' + small.h + ' store px (40 CSS)');
+    S.patchImg(key, one.id, { w: 200, h: 100 });
+
+    // ---- 5 - IT IS ONE STEP OF UNDO, LIKE A STROKE
+    const before = S.images(key).length;
+    S.undo(key);
+    say(S.images(key).length === before - 1,
+      'undo took the picture back the way it takes back a stroke');
+    // and a stroke after a picture means undo takes the STROKE
+    const p2 = S.addImg(key, { src: tiny, x: 10, y: 10, w: 120, h: 60 });
+    S.add(key, { c: '#12141a', w: 5.5, p: [20, 20, 150, 30, 30, 150, 40, 40, 150] });
+    const nImg = S.images(key).length, nStr = S.strokes(key).length;
+    S.undo(key);
+    say(S.images(key).length === nImg && S.strokes(key).length === nStr - 1,
+      'a stroke drawn after it, undo takes the stroke and leaves the picture');
+
+    // ---- 6 - A PAGE EMPTIED TAKES ITS PICTURES WITH IT
+    say(S.has(key), 'a page carrying a picture is not counted empty');
+    S.clear(key);
+    say(S.images(key).length === 0 && S.strokes(key).length === 0,
+      'emptying the page took the pictures with the ink');
+
+    // ---- 7 - WEIGHT: A BIG ONE IS SHRUNK, NOT KEPT AS IT CAME
+    const big = (() => {
+      const c = document.createElement('canvas'); c.width = 4000; c.height = 2000;
+      const g = c.getContext('2d');
+      g.fillStyle = '#048'; g.fillRect(0, 0, 4000, 2000);
+      g.fillStyle = '#fc0'; g.fillRect(0, 0, 2000, 1000);
+      return c.toDataURL('image/png');
+    })();
+    const rawKB = Math.round(big.length / 1024);
+    if (P.placeImg) {
+      await P.placeImg(box, big);
+      const got = S.images(key)[0];
+      const probe = new Image();
+      await new Promise(r => { probe.onload = r; probe.onerror = r; probe.src = got ? got.src : ''; });
+      const encKB = got ? Math.round(got.src.length / 1024) : 0;
+      say(Boolean(got) && Math.max(probe.naturalWidth, probe.naturalHeight) <= 1600,
+        'a 4000 px picture came in at ' + probe.naturalWidth + ' x ' + probe.naturalHeight);
+      say(Boolean(got) && encKB < rawKB / 2,
+        're-encoded ' + rawKB + ' KB -> ' + encKB + ' KB');
+    } else {
+      say(false, 'the pad does not expose placeImg, so weight cannot be measured');
+    }
+
+    // ---- 8 - IT SURVIVES THE SHEETS BEING REBUILT UNDER US
+    const idNow = (S.images(key)[0] || {}).id || '';
+    host.querySelectorAll('.inkBox').forEach(b => b.remove());
+    card.innerHTML = '<div class="qcard">a question</div>';
+    await P.mount();
+    const box2 = host.querySelector('.inkBox');
+    P.light.fit(box2.querySelector('.inkDry'));
+    P.paintImgs && P.paintImgs(box2);
+    say(Boolean(box2 && box2.querySelector('.inkImg[data-id="' + idNow + '"]')),
+      'after the part was rebuilt the picture is drawn again from the record');
+    // and everything after this measures the NEW box
+    box = box2; cv = box.querySelector('.inkDry');
+    P.light.fit(cv);
+
+    // ---- 9 - RESIZING KEEPS THE SHAPE, DRIVEN BY REAL EVENTS
+    // Not by calling the arithmetic: it lives inside the pointer handler,
+    // and a guard that reaches past the handler would pass while the
+    // corner the hand actually grabs does something else.
+    // AND THE PICTURE IS PICKED FIRST, by a press, because the handles
+    // only exist on a picked one - which is itself the behaviour: eight
+    // dots on every picture would bury the page they sit on
+    S.clear(key);
+    const r9 = S.addImg(key, { src: tiny, x: 100, y: 100, w: 240, h: 120, un: false });
+    P.mode('select');
+    P.paintImgs(box);
+    const el9 = box.querySelector('.inkImg[data-id="' + r9.id + '"]');
+    const c9 = R(el9);
+    el9.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true,
+      composed: true, pointerId: 6, clientX: c9.left + c9.width / 2, clientY: c9.top + c9.height / 2 }));
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 6 }));
+    say(el9.classList.contains('is-picked'), 'a press picks the picture and its corners appear');
+
+    const h9 = el9.querySelector('.inkImgH[data-h="se"]');
+    const b9 = h9 ? R(h9) : null;
+    if (!b9 || !b9.width) {
+      say(false, 'the corner handle has no box to grab');
+    } else {
+      const px = b9.left + b9.width / 2, py = b9.top + b9.height / 2;
+      // A COPY, NOT THE OBJECT. `images()` hands back the live records, so
+      // holding one and patching it compares the thing with itself - which
+      // is how this check first passed a no-op and failed a working drag
+      const was = Object.assign({}, S.images(key)[0]);
+      const ratioWas = was.w / was.h;
+      h9.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true,
+        composed: true, pointerId: 7, clientX: px, clientY: py }));
+      document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 7,
+        clientX: px + 40, clientY: py + 4 }));
+      document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7,
+        clientX: px + 40, clientY: py + 4 }));
+      const now9 = S.images(key)[0];
+      const drift = Math.abs(now9.w / now9.h - ratioWas) / ratioWas;
+      say(now9.w > was.w && drift < 0.01,
+        'dragged wider by the corner: ' + was.w + 'x' + was.h + ' to ' + now9.w + 'x' + now9.h
+        + ', shape held to ' + (drift * 100).toFixed(2) + ' per cent');
+    }
+
+    // ---- 10 - IT LANDS WHERE THE HAND IS STANDING
+    // In two halves, because a real clipboard paste cannot be synthesised
+    // in Chromium: `clipboardData` is read-only and the constructor drops
+    // it. So what is measured is the spot being tracked, and a picture
+    // placed at a spot being centred on it - and the clipboard read
+    // itself shares its path with the file picker above
+    S.clear(key);
+    P.paintImgs(box);
+    const dryR = R(cv);
+    const standX = dryR.left + dryR.width * 0.25;
+    const standY = dryR.top + dryR.height * 0.7;
+    box.querySelector('.inkPad').dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, composed: true, pointerId: 9, clientX: standX, clientY: standY }));
+    const wantX = (standX - dryR.left) / dryR.width * (cv.width * 2);
+    const wantY = (standY - dryR.top) / dryR.height * (cv.height * 2);
+    const spot = P.lastAt && P.lastAt();
+    say(Boolean(spot) && spot.inBox && Math.hypot(spot.x - wantX, spot.y - wantY) < 2,
+      'the spot the pointer stood on is tracked: ' + (spot ? Math.round(spot.x) + ',' + Math.round(spot.y) : 'none')
+      + ' against ' + Math.round(wantX) + ',' + Math.round(wantY));
+    await P.placeImg(box, tiny, wantX, wantY);
+    const put = S.images(key)[0];
+    if (!put) {
+      say(false, 'nothing was placed');
+    } else {
+      const off = Math.hypot(put.x + put.w / 2 - wantX, put.y + put.h / 2 - wantY);
+      say(off <= 20, 'placed centred on that spot, off by ' + Math.round(off) + ' store px, limit 20');
+    }
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + '\n' + out.join('\n');
+  })();
+</script>

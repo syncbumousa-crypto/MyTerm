@@ -149,18 +149,26 @@
     shut();
     openKey = key;
     btn.classList.add('on');
+    // ===== A POP-IN, NOT A PANEL ON THE PAPER =====
+    // It was inserted after the question, and a rectangle opening inside
+    // the sheet pushes the page about and sits where the answer should be.
+    // The reader asked for a window that holds the pictures and nothing
+    // else - so it is a layer over everything, closed by its own cross, by
+    // Escape, or by pressing the dark outside it.
     const wrap = document.createElement('div');
     wrap.className = 'solWrap';
     wrap.innerHTML =
-        '<div class="solHead">'
-      +   '<b>Your answer</b><span class="solCount"></span>'
-      +   '<span class="solGrow"></span>'
-      +   '<button type="button" class="solAdd">Add a picture</button>'
-      +   '<button type="button" class="solShut" title="Close">&#10005;</button>'
-      + '</div>'
-      + '<div class="solBody"></div>'
-      + '<p class="solSay" hidden></p>';
-    btn.closest('.qcard').after(wrap);
+        '<div class="solCard" role="dialog" aria-modal="true">'
+      +   '<div class="solHead">'
+      +     '<b>Your answer</b><span class="solCount"></span>'
+      +     '<span class="solGrow"></span>'
+      +     '<button type="button" class="solAdd">Add a picture</button>'
+      +     '<button type="button" class="solShut" title="Close">&#10005;</button>'
+      +   '</div>'
+      +   '<div class="solBody"></div>'
+      +   '<p class="solSay" hidden></p>'
+      + '</div>';
+    document.body.append(wrap);
     draw();
   };
 
@@ -218,6 +226,9 @@
     }
     const x = t.closest && t.closest('.solShut');
     if (x) { ev.preventDefault(); shut(); return; }
+    // The dark around it closes it, which is what the hand expects of a
+    // layer over the page - but only the dark, never the card in it
+    if (t.classList && t.classList.contains('solWrap')) { ev.preventDefault(); shut(); return; }
     const del = t.closest && t.closest('.solDel');
     if (del) {
       ev.preventDefault();
@@ -228,6 +239,10 @@
       if (store().dropSol(openKey, item.dataset.id)) draw();
       return;
     }
+  });
+
+  document.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && openKey) { ev.preventDefault(); shut(); }
   });
 
   window.MyTermSolShelf = { arm, mount, count, draw, when, shut,

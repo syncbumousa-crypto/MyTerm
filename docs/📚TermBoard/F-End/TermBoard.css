@@ -4419,9 +4419,19 @@ body.darkpaper .cep-note { color: #9a9ca4; }
 .solBtn.has { color: var(--ink, #e9eaee); }
 .solN { font-weight: 700; font-variant-numeric: tabular-nums; }
 
+/* A POP-IN over everything, not a rectangle opening inside the paper:
+   a panel pushed into the sheet moves the page about and sits exactly
+   where the answer belongs. The dark closes it, and so does Escape. */
 .solWrap {
-  margin: 6px 0 10px; border: 1px solid var(--line, #3a3b42); border-radius: 10px;
-  background: rgba(0, 0, 0, .18); overflow: hidden;
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: rgba(0, 0, 0, .55);
+}
+.solCard {
+  width: min(760px, 100%); max-height: 86vh; display: flex; flex-direction: column;
+  border: 1px solid var(--line, #3a3b42); border-radius: 12px;
+  background: var(--card, #1b1c22); overflow: hidden;
+  box-shadow: 0 24px 60px -22px rgba(0, 0, 0, .8);
 }
 .solHead {
   display: flex; align-items: center; gap: 8px;
@@ -4461,3 +4471,11 @@ body.darkpaper .cep-note { color: #9a9ca4; }
 .solDel:hover { background: rgba(177, 48, 42, .22); color: #ff8f87; }
 .solNone { grid-column: 1 / -1; margin: 4px 2px; font-size: 11.5px; color: var(--dim, #9a9ca4); }
 .solSay { margin: 0; padding: 6px 10px 9px; font-size: 11.5px; color: #ff8f87; }
+
+/* ===== THE HANDWRITING AREA IS PUT AWAY =====
+   Asked for on 2026-10-24: "hide the whole handwriting answer area,
+   take it away". HIDDEN, not deleted - the notebook, its guards and
+   every stroke already written stay exactly where they are, and one
+   line brings it all back. A canvas with no size paints nothing, so
+   this costs nothing either. */
+.inkBox, .inkDw, .cd-dw { display: none !important; }

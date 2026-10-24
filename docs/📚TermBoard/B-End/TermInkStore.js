@@ -250,6 +250,20 @@
   const CLOUD_QUIET = 4000;
   let cloudTimer = 0;
 
+  // ===== IS THERE ANYTHING WORTH SENDING? =====
+  // Two places decided this by asking whether a sheet held STROKES, and
+  // when the record grew pictures they went on asking only about ink. The
+  // effect was silent and total: a card whose whole answer was a
+  // photograph never got a file in Drive at all, so it lived on the one
+  // machine that took it and the laptop found nothing. Reported by the
+  // reader on 2026-10-24 - "I added a picture and when I opened the
+  // laptop it was not there".
+  //
+  // So there is one answer now, and anything that counts as content
+  // counts here: ink, a picture on a sheet, or a picture in the folder.
+  const worth = d => Boolean(d && (
+    d.sh.some(s => s.s.length || (s.im || []).length) || (d.sol || []).length));
+
   const wrote = key => {
     // The content changed, so the version moves — here and nowhere else
     const d = pads.get(key);
@@ -433,7 +447,7 @@
     }
     // Nothing of ours yet, and nothing worth a file: an empty card does
     // not litter the folder
-    if (!id && !d.sh.some(s => s.s.length)) return true;
+    if (!id && !worth(d)) return true;
 
     if (id) {
       const there = await cloud.read(id).catch(() => null);
@@ -574,7 +588,7 @@
       //   or while the reader was signed out, goes up by itself the next
       //   time he opens that part. Without this the shelf keeps it and
       //   nothing ever sends it
-      if (Number(d.rev) > Number(d.pr || 0) && d.sh.some(s => s.s.length)) cloudOwed.add(key);
+      if (Number(d.rev) > Number(d.pr || 0) && worth(d)) cloudOwed.add(key);
       // And what the OTHER machine wrote, fetched behind this — not
       // awaited, because a card must appear with its own ink at once and
       // an attempt made on the tablet arriving a moment later is no loss

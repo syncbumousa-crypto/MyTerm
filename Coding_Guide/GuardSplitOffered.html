@@ -1,0 +1,142 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · the cut is offered exactly where it would work</title>
+<pre id="o">pending</pre>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermChapterStore.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ ✂️  THE BUTTON'S GREYNESS AND THE DEED'S REFUSAL ARE ONE RULE
+  // # 🔤 HTML + JavaScript
+  // # 🎯 Asks `canSplit` of every row, then actually splits that row on a
+  // #    freshly opened chapter, and the two answers must agree.
+  // # 🔗 Reported on 2026-10-25: the paper offered `Join the table above`
+  // #    and `below` and nothing offered the cut, though `split` had been
+  // #    in the store all along. Adding a button meant deciding when to
+  // #    grey it - and that rule already existed inside `split`. Written
+  // #    out a second time in the menu it would have drifted on the first
+  // #    change, so now the store answers and the menu asks.
+  // # 🔗 Each row is tried on a REOPENED chapter: a cut changes the cids
+  // #    under it, so trying them in sequence would measure the leftovers
+  // #    of the previous answer and call it the rule.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const C = window.MyTermChapterStore;
+    if (!C || !C.split) { o.textContent = 'FAIL the chapter store did not load'; return; }
+    if (typeof C.canSplit !== 'function') {
+      o.textContent = 'FAIL the store does not answer canSplit, so the menu carries its own copy of the rule';
+      return;
+    }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    // IndexedDB is refused on file:// and the store's own shelf would then
+    // never settle - the same stand-in GuardFoldSpeaks uses
+    const kept = new Map(), later = fn => setTimeout(fn, 0);
+    Object.defineProperty(window, 'indexedDB', { configurable: true, value: {
+      open: () => {
+        const ask = {};
+        later(() => {
+          ask.result = { transaction: () => {
+            const deal = {};
+            deal.objectStore = () => ({
+              get: k => { const r = { result: kept.get(k) }; later(() => deal.oncomplete && deal.oncomplete()); return r; },
+              put: (v, k) => { kept.set(k, v); later(() => deal.oncomplete && deal.oncomplete()); return {}; }
+            });
+            return deal;
+          } };
+          if (ask.onsuccess) ask.onsuccess();
+        });
+        return ask;
+      }
+    } });
+
+    // FIVE ROWS IN TWO TABLES: three under one cid, two under the next. So
+    // the heads are row 1 and row 4, and a cut can only mean anything on
+    // rows 2, 3 and 5
+    const stamp = '2026-10-25T10:00:00.000Z';
+    const rowsOf = () => [
+      { id: 'r1', term: 'a', mean: '', cid: 1, order: 1, updatedAt: stamp },
+      { id: 'r2', term: 'b', mean: '', cid: 1, order: 2, updatedAt: stamp },
+      { id: 'r3', term: 'c', mean: '', cid: 1, order: 3, updatedAt: stamp },
+      { id: 'r4', term: 'd', mean: '', cid: 2, order: 4, updatedAt: stamp },
+      { id: 'r5', term: 'e', mean: '', cid: 2, order: 5, updatedAt: stamp }
+    ];
+
+    // A PAIR OF FILES PER ROUND, and this is not tidiness. `open()` flushes
+    // the PREVIOUS chapter before it reads the new one - and by then this
+    // function has already stood the new cloud in `window`, so that flush
+    // landed on the new round's `content-1` and the read handed back the
+    // rows the last cut had mutated. The row-by-row loop still agreed with
+    // itself and said PASS; it was the named checks that caught it, with
+    // `r5:3` on a chapter that had just been opened fresh. A fixture that
+    // is dirtier than it claims measures the dirt.
+    let round = 0;
+    const fresh = async () => {
+      round++;
+      const cid = 'content-' + round, sid = 'state-' + round;
+      const sky = new Map();
+      sky.set(cid, { app: 'MyTerm', version: 2, sections: [
+        { id: 'p-1', name: 'Terms', kind: 'part', rows: rowsOf(), updatedAt: stamp } ] });
+      sky.set(sid, { app: 'MyTerm', marks: {}, covers: {}, updatedAt: stamp });
+      window.MyTermCloud = {
+        readFile: async id => { const v = sky.get(id); return v ? JSON.parse(JSON.stringify(v)) : null; },
+        writeFile: async (id, body) => { sky.set(id, JSON.parse(JSON.stringify(body))); return true; },
+        createJson: async () => 'made', makeFolder: async () => 'folder-1', rename: async () => true,
+        fileAlive: async () => true, findChild: async () => null, now: () => new Date().toISOString()
+      };
+      const course = { id: 'c-1', name: 'FIN', folderId: 'folder-course', chapters: [] };
+      // A DIFFERENT CHAPTER ID EACH TIME, or `open` recognises the one it
+      // already has and hands back the state the last cut left behind
+      const chapter = { id: 'h-' + round, name: 'Ch1',
+                        folderId: 'folder-1', folderName: 'Ch1',
+                        contentId: cid, stateId: sid, contentVersion: 2 };
+      course.chapters.push(chapter);
+      kept.clear();
+      const got = await C.open({ app: 'MyTerm', courses: [course] }, course, chapter);
+      C.useSection('p-1');
+      return Boolean(got);
+    };
+
+    say(await fresh(), 'the chapter opened on five rows in two tables');
+    say(C.rows().length === 5, 'and all five are there: ' + C.rows().length);
+
+    // ---- ROW BY ROW: what the button would show, and what the deed does
+    const seen = [];
+    let apart = 0;
+    for (const id of ['r1', 'r2', 'r3', 'r4', 'r5']) {
+      if (!(await fresh())) { faults.push('the chapter would not reopen for ' + id); break; }
+      const offered = C.canSplit(id);
+      const did = C.split(id);
+      seen.push(id + ' ' + (offered ? 'offered' : 'grey') + '/' + (did ? 'cut' : 'refused'));
+      if (offered !== did) apart++;
+    }
+    say(apart === 0, 'the cut is offered exactly where it works: ' + seen.join(' · '));
+
+    // ---- AND THE RULE IS THE RIGHT ONE, said in words
+    await fresh();
+    say(C.canSplit('r1') === false, 'the first row of the part cannot be cut off: nothing is above it');
+    say(C.canSplit('r4') === false, 'a row that already heads its own table is already cut');
+    say(C.canSplit('r2') === true && C.canSplit('r3') === true && C.canSplit('r5') === true,
+      'every row inside a table can head a new one: r2=' + C.canSplit('r2') + ' r3=' + C.canSplit('r3') + ' r5=' + C.canSplit('r5') + ' rows=' + C.rows().map(r => r.id + ':' + r.cid).join(','));
+
+    // ---- and the cut does what it says
+    await fresh();
+    C.split('r3');
+    const rows = C.rows();
+    const cidOf = id => (rows.find(r => r.id === id) || {}).cid;
+    say(cidOf('r1') === cidOf('r2') && cidOf('r3') !== cidOf('r2'),
+      'after the cut, row 3 heads a table of its own and rows 1-2 are untouched: '
+      + rows.map(r => r.cid).join(','));
+    say(C.canSplit('r3') === false, 'and the same row is not offered the cut twice');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

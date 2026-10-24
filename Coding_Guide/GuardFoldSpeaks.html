@@ -1,0 +1,131 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · what Drive hands over is announced</title>
+<pre id="o">pending</pre>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermChapterStore.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ 📣  A PART THAT ARRIVES LATE MUST BE SAID OUT LOUD
+  // # 🔤 HTML + JavaScript
+  // # 🎯 Drives the REAL chapter store against a cloud of the guard's own
+  // #    making: it opens a chapter, then lets Drive hold a newer copy
+  // #    with a part this device has never seen, and asks for it.
+  // # 🔗 Reported on 2026-10-24. A part was added to FIN250 Ch1 from this
+  // #    session; Drive took it and the store took it, and the strip of
+  // #    parts went on showing five. The open serves the SHELF first and
+  // #    asks Drive after - that is what the shelf is for - so anything
+  // #    the fold brings in lands after the strip is already painted, and
+  // #    nothing told the screen. A reader would have called it lost: the
+  // #    same shape of fault as the picture that reached Drive and was
+  // #    thrown away by a fold that only merged sheets.
+  // # 🔗 So what is measured is not the merge (that worked) but the WORD:
+  // #    `onFold` fires, and it fires after the section is in, never
+  // #    before - a screen repainted a tick early would draw the old list
+  // #    and look exactly like no fix at all.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const C = window.MyTermChapterStore;
+    if (!C || !C.open) { o.textContent = 'FAIL the chapter store did not load'; return; }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    // ---- A SHELF OF OUR OWN FIRST, AND IT IS NOT A CONVENIENCE.
+    // The store keeps its copy in IndexedDB, and IndexedDB is refused on
+    // `file://` - the open then settles NEITHER handler, so the promise
+    // inside `cacheRead` never resolves and `open()` waits for ever. The
+    // first run of this guard printed `at: opening` and nothing else,
+    // which is exactly what that looks like. The store has no shelf seam
+    // of its own (the ink store does), so one is stood here by name.
+    const kept = new Map();
+    const later = fn => setTimeout(fn, 0);
+    Object.defineProperty(window, 'indexedDB', { configurable: true, value: {
+      open: () => {
+        const ask = {};
+        later(() => {
+          ask.result = { transaction: () => {
+            const deal = {};
+            deal.objectStore = () => ({
+              get: key => { const r = { result: kept.get(key) }; later(() => deal.oncomplete && deal.oncomplete()); return r; },
+              put: (val, key) => { kept.set(key, val); later(() => deal.oncomplete && deal.oncomplete()); return {}; }
+            });
+            return deal;
+          } };
+          if (ask.onsuccess) ask.onsuccess();
+        });
+        return ask;
+      }
+    } });
+
+    // ---- a Drive of our own.
+    //      The store reaches for window.MyTermCloud by
+    //      name on every call, so standing one here IS the seam
+    const sky = new Map();
+    const partRow = id => ({ id: id, term: id, mean: '', updatedAt: '2026-10-24T10:00:00.000Z' });
+    sky.set('content-1', { app: 'MyTerm', version: 4, sections: [
+      { id: 'terms', name: 'Terms', kind: 'part', rows: [partRow('r-1')],
+        updatedAt: '2026-10-24T10:00:00.000Z' },
+      { id: 'p-tax', name: 'Tax Rules', kind: 'rules', group: 'rules1', rows: [],
+        updatedAt: '2026-10-24T10:00:00.000Z' } ] });
+    sky.set('state-1', { app: 'MyTerm', marks: {}, covers: {}, updatedAt: '2026-10-24T10:00:00.000Z' });
+    let reads = 0, writes = 0;
+    window.MyTermCloud = {
+      readFile: async id => { reads++; const v = sky.get(id);
+        return v ? JSON.parse(JSON.stringify(v)) : null; },
+      writeFile: async (id, body) => { writes++; sky.set(id, JSON.parse(JSON.stringify(body))); return true; },
+      createJson: async () => 'made-1',
+      makeFolder: async () => 'folder-1',
+      rename: async () => true,
+      fileAlive: async () => true,
+      findChild: async () => null,
+      now: () => new Date().toISOString()
+    };
+
+    const course = { id: 'c-1', name: 'FIN', folderId: 'folder-course', chapters: [] };
+    const chapter = { id: 'h-1', name: 'Ch1', folderId: 'folder-1', folderName: 'Ch1',
+                      contentId: 'content-1', stateId: 'state-1', contentVersion: 4 };
+    course.chapters.push(chapter);
+    const board = { app: 'MyTerm', courses: [course] };
+
+    // ---- the word, before anything is opened
+    say(typeof C.onFold === 'function', 'the store offers a seam for what arrives');
+    let heard = 0, sawAtTheTime = null;
+    C.onFold?.(() => { heard++; sawAtTheTime = C.sections().map(s => s.name); });
+
+    o.textContent = "at: opening"; const got = await C.open(board, course, chapter); o.textContent = "at: opened";
+    say(Boolean(got), 'the chapter opened');
+    say(C.sections().length === 2, 'it holds the two parts Drive had: ' + C.sections().length);
+    say(heard === 0, 'and nothing was announced for a copy it read itself');
+
+    // ---- NOW ANOTHER DEVICE ADDS A PART, and this one is told to look
+    const there = sky.get('content-1');
+    there.version = 5;
+    there.sections.push({ id: 'p-new', name: 'Profit vs Cash', kind: 'rules', group: 'rules3',
+                          rows: [], updatedAt: '2026-10-24T18:53:00.000Z' });
+    sky.set('content-1', there);
+
+    o.textContent = "at: refreshing"; await C.refresh(); o.textContent = "at: refreshed";
+    const names = C.sections().map(s => s.name);
+    say(names.length === 3 && names.indexOf('Profit vs Cash') > -1,
+      'the part made elsewhere is in the store: ' + names.join(' · '));
+    say(heard === 1, 'and it was ANNOUNCED once: heard ' + heard + ' time(s)');
+    // The order is the whole point. Said before the merge, a screen would
+    // repaint the list it already had and the fault would look unfixed
+    say(Boolean(sawAtTheTime) && sawAtTheTime.indexOf('Profit vs Cash') > -1,
+      'and the word came AFTER it was in, not before: ' + (sawAtTheTime || []).join(' · '));
+
+    // ---- and a look that finds nothing new says nothing
+    const before = heard;
+    o.textContent = "at: refreshing"; await C.refresh(); o.textContent = "at: refreshed";
+    say(heard === before, 'a second look with nothing new is silent: heard ' + (heard - before) + ' more');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

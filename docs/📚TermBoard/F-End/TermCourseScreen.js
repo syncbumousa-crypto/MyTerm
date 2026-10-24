@@ -1572,6 +1572,12 @@
                   unread: 'Could not read your file from Drive' };
 
   window.MyTermChapterStore?.watch(state => window.MyTermCourseSync(state));
+  // AND THE STRIP IS DRAWN AGAIN WHEN DRIVE HANDS OVER SOMETHING NEW.
+  // It is built from the parts the store held at the moment of painting,
+  // and the store serves the shelf first - so a part added on another
+  // device arrives a moment later, and until now was never shown until
+  // something else happened to repaint
+  window.MyTermChapterStore?.onFold?.(() => drawTabs());
 
   window.MyTermCourseSync = state => {
     if (!syncDot) return;

@@ -1672,7 +1672,24 @@ body.reading .build { bottom: 46px; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* Smaller than the square it sits in, by request on 2026-10-24. The
+     name is for recognising a part you already know; what is READ on
+     this square is the time above it and the bars under it */
+  font-size: 10.5px;
 }
+
+/* ABOVE THE NAME: HOW LONG THIS PART NEEDS. Dim and small on purpose -
+   it is a figure to glance at while planning an evening, not a heading */
+.ctab-part-time {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9.5px;
+  letter-spacing: .02em;
+  opacity: .62;
+}
+.ctab-part.on .ctab-part-time { opacity: .55; }
 
 /* To the LEFT of the part's name, where nothing else on this strip
    stands — so it is never taken for the plus on the chapter above it,

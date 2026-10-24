@@ -939,7 +939,27 @@
         barOf('learnt', part.learnt, part.rows,
               part.rows ? part.learnt + '/' + part.rows : '—'),
         mixOf(part.good, part.bad, part.rows, ''));
-      one.append(line, lines);
+      // ============================================================
+      // ABOVE THE NAME: WHAT THIS PART STILL ASKS OF AN EVENING
+      //
+      // Not a number anybody stores. It is the pace set on the gear
+      // times what is actually in the part - the very `minutesOf` the
+      // chapter's own hours are summed from, so the squares add up to
+      // the chapter above them and no two readings can disagree.
+      //
+      // A part with no pace yet says so rather than saying `0h`: zero
+      // is a measurement, and `no pace set` is the absence of one
+      // ============================================================
+      const mins = minutesOf(part);
+      const when = document.createElement('span');
+      when.className = 'ctab-part-time';
+      when.textContent = mins
+        ? (window.MyTermHours ? window.MyTermHours.fmt(mins) : Math.round(mins) + 'm')
+        : '—';
+      when.title = mins ? 'How long this part needs at the pace you set'
+                        : 'No pace set yet — press the gear';
+
+      one.append(when, line, lines);
 
       one.title = readingOf(part.name, part.rows, part.learnt, part.good, part.bad);
       one.onclick = event => {

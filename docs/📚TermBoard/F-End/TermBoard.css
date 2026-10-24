@@ -4330,3 +4330,62 @@ body.darkpaper .cep-note { color: #9a9ca4; }
 .sumNo { color: var(--orange); font-size: 13px; }
 .sumFoot { margin: 16px 0 0; font-size: 11px; color: var(--dim2); }
 .sumFoot code { color: var(--dim); }
+
+/* ============================================================
+   PICTURES ON AN INK SHEET
+   ============================================================
+   Two layers with the canvases between them, so a picture can sit under
+   the writing or over it. Everything is in per-cent of the pad, because
+   the pad is laid out at a pinned 800 and only scaled visually: a
+   picture given pixels would slide against the ink at any other size.
+
+   THE LAYERS ARE INERT BY DEFAULT. `is-live` is put on them only while
+   the select tool is held - without that, a picture would swallow the
+   pen stroke meant to be written across it.
+   ============================================================ */
+.inkPad { position: relative; }
+.inkImgs {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+}
+.inkImgs.is-under { z-index: 0; }
+.inkImgs.is-over  { z-index: 3; }
+.inkPad > canvas.inkDry { position: relative; z-index: 1; }
+.inkPad > canvas.inkWet { position: absolute; inset: 0; z-index: 2; }
+.inkImgs.is-live { pointer-events: auto; }
+
+.inkImg { position: absolute; }
+.inkImg > img {
+  width: 100%; height: 100%; display: block;
+  object-fit: fill;            /* the frame IS the size the reader set */
+  user-select: none; -webkit-user-drag: none;
+}
+.inkImgs.is-live .inkImg { cursor: move; }
+
+/* The frame and its handles appear only on the picked one: eight dots on
+   every picture would bury the page they sit on */
+.inkImg > .inkImgUI, .inkImg > .inkImgH { display: none; }
+.inkImg.is-picked { outline: 1.5px solid #3a6bb0; outline-offset: 0; }
+.inkImg.is-picked > .inkImgUI { display: flex; }
+.inkImg.is-picked > .inkImgH { display: block; }
+
+.inkImgUI {
+  position: absolute; top: -11px; inset-inline-end: 0; gap: 3px; z-index: 2;
+}
+.inkImgBtn {
+  width: 20px; height: 20px; padding: 0; line-height: 1; font: inherit; font-size: 11px;
+  border: 1px solid #3a6bb0; border-radius: 5px;
+  background: #11131a; color: #e9eaee; cursor: pointer;
+}
+.inkImgBtn:hover { background: #1b2130; }
+
+/* 10 px of grab on a 6 px dot: the corner must be catchable with a
+   finger, and a dot big enough for that would hide the picture's own
+   corner */
+.inkImgH {
+  position: absolute; width: 12px; height: 12px; z-index: 2;
+  background: #3a6bb0; border: 1.5px solid #fff; border-radius: 3px;
+}
+.inkImgH[data-h="nw"] { left: -6px;  top: -6px;    cursor: nwse-resize; }
+.inkImgH[data-h="ne"] { right: -6px; top: -6px;    cursor: nesw-resize; }
+.inkImgH[data-h="sw"] { left: -6px;  bottom: -6px; cursor: nesw-resize; }
+.inkImgH[data-h="se"] { right: -6px; bottom: -6px; cursor: nwse-resize; }

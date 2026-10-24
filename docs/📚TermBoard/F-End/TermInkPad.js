@@ -101,6 +101,13 @@
       +       '<path d="M13.4 4.9l5.7 5.7a1.7 1.7 0 0 1 0 2.4l-6.6 6.6a1.7 1.7 0 0 1-2.4 0'
       +       'l-5.7-5.7a1.7 1.7 0 0 1 0-2.4l6.6-6.6a1.7 1.7 0 0 1 2.4 0z"/>'
       +       '<path d="M7.2 11.1l5.7 5.7"/></svg></button>'
+      +     '<button class="inkBtn inkImgBtnBar" data-ink="img"'
+      +       ' title="Put a picture on this page - or stand on a spot and paste one">'
+      +       '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"'
+      +       ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+      +       '<rect x="3" y="4" width="18" height="16" rx="2"/>'
+      +       '<circle cx="8.5" cy="9.5" r="1.6"/>'
+      +       '<path d="M21 16l-5-5L7 20"/></svg></button>'
       +     '<button class="inkBtn" data-ink="undo" title="Take back the last stroke">↶</button>'
       +     '<button class="inkBtn" data-ink="clear" title="Empty this page">✕</button>'
       +   '</span>'
@@ -127,7 +134,11 @@
       // by looking at the page
       +   '<span class="inkState" hidden>not sent yet</span>'
       + '</div>'
-      + '<div class="inkPad"><canvas class="inkDry"></canvas><canvas class="inkWet"></canvas></div>';
+      + '<div class="inkPad">'
+      +   '<div class="inkImgs is-under"></div>'
+      +   '<canvas class="inkDry"></canvas><canvas class="inkWet"></canvas>'
+      +   '<div class="inkImgs is-over"></div>'
+      + '</div>';
     return box;
   };
 
@@ -406,6 +417,10 @@
     c.clearRect(0, 0, cv.width * SC, cv.height * SC);
     store().strokes(box.dataset.key).forEach(st => drawStroke(c, st));
     delete cv.dataset.soft;
+    // The pictures are redrawn from the record with the ink and from the
+    // same place: a part switch rebuilds every sheet, so this is the one
+    // seam that survives it
+    if (box) paintImgs(box);
     thumbDrop(cv);              // the content changed: the old thumbnail is now a lie
   };
 
@@ -962,6 +977,7 @@
     else if (what === 'width') { slot = +b.dataset.i; mode = 'pen'; }
     else if (what === 'erase') { mode = mode === 'erase' ? 'pen' : 'erase'; selClear(); }
     else if (what === 'select') { mode = mode === 'select' ? 'pen' : 'select'; selClear(); }
+    else if (what === 'img') { const fi = fileInput(); fi._box = box; fi.click(); }
     else if (what === 'full') { fullToggle(box); }
     else if (what === 'undo') { if (store().undo(key)) repaint(cv); }
     else if (what === 'clear') {
@@ -1006,6 +1022,14 @@
       box.querySelectorAll('[data-ink="width"]').forEach(b =>
         b.classList.toggle('on', +b.dataset.i === slot && mode === 'pen'));
       box.querySelectorAll('[data-ink="erase"]').forEach(b => b.classList.toggle('on', mode === 'erase'));
+      // THE PEN COMES FIRST. The picture layers take no pointer at all
+      // unless the hand is on the select tool: otherwise a picture would
+      // swallow the stroke meant to be written across it, and the page
+      // would stop taking writing exactly where the reader put a diagram
+      box.querySelectorAll('.inkImgs').forEach(L =>
+        L.classList.toggle('is-live', mode === 'select'));
+      box.querySelectorAll('[data-ink="img"]').forEach(b => b.classList.remove('on'));
+      markPicked(box);
       // AND THE SELECT TOOL SAYS SO. It was the only tool on the bar
       // that looked the same armed as not, so the only way to know
       // whether a drag would draw a line or a box was to try it
@@ -1656,6 +1680,303 @@
                 INK_STREAM, INK_TAPER, INK_VSPAN, INK_VSM, WIDTHS }
     },
     drawStroke, nominal,
-    PALM_PX
+    PALM_PX,
+
+    // ---------- seams for the picture guard ----------
+    // Arrows and not the functions themselves: they are declared
+    // further down this file, and naming them in the object literal
+    // would read them before they exist. An arrow resolves when it is
+    // called, which is always after the module has finished.
+    paintImgs: box => paintImgs(box),
+    placeImg: (box, src, x, y) => placeImg(box, src, x, y),
+    // Reading it is free; setting it is what a guard needs in order to
+    // ask "and with the pen in hand?" without pressing a button
+    mode: m => { if (m) { mode = m; tools(); } return mode; },
+    // WHERE THE HAND LAST STOOD inside a pad, in store space. A real
+    // clipboard paste cannot be synthesised in Chromium - `clipboardData`
+    // is read-only and the constructor ignores it - so the guard measures
+    // the two halves that make the behaviour instead: that the spot is
+    // tracked, and that a picture placed at a spot is centred on it. The
+    // clipboard read itself shares its path with the file picker.
+    lastAt: () => lastAt && { x: lastAt.x, y: lastAt.y, inBox: Boolean(lastAt.box) }
   };
+
+  // ============================================================
+  // # PICTURES ON THE SHEET
+  //
+  // A picture is an ELEMENT, never pixels in the canvas. Painted into
+  // `.inkDry` it would become ink: not grabbable, not resizable, not
+  // liftable above or below the writing, and not removable without
+  // redrawing everything. So the sheet carries two picture layers with
+  // the canvases between them, and the browser does the dragging.
+  //
+  //   .inkPad
+  //     .inkImgs.is-under   <- below the writing
+  //     canvas.inkDry       <- the writing
+  //     canvas.inkWet       <- the stroke under the nib
+  //     .inkImgs.is-over    <- above the writing
+  //
+  // "Changing the layer" of a picture in a NOTEBOOK means one thing and
+  // not a z-index to be dialled: is it under the writing or over it? So
+  // the frame carries one button that flips those two, and the pictures
+  // inside one layer stack in the order they were inserted.
+  //
+  // THE PEN COMES FIRST. While the hand holds the pen the layers take no
+  // pointer at all, or a picture would swallow the stroke meant to be
+  // written across it. They become grabbable only in `select` mode.
+  // ============================================================
+  const MAX_EDGE = 1600;               // longest side after re-encoding
+  const MAX_SHEET = 2 * 1024 * 1024;   // all the pictures of one sheet, encoded
+  const MIN_EDGE = 80;                 // store space, so 40 CSS px - never lost
+
+  const imgsOf = (box, under) =>
+    box.querySelector('.inkImgs.is-' + (under ? 'under' : 'over'));
+
+  // Said on the box itself and not in an alert: an alert stops the hand,
+  // and the only thing the reader can do about either message is choose
+  // a different picture
+  const imgSay = (box, text) => {
+    const st = box.querySelector('.inkState');
+    if (!st) return;
+    st.hidden = false;
+    st.textContent = text;
+    clearTimeout(st._imgT);
+    st._imgT = setTimeout(() => { st.textContent = 'not sent yet'; st.hidden = true; }, 4000);
+  };
+
+  // RE-ENCODED BEFORE IT IS KEPT, NEVER AS IT ARRIVED. A screenshot off
+  // the clipboard is a 4000-px PNG of several megabytes, `data:` adds a
+  // third to it, and this record is pushed to Drive on every save. The
+  // reader is told when his picture is refused; he is not left with a
+  // page that silently stops syncing.
+  const reEncode = srcUrl => new Promise((done, fail) => {
+    const im = new Image();
+    im.onload = () => {
+      const long = Math.max(im.naturalWidth, im.naturalHeight) || 1;
+      const k = Math.min(1, MAX_EDGE / long);
+      const w = Math.max(1, Math.round(im.naturalWidth * k));
+      const h = Math.max(1, Math.round(im.naturalHeight * k));
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(im, 0, 0, w, h);
+      // WebP first: a screenshot kept as PNG is about three times the
+      // size for nothing. Transparency survives it, which a JPEG would
+      // flatten onto black - and a diagram pasted over the writing is
+      // exactly the case that needs it
+      let out = '';
+      try { out = cv.toDataURL('image/webp', 0.82); } catch (e) { out = ''; }
+      if (!out || out.slice(0, 15) !== 'data:image/webp') out = cv.toDataURL('image/jpeg', 0.85);
+      done({ src: out, w: w, h: h });
+    };
+    im.onerror = () => fail(new Error('not an image'));
+    im.src = srcUrl;
+  });
+
+  const sheetWeight = key => (store().images(key) || [])
+    .reduce((a, im) => a + (im.src ? im.src.length : 0), 0);
+
+  // Where a new picture lands: the point asked for, else the middle of
+  // the paper. A photograph that arrives wider than the sheet is not
+  // useful at full width, so it comes in at three fifths of the page.
+  const placeImg = async (box, srcUrl, atX, atY) => {
+    const key = box.dataset.key;
+    const cv = box.querySelector('.inkDry');
+    if (!cv || !cv.width) return null;
+    const pw = cv.width * SC, ph = cv.height * SC;
+    let enc;
+    try { enc = await reEncode(srcUrl); }
+    catch (e) { imgSay(box, 'That file is not a picture'); return null; }
+    if (sheetWeight(key) + enc.src.length > MAX_SHEET) {
+      imgSay(box, 'This page is full of pictures - remove one first');
+      return null;
+    }
+    const fit = Math.min(1, (pw * 0.6) / enc.w, (ph * 0.6) / enc.h);
+    const w = Math.max(MIN_EDGE, Math.round(enc.w * fit));
+    const h = Math.max(MIN_EDGE, Math.round(enc.h * fit));
+    const x = Math.round((atX === undefined ? pw / 2 : atX) - w / 2);
+    const y = Math.round((atY === undefined ? ph / 2 : atY) - h / 2);
+    const one = store().addImg(key, { src: enc.src, x: x, y: y, w: w, h: h, un: false });
+    if (one) { paintImgs(box); imgPick(box, one.id); }
+    return one;
+  };
+
+  // ---------- drawing them from the store ----------
+  // From the record, never from markup: opening a part rebuilds every
+  // sheet, so anything left in the page dies with it
+  const paintImgs = box => {
+    const key = box.dataset.key;
+    const cv = box.querySelector('.inkDry');
+    if (!cv || !cv.width) return;
+    const pw = cv.width * SC, ph = cv.height * SC;
+    const list = store().images(key) || [];
+    [true, false].forEach(under => {
+      const host = imgsOf(box, under);
+      if (!host) return;
+      host.innerHTML = list.filter(im => Boolean(im.un) === under).map(im =>
+        '<div class="inkImg" data-id="' + im.id + '"'
+        + ' style="left:' + (im.x / pw * 100) + '%;top:' + (im.y / ph * 100) + '%;'
+        + 'width:' + (im.w / pw * 100) + '%;height:' + (im.h / ph * 100) + '%">'
+        + '<img src="' + im.src + '" alt="" draggable="false">'
+        + '<span class="inkImgUI">'
+        + '<button class="inkImgBtn" data-img="layer" title="Under the writing / over it">&#8645;</button>'
+        + '<button class="inkImgBtn" data-img="del" title="Remove this picture">&#10005;</button>'
+        + '</span>'
+        + '<i class="inkImgH" data-h="nw"></i><i class="inkImgH" data-h="ne"></i>'
+        + '<i class="inkImgH" data-h="sw"></i><i class="inkImgH" data-h="se"></i>'
+        + '</div>').join('');
+    });
+    markPicked(box);
+  };
+
+  // ---------- which one is picked ----------
+  let picked = '';            // one for the whole screen: one hand, one selection
+  const imgPick = (box, id) => { picked = id || ''; markPicked(box); };
+  const markPicked = box => {
+    box.querySelectorAll('.inkImg').forEach(el =>
+      el.classList.toggle('is-picked', el.dataset.id === picked && mode === 'select'));
+  };
+  const unpickAll = () => {
+    picked = '';
+    if (where) where.querySelectorAll('.inkBox').forEach(b => markPicked(b));
+  };
+
+  // ---------- inserting ----------
+  const fileInput = () => {
+    let el = document.getElementById('inkImgFile');
+    if (el) return el;
+    el = document.createElement('input');
+    el.type = 'file'; el.accept = 'image/*'; el.id = 'inkImgFile';
+    el.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px';
+    el.addEventListener('change', () => {
+      const f = el.files && el.files[0], box = el._box;
+      el.value = '';                       // the same file chosen twice must fire again
+      if (!f || !box) return;
+      const rd = new FileReader();
+      rd.onload = () => placeImg(box, String(rd.result));
+      rd.readAsDataURL(f);
+    });
+    document.body.appendChild(el);
+    return el;
+  };
+
+  // ---------- pasting where the hand is ----------
+  // "Stand on a place and paste" - so the last point the pointer touched
+  // inside a pad is remembered, and a paste lands there rather than in
+  // the middle of a page the reader was not looking at
+  let lastAt = null;          // { box, x, y } in store space
+  document.addEventListener('pointermove', ev => {
+    const pad = ev.target.closest && ev.target.closest('.inkPad');
+    if (!pad) return;
+    const box = pad.closest('.inkBox');
+    const dry = box && box.querySelector('.inkDry');
+    if (!dry || !dry.width) return;
+    const r = dry.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    lastAt = { box: box,
+               x: (ev.clientX - r.left) / r.width * (dry.width * SC),
+               y: (ev.clientY - r.top) / r.height * (dry.height * SC) };
+  }, true);
+
+  document.addEventListener('paste', ev => {
+    if (!lastAt || !lastAt.box || !document.contains(lastAt.box)) return;
+    const items = (ev.clipboardData && ev.clipboardData.items) || [];
+    let file = null;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].kind === 'file' && String(items[i].type).slice(0, 6) === 'image/') {
+        file = items[i].getAsFile(); break;
+      }
+    }
+    if (!file) return;
+    ev.preventDefault();
+    const box = lastAt.box, x = lastAt.x, y = lastAt.y;
+    const rd = new FileReader();
+    rd.onload = () => placeImg(box, String(rd.result), x, y);
+    rd.readAsDataURL(file);
+  });
+
+  // ---------- moving, resizing, layering, removing ----------
+  document.addEventListener('pointerdown', ev => {
+    if (mode !== 'select') return;             // the pen comes first
+    const el = ev.target.closest && ev.target.closest('.inkImg');
+    if (!el) {
+      if (ev.target.closest && ev.target.closest('.inkPad')) unpickAll();
+      return;
+    }
+    const box = el.closest('.inkBox');
+    const key = box.dataset.key;
+    const id = el.dataset.id;
+    imgPick(box, id);
+
+    const btn = ev.target.closest('.inkImgBtn');
+    if (btn) {
+      ev.preventDefault(); ev.stopPropagation();
+      const one = (store().images(key) || []).find(i => i.id === id);
+      if (!one) return;
+      if (btn.dataset.img === 'del') {
+        if (store().dropImg(key, id)) { picked = ''; paintImgs(box); }
+      } else if (store().patchImg(key, id, { un: !one.un })) {
+        paintImgs(box);
+      }
+      return;
+    }
+
+    const dry = box.querySelector('.inkDry');
+    const r = dry.getBoundingClientRect();
+    if (!r.width) return;
+    const toStore = (px, py) => ({ x: px / r.width * (dry.width * SC),
+                                   y: py / r.height * (dry.height * SC) });
+    const start = toStore(ev.clientX - r.left, ev.clientY - r.top);
+    const one = (store().images(key) || []).find(i => i.id === id);
+    if (!one) return;
+    const from = { x: one.x, y: one.y, w: one.w, h: one.h };
+    const handle = ev.target.closest('.inkImgH');
+    const corner = handle ? handle.dataset.h : '';
+    const ratio = from.w / Math.max(1, from.h);
+
+    ev.preventDefault(); ev.stopPropagation();
+
+    const onMove = e2 => {
+      const now2 = toStore(e2.clientX - r.left, e2.clientY - r.top);
+      const dx = now2.x - start.x, dy = now2.y - start.y;
+      if (!corner) {
+        store().patchImg(key, id, { x: from.x + dx, y: from.y + dy });
+      } else {
+        // THE SHAPE IS KEPT unless the hand says otherwise: a photograph
+        // stretched out of its proportions is a fault nobody asks for.
+        // Shift frees it.
+        const west = corner[1] === 'w', north = corner[0] === 'n';
+        let w = from.w + (west ? -dx : dx);
+        let h = from.h + (north ? -dy : dy);
+        if (!e2.shiftKey) {
+          if (Math.abs(w - from.w) >= Math.abs(h - from.h)) h = w / ratio; else w = h * ratio;
+        }
+        w = Math.max(MIN_EDGE, w); h = Math.max(MIN_EDGE, h);
+        store().patchImg(key, id, {
+          w: w, h: h,
+          x: west ? from.x + (from.w - w) : from.x,
+          y: north ? from.y + (from.h - h) : from.y
+        });
+      }
+      paintImgs(box);
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  }, true);
+
+  document.addEventListener('keydown', ev => {
+    if (ev.key !== 'Delete' && ev.key !== 'Backspace') return;
+    if (!picked || mode !== 'select') return;
+    const el = where && where.querySelector('.inkImg[data-id="' + picked + '"]');
+    if (!el) return;
+    const box = el.closest('.inkBox');
+    ev.preventDefault();
+    if (store().dropImg(box.dataset.key, picked)) { picked = ''; paintImgs(box); }
+  });
+
 })();

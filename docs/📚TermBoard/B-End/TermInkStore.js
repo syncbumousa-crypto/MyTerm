@@ -25,7 +25,7 @@
 // #    vocabulary for "which card" and not two.
 // ============================================================
 (() => {
-  const VER = 4;              // the record's own shape
+  const VER = 5;              // the record's own shape (5 = sheets may carry images)
   const SC = 2;               // store space = CSS pixels × 2
   const QUIET = 900;          // written after this much silence, never mid-stroke
 
@@ -160,9 +160,35 @@
           c: typeof st.c === 'string' ? st.c : '#12141a',
           w: Number(st.w) > 0 ? Number(st.w) : 5.5,
           p: st.p.map(n => Math.round(Number(n) || 0))
-        }))
+        })),
+      // ---------- IMAGES ON THE SHEET ----------
+      // THIS FILTER IS THE WHOLE REASON images had to start here. It
+      // rebuilds the record field by field and DROPS WHAT IT DOES NOT
+      // KNOW, so a picture written into a sheet without being named
+      // here is wiped on the next load without a sound. Nothing in the
+      // pad can make up for that, so nothing in the pad was written
+      // until this was.
+      //
+      // Coordinates are in STORE SPACE (CSS x 2) exactly like a
+      // stroke's, so one system of numbers governs the sheet and a
+      // picture cannot drift against the writing on it.
+      im: (Array.isArray(s.im) ? s.im : [])
+        .filter(im => im && typeof im === 'object' && typeof im.src === 'string' && im.src)
+        .map(im => ({
+          id: typeof im.id === 'string' && im.id ? im.id : newId(),
+          src: im.src,
+          x: Math.round(Number(im.x) || 0),
+          y: Math.round(Number(im.y) || 0),
+          w: Math.max(80, Math.round(Number(im.w) || 0)),
+          h: Math.max(80, Math.round(Number(im.h) || 0)),
+          un: Boolean(im.un)          // true = under the ink, absent = over it
+        })),
+      // The last unit added, so one step of undo can take back a
+      // picture the way it takes back a stroke. A pen has one step and
+      // not a history, and so does this
+      lu: typeof s.lu === 'string' ? s.lu : ''
     }));
-    if (!sheets.length) sheets.push({ id: newId(), by: me, ts: 0, at: '', s: [] });
+    if (!sheets.length) sheets.push({ id: newId(), by: me, ts: 0, at: '', s: [], im: [], lu: '' });
     return { v: VER, sc: SC, rev: Number(d.rev) > 0 ? Number(d.rev) : 1,
              // `pr` is the version that actually REACHED Drive. It lives in
              // the record, so a device that failed to send and was then
@@ -543,15 +569,70 @@
       const d = pads.get(key);
       return d ? d.sh[at(key)].s : [];
     },
+    // A SHEET CARRYING ONLY A PICTURE IS NOT EMPTY. `seal` refuses an
+    // empty page and `clear` has nothing to do on one, and both read
+    // this - so a page whose whole answer is a photograph had to count
     has: key => {
       const d = pads.get(key);
-      return Boolean(d && d.sh.some(s => s.s.length));
+      return Boolean(d && d.sh.some(s => s.s.length || s.im.length));
+    },
+
+    // ---------- the pictures of the open sheet ----------
+    images: key => {
+      const d = pads.get(key);
+      return d ? d.sh[at(key)].im : [];
+    },
+    addImg: (key, im) => {
+      const d = record(key);
+      const sheet = d.sh[at(key)];
+      const one = { id: newId(), src: String(im.src || ''),
+                    x: Math.round(im.x || 0), y: Math.round(im.y || 0),
+                    w: Math.max(80, Math.round(im.w || 0)),
+                    h: Math.max(80, Math.round(im.h || 0)),
+                    un: Boolean(im.un) };
+      if (!one.src) return null;
+      sheet.im.push(one);
+      sheet.lu = 'im:' + one.id;
+      sheet.at = now();
+      wrote(key);
+      return one;
+    },
+    // Moved, resized or sent under the ink. One door for all three: they
+    // differ only in which numbers the hand changed, and a second door
+    // would mean a second place to forget `wrote`
+    patchImg: (key, id, patch) => {
+      const d = pads.get(key);
+      if (!d) return false;
+      const sheet = d.sh[at(key)];
+      const one = sheet.im.find(i => i.id === id);
+      if (!one) return false;
+      if (patch.x !== undefined) one.x = Math.round(patch.x);
+      if (patch.y !== undefined) one.y = Math.round(patch.y);
+      if (patch.w !== undefined) one.w = Math.max(80, Math.round(patch.w));
+      if (patch.h !== undefined) one.h = Math.max(80, Math.round(patch.h));
+      if (patch.un !== undefined) one.un = Boolean(patch.un);
+      sheet.at = now();
+      wrote(key);
+      return true;
+    },
+    dropImg: (key, id) => {
+      const d = pads.get(key);
+      if (!d) return false;
+      const sheet = d.sh[at(key)];
+      const n = sheet.im.length;
+      sheet.im = sheet.im.filter(i => i.id !== id);
+      if (sheet.im.length === n) return false;
+      if (sheet.lu === 'im:' + id) sheet.lu = '';
+      sheet.at = now();
+      wrote(key);
+      return true;
     },
 
     // ---------- what the pad does to it ----------
     add: (key, stroke) => {
       const d = record(key);
       d.sh[at(key)].s.push(stroke);
+      d.sh[at(key)].lu = '';            // the stroke is now the last unit
       d.sh[at(key)].at = now();
       wrote(key);
       return stroke;
@@ -559,10 +640,27 @@
     // The last stroke taken back. Not a history: one step, which is
     // what a pen has — and it is the current sheet's own last stroke,
     // never another attempt's
+    // ONE STEP, AND A PICTURE COUNTS AS ONE. Inserting a picture is a
+    // thing that happened to the page, so a button that takes back the
+    // last thing must take it back too - otherwise it undoes half of
+    // what the hand does and leaves the other half standing. `lu` says
+    // which kind came last; a pen has one step and not a history, so
+    // this has one step as well
     undo: key => {
       const d = pads.get(key);
       if (!d) return false;
-      const s = d.sh[at(key)].s;
+      const sheet = d.sh[at(key)];
+      if (sheet.lu && sheet.lu.slice(0, 3) === 'im:') {
+        const id = sheet.lu.slice(3);
+        const n = sheet.im.length;
+        sheet.im = sheet.im.filter(i => i.id !== id);
+        sheet.lu = '';
+        if (sheet.im.length === n) return false;
+        sheet.at = now();
+        wrote(key);
+        return true;
+      }
+      const s = sheet.s;
       if (!s.length) return false;
       s.pop();
       d.sh[at(key)].at = now();
@@ -592,7 +690,14 @@
     // beside it are not touched, and whoever asks is told so by name
     clear: key => {
       const d = pads.get(key);
-      if (!d || !d.sh[at(key)].s.length) return false;
+      if (!d) return false;
+      const sheet = d.sh[at(key)];
+      // The pictures of THIS sheet go with its ink: 'empty this page'
+      // means the page, and leaving photographs standing on a page the
+      // reader just emptied would read as a fault
+      if (!sheet.s.length && !sheet.im.length) return false;
+      sheet.im = [];
+      sheet.lu = '';
       d.sh[at(key)].s = [];
       d.sh[at(key)].at = now();
       wrote(key);

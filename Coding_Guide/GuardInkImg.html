@@ -234,8 +234,8 @@
     const standY = dryR.top + dryR.height * 0.7;
     box.querySelector('.inkPad').dispatchEvent(new PointerEvent('pointermove', {
       bubbles: true, composed: true, pointerId: 9, clientX: standX, clientY: standY }));
-    const wantX = (standX - dryR.left) / dryR.width * (cv.width * 2);
-    const wantY = (standY - dryR.top) / dryR.height * (cv.height * 2);
+    const wantX = (standX - dryR.left) / dryR.width * (cv.offsetWidth * 2);
+    const wantY = (standY - dryR.top) / dryR.height * (cv.offsetHeight * 2);
     const spot = P.lastAt && P.lastAt();
     say(Boolean(spot) && spot.inBox && Math.hypot(spot.x - wantX, spot.y - wantY) < 2,
       'the spot the pointer stood on is tracked: ' + (spot ? Math.round(spot.x) + ',' + Math.round(spot.y) : 'none')
@@ -249,7 +249,8 @@
       say(off <= 20, 'placed centred on that spot, off by ' + Math.round(off) + ' store px, limit 20');
     }
 
-    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+    (function(){S.clear(key);var sq=S.addImg(key,{src:tiny,x:200,y:200,w:200,h:200,un:false});P.paintImgs(box);var lay=box.querySelector(".inkImgs.is-over"),rl=R(lay),rc=R(cv);say(Math.abs(rl.width-rc.width)<2&&Math.abs(rl.height-rc.height)<2&&Math.abs(rl.left-rc.left)<2&&Math.abs(rl.top-rc.top)<2,"the layer is the canvas box: "+Math.round(rl.width)+"x"+Math.round(rl.height)+" against "+Math.round(rc.width)+"x"+Math.round(rc.height));var e=box.querySelector(".inkImg");var rs=e?R(e):null;say(Boolean(rs)&&Math.abs(rs.width-rs.height)<2&&Math.abs(rs.width-100)<3,"a 200x200 record is drawn "+(rs?Math.round(rs.width)+"x"+Math.round(rs.height):"none")+" CSS px, wanted 100 square");})();
+o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
       + '\n' + out.join('\n');
   })();
 </script>

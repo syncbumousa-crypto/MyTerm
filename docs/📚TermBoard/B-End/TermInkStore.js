@@ -25,7 +25,7 @@
 // #    vocabulary for "which card" and not two.
 // ============================================================
 (() => {
-  const VER = 6;              // 5 = sheets carry images - 6 = the card carries a shelf of solutions
+  const VER = 7;              // 5 = sheets carry images - 6 = the card carries a shelf of solutions - 7 = and remembers what was taken off it
   const SC = 2;               // store space = CSS pixels × 2
   const QUIET = 900;          // written after this much silence, never mid-stroke
 
@@ -213,7 +213,18 @@
         h: Math.max(1, Math.round(Number(a.h) || 0)),
         by: typeof a.by === 'string' ? a.by : me
       }));
-    return { v: VER, sc: SC, rev: Number(d.rev) > 0 ? Number(d.rev) : 1, sol: sol,
+    // ---------- AND WHAT WAS TAKEN OFF THE SHELF ----------
+    // A picture is never edited: the only thing that can happen to it
+    // after it is put there is removal. So the fold of two shelves is a
+    // union - and a union alone would resurrect everything either device
+    // ever deleted. These are the ids that were removed, so removal
+    // travels between machines the way the pictures do.
+    const rip = (Array.isArray(d.rip) ? d.rip : [])
+      .filter(x => typeof x === 'string' && x)
+      .slice(-400);
+    const dead = new Set(rip);
+    return { v: VER, sc: SC, rev: Number(d.rev) > 0 ? Number(d.rev) : 1,
+             sol: sol.filter(a => !dead.has(a.id)), rip: rip,
              // `pr` is the version that actually REACHED Drive. It lives in
              // the record, so a device that failed to send and was then
              // closed still knows, on its next open, that it is holding ink
@@ -429,6 +440,31 @@
     // where the reader left it
     mine.sh.forEach(s => { if (here.has(s.id)) out.push(s); });
     mine.sh = out.length ? out : [blank()];
+
+    // ============================================================
+    // AND THE SHELF OF PICTURES IS FOLDED TOO
+    //
+    // This line did not exist, and that is how a picture added on the
+    // tablet - written to Drive, the badge saying so truthfully - was
+    // not on the laptop. The fold took `theirs.sh` and nothing else, so
+    // the laptop kept its own empty shelf, raised `rev` above Drive's,
+    // and its next push would have written the picture OUT of Drive.
+    // Reported on 2026-10-24, and it was never a display fault.
+    //
+    // Pictures are immutable, so the union needs no arbitration - only
+    // the tombstones, which win over presence so that a removal is not
+    // undone by the other end still holding the picture.
+    // ============================================================
+    const gone = new Set([].concat(
+      Array.isArray(mine.rip) ? mine.rip : [],
+      Array.isArray(theirs.rip) ? theirs.rip : []));
+    const shelf = new Map();
+    [].concat(Array.isArray(theirs.sol) ? theirs.sol : [],
+              Array.isArray(mine.sol) ? mine.sol : [])
+      .forEach(a => { if (a && a.id && !gone.has(a.id)) shelf.set(a.id, a); });
+    mine.sol = Array.from(shelf.values()).sort((x, y) => (x.ts || 0) - (y.ts || 0));
+    mine.rip = Array.from(gone).slice(-400);
+
     mine.rev = Math.max(Number(theirs.rev) || 1, Number(mine.rev) || 1) + 1;
     return mine;
   };
@@ -641,6 +677,11 @@
       const n = d.sol.length;
       d.sol = d.sol.filter(a => a.id !== id);
       if (d.sol.length === n) return false;
+      // Written down, or the next fold with a device that still holds it
+      // would put it back on the shelf
+      if (!Array.isArray(d.rip)) d.rip = [];
+      if (d.rip.indexOf(id) < 0) d.rip.push(String(id));
+      if (d.rip.length > 400) d.rip = d.rip.slice(-400);
       wrote(key);
       return true;
     },

@@ -589,6 +589,18 @@
   const headOf = (rows, i) => { let s = i; while (s > 0 && rows[s - 1].cid === rows[i].cid) s--; return s; };
   const tailOf = (rows, i) => { let e = i; while (e < rows.length - 1 && rows[e + 1].cid === rows[i].cid) e++; return e; };
 
+  // ============================================================
+  // WHETHER A SPLIT WOULD DO ANYTHING, IN ONE PLACE
+  //
+  // A row cannot be cut off from a table it does not sit inside: the
+  // first row of the part has nothing above it, and a row that is
+  // already the head of its own table is already cut. `split` refused
+  // both, and the menu that offers it had no way to ask - so a button
+  // would have to carry a second copy of this rule and the two would
+  // drift. It is asked instead.
+  // ============================================================
+  const splittable = (rows, i) => i > 0 && headOf(rows, i) !== i;
+
   const splitAt = (rows, i) => {
     const was = rows[i].cid, fresh = nextCid(rows);
     for (let k = i; k < rows.length && rows[k].cid === was; k++) rows[k].cid = fresh;
@@ -1994,12 +2006,20 @@
       if (!open) return false;
       const rows = livingRows();
       const i = indexOf(rows, rowId);
-      if (i <= 0 || headOf(rows, i) === i) return false;
+      if (!splittable(rows, i)) return false;
 
       const before = snapshot(rows);
       splitAt(rows, i);
       placed(rows, before);
       return true;
+    },
+
+    // Asked by the menu that offers the cut, so the greyness of the
+    // button and the refusal of the deed are the one rule
+    canSplit: rowId => {
+      if (!open) return false;
+      const rows = livingRows();
+      return splittable(rows, indexOf(rows, rowId));
     },
 
     join: (rowId, way) => {

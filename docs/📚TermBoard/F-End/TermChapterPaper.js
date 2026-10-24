@@ -1138,6 +1138,12 @@
     menu.append(document.createElement('hr'));
     item('↑  Join the table above', head === 0, () => store().join(rowId, -1));
     item('↓  Join the table below', tail === total - 1, () => store().join(rowId, 1));
+    // The cut was in the store from the beginning and nothing offered it:
+    // two ways to put tables together and no way to take one apart. The row
+    // pressed becomes the head of a new table, so everything from it down
+    // parts company with what is above it. Whether it would do anything is
+    // ASKED of the store, never worked out again here
+    item('┄  Split the table here', !store().canSplit(rowId), () => store().split(rowId));
     menu.append(document.createElement('hr'));
     item(rows[at].outside ? '▨  Mark as required' : '▨  Mark as not required',
          false, () => store().outside(rowId, !rows[at].outside));

@@ -1,0 +1,131 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · opening a part leaves the reader where he was</title>
+<style>
+  #scroller { height: 300px; overflow: auto; border: 1px solid #ccc; }
+  #host { width: 460px; --sheetScale: 1; }
+  .msheet { width: 440px; border: 1px solid #ddd; margin: 6px 0; }
+  .qcard { height: 220px; }
+  /* STANDING IN FOR TermSheet.css, which styles the strip but also lays
+     the sheets out absolutely and scales them - loading it collapses this
+     fixture to one screen, and a container that cannot scroll proves
+     nothing. These two rules give the strip the only thing the check
+     needs: a width it can overflow. */
+  .inkTabStrip { display: flex; gap: 4px; max-width: 160px; overflow-x: auto; }
+  .inkTab { flex: none; }
+</style>
+<pre id="o">pending</pre>
+<div id="scroller"><div id="host"></div></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermInkPad.js"></script>
+<script>
+  // REPORTED BY THE READER: "every time I go into the rules section the
+  // page drops to the bottom instead of leaving me where I was, and I
+  // think it has to do with the rendering of the old solutions."
+  //
+  // He was right about the cause. `syncTabs` ended with
+  // `on.scrollIntoView({block:'nearest'})` to bring the open attempt tab
+  // into the strip - but `scrollIntoView` moves EVERY scrollable
+  // ancestor, and `mount` calls `syncTabs` once per card. A part of
+  // thirty-five cards therefore ended at the last one. And it only bit
+  // where sealed attempts existed, because only then is there a tab to
+  // bring into view - which is why it looked like the old answers were
+  // doing it.
+  //
+  // So what is measured is the thing he lost: the scroll position of the
+  // container across a mount. Not "does a tab exist" - the position.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async function () {
+    const o = document.getElementById('o');
+    const host = document.getElementById('host');
+    const sc = document.getElementById('scroller');
+    const faults = [], out = [];
+    const S = window.MyTermInkStore, P = window.MyTermInkPad;
+    if (!S || !P) { o.textContent = 'FAIL the pad did not load'; return; }
+    const say = (ok, t) => { out.push((ok ? 'PASS ' : 'FAIL ') + t); if (!ok) faults.push(t); };
+
+    const bin = new Map();
+    S.useShelf({ name: 'guard shelf',
+      get: async k => (bin.has(k) ? JSON.parse(bin.get(k)) : null),
+      put: async (k, v) => { bin.set(k, JSON.stringify(v)); return true; } });
+    S.useCloud({ name: 'no cloud', ready: () => false, list: async () => [], find: async () => null,
+                 folder: async () => '', make: async () => null, read: async () => null, write: async () => false });
+    // TermBoard.css ONLY. TermSheet.css lays the sheets out absolutely and
+    // scales them, which collapses this fixture to a single screen - and a
+    // container that cannot scroll proves nothing about scrolling. The strip
+    // is styled in TermBoard.css, which is all this needs
+    for (const u of ['TermBoard.css']) {
+      const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/' + u + '?t=' + Date.now())).text();
+      document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
+    }
+    await S.open('c-place', 'h-place');
+
+    // TEN CARDS, so the container really does scroll - a fixture that
+    // cannot scroll proves nothing about scrolling
+    for (let i = 0; i < 10; i++) {
+      const card = document.createElement('div');
+      card.className = 'msheet msheet-card';
+      card.dataset.group = 'rules1'; card.dataset.at = String(i);
+      card.innerHTML = '<div class="qcard">question ' + (i + 1) + '</div>';
+      host.append(card);
+    }
+    P.arm(host);
+    await P.mount();
+    say(host.querySelectorAll('.inkBox').length === 10, 'ten notebooks were built');
+    say(sc.scrollHeight > sc.clientHeight + 100, 'the container really scrolls: '
+      + sc.scrollHeight + ' in ' + sc.clientHeight);
+
+    // ---- AND EVERY CARD CARRIES A SEALED ATTEMPT, which is the state the
+    //      fault needed: only then is there an open tab to bring into view
+    for (let i = 0; i < 10; i++) {
+      const key = 'rules1#' + i;
+      S.add(key, { c: '#12141a', w: 5.5, p: [20, 20, 150, 40, 40, 150, 60, 60, 150] });
+      S.seal(key);
+    }
+    say(S.sheets('rules1#9').length === 2, 'each page has a sealed attempt beside the open one');
+
+    // ---- the reader is somewhere in the middle, and comes back
+    host.querySelectorAll('.inkBox').forEach(b => b.remove());
+    sc.scrollTop = 420;
+    const was = sc.scrollTop;
+    await P.mount();
+    const now = sc.scrollTop;
+    // NOT "to the pixel": the browser's own scroll anchoring shifts the
+    // offset when content is inserted, and that is it keeping the reader on
+    // the same CONTENT rather than the same number. What he lost was the
+    // place, so what is measured is the place: within one screen of it, and
+    // nowhere near the end
+    say(Math.abs(now - was) < sc.clientHeight,
+      'after the part was rebuilt he is at ' + Math.round(now) + ', from ' + was
+      + ' - a drift of ' + Math.round(Math.abs(now - was)) + ' within one screen of ' + sc.clientHeight);
+    say(now < sc.scrollHeight - sc.clientHeight - 50,
+      'and NOT at the bottom (' + Math.round(now) + ' of ' + (sc.scrollHeight - sc.clientHeight) + ')');
+
+    // ---- and the strip itself still does its job: the open tab is visible
+    const box = host.querySelector('.inkBox[data-key="rules1#0"]');
+    const strip = box && box.querySelector('.inkTabStrip');
+    const on = strip && strip.querySelector('.inkTab.on');
+    if (!on) { say(false, 'no open tab to look at'); }
+    else {
+      const sr = strip.getBoundingClientRect(), tr = on.getBoundingClientRect();
+      say(tr.left >= sr.left - 1 && tr.right <= sr.right + 1,
+        'the open tab sits inside the strip: ' + Math.round(tr.left) + '-' + Math.round(tr.right)
+        + ' within ' + Math.round(sr.left) + '-' + Math.round(sr.right));
+    }
+
+    // ---- a tab pressed by hand still moves nothing but the strip
+    sc.scrollTop = 300;
+    const before = sc.scrollTop;
+    const tabs = box.querySelectorAll('.inkTab');
+    if (tabs.length > 1) { tabs[0].click(); }
+    say(Math.abs(sc.scrollTop - before) < 4,
+      'pressing an attempt tab left the page at ' + Math.round(sc.scrollTop));
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK') + '\n' + out.join('\n');
+  }).call(null).catch(e => {
+    document.getElementById('o').textContent = 'THREW ' + (e && e.stack || e);
+  });
+</script>

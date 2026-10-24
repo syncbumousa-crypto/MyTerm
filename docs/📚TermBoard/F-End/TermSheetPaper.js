@@ -552,6 +552,10 @@
       if (!where) return false;
       told = onTick || (() => {});
       window.MyTermInkPad?.arm?.(where);
+      // The folder on a question is told the same spot and at the same
+      // moment: it draws a button into each question, and a question that
+      // was never drawn has no folder to show
+      window.MyTermSolShelf?.arm?.(where);
       where.addEventListener('click', pressed);
       watchSize();
       return true;
@@ -582,6 +586,10 @@
       // switch and a tick rebuild none
       // ============================================================
       window.MyTermInkPad?.mount?.();
+      // AND AFTER THE SAME DRAW. Opening a part rebuilds every sheet, so a
+      // button put into a question dies with it - this is the one seam
+      // that survives, exactly as the notebook's is
+      window.MyTermSolShelf?.mount?.();
       return stack.length;
     },
 

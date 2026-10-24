@@ -167,7 +167,27 @@
     if (!strip) return;
     strip.innerHTML = tabsOf(box.dataset.key);
     const on = strip.querySelector('.inkTab.on');
-    if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    // ===== THE STRIP IS SCROLLED, AND NOTHING ELSE IS =====
+    // This was `on.scrollIntoView({block:'nearest', inline:'nearest'})`, and
+    // `scrollIntoView` moves EVERY scrollable ancestor, not the one box
+    // asked about. `mount` calls this once per card, so opening a rules
+    // part of thirty-five cards ended with the page dragged to the last
+    // one - the reader lost his place every single time he came back,
+    // and only on parts that already had sealed attempts in them, which
+    // is why it looked like the old solutions were doing it. They were.
+    //
+    // The intent stated above - "the strip scrolls sideways instead" - is
+    // kept exactly, by arithmetic on the strip's own scrollLeft. Nothing
+    // outside the strip can move.
+    // And BY RECTANGLES, not `offsetLeft`: that is measured from the
+    // nearest POSITIONED ancestor, which is not always the strip - so the
+    // first arithmetic here left the tab nine pixels outside and clamped.
+    // A rectangle is a rectangle wherever the element hangs.
+    if (on) {
+      const sr = strip.getBoundingClientRect(), tr = on.getBoundingClientRect();
+      if (tr.left < sr.left) strip.scrollLeft -= (sr.left - tr.left);
+      else if (tr.right > sr.right) strip.scrollLeft += (tr.right - sr.right);
+    }
   };
 
   // ============================================================
@@ -1026,8 +1046,10 @@
       // unless the hand is on the select tool: otherwise a picture would
       // swallow the stroke meant to be written across it, and the page
       // would stop taking writing exactly where the reader put a diagram
-      box.querySelectorAll('.inkImgs').forEach(L =>
-        L.classList.toggle('is-live', mode === 'select'));
+      box.querySelectorAll('.inkImgs').forEach(L => {
+        L.classList.toggle('is-live', mode === 'select');
+        L.style.pointerEvents = mode === 'select' ? 'auto' : 'none';
+      });
       box.querySelectorAll('[data-ink="img"]').forEach(b => b.classList.remove('on'));
       markPicked(box);
       // AND THE SELECT TOOL SAYS SO. It was the only tool on the bar
@@ -1698,7 +1720,11 @@
     // the two halves that make the behaviour instead: that the spot is
     // tracked, and that a picture placed at a spot is centred on it. The
     // clipboard read itself shares its path with the file picker.
-    lastAt: () => lastAt && { x: lastAt.x, y: lastAt.y, inBox: Boolean(lastAt.box) }
+    lastAt: () => lastAt && { x: lastAt.x, y: lastAt.y, inBox: Boolean(lastAt.box) },
+    // Lent to the shelf of solutions so the shrinking and re-encoding
+    // has ONE implementation: both of them answer to the same ceiling and
+    // the same Drive, and two copies of this would drift
+    encode: src => reEncode(src)
   };
 
   // ============================================================
@@ -1822,13 +1848,23 @@
     // is cut off" the reader reported. So the layers are given the
     // canvas's own box, read from the live canvas on every paint so a
     // refit cannot leave them behind
+    // ===== AND ITS STRUCTURE IS WRITTEN ON IT, NOT BORROWED =====
+    // `position: absolute` was left to the stylesheet, and two guards do
+    // not load that sheet - so the layers became ordinary blocks with a
+    // height written on them and pushed the pad from 744 to 3722 px,
+    // which then woke the size observer and redrew every canvas. A thing
+    // whose LAYOUT is structural cannot depend on a sheet that may be
+    // absent; only its look may.
     [true, false].forEach(under => {
       const L = imgsOf(box, under);
       if (!L) return;
+      L.style.position = 'absolute';
+      L.style.overflow = 'hidden';
       L.style.left = cv.offsetLeft + 'px';
       L.style.top = cv.offsetTop + 'px';
       L.style.width = cv.offsetWidth + 'px';
       L.style.height = cv.offsetHeight + 'px';
+      L.style.pointerEvents = mode === 'select' ? 'auto' : 'none';
     });
     [true, false].forEach(under => {
       const host = imgsOf(box, under);

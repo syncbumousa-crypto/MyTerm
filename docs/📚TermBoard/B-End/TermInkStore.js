@@ -25,7 +25,7 @@
 // #    vocabulary for "which card" and not two.
 // ============================================================
 (() => {
-  const VER = 5;              // the record's own shape (5 = sheets may carry images)
+  const VER = 6;              // 5 = sheets carry images - 6 = the card carries a shelf of solutions
   const SC = 2;               // store space = CSS pixels × 2
   const QUIET = 900;          // written after this much silence, never mid-stroke
 
@@ -147,6 +147,14 @@
   // A record that is wrong in any way still has to come back usable: a
   // reader's ink is read on the first open of a browser we have never
   // seen, and there is no second chance to fix a record we refused
+  // ===== EVERY SHEET IS BORN HERE =====
+  // `shape()` normalises what ARRIVES, and it cannot govern what other
+  // functions build. Two of them made a sheet by hand, and when the
+  // record grew an `im` array they went on making sheets without one -
+  // so `clear` read `sheet.im.length` off undefined and threw. A field
+  // added to a record must have exactly one place that creates it.
+  const blank = () => ({ id: newId(), by: me, ts: 0, at: now(), s: [], im: [], lu: '' });
+
   const shape = d => {
     if (!d || typeof d !== 'object' || Array.isArray(d)) d = {};
     const sh = Array.isArray(d.sh) ? d.sh : [];
@@ -188,8 +196,24 @@
       // not a history, and so does this
       lu: typeof s.lu === 'string' ? s.lu : ''
     }));
-    if (!sheets.length) sheets.push({ id: newId(), by: me, ts: 0, at: '', s: [], im: [], lu: '' });
-    return { v: VER, sc: SC, rev: Number(d.rev) > 0 ? Number(d.rev) : 1,
+    if (!sheets.length) sheets.push(Object.assign(blank(), { ts: 0, at: '' }));
+    // ---------- THE SHELF OF SOLUTIONS ----------
+    // Not inside a sheet: a sheet is one ATTEMPT at writing, and a
+    // photograph of the worked answer belongs to the QUESTION. So it sits
+    // on the record beside the sheets, newest last, each with the moment
+    // it was put there - which is the whole of what the reader asked to
+    // see when he opens the folder.
+    const sol = (Array.isArray(d.sol) ? d.sol : [])
+      .filter(a => a && typeof a === 'object' && typeof a.src === 'string' && a.src)
+      .map(a => ({
+        id: typeof a.id === 'string' && a.id ? a.id : newId(),
+        src: a.src,
+        ts: Number(a.ts) > 0 ? Number(a.ts) : 0,
+        w: Math.max(1, Math.round(Number(a.w) || 0)),
+        h: Math.max(1, Math.round(Number(a.h) || 0)),
+        by: typeof a.by === 'string' ? a.by : me
+      }));
+    return { v: VER, sc: SC, rev: Number(d.rev) > 0 ? Number(d.rev) : 1, sol: sol,
              // `pr` is the version that actually REACHED Drive. It lives in
              // the record, so a device that failed to send and was then
              // closed still knows, on its next open, that it is holding ink
@@ -390,7 +414,7 @@
     // And everything of mine that Drive has never seen, at the end —
     // where the reader left it
     mine.sh.forEach(s => { if (here.has(s.id)) out.push(s); });
-    mine.sh = out.length ? out : [{ id: newId(), by: me, ts: 0, at: now(), s: [] }];
+    mine.sh = out.length ? out : [blank()];
     mine.rev = Math.max(Number(theirs.rev) || 1, Number(mine.rev) || 1) + 1;
     return mine;
   };
@@ -577,6 +601,38 @@
       return Boolean(d && d.sh.some(s => s.s.length || s.im.length));
     },
 
+    // ---------- the shelf of solutions, one per question ----------
+    sols: key => {
+      const d = pads.get(key);
+      return d ? (d.sol || []) : [];
+    },
+    addSol: (key, a) => {
+      const d = record(key);
+      if (!Array.isArray(d.sol)) d.sol = [];
+      // Date.now() and not now(): the latter is the ISO string this record
+      // keeps in its at field, while a STAMP is a number - seal writes
+      // Date.now() and stamp() reads one. Mixing the two made shape() drop
+      // every date to zero, and the folder then showed pictures with no day
+      const one = { id: newId(), src: String(a.src || ''), ts: Date.now(),
+                    w: Math.max(1, Math.round(a.w || 0)),
+                    h: Math.max(1, Math.round(a.h || 0)), by: me };
+      if (!one.src) return null;
+      d.sol.push(one);
+      wrote(key);
+      return one;
+    },
+    dropSol: (key, id) => {
+      const d = pads.get(key);
+      if (!d || !Array.isArray(d.sol)) return false;
+      const n = d.sol.length;
+      d.sol = d.sol.filter(a => a.id !== id);
+      if (d.sol.length === n) return false;
+      wrote(key);
+      return true;
+    },
+    solWeight: key => ((pads.get(key) || {}).sol || [])
+      .reduce((a, x) => a + (x.src ? x.src.length : 0), 0),
+
     // ---------- the pictures of the open sheet ----------
     images: key => {
       const d = pads.get(key);
@@ -740,7 +796,7 @@
       if (!d.sh[i].s.length) return false;
       d.sh[i].ts = Date.now();
       d.sh[i].at = now();
-      d.sh.push({ id: newId(), by: me, ts: 0, at: now(), s: [] });
+      d.sh.push(blank());
       openSheet.set(key, d.sh.length - 1);
       wrote(key);
       return true;

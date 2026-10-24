@@ -1,0 +1,152 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · the folder on a question</title>
+<style>
+  #host { width: 460px; --sheetScale: 1; }
+  .msheet { width: 440px; border: 1px solid #ccc; margin: 6px 0; }
+  .qcard { height: 50px; }
+</style>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermInkStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermInkPad.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermSolShelf.js"></script>
+<script>
+  // THE SAME TRAP AS THE PICTURES ON A SHEET, AND IT IS CHECKED FIRST:
+  // `shape()` rebuilds the record field by field and drops what it does
+  // not know, so a shelf written without being named there is wiped on
+  // the next load without a sound. Check one is the round trip.
+  //
+  // The second is that the folder belongs to the QUESTION and not to an
+  // attempt: sealing, emptying or deleting an attempt sheet must leave
+  // the photographs standing. The reader's worked answer is not a draft
+  // of his handwriting.
+  //
+  // The third is the dates, because they are the whole of what he asked
+  // to see on opening it.
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async function(){
+    const o = document.getElementById('o');
+    const host = document.getElementById('host');
+    const faults = [], out = [];
+    const S = window.MyTermInkStore, P = window.MyTermInkPad, F = window.MyTermSolShelf;
+    if (!S || !F) { o.textContent = 'FAIL the shelf did not load'; return; }
+    if (!S.addSol || !S.sols) { o.textContent = 'FAIL the store knows nothing of a shelf'; return; }
+
+    const bin = new Map();
+    S.useShelf({ name: 'the guard’s own shelf',
+      get: async k => (bin.has(k) ? JSON.parse(bin.get(k)) : null),
+      put: async (k, v) => { bin.set(k, JSON.stringify(v)); return true; } });
+    S.useCloud({ name: 'no cloud', ready: () => false, list: async () => [], find: async () => null,
+                 folder: async () => '', make: async () => null, read: async () => null, write: async () => false });
+    await S.open('c-sol', 'h-sol');
+
+    const card = document.createElement('div');
+    card.className = 'msheet msheet-card';
+    card.dataset.group = 'rules1'; card.dataset.at = '0';
+    card.innerHTML = '<div class="qcard">a question</div>';
+    host.append(card);
+    P.arm(host); await P.mount();
+    F.arm(host); F.mount();
+
+    const key = 'rules1#0';
+    const say = (ok, txt) => { out.push((ok ? 'PASS ' : 'FAIL ') + txt); if (!ok) faults.push(txt); };
+
+    const tiny = (() => {
+      const c = document.createElement('canvas'); c.width = 30; c.height = 20;
+      const g = c.getContext('2d'); g.fillStyle = '#0a0'; g.fillRect(0, 0, 30, 20);
+      return c.toDataURL('image/png');
+    })();
+
+    // ---- 1 - ONE BUTTON, AND IT IS ON THE QUESTION
+    const btn = host.querySelector('.qcard > .solBtn');
+    say(Boolean(btn), 'a button was put on the question');
+    say(host.querySelectorAll('.solBtn').length === 1, 'exactly one, not one per draw');
+    F.mount(); F.mount();
+    say(host.querySelectorAll('.solBtn').length === 1,
+      'mounted three times, still ' + host.querySelectorAll('.solBtn').length);
+
+    // ---- 2 - IT SURVIVES THE ROUND TRIP THROUGH shape()
+    const a1 = S.addSol(key, { src: tiny, w: 30, h: 20 });
+    say(Boolean(a1 && a1.id && a1.ts > 0), 'the store took a picture and stamped it');
+    await S.flush();
+    const raw = JSON.parse(bin.get(Array.from(bin.keys()).find(k => String(k).indexOf('rules1') >= 0)));
+    const kept = (raw || {}).sol || [];
+    say(kept.length === 1 && kept[0].src === tiny && kept[0].ts > 0,
+      'it survived the shelf and shape(): ' + kept.length + ' kept, stamp ' + (kept[0] ? kept[0].ts > 0 : false));
+    say(Number(raw.v) >= 6, 'the record says version ' + raw.v + ' (6 carries a shelf)');
+
+    // ---- 3 - IT IS THE QUESTION'S, NOT AN ATTEMPT'S
+    S.add(key, { c: '#12141a', w: 5.5, p: [20, 20, 150, 30, 30, 150, 40, 40, 150] });
+    S.seal(key);
+    say(S.sols(key).length === 1, 'an attempt sealed, the picture still stands');
+    S.clear(key);
+    say(S.sols(key).length === 1, 'the page emptied, the picture still stands');
+    const sheets = S.sheets(key).length;
+    if (sheets > 1) { S.drop(key, 0); say(S.sols(key).length === 1, 'an attempt deleted, the picture still stands'); }
+    else { say(true, 'only one attempt, nothing to delete'); }
+
+    // ---- 4 - MORE THAN ONE, NEWEST FIRST ON SCREEN
+    S.addSol(key, { src: tiny, w: 30, h: 20 });
+    S.addSol(key, { src: tiny, w: 30, h: 20 });
+    say(S.sols(key).length === 3, 'three pictures in the folder');
+    btn.click();
+    const wrap = document.querySelector('.solWrap');
+    say(Boolean(wrap), 'pressing the button opened the folder');
+    say(Boolean(wrap) && wrap.previousElementSibling === btn.closest('.qcard'),
+      'and it opened under the question itself');
+    const items = wrap ? wrap.querySelectorAll('.solItem') : [];
+    say(items.length === 3, 'it shows all three: ' + items.length);
+    const stamps = Array.from(wrap ? wrap.querySelectorAll('.solWhen') : []).map(s => s.textContent.trim());
+    say(stamps.length === 3 && stamps.every(s => s.length > 0),
+      'every one carries its date: ' + stamps.join(' | '));
+    // newest first: the ids in the page are the store's order reversed
+    const ids = Array.from(items).map(i => i.dataset.id);
+    const byTime = S.sols(key).slice().sort((x, y) => y.ts - x.ts).map(x => x.id);
+    say(ids.join(',') === byTime.join(','), 'newest at the top');
+
+    // ---- 5 - THE COUNT ON THE BUTTON IS READ, NOT GUESSED
+    say(btn.querySelector('.solN').textContent === '3',
+      'the button says ' + btn.querySelector('.solN').textContent);
+
+    // ---- 6 - THE DATES IN THE READER'S OWN WORDS
+    const day = 86400000;
+    say(/^today /.test(F.when(Date.now())), 'today reads "' + F.when(Date.now()) + '"');
+    say(/^yesterday /.test(F.when(Date.now() - day)), 'yesterday reads "' + F.when(Date.now() - day) + '"');
+    const old = F.when(Date.now() - 40 * day);
+    say(!/^today|^yesterday/.test(old) && old.length > 6, 'older reads "' + old + '"');
+
+    // ---- 7 - REMOVING ONE
+    const first = wrap.querySelector('.solItem');
+    const gone = first.dataset.id;
+    S.dropSol(key, gone);
+    F.draw();
+    say(S.sols(key).length === 2 && !wrap.querySelector('.solItem[data-id="' + gone + '"]'),
+      'one removed, two left');
+
+    // ---- 8 - IT CLOSES, AND PRESSING AGAIN REOPENS
+    btn.click();
+    say(!document.querySelector('.solWrap'), 'pressing again closed it');
+    btn.click();
+    say(Boolean(document.querySelector('.solWrap')), 'and once more reopened it');
+
+    // ---- 9 - A SECOND QUESTION HAS ITS OWN FOLDER
+    const card2 = document.createElement('div');
+    card2.className = 'msheet msheet-card';
+    card2.dataset.group = 'rules1'; card2.dataset.at = '1';
+    card2.innerHTML = '<div class="qcard">another question</div>';
+    host.append(card2);
+    await P.mount(); F.mount();
+    const btn2 = card2.querySelector('.solBtn');
+    say(Boolean(btn2) && btn2.dataset.key === 'rules1#1',
+      'the second question got its own folder, keyed ' + (btn2 ? btn2.dataset.key : 'none'));
+    say(S.ready('rules1#1') ? S.sols('rules1#1').length === 0 : true,
+      'and it is empty - a folder is not shared between questions');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK') + '\n' + out.join('\n');
+  }).call(null).catch(e => { document.getElementById('o').textContent = 'THREW ' + (e && e.stack || e); });
+setTimeout(() => { var p = document.getElementById('o'); if (p.textContent === 'pending') p.textContent = 'HUNG - never finished'; }, 12000);
+</script>

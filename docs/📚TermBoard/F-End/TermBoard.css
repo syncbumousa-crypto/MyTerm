@@ -4394,3 +4394,70 @@ body.darkpaper .cep-note { color: #9a9ca4; }
 .inkImgH[data-h="ne"] { right: -6px; top: -6px;    cursor: nesw-resize; }
 .inkImgH[data-h="sw"] { left: -6px;  bottom: -6px; cursor: nesw-resize; }
 .inkImgH[data-h="se"] { right: -6px; bottom: -6px; cursor: nwse-resize; }
+
+/* ============================================================
+   THE FOLDER ON A QUESTION
+   ============================================================
+   One button at the top of the question, and the folder opens under the
+   question itself - not beside the notebook, because it is the
+   QUESTION'S folder and the hand looks for it where the question is.
+
+   The button carries a count read from the record, so a folder with
+   something in it says so without being opened. An empty one stays
+   quiet: a badge that lights on nothing is noise.
+   ============================================================ */
+.qcard { position: relative; }
+.solBtn {
+  position: absolute; top: 6px; inset-inline-end: 6px; z-index: 4;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 7px; font: inherit; font-size: 11px;
+  border: 1px solid var(--line, #3a3b42); border-radius: 7px;
+  background: transparent; color: var(--dim, #9a9ca4); cursor: pointer;
+}
+.solBtn:hover { border-color: #55565f; color: var(--ink, #e9eaee); }
+.solBtn.on { border-color: #3a6bb0; background: rgba(58, 107, 176, .18); color: var(--ink, #e9eaee); }
+.solBtn.has { color: var(--ink, #e9eaee); }
+.solN { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.solWrap {
+  margin: 6px 0 10px; border: 1px solid var(--line, #3a3b42); border-radius: 10px;
+  background: rgba(0, 0, 0, .18); overflow: hidden;
+}
+.solHead {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-bottom: 1px solid var(--line, #3a3b42);
+  font-size: 12px; color: var(--ink, #e9eaee);
+}
+.solCount { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px;
+  background: rgba(127, 127, 127, .22); font-variant-numeric: tabular-nums; }
+.solGrow { flex: 1 1 auto; }
+.solAdd, .solShut {
+  font: inherit; font-size: 11.5px; padding: 3px 9px; cursor: pointer;
+  border: 1px solid var(--line, #3a3b42); border-radius: 7px;
+  background: transparent; color: var(--dim, #9a9ca4);
+}
+.solAdd:hover, .solShut:hover { border-color: #3a6bb0; color: var(--ink, #e9eaee); }
+.solShut { padding: 3px 7px; }
+
+/* A grid and not a column: two or three pages of a worked answer are
+   read side by side, and a column of full-width photographs buries the
+   next question under them */
+.solBody {
+  display: grid; gap: 8px; padding: 9px 10px;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+}
+.solItem { margin: 0; border: 1px solid var(--line, #3a3b42); border-radius: 8px; overflow: hidden; }
+.solLink { display: block; }
+.solItem img { display: block; width: 100%; height: 92px; object-fit: cover; background: #000; }
+.solItem figcaption {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 6px; font-size: 10.5px; color: var(--dim, #9a9ca4);
+}
+.solWhen { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.solDel {
+  font: inherit; font-size: 10px; line-height: 1; padding: 2px 5px; cursor: pointer;
+  border: 0; border-radius: 5px; background: transparent; color: var(--dim, #9a9ca4);
+}
+.solDel:hover { background: rgba(177, 48, 42, .22); color: #ff8f87; }
+.solNone { grid-column: 1 / -1; margin: 4px 2px; font-size: 11.5px; color: var(--dim, #9a9ca4); }
+.solSay { margin: 0; padding: 6px 10px 9px; font-size: 11.5px; color: #ff8f87; }

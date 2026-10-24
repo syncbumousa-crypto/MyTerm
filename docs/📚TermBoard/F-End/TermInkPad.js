@@ -1782,7 +1782,12 @@
     const key = box.dataset.key;
     const cv = box.querySelector('.inkDry');
     if (!cv || !cv.width) return null;
-    const pw = cv.width * SC, ph = cv.height * SC;
+    // THE SAME SPACE THE STROKES LIVE IN: `offsetWidth x SC`, which is
+    // what `nominal` means by store space. `cv.width` is the BACKING store
+    // and carries the device ratio, so on a tablet at ratio 2 it is twice
+    // this - and a picture measured in it would be sized and placed in a
+    // space the writing does not share
+    const pw = cv.offsetWidth * SC, ph = cv.offsetHeight * SC;
     let enc;
     try { enc = await reEncode(srcUrl); }
     catch (e) { imgSay(box, 'That file is not a picture'); return null; }
@@ -1807,8 +1812,24 @@
     const key = box.dataset.key;
     const cv = box.querySelector('.inkDry');
     if (!cv || !cv.width) return;
-    const pw = cv.width * SC, ph = cv.height * SC;
+    const pw = cv.offsetWidth * SC, ph = cv.offsetHeight * SC;
     const list = store().images(key) || [];
+    // ===== AND THE LAYER IS THE CANVAS BOX, NOT THE STAGE =====
+    // Measured on 2026-10-24: the pad runs 774 x 944 while its canvas is
+    // 772 x 386 - the room under a card is taller than the paper in it. A
+    // layer stretched over the pad therefore turned a square 80 x 80 into
+    // 40 x 98 and pushed its far edge outside, which is the "the picture
+    // is cut off" the reader reported. So the layers are given the
+    // canvas's own box, read from the live canvas on every paint so a
+    // refit cannot leave them behind
+    [true, false].forEach(under => {
+      const L = imgsOf(box, under);
+      if (!L) return;
+      L.style.left = cv.offsetLeft + 'px';
+      L.style.top = cv.offsetTop + 'px';
+      L.style.width = cv.offsetWidth + 'px';
+      L.style.height = cv.offsetHeight + 'px';
+    });
     [true, false].forEach(under => {
       const host = imgsOf(box, under);
       if (!host) return;
@@ -1873,8 +1894,8 @@
     const r = dry.getBoundingClientRect();
     if (!r.width || !r.height) return;
     lastAt = { box: box,
-               x: (ev.clientX - r.left) / r.width * (dry.width * SC),
-               y: (ev.clientY - r.top) / r.height * (dry.height * SC) };
+               x: (ev.clientX - r.left) / r.width * (dry.offsetWidth * SC),
+               y: (ev.clientY - r.top) / r.height * (dry.offsetHeight * SC) };
   }, true);
 
   document.addEventListener('paste', ev => {
@@ -1923,8 +1944,8 @@
     const dry = box.querySelector('.inkDry');
     const r = dry.getBoundingClientRect();
     if (!r.width) return;
-    const toStore = (px, py) => ({ x: px / r.width * (dry.width * SC),
-                                   y: py / r.height * (dry.height * SC) });
+    const toStore = (px, py) => ({ x: px / r.width * (dry.offsetWidth * SC),
+                                   y: py / r.height * (dry.offsetHeight * SC) });
     const start = toStore(ev.clientX - r.left, ev.clientY - r.top);
     const one = (store().images(key) || []).find(i => i.id === id);
     if (!one) return;

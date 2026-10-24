@@ -4344,8 +4344,13 @@ body.darkpaper .cep-note { color: #9a9ca4; }
    pen stroke meant to be written across it.
    ============================================================ */
 .inkPad { position: relative; }
+/* NOT `inset: 0`. The pad is the room under a card and the canvas is the
+   paper in it, and they are not the same box: measured 774 x 944 against
+   772 x 386. A layer stretched over the pad turned a square into a tall
+   rectangle and pushed its far edge out of sight. So the geometry is
+   written on it from the live canvas on every paint. */
 .inkImgs {
-  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  position: absolute; pointer-events: none; overflow: hidden;
 }
 .inkImgs.is-under { z-index: 0; }
 .inkImgs.is-over  { z-index: 3; }

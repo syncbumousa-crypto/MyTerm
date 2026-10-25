@@ -94,6 +94,11 @@
 .msheet .eqSide {display:flex; flex-direction:column; align-items:center; min-width:0; gap:calc(7px * var(--eqScale,1)); padding:0 calc(14px * var(--eqScale,1));}
 .msheet .eqSide + .eqSide {border-left:1px solid #c3d0e4;}
 .msheet .eqSideHead {font-size:calc(12px * var(--fs) * var(--eqScale,1)); font-weight:700; color:#1c4e9c; letter-spacing:.3px;}
+/* THE SECOND NAME, UNDER THE FIRST. A side is named twice - once in
+   English and once in Arabic - and the two are one heading, not a
+   heading with a note beside it. Inline, the second name ran straight
+   on from the first and read as part of the same word. */
+.msheet .eqSideHead small {display:block; font-size:.76em; font-weight:600; letter-spacing:0; color:#44557a; margin-top:1px;}
 /* Inside a half-page a law takes the half, not the 600px it takes alone */
 .msheet .eqPair .lawBox {width:100%; max-width:none;}
 

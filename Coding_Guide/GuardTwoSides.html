@@ -1,0 +1,110 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · a page split down the middle</title>
+<style>
+  /* The paper this guard measures on. The sheet's own stylesheet is
+     FETCHED below, never copied: a copy would agree with itself. */
+  #host { width: 800px; }
+</style>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermSheetStore.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ ⚖️  THE TWO SIDES SURVIVE THE GATE, AND THE LINE IS IN THE MIDDLE
+  // # 🔤 HTML + JavaScript
+  // # 🎯 Two measurements the eye would miss: that the gate KEEPS the
+  // #    three class names the split needs, and that the border really
+  // #    falls halfway across the page rather than at the edge of a
+  // #    gutter.
+  // # 🔗 Asked for Ch2's trades page on 2026-10-25: brokers one side,
+  // #    dealers the other, each with its execution price over its cost.
+  // # 🔗 A class the gate does not know is DROPPED without a word, so a
+  // #    layout that reads correctly in the editor arrives as one column
+  // #    with no line - which is why the gate is asked first here.
+  // # 🔗 And the halfway-ness is measured, not asserted: `column-gap` with
+  // #    the padding on the wrong side puts the border at a column edge,
+  // #    and the page still looks deliberate.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const host = document.getElementById('host');
+    const S = window.MyTermSheetStore;
+    if (!S || typeof S.gate !== 'function') { o.textContent = 'FAIL the sheet store did not load, or its gate is not a seam'; return; }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    const law = (no, lhs) => '<div class="lawBox"><span class="lawNo">' + no + '</span>'
+      + '<div class="lawEq"><span class="tt v-c lhs"><span class="lhsRow">' + lhs + '</span></span>'
+      + ' = <span class="tt v-c">something</span></div></div>';
+    const page = '<div class="eqPage">'
+      + '<div class="eqHead">one trade, two ways</div>'
+      + '<div class="eqPair">'
+      +   '<div class="eqSide"><div class="eqSideHead">Brokers</div>' + law('1.3', 'price') + law('1.5', 'cost') + '</div>'
+      +   '<div class="eqSide"><div class="eqSideHead">Dealers</div>' + law('1.4', 'price') + law('1.6', 'cost') + '</div>'
+      + '</div></div>';
+
+    // ---- 1  THE GATE KEEPS THE THREE NAMES
+    const gated = S.gate(page);
+    const held = document.createElement('div');
+    held.innerHTML = gated;
+    say(Boolean(held.querySelector('.eqPair')), 'the gate kept the wrapper');
+    say(held.querySelectorAll('.eqSide').length === 2, 'and both sides: ' + held.querySelectorAll('.eqSide').length);
+    say(held.querySelectorAll('.eqSideHead').length === 2, 'and the caption over each');
+    say(held.querySelectorAll('.lawBox').length === 4, 'and the four laws inside them');
+    // the other end of the same measurement: a name it does not know goes
+    const madeUp = S.gate('<div class="eqPair eqNotAThing"><div class="eqSide">x</div></div>');
+    say(/eqPair/.test(madeUp) && !/eqNotAThing/.test(madeUp),
+      'and a class it does not know is dropped, so this check means something');
+
+    // ---- 2  THE SHEET'S OWN STYLESHEET, FETCHED
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
+    host.innerHTML = '<div class="msheet msheet-law">' + gated + '</div>';
+    // A READ THAT FORCES LAYOUT, not a wait for a frame. Under
+    // `--virtual-time-budget` the headless browser does not necessarily
+    // tick `requestAnimationFrame` at all, and the first run of this guard
+    // printed `pending` for ever waiting on one.
+    void host.offsetHeight;
+    await new Promise(r => setTimeout(r, 50));
+    void host.offsetHeight;
+
+    const pair = host.querySelector('.eqPair');
+    const sides = [...host.querySelectorAll('.eqSide')];
+    const pr = pair.getBoundingClientRect();
+    const a = sides[0].getBoundingClientRect(), b = sides[1].getBoundingClientRect();
+    say(pr.width > 300, 'the split page has real width: ' + Math.round(pr.width) + 'px');
+    say(Math.abs(a.width - b.width) <= 1,
+      'the two halves are equal: ' + Math.round(a.width) + ' and ' + Math.round(b.width));
+
+    const line = getComputedStyle(sides[1]).borderLeftWidth;
+    const colour = getComputedStyle(sides[1]).borderLeftColor;
+    say(parseFloat(line) >= 1, 'there is a line down the second side: ' + line);
+    say(!/rgba\(0, 0, 0, 0\)|transparent/.test(colour), 'and it has a colour: ' + colour);
+
+    // IN THE MIDDLE, measured. The border sits at the left edge of the
+    // second half, so halfway across the pair is where it must be
+    const middle = pr.left + pr.width / 2;
+    say(Math.abs(b.left - middle) <= 1,
+      'and it falls in the middle: ' + Math.round(b.left - middle) + 'px off centre');
+
+    // ---- 3  AND A LAW IN A HALF IS NOT SQUEEZED TO NOTHING
+    const boxes = [...host.querySelectorAll('.eqPair .lawBox')];
+    const widest = Math.max(...boxes.map(x => x.getBoundingClientRect().width));
+    const narrowest = Math.min(...boxes.map(x => x.getBoundingClientRect().width));
+    say(narrowest > 120, 'every law keeps room inside its half: ' + Math.round(narrowest) + 'px');
+    say(widest <= Math.round(a.width) + 1, 'and none spills past its half: ' + Math.round(widest));
+
+    // ---- 4  THE SIDES DO NOT OVERLAP, which a centred line cannot prove alone
+    say(a.right <= b.left + 1, 'the halves sit side by side, not over each other');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

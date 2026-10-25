@@ -49,6 +49,10 @@
   const CLASSES = new Set([
     // the sheet and its head
     'eqPage', 'eqHead', 'lawGrid', 'eqRule', 'pairGap', 'wrap', 'grp', 'sec',
+    // A page split down the middle, and the caption over each half. A
+    // class the gate does not know is DROPPED, so a layout that reads
+    // correctly on the way in arrives as one column with no line
+    'eqPair', 'eqSide', 'eqSideHead',
     // a law in its box
     'lawBox', 'lawDerived', 'lawNo', 'lawEq', 'lawNote', 'lawIco',
     'frac', 'fnum', 'fden', 'lhs', 'lhsRow',

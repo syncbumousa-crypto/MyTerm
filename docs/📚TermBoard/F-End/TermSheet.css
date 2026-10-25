@@ -77,6 +77,26 @@
 .msheet .treeEnd {height:calc(24px * var(--eqScale,1));}
 .msheet .eqRule {display:flex; align-items:center; gap:10px; width:100%; max-width:700px; font-size:calc(11.5px * var(--fs) * var(--eqScale,1)); font-weight:700; color:#1c4e9c; margin:calc(6px * var(--eqScale,1)) 0 calc(2px * var(--eqScale,1)); flex:0 0 auto;}
 .msheet .eqRule::before, .msheet .eqRule::after {content:''; flex:1 1 auto; height:1px; background:#c3d0e4;}
+/* ============================================================ */
+/* # 🧱 ⚖️  TWO SIDES OF ONE PAGE, AND THE LINE WHERE THEY MEET */
+/* # 🔤 CSS */
+/* # 🎯 A law page split down the middle: one trade seen two ways, each */
+/* #    side with its own execution price over its own cost. */
+/* # 🔗 Asked for Ch2's trades page on 2026-10-25 - six laws stacked in */
+/* #    one column said nothing about which belonged to whom. */
+/* # 🔗 THE GAP IS ZERO AND THE PADDING IS ON THE SIDES, so the border */
+/* #    falls exactly halfway and not at the edge of a gutter. And the */
+/* #    direction is pinned: the page turns with the language and the */
+/* #    reader asked for dealers on the RIGHT, which a flipped grid */
+/* #    would answer with dealers on the left in Arabic. */
+/* ============================================================ */
+.msheet .eqPair {display:grid; grid-template-columns:1fr 1fr; column-gap:0; width:100%; max-width:780px; direction:ltr;}
+.msheet .eqSide {display:flex; flex-direction:column; align-items:center; min-width:0; gap:calc(7px * var(--eqScale,1)); padding:0 calc(14px * var(--eqScale,1));}
+.msheet .eqSide + .eqSide {border-left:1px solid #c3d0e4;}
+.msheet .eqSideHead {font-size:calc(12px * var(--fs) * var(--eqScale,1)); font-weight:700; color:#1c4e9c; letter-spacing:.3px;}
+/* Inside a half-page a law takes the half, not the 600px it takes alone */
+.msheet .eqPair .lawBox {width:100%; max-width:none;}
+
 .msheet .taxTag {display:inline-flex; align-items:center; justify-content:center; gap:3px; font-size:calc(8.5px * var(--fs) * var(--eqScale,1)); font-weight:700; padding:1px 6px 2px; border-radius:999px; white-space:nowrap; justify-self:center; margin-bottom:calc(3px * var(--eqScale,1));}
 .msheet .taxTag .lawIco {width:1em; height:1em;}
 .msheet .taxTag.yes {background:#fdeceb; color:#9c3b34; border:1px solid #e3b6b2;}

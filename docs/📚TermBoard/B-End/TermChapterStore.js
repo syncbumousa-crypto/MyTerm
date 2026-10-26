@@ -400,9 +400,26 @@
     : [{ id: 'terms', name: 'Terms', kind: 'part', per: 'row', each: 0,
          deleted: false, updatedAt: null, rows: [] }];
 
+  // ============================================================
+  // A CONTENT FILE SAYS WHOSE IT IS
+  //
+  // It did not, and on 2026-10-17 six of Ch4's parts arrived in Ch6 -
+  // the same ids and the same timestamps, so they were not made there but
+  // FOLDED in: `foldFromDrive` adopts any part whose id it does not
+  // already hold, and the file it read gave it no way to know the part
+  // belonged to another chapter. Four of the six then claimed groups Ch6
+  // was already using, so they quietly displayed Ch6's own law pages under
+  // Ch4's names - which is why nine days passed and the reader found it,
+  // not a guard.
+  //
+  // `whose` travels in the file from now on. An older file carries none,
+  // and absence proves nothing - so it is only ever used to REFUSE a fold
+  // that names somebody else, never to require a name.
+  // ============================================================
   const shapeContent = doc => ({
     app: 'MyTerm',
     version: Math.max(1, Number(doc?.version) || 1),
+    whose: typeof doc?.whose === 'string' ? doc.whose : '',
     sections: shapeSections(doc?.sections)
   });
 
@@ -903,6 +920,7 @@
     try {
       if (wantedContent && open.chapter.contentId) {
         open.content.version = (Number(open.content.version) || 1) + 1;
+        open.content.whose = open.chapter.id;
         await cloud().writeFile(open.chapter.contentId, open.content);
         open.chapter.contentVersion = open.content.version;
         cacheWrite(open.chapter.id, open.content);
@@ -1011,6 +1029,14 @@
     if (!doc || !open || open.chapter.id !== mine) return false;
 
     const incoming = shapeContent(doc);
+    // A FILE THAT NAMES ANOTHER CHAPTER IS NOT FOLDED. This is the one
+    // line that would have kept Ch4's parts out of Ch6: the merge below
+    // takes every part it does not recognise, and recognising is by id
+    // alone, which says nothing at all about belonging
+    if (incoming.whose && incoming.whose !== mine) {
+      tellStatus('unread');
+      return false;
+    }
     if (Number(incoming.version) === Number(open.content.version)) return false;
 
     // What the fold keeps that Drive has not got — weighed before
@@ -1228,6 +1254,29 @@
     // something this device did not have - a part made on another
     // machine, or rows that change what the squares count
     onFold: fn => { toldFold = typeof fn === 'function' ? fn : () => {}; },
+
+    // ============================================================
+    // TWO PARTS CLAIMING ONE STACK OF SHEETS
+    //
+    // A rules part is keyed to its `group`, and the group is the key to
+    // the chapter's sheets. Two living parts on one group therefore show
+    // the SAME pages under two names - which is how six of Ch4's parts
+    // sat in Ch6 for nine days wearing Ch6's own law pages.
+    //
+    // Nothing legitimate makes two: the strip's plus button cannot make a
+    // rules part at all. So this reports rather than repairs - a rule that
+    // deleted the second claimant would be a rule that can delete a part,
+    // and the choice of which one to keep is not the store's to make.
+    // ============================================================
+    strayGroups: () => {
+      const seen = new Map(), out = [];
+      livingSections().forEach(s => {
+        if (s.kind !== 'rules' || !s.group) return;
+        if (seen.has(s.group)) out.push({ group: s.group, kept: seen.get(s.group), also: s.name, id: s.id });
+        else seen.set(s.group, s.name);
+      });
+      return out;
+    },
 
     hold: on => { penHeld = on !== false; },
 

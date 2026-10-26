@@ -31,7 +31,11 @@
     const o = document.getElementById('o');
     const C = window.MyTermChapterStore;
     if (!C || !C.open) { o.textContent = 'FAIL the chapter store did not load'; return; }
+    // Said as a fault, not thrown: run against the code before today and
+    // the seam is simply not there, and a guard that dies says less than
+    // a guard that reports
     const faults = [], out = [];
+    if (typeof C.strayGroups !== 'function') faults.push('the store cannot report two parts on one group');
     const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
 
     // ---- A SHELF OF OUR OWN FIRST, AND IT IS NOT A CONVENIENCE.
@@ -122,6 +126,49 @@
     const before = heard;
     o.textContent = "at: refreshing"; await C.refresh(); o.textContent = "at: refreshed";
     say(heard === before, 'a second look with nothing new is silent: heard ' + (heard - before) + ' more');
+
+    // ================= A FILE THAT BELONGS TO SOMEBODY ELSE =================
+    // Reported on 2026-10-26: six of Ch4's parts were sitting in Ch6 - the
+    // same ids, the same timestamps. They were never made there; the fold
+    // adopted them, because it takes every part whose id it does not hold
+    // and the file it reads says nothing about whose it is. Four then
+    // claimed groups Ch6 already used, so they wore Ch6's own law pages
+    // under Ch4's names and nine days passed before the reader noticed.
+    //
+    // Two things are measured: a named file from a stranger is refused, and
+    // a file with no name at all is still folded (every file written before
+    // today carries none, and absence is not evidence).
+    {
+      const before = C.sections().length;
+      const heardBefore = heard;
+      const there = sky.get('content-1');
+      there.version = 9;
+      there.whose = 'h-somebody-else';
+      there.sections.push({ id: 'p-stranger', name: 'Depreciation', kind: 'rules', group: 'rules1',
+                            rows: [], updatedAt: '2026-10-26T10:00:00.000Z' });
+      sky.set('content-1', there);
+      await C.refresh();
+      const names = C.sections().map(s => s.name);
+      say(C.sections().length === before && names.indexOf('Depreciation') < 0,
+        'a file that names another chapter is refused: ' + C.sections().length + ' parts, as before');
+      say(heard === heardBefore, 'and nothing was announced for it');
+
+      // and the same arrival with no name is taken, as the old files must be
+      delete there.whose;
+      there.version = 10;
+      sky.set('content-1', there);
+      await C.refresh();
+      say(C.sections().map(s => s.name).indexOf('Depreciation') > -1,
+        'while a file with no name at all is still folded');
+
+      // AND THE COLLISION IS NOW VISIBLE. `Depreciation` claims rules1,
+      // which `Tax Rules` already holds - exactly the Ch6 shape
+      const strays = (typeof C.strayGroups === 'function' ? C.strayGroups() : []);
+      say(strays.length === 1 && strays[0].group === 'rules1',
+        'two parts on one group are reported: ' + JSON.stringify(strays));
+      say(Boolean(strays[0]) && strays[0].kept === 'Tax Rules' && strays[0].also === 'Depreciation',
+        'and it says which came first: ' + (strays[0] ? strays[0].kept + ' before ' + strays[0].also : 'nothing reported'));
+    }
 
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
       + ' (' + out.length + ' checks)\n' + out.join('\n');

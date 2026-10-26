@@ -189,6 +189,43 @@
 .msheet table.qTable th {white-space:normal; overflow-wrap:anywhere;}
 .msheet table.qTable th {background:#eef0f4; font-weight:700;}
 .msheet table.qTable tbody tr:nth-child(even) td {background:#f7f8fa;}
+/* ============================================================ */
+/* # 🧾 📄  A FINANCIAL STATEMENT IS NOT A GRID */
+/* # 🔤 CSS */
+/* # 🎯 Labels down the left, amounts in one right-aligned column, a */
+/* #    rule above each subtotal and a double rule under the bottom */
+/* #    line - the shape the reader must reproduce in an exam. */
+/* # 🔗 The class names were whitelisted long ago (`finStmt`, `acct`, */
+/* #    `tot`, `in1`, `u`, `d`) and the styling was never ported, so a */
+/* #    statement written with them rendered as a heap of text. The */
+/* #    refinements travelled and the base rule did not, which is the */
+/* #    same fault this project has paid for before. */
+/* # 🔗 `qTable` was the alternative and it is the wrong one: its */
+/* #    borders and striped rows say `data table`, and a statement is */
+/* #    read down one column, not across a grid. */
+/* ============================================================ */
+.msheet .finStmtWrap {overflow-x:auto; margin:10px 0 2px; direction:ltr;}
+.msheet table.finStmt {
+  border-collapse:collapse; margin:10px 0 2px; direction:ltr;
+  font-size:calc(11.5px * var(--fs)); font-variant-numeric:tabular-nums;
+  min-width:min(420px, 100%);
+}
+.msheet table.finStmt caption {caption-side:top; text-align:left; padding:0 0 5px; white-space:normal;}
+.msheet .fsCo    {display:block; font-weight:700; color:#1c4e9c;}
+.msheet .fsTitle {display:block; font-weight:600;}
+.msheet .fsWhen  {display:block; font-size:.85em; color:#5a6472;}
+.msheet table.finStmt td {border:0; padding:2px 6px; vertical-align:baseline;}
+.msheet table.finStmt td.acct {text-align:left; white-space:normal; padding-right:22px;}
+.msheet table.finStmt td.n {text-align:right; white-space:nowrap; min-width:72px;}
+/* The indent IS the subordination: an expense inside a group is a step in */
+.msheet table.finStmt td.acct.in1 {padding-left:18px;}
+.msheet table.finStmt td.acct.in2 {padding-left:34px;}
+.msheet table.finStmt tr.tot td {font-weight:700;}
+/* One rule over a subtotal, two under the figure the statement exists for */
+.msheet table.finStmt td.u {border-top:1px solid #6b7280;}
+.msheet table.finStmt td.d {border-top:1px solid #6b7280; border-bottom:3px double #6b7280;}
+.msheet table.finStmt tr.fsKey td {background:#eef4ff;}
+
 /* ============================================================
    THE THREE PRESSES A SHEET CARRIES
    Their own buttons, their own measurements: a 22px square, half

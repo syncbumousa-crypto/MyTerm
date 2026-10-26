@@ -709,10 +709,16 @@
 
   // A copy taken NOW, as text: the content goes on being typed into
   // while the database writes, and what is kept must be what was saved
-  const cacheWrite = (id, content) => {
+  // AWAITED, AND THAT IS THE WHOLE OF THE FIX. It was fire-and-forget, so a
+  // reload a second after a write outran the IndexedDB transaction: Drive got
+  // the new copy and the shelf kept the old one at the SAME version number -
+  // and the fold's only test is that number, so the stale copy then won every
+  // open. Measured on 2026-10-27: Drive v156 held the new order of parts and
+  // the screen drew the old one.
+  const cacheWrite = async (id, content) => {
     let copy = null;
     try { copy = JSON.parse(JSON.stringify(content)); } catch { return; }
-    onShelf('readwrite', s => s.put(copy, cacheKey(id)));
+    await onShelf('readwrite', s => s.put(copy, cacheKey(id)));
   };
 
   // ============================================================
@@ -923,7 +929,7 @@
         open.content.whose = open.chapter.id;
         await cloud().writeFile(open.chapter.contentId, open.content);
         open.chapter.contentVersion = open.content.version;
-        cacheWrite(open.chapter.id, open.content);
+        await cacheWrite(open.chapter.id, open.content);
       }
 
       if ((wantedState || mustState) && open.chapter.stateId) {
@@ -1075,9 +1081,28 @@
       ours.updatedAt = section.updatedAt;
     });
 
+    // ============================================================
+    // AND WHERE EACH PART SITS COMES OVER TOO
+    //
+    // The merge above carries every field of a part except its place, so a
+    // strip reordered on one device never reached another: the file said one
+    // order and the screen drew the order this device happened to hold. The
+    // reading order is a decision the reader made, exactly like a name.
+    //
+    // Anything the file does not mention keeps its place at the end - a part
+    // made here and not yet sent must not be pushed out of the list.
+    // ============================================================
+    const place = new Map();
+    incoming.sections.forEach((s, i) => place.set(s.id, i));
+    open.content.sections.sort((a, b) => {
+      const x = place.has(a.id) ? place.get(a.id) : Number.MAX_SAFE_INTEGER;
+      const y = place.has(b.id) ? place.get(b.id) : Number.MAX_SAFE_INTEGER;
+      return x - y;
+    });
+
     open.content.version = incoming.version;
     open.chapter.contentVersion = incoming.version;
-    cacheWrite(open.chapter.id, open.content);
+    await cacheWrite(open.chapter.id, open.content);
     // Said AFTER the cache, so a copy that never reaches Drive is at
     // least on the shelf under the version the board records — and the
     // sending, when it lands, writes the shelf again

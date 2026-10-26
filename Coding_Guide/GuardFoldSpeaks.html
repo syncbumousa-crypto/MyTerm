@@ -170,6 +170,25 @@
         'and it says which came first: ' + (strays[0] ? strays[0].kept + ' before ' + strays[0].also : 'nothing reported'));
     }
 
+    // ================= AND WHERE EACH PART SITS COMES OVER =================
+    // The merge carried every field of a part except its place, so a strip
+    // reordered on one device never reached another - measured on 2026-10-27
+    // with Ch3: the file held `Income Statement · Balance Sheet · FASB` and
+    // the screen drew the two new parts at the end, twice, across reloads.
+    {
+      const there = sky.get('content-1');
+      there.version = 20;
+      // the file says the new part comes SECOND, not last
+      const fresh = there.sections.filter(s => s.id !== 'p-new');
+      const moved = there.sections.find(s => s.id === 'p-new');
+      there.sections = [fresh[0], moved, ...fresh.slice(1)].filter(Boolean);
+      sky.set('content-1', there);
+      await C.refresh();
+      const names = C.sections().map(s => s.name);
+      const where = names.indexOf('Profit vs Cash');
+      say(where === 1, 'the file\u2019s own order of parts is adopted: ' + names.join(' · '));
+    }
+
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
       + ' (' + out.length + ' checks)\n' + out.join('\n');
   })().catch(e => {

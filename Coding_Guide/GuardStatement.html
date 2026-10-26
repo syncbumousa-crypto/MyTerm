@@ -1,0 +1,119 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>#host { width: 760px; }</style>
+<title>Guard · a statement reads down one column</title>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermSheetStore.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ 🧾  A FINANCIAL STATEMENT IS NOT A HEAP OF TEXT
+  // # 🔤 HTML + JavaScript
+  // # 🎯 Measures the four things that make a statement a statement: the
+  // #    amounts share ONE right-hand column, an expense inside a group
+  // #    is stepped in, a subtotal carries a rule above it, and the
+  // #    bottom line is ruled twice.
+  // # 🔗 Asked on 2026-10-27: E3-1 says `arrange the accounts into a
+  // #    well-labelled income statement` and the answer was three lines
+  // #    of prose. The class names for a statement had been whitelisted
+  // #    long before and the CSS was never ported, so anything written
+  // #    with them rendered as text - the refinements travelled and the
+  // #    base rule did not.
+  // # 🔗 So the gate is asked first (a dropped class is silent), and the
+  // #    stylesheet is FETCHED, never restated here: a copy of the rules
+  // #    would agree with itself.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o'), host = document.getElementById('host');
+    const S = window.MyTermSheetStore;
+    if (!S || typeof S.gate !== 'function') { o.textContent = 'FAIL the sheet store did not load'; return; }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    const row = (cls, label, amount, numCls) =>
+      '<tr' + (cls ? ' class="' + cls + '"' : '') + '>'
+      + '<td class="acct' + (label.step ? ' in' + label.step : '') + '">' + label.text + '</td>'
+      + '<td class="n' + (numCls ? ' ' + numCls : '') + '">' + amount + '</td></tr>';
+    const page = '<div class="eqPage"><div class="finStmtWrap"><table class="finStmt">'
+      + '<caption><span class="fsCo">A Company</span><span class="fsTitle">Income Statement</span>'
+      +   '<span class="fsWhen">for the year ended December 31</span></caption><tbody>'
+      + row('', { text: 'Sales revenue' }, '345')
+      + row('', { text: 'Less: cost of goods sold', step: 1 }, '(255)')
+      + row('tot', { text: 'Gross profit' }, '90', 'u')
+      + row('', { text: 'Selling expense', step: 1 }, '(18)')
+      + row('tot', { text: 'Net profit', step: 0 }, '14.22', 'd')
+      + '</tbody></table></div></div>';
+
+    // ---- 1  THE GATE KEEPS WHAT A STATEMENT IS MADE OF
+    const gated = S.gate(page);
+    const held = document.createElement('div'); held.innerHTML = gated;
+    say(Boolean(held.querySelector('table.finStmt')), 'the gate kept the statement itself');
+    say(held.querySelectorAll('td.acct').length === 5, 'and every label cell: ' + held.querySelectorAll('td.acct').length);
+    say(held.querySelectorAll('td.n').length === 5, 'and every amount cell');
+    say(Boolean(held.querySelector('td.acct.in1')), 'and the indent that says `inside this group`');
+    say(Boolean(held.querySelector('tr.tot')) && Boolean(held.querySelector('td.u')) && Boolean(held.querySelector('td.d')),
+      'and the subtotal, its rule, and the double rule under the bottom line');
+    say(Boolean(held.querySelector('.fsCo')) && Boolean(held.querySelector('.fsTitle')) && Boolean(held.querySelector('.fsWhen')),
+      'and the three lines of the heading: whose, what, when');
+
+    // ---- 2  THE SHEET'S OWN STYLESHEET, FETCHED
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
+    host.innerHTML = '<div class="msheet msheet-card">' + gated + '</div>';
+    // a read that forces layout - headless Edge under a virtual-time budget
+    // never ticks requestAnimationFrame
+    void host.offsetHeight;
+    await new Promise(r => setTimeout(r, 50));
+    void host.offsetHeight;
+
+    const nums = [...host.querySelectorAll('table.finStmt td.n')];
+    const labels = [...host.querySelectorAll('table.finStmt td.acct')];
+    say(nums.length === 5 && labels.length === 5, 'the statement is drawn: ' + nums.length + ' amounts');
+
+    // THE ONE COLUMN. Amounts that do not share a right edge cannot be read
+    // down, and that is the whole reason a statement is not prose
+    const rights = nums.map(n => Math.round(n.getBoundingClientRect().right));
+    say(new Set(rights).size === 1, 'every amount ends on one right edge: ' + [...new Set(rights)].join(', '));
+    const aligned = nums.every(n => getComputedStyle(n).textAlign === 'right');
+    say(aligned, 'and each is right-aligned in its cell');
+
+    // THE INDENT IS REAL, not a space in the text
+    const plain = labels.find(l => !l.classList.contains('in1'));
+    const stepped = labels.find(l => l.classList.contains('in1'));
+    // WHERE THE TEXT STARTS, not where the cell does. `padding-left` moves
+    // the words inside a box whose edges are the column's, so the first
+    // reading of this compared two identical cell edges and reported 0px -
+    // a measurement that would have called the indent broken for ever.
+    const textLeft = td => { const r = document.createRange(); r.selectNodeContents(td);
+      return r.getBoundingClientRect().left; };
+    const step = Math.round(textLeft(stepped) - textLeft(plain));
+    say(step > 6, 'an expense inside a group is stepped in: ' + step + 'px of text indent');
+
+    // THE RULES. A subtotal with no line over it is just another row
+    const sub = host.querySelector('td.u'), last = host.querySelector('td.d');
+    say(parseFloat(getComputedStyle(sub).borderTopWidth) >= 1, 'the subtotal carries a rule above it');
+    const bottom = getComputedStyle(last);
+    say(parseFloat(bottom.borderBottomWidth) >= 2 && bottom.borderBottomStyle === 'double',
+      'and the bottom line is ruled twice: ' + bottom.borderBottomStyle + ' ' + bottom.borderBottomWidth);
+    const tot = host.querySelector('tr.tot td');
+    say(Number(getComputedStyle(tot).fontWeight) >= 600, 'a total reads heavier than a line item: ' + getComputedStyle(tot).fontWeight);
+
+    // AND IT IS NOT THE DATA GRID. Borders and stripes say `table`, and this
+    // is not one - `qTable` was the wrong tool, so it must not look like it
+    const cell = nums[0], cs = getComputedStyle(cell);
+    say(parseFloat(cs.borderLeftWidth) === 0 && parseFloat(cs.borderRightWidth) === 0,
+      'the cells carry no vertical borders');
+    say(getComputedStyle(nums[1]).fontVariantNumeric.indexOf('tabular-nums') > -1
+        || getComputedStyle(host.querySelector('table.finStmt')).fontVariantNumeric.indexOf('tabular-nums') > -1,
+      'and the figures are tabular, so the columns of digits line up');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

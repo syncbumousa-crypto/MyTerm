@@ -11,8 +11,8 @@
   // # 🔤 HTML + JavaScript
   // # 🎯 A statement has more than one shape - with preferred stock,
   // #    without it, a household's - so a page carries several and
-  // #    offers them. What is measured: the gate keeps the three names,
-  // #    the stored page carries NO state about which is open, and the
+  // #    offers them. What is measured: the gate keeps the names, the
+  // #    stored page carries NO state about which is open, and the
   // #    strip shows exactly one at a time.
   // # 🔗 Asked on 2026-10-27: the reader noticed E3-1's answer has no
   // #    preferred or common stock line at all, only a dividend.
@@ -22,11 +22,19 @@
   // #
   // # 🎯 AND THE SAME LADDER IN TWO LANGUAGES (asked the same day):
   // #    every line carries its Arabic translation under it, smaller
-  // #    and close, inside a framed box under a header row. The
-  // #    closeness is measured AGAINST THE ROW PITCH and not against a
-  // #    number I chose: a translation as far from its line as the next
-  // #    line is belongs to neither of them, and that was the whole
-  // #    complaint - lines thrown on a page.
+  // #    and close, inside a framed box. The closeness is measured
+  // #    AGAINST THE ROW PITCH and not against a number I chose: a
+  // #    translation as far from its line as the next line is belongs
+  // #    to neither of them, and that was the complaint.
+  // #
+  // # 🎯 AND A GLOSS BELONGS TO ITS TERM (asked after the first draw):
+  // #    `revenues − COGS` with `الإيرادات − التكلفة` under the whole of
+  // #    it restates the rule in Arabic - the rule taught twice and the
+  // #    vocabulary not at all. So each word carries its own word under
+  // #    it, which is measured by WHERE THE GLOSS SITS: under its own
+  // #    term's box, and two glosses never at the same place.
+  // #    The head of the statement, by contrast, carries no gloss and a
+  // #    ground of its own, and its date line three blanks to fill in.
   // ============================================================
   window.onerror = (m, s, l, c) => {
     document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
@@ -40,25 +48,30 @@
     const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
 
     const ar = t => '<span class="fsAr">' + t + '</span>';
-    const line = (en, arabic) => en + ar(arabic);
-    const thead = '<thead><tr>'
-      + '<th class="c1">#' + ar('خطوة') + '</th>'
-      + '<th class="c2">Line of the statement' + ar('بندُ القائمة') + '</th>'
-      + '<th class="c3">How it is found' + ar('كيف يُوجَد') + '</th></tr></thead>';
+    const wd = (en, arabic) => '<span class="fsWd">' + en + ar(arabic) + '</span>';
+    const blank = w => '<span class="fsBlank">' + w + '</span>';
+    // the head says whose, what and when - and nothing in Arabic
+    const cap = (co, title) => '<caption>'
+      + '<span class="fsCo">' + co + '</span>'
+      + '<span class="fsTitle">' + title + '</span>'
+      + '<span class="fsWhen">for the year ended ' + blank('month') + blank('day') + ', ' + blank('year') + '</span>'
+      + '</caption>';
+    // the columns need no words over them: a step number, a line, a rule
+    const thead = '<thead><tr><th class="c1">#</th><th class="c2"></th><th class="c3"></th></tr></thead>';
     const tbody = '<tbody>'
-      + '<tr><td class="c1 u">1.</td><td class="c2 u">' + line('Total revenues', 'إجماليُّ الإيرادات')
+      + '<tr><td class="c1 u">1.</td><td class="c2 u">Total revenues' + ar('إجماليُّ الإيرادات')
       +   '</td><td class="c3 u"></td></tr>'
-      + '<tr><td class="c1"></td><td class="c2 in1">' + line('Less: cost of goods sold', 'ناقصًا: تكلفةُ البضاعة')
-      +   '</td><td class="c3"><span class="miss"></span></td></tr>'
-      + '<tr class="tot"><td class="c1 u">2.</td><td class="c2 u">' + line('Gross profit', 'مجملُ الربح')
-      +   '</td><td class="c3 u"><span class="an"><b>1</b>revenues − COGS' + ar('الإيرادات − التكلفة')
-      +   '</span></td></tr></tbody>';
+      + '<tr><td class="c1"></td><td class="c2 in1">Less: cost of goods sold (COGS)'
+      +   ar('تكلفةُ البضاعة المباعة') + '</td><td class="c3"><span class="miss"></span></td></tr>'
+      // a bare `Less:` is not a term and carries no gloss at all
+      + '<tr><td class="c1"></td><td class="c2 in1">Less:</td>'
+      +   '<td class="c3"><span class="miss"></span></td></tr>'
+      + '<tr class="tot"><td class="c1 u">2.</td><td class="c2 u">Gross profit' + ar('مجملُ الربح')
+      +   '</td><td class="c3 u"><span class="an"><b>1</b>' + wd('revenues', 'الإيرادات')
+      +   ' − ' + wd('COGS', 'تكلفةُ البضاعة') + '</span></td></tr></tbody>';
     const shape = (kind, title) => '<div class="fsShape" data-kind="' + kind + '">'
-      + '<div class="finStmtWrap fsFrame"><table class="finStmt"><caption>'
-      + '<span class="fsCo">Company’s name' + ar('اسمُ الشركة') + '</span>'
-      + '<span class="fsTitle">' + title + ar('قائمةُ الدخل') + '</span>'
-      + '<span class="fsWhen">for the year ended' + ar('للسنةِ المنتهية') + '</span>'
-      + '</caption>' + thead + tbody + '</table></div></div>';
+      + '<div class="finStmtWrap fsFrame"><table class="finStmt">'
+      + cap('Company’s name', title) + thead + tbody + '</table></div></div>';
     const page = '<div class="eqPage">'
       + '<div class="fsPick">'
       +   '<span class="fsTab" data-kind="full">With preferred stock</span>'
@@ -79,13 +92,15 @@
       'each choice still names the shape it opens');
     say(held.querySelectorAll('table.finStmt').length === 3, 'and each shape kept its statement');
 
-    // ---- 2  AND THE TWO LANGUAGES, THE FRAME AND THE HEADER ROW
+    // ---- 2  AND THE TWO LANGUAGES, THE FRAME, THE GLOSSES AND THE BLANKS
     const asked = page.split('class="fsAr"').length - 1;
     say(held.querySelectorAll('.fsAr').length === asked && asked > 0,
       'every translation survived the gate: ' + held.querySelectorAll('.fsAr').length + ' of ' + asked);
+    say(held.querySelectorAll('.fsWd').length === page.split('class="fsWd"').length - 1,
+      'and every term that carries one: ' + held.querySelectorAll('.fsWd').length);
+    say(held.querySelectorAll('.fsBlank').length === 9, 'and every blank to fill in: '
+      + held.querySelectorAll('.fsBlank').length);
     say(held.querySelectorAll('.finStmtWrap.fsFrame').length === 3, 'and the box round each statement');
-    say(held.querySelectorAll('thead th').length === 9,
-      'and the header row of each: ' + held.querySelectorAll('thead th').length + ' cells');
     // ONE ladder per shape, not two. Two were the old way - an English
     // table and an Arabic one switched by `data-rlang` - and the reader
     // never saw a line's two names together, which is the thing learnt
@@ -109,17 +124,17 @@
     await new Promise(r => setTimeout(r, 50));
     void host.offsetHeight;
 
-    // the first line of a span, which is the English one - a Range over
-    // the whole span would take the translation in with it
+    // the first line of an element, which is the English one - a Range over
+    // the whole of it would take the gloss in with it
     const firstLine = el => { const r = document.createRange(); r.setStart(el, 0); r.setEnd(el, 1);
       return r.getBoundingClientRect(); };
 
-    const cap = host.querySelector('table.finStmt caption');
-    say(getComputedStyle(cap).textAlign === 'center', 'the heading is centred: ' + getComputedStyle(cap).textAlign);
-    const co = cap.querySelector('.fsCo');
-    const capBox = cap.getBoundingClientRect();
+    const head = host.querySelector('table.finStmt caption');
+    say(getComputedStyle(head).textAlign === 'center', 'the heading is centred: ' + getComputedStyle(head).textAlign);
+    const co = head.querySelector('.fsCo');
+    const headBox = head.getBoundingClientRect();
     const en = firstLine(co);
-    const leftGap = Math.round(en.left - capBox.left), rightGap = Math.round(capBox.right - en.right);
+    const leftGap = Math.round(en.left - headBox.left), rightGap = Math.round(headBox.right - en.right);
     say(Math.abs(leftGap - rightGap) <= 2,
       'and the company name sits in the middle of it: ' + leftGap + 'px / ' + rightGap + 'px');
     say(/Company/.test(co.textContent), 'and it is the company name that stands there');
@@ -140,27 +155,37 @@
     const fr = frame.getBoundingClientRect(), tb = frame.querySelector('table').getBoundingClientRect();
     say(tb.left >= fr.left && tb.right <= fr.right + 1 && tb.bottom <= fr.bottom + 1,
       'and the table is drawn inside the box, not spilling out of it');
-    // a box much wider than its table reads as dead space, which is the
-    // look being fixed - so the ladder is made to fill it
-    say(tb.width >= fr.width - parseFloat(fs.paddingLeft) - parseFloat(fs.paddingRight) - 2,
-      'and fills it: table ' + Math.round(tb.width) + ' in box ' + Math.round(fr.width));
 
-    // ---- 7  THE HEADER ROW IS DRAWN, ABOVE THE FIRST LINE
-    const th = [...frame.querySelectorAll('thead th')];
-    say(th.length === 3, 'the ladder has a header over its three columns: ' + th.length);
-    const firstBody = frame.querySelector('tbody tr td');
-    say(th[0].getBoundingClientRect().bottom <= firstBody.getBoundingClientRect().top + 1,
-      'and it stands above the first line of the statement');
-    say(parseFloat(getComputedStyle(th[1]).borderBottomWidth) >= 1,
-      'and a rule divides it from them: ' + getComputedStyle(th[1]).borderBottomWidth);
-    say(Number(getComputedStyle(th[1]).fontWeight) >= 600, 'and it reads as a heading');
-    // the ONE vertical line a statement may carry: the rule is not part
-    // of the statement's body, and the amounts still share one borderless
-    // column, which is what GuardStatement measures
-    say(parseFloat(getComputedStyle(frame.querySelector('td.c3')).borderLeftWidth) >= 1,
-      'a hairline sets the rule column apart, so the box reads as a table');
+    // ---- 7  THE HEAD OF THE STATEMENT STANDS ON A GROUND OF ITS OWN
+    const hs = getComputedStyle(head);
+    say(!/rgba\(0, 0, 0, 0\)|transparent/.test(hs.backgroundColor),
+      'the head is laid on a colour: ' + hs.backgroundColor);
+    say(hs.backgroundColor !== fs.backgroundColor,
+      'and it is not the same colour as the box round it: ' + hs.backgroundColor + ' on ' + fs.backgroundColor);
+    say(parseFloat(hs.paddingTop) >= 4 && parseFloat(hs.paddingLeft) >= 4,
+      'and the colour has room round the words: ' + hs.paddingTop + ' ' + hs.paddingLeft);
+    // THE HEAD CARRIES NO GLOSS. A company's name is not a term to learn
+    say(head.querySelectorAll('.fsAr').length === 0,
+      'and nothing in it is translated: ' + head.querySelectorAll('.fsAr').length + ' glosses');
+    say(host.querySelector('thead').querySelectorAll('.fsAr').length === 0,
+      'nor is anything over the columns');
 
-    // ---- 8  THE TRANSLATION BELONGS TO THE LINE ABOVE IT
+    // ---- 8  THE DATE IS THREE BLANKS, EACH SAYING WHAT GOES IN IT
+    const when = head.querySelector('.fsWhen');
+    const blanks = [...when.querySelectorAll('.fsBlank')];
+    say(blanks.length === 3, 'the date line is three blanks: ' + blanks.length);
+    say(blanks.map(b => b.textContent).join('/') === 'month/day/year',
+      'and each says what goes in it, in order: ' + blanks.map(b => b.textContent).join('/'));
+    say(/day\s*<\/span>\s*,/.test(when.innerHTML) || /,/.test(when.textContent.split('day')[1] || ''),
+      'and a comma stands between the day and the year');
+    const bs = getComputedStyle(blanks[0]);
+    say(parseFloat(bs.borderTopWidth) >= 1 && bs.borderTopStyle !== 'none',
+      'and a blank is drawn as a box: ' + bs.borderTopStyle + ' ' + bs.borderTopWidth);
+    const br = blanks.map(b => b.getBoundingClientRect());
+    say(br[0].right <= br[1].left + 1 && br[1].right <= br[2].left + 1,
+      'and they stand side by side on one line');
+
+    // ---- 9  THE TRANSLATION BELONGS TO THE LINE ABOVE IT
     const c2 = [...frame.querySelectorAll('tbody td.c2')];
     const pairs = c2.map(td => ({ td, arab: td.querySelector('.fsAr') })).filter(p => p.arab);
     say(pairs.length >= 2, 'the lines carry their translations: ' + pairs.length);
@@ -176,8 +201,35 @@
       + ' under ' + getComputedStyle(pairs[0].td).fontSize);
     say(getComputedStyle(pairs[0].arab).display === 'block', 'and on a line of its own, not an inline tail');
     say(getComputedStyle(pairs[0].arab).direction === 'rtl', 'and laid out right to left, as Arabic is');
-    // the formula is a text too, and the reader answers in one language
-    say(Boolean(frame.querySelector('.an .fsAr')), 'the rule in its box is translated as well');
+    // a line that is only `Less:` is not a term, and carries nothing
+    const bare = c2.find(td => td.textContent.trim() === 'Less:');
+    say(Boolean(bare) && !bare.querySelector('.fsAr'),
+      'a bare `Less:` carries no gloss, because it is not a term');
+
+    // ---- 10  AND A GLOSS IN A RULE BOX BELONGS TO ITS TERM
+    const tag = frame.querySelector('.an');
+    const words = [...tag.querySelectorAll('.fsWd')];
+    say(words.length >= 2, 'the rule is read term by term: ' + words.length + ' terms');
+    say(words.every(w => w.querySelector('.fsAr')), 'and each term carries its own word');
+    say([...tag.children].filter(k => k.classList.contains('fsAr')).length === 0,
+      'and the rule is NOT restated in Arabic under the whole of it');
+    // WHERE THE GLOSS SITS. Under its own term's box, and two glosses never
+    // at the same place - which is what would happen if `fsWd` lost its
+    // inline-block and the gloss fell back to the width of the line
+    const mid = r => (r.left + r.right) / 2;
+    const under = words.every(w => {
+      const g = w.querySelector('.fsAr').getBoundingClientRect(), t = firstLine(w);
+      return mid(g) >= t.left - 2 && mid(g) <= t.right + 2;
+    });
+    say(under, 'each gloss sits under the term it translates');
+    const centres = words.map(w => Math.round(mid(w.querySelector('.fsAr').getBoundingClientRect())));
+    say(new Set(centres).size === words.length,
+      'and no two of them stand in the same place: ' + centres.join(' / '));
+    say(getComputedStyle(words[0]).display === 'inline-block',
+      'the term is a box of its own: ' + getComputedStyle(words[0]).display);
+    say(parseFloat(getComputedStyle(words[0].querySelector('.fsAr')).fontSize)
+        < parseFloat(getComputedStyle(tag).fontSize),
+      'and its word is set smaller than the term');
 
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
       + ' (' + out.length + ' checks)\n' + out.join('\n');

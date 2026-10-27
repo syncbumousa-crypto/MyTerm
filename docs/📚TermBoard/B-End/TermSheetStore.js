@@ -75,6 +75,10 @@
     // the paper settles all of it - the steps renumber and the bottom
     // line moves to wherever the ladder now ends
     'fsAsk', 'fsQ', 'fsOpt',
+    // A question may be worth explaining: `fsWhyBtn` is the box in its
+    // corner and `fsWhy` the panel it opens, which is closed at every
+    // draw - the page may not arrive with it already open
+    'fsWhy', 'fsWhyBtn',
     // a law in its box
     'lawBox', 'lawDerived', 'lawNo', 'lawEq', 'lawNote', 'lawIco',
     'frac', 'fnum', 'fden', 'lhs', 'lhsRow',

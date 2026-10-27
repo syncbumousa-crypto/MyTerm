@@ -297,7 +297,13 @@
 .msheet .finStmtWrap.fsFrame {
   border:1px solid #d7dde8; border-radius:10px; padding:9px 13px 11px;
   background:#fcfdff; margin:10px 0 4px;
+  /* THE FULL WIDTH OF THE PAGE, not of its own contents. A framed box
+     that shrinks to fit squeezed the balance sheet - two halves side by
+     side with the rule column set `nowrap` - into half the paper and put
+     a scrolling bar under it, wrapping every label onto two lines. */
+  width:100%; box-sizing:border-box;
 }
+.msheet .fsFrame .eqPair {width:100%;}
 .msheet .finStmtWrap.fsFrame table.finStmt {width:100%; margin:0;}
 .msheet .finStmtWrap.fsFrame td.c2, .msheet .finStmtWrap.fsFrame th.c2 {width:100%;}
 .msheet table.finStmt .fsAr {

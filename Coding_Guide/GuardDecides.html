@@ -326,6 +326,18 @@
     say(Boolean(oneHead.querySelector('.fsCo')) && Boolean(oneHead.querySelector('.fsTitle')),
       'naming whose it is and what it is, once and not twice');
     say(halves.every(t => !t.querySelector('caption')), 'and neither half carries a head of its own');
+    // AND THE BOX TAKES THE PAGE'S WIDTH, NOT ITS OWN CONTENTS'. A framed
+    // pair that shrinks to fit squeezed the balance sheet into half the
+    // paper, put a scrolling bar under it and wrapped every label onto two
+    // lines - while looking, at a glance, perfectly deliberate
+    const pairFrame = sheet.querySelector('.finStmtWrap.fsFrame:not([hidden])');
+    const fw = pairFrame.getBoundingClientRect().width, pw = sheet.getBoundingClientRect().width;
+    say(fw >= pw * 0.9, 'the box takes the width of the page: ' + Math.round(fw) + ' of ' + Math.round(pw));
+    say(pairFrame.scrollWidth <= pairFrame.clientWidth + 2,
+      'and nothing in it is pushed out of sight: ' + pairFrame.scrollWidth + ' inside ' + pairFrame.clientWidth);
+    const sideBoxes = [...pairFrame.querySelectorAll('.eqSide')].map(s => s.getBoundingClientRect());
+    say(halves.every((t, i) => t.getBoundingClientRect().right <= sideBoxes[i].right + 1),
+      'and neither half spills past its own side');
 
     press('company');
     say(shown() === 'company' && rungs().join(' ') === seq(8).join(' '),

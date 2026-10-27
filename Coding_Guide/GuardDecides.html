@@ -113,6 +113,24 @@
       + '<tr class="tot"><td class="acct">(1) Total income</td><td class="n u">$91,815</td></tr>'
       + '<tr class="tot"><td class="acct">(3) Cash surplus (or deficit)</td><td class="n d">$3,675</td></tr>'
       + '</tbody></table></div>';
+    // TWO LADDERS UNDER ONE HEAD, which is what a balance sheet is: each
+    // half numbers its own steps from one, and the head names whose the
+    // statement is once rather than twice
+    const pair = '<div class="finStmtWrap fsFrame" data-when="pair">'
+      + '<div class="fsHead"><span class="fsCo">Company’s name</span>'
+      + '<span class="fsTitle">Balance Sheet</span></div>'
+      + '<div class="eqPair">'
+      + '<div class="eqSide"><div class="eqSideHead">Assets<small>الأصول</small></div>'
+      +   '<table class="finStmt"><tbody>'
+      +   TR(C1('0.', 'u') + C2('Total current assets', 'u') + C3(AN([['cash', 'النقد'], '+', ['inventories', 'المخزون']]), 'u'), 'tot')
+      +   TR(C1('0.') + C2('Total assets') + C3(AN([['current assets', 'المتداولة'], '+', ['net fixed assets', 'الثابتة']])), 'tot')
+      +   '</tbody></table></div>'
+      + '<div class="eqSide"><div class="eqSideHead">Liabilities and equity<small>الخصوم وحقوق الملكيّة</small></div>'
+      +   '<table class="finStmt"><tbody>'
+      +   TR(C1('0.', 'u') + C2('Total liabilities', 'u') + C3(AN([['current', 'المتداولة'], '+', ['long-term', 'طويلةِ الأجل']]), 'u'), 'tot')
+      +   TR(C1('0.') + C2('Total equity') + C3(AN([['common stock', 'الأسهمُ العاديّة'], '+', ['retained earnings', 'المحتجزة']])), 'tot')
+      +   TR(C1('0.') + C2('Total liabilities and equity') + C3(AN([['liabilities', 'الخصوم'], '+', ['equity', 'حقوقُ الملكيّة']])), 'tot')
+      +   '</tbody></table></div></div></div>';
     const household = '<tbody>'
       + TR(C1('Income' + AR('الدخل'), 'u', 2) + C2('Salaries and wages' + AR('الرواتبُ والأجور'), 'u', 1) + C3(MS, 'u'))
       + TR(C2('Other income' + AR('دخلٌ آخر'), '', 1) + C3(MS))
@@ -134,7 +152,8 @@
     const page = '<div class="eqPage">'
       + '<div class="fsAsk" data-ask="who" data-mode="one">' + why
       +   '<div class="fsQ">Whose statement?' + AR('قائمةُ مَن؟') + '</div>'
-      +   opt('company', 'A company', 'شركة', true) + opt('household', 'A household', 'أسرة') + '</div>'
+      +   opt('company', 'A company', 'شركة', true) + opt('household', 'A household', 'أسرة')
+      +   opt('pair', 'A balance sheet', 'قائمةُ المركز') + '</div>'
       + '<div class="fsAsk" data-ask="profit" data-when="company">'
       +   '<div class="fsQ">What has a share of the net profit after taxes?' + AR('ما الذي له نصيب؟') + '</div>'
       +   opt('pfd', 'The preferred stockholders', 'الأسهمُ الممتازة', false, 'fsHueA')
@@ -142,7 +161,7 @@
       +   opt('re', 'The company itself', 'الشركةُ نفسُها', false, 'fsHueC') + '</div>'
       + frame('company', 'Company’s name', 'Income Statement', company)
       + frame('household', 'Household’s name', 'Income and Expense Statement', household)
-      + example
+      + example + pair
       + '</div>';
 
     // ---- 1  THE GATE KEEPS THE QUESTION, ITS CHOICES AND THEIR WIRING
@@ -150,7 +169,7 @@
     const held = document.createElement('div'); held.innerHTML = gated;
     say(held.querySelectorAll('.fsAsk').length === 2, 'the gate kept both questions: ' + held.querySelectorAll('.fsAsk').length);
     say(held.querySelectorAll('.fsQ').length === 2, 'and the wording of each');
-    say(held.querySelectorAll('.fsOpt').length === 5, 'and all five choices: ' + held.querySelectorAll('.fsOpt').length);
+    say(held.querySelectorAll(".fsOpt").length === 6, "and all six choices: " + held.querySelectorAll('.fsOpt').length);
     say([...held.querySelectorAll('.fsOpt')].every(x => x.getAttribute('data-pick')),
       'each choice still says what it turns on');
     say(held.querySelectorAll('[data-when]').length === page.split('data-when="').length - 1,
@@ -159,7 +178,7 @@
       'and the question that takes one answer, and the author’s opening position');
     say(Boolean(held.querySelector('.fsWhyBtn')) && Boolean(held.querySelector('.fsWhy')),
       'and the box in the corner with the panel it opens');
-    say(held.querySelectorAll('.fsOpt .fsAr').length === 5, 'and the Arabic word under every choice: '
+    say(held.querySelectorAll(".fsOpt .fsAr").length === 6, "and the Arabic word under every choice: "
       + held.querySelectorAll('.fsOpt .fsAr').length);
     // and a stored `on` is still dropped: the author says `data-on`, the
     // reader says press, and NEITHER is a stored class
@@ -281,6 +300,33 @@
       'and keeps the bottom line it was written with: ' + (ruled ? ruled.textContent : '(stripped)'));
     say(getComputedStyle(ruled).borderBottomStyle === 'double', 'ruled twice, as a bottom line is');
     say(!filled.querySelector('td.c1'), 'it carries no numbered step, which is why it is left alone');
+    // ---- 9b  TWO LADDERS UNDER ONE HEAD: a balance sheet
+    press('pair');
+    say(shown() === 'pair', 'a statement drawn as two halves takes its turn: ' + shown());
+    const halves = [...sheet.querySelectorAll('.finStmtWrap:not([hidden]) table.finStmt')];
+    say(halves.length === 2, 'it is two ladders, not one: ' + halves.length);
+    const stepsIn = t => [...t.querySelectorAll('tbody tr')].filter(r => !r.hidden)
+      .map(r => { const c = r.querySelector('td.c1:not(.lbl)'); return c ? c.textContent.trim() : ''; }).filter(Boolean);
+    // EACH HALF FROM ONE. The order of doing belongs to the half, and a
+    // right-hand side that began at three would read as the left one's tail
+    say(stepsIn(halves[0]).join(' ') === '1. 2.' && stepsIn(halves[1]).join(' ') === '1. 2. 3.',
+      'and each numbers its own steps from one: ' + stepsIn(halves[0]).join(' ') + ' | ' + stepsIn(halves[1]).join(' '));
+    const bothEnds = halves.map(t => { const d = t.querySelector('td.d');
+      return d ? d.closest('tr').querySelector('td.c2').textContent.trim() : '(none)'; });
+    say(bothEnds.every(x => x !== '(none)'), 'and each half is ruled twice where it ends: ' + bothEnds.join(' | '));
+    // and the head stands over BOTH, with the caption's own ground
+    const oneHead = sheet.querySelector('.finStmtWrap:not([hidden]) .fsHead');
+    say(Boolean(oneHead), 'one head stands over the pair');
+    const hb = oneHead.getBoundingClientRect(), pairBox = sheet.querySelector('.finStmtWrap:not([hidden]) .eqPair').getBoundingClientRect();
+    say(hb.bottom <= pairBox.top + 1, 'above both halves, not inside either');
+    say(getComputedStyle(oneHead).textAlign === 'center', 'centred over them');
+    const headGround = getComputedStyle(oneHead).backgroundColor;
+    say(!/rgba\(0, 0, 0, 0\)|transparent/.test(headGround),
+      'and laid on the same ground a caption is: ' + headGround);
+    say(Boolean(oneHead.querySelector('.fsCo')) && Boolean(oneHead.querySelector('.fsTitle')),
+      'naming whose it is and what it is, once and not twice');
+    say(halves.every(t => !t.querySelector('caption')), 'and neither half carries a head of its own');
+
     press('company');
     say(shown() === 'company' && rungs().join(' ') === seq(8).join(' '),
       'and going back finds the company’s ladder as it was left: ' + rungs().join(' '));

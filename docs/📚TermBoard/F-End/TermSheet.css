@@ -347,6 +347,39 @@
 .msheet table.finStmt .fsWd {display:inline-block; vertical-align:top; text-align:center;}
 .msheet table.finStmt .fsWd .fsAr {text-align:center;}
 .msheet table.finStmt .an {line-height:1.4; padding:1px 7px;}
+
+/* ============================================================ */
+/* # 🤔 🧾  A STATEMENT THAT ANSWERS A DECISION */
+/* # 🔤 CSS */
+/* # 🎯 One statement, and over it the questions it answers: what is */
+/* #    done with the net profit after taxes. Press `paid to preferred */
+/* #    stockholders` and the two rungs that follow from it appear; */
+/* #    press `kept in the company` and the retained-earnings line */
+/* #    appears with the rule that fits what else is chosen. */
+/* # 🔗 It replaces three pre-drawn shapes picked from a strip. Three */
+/* #    shapes are three answers already given; a reader who presses */
+/* #    the decision himself is the one who learns which rungs follow */
+/* #    from it - and the combinations are more than three. */
+/* # 🔗 A chosen option wears a tick, because a pill that only changes */
+/* #    colour reads as `selected tab`, and these are not tabs: two of */
+/* #    them can be on at once. */
+/* ============================================================ */
+.msheet .fsAsk {
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px;
+  margin:0 0 8px; padding:7px 10px 8px; border:1px dashed #c9d6ea;
+  border-radius:9px; background:#f8fbff;
+}
+.msheet .fsQ {
+  width:100%; text-align:center; font-weight:700; color:#44557a;
+  font-size:calc(10.5px * var(--fs)); margin:0 0 1px;
+}
+.msheet .fsOpt {
+  cursor:pointer; user-select:none; border:1px solid #c3d0e4; border-radius:999px;
+  padding:2px 11px; font-size:calc(10.5px * var(--fs)); color:#44557a; background:#fff;
+}
+.msheet .fsOpt:hover {border-color:#9db4d6;}
+.msheet .fsOpt.on {background:#1c4e9c; border-color:#1c4e9c; color:#fff; font-weight:700;}
+.msheet .fsOpt.on::before {content:"\2713\00a0";}
 .msheet table.finStmt .miss {
   display:inline-block; min-width:118px; height:1em;
   border-bottom:1.4px dashed #bda34a; background:#fffbe9;

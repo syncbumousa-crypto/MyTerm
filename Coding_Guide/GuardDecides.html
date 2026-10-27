@@ -1,0 +1,260 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>#host { width: 820px; }</style>
+<title>Guard · a statement that answers a decision</title>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermSheetStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermSheetPaper.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ 🤔  ONE STATEMENT, AND THE DECISION THAT SHAPES IT
+  // # 🔤 HTML + JavaScript
+  // # 🎯 Asked on 2026-10-27: not three pre-drawn shapes picked from a
+  // #    strip, but ONE statement over which the reader answers `what is
+  // #    done with the net profit after taxes` - paid to the preferred
+  // #    holders, paid to the common holders, kept in the company - and
+  // #    the ladder changes under each press, in any combination.
+  // # 🎯 What is measured: the gate keeps the question and its choices
+  // #    and drops a stored `on`; the opening position comes from the
+  // #    author's `data-on`; a choice shows exactly the rows whose
+  // #    `data-when` holds; THE STEPS RENUMBER with no gap; the rule
+  // #    badges renumber as their own sequence; exactly one variant of a
+  // #    rule is ever visible; and the double rule follows the end of
+  // #    the ladder wherever it now is.
+  // # 🔗 THE REAL ENGINE IS DRIVEN, not a copy of it: `decide` and
+  // #    `settle` are handed out by the paper. A guard carrying its own
+  // #    `data-when` reader and its own renumbering would agree with
+  // #    itself for ever, and the first change to either would be
+  // #    measured against the old rule.
+  // # 🔗 And the fixture is the REAL ladder - eighteen rows, the brace
+  // #    over the operating expenses, the rule that sits on a line which
+  // #    is not a rung. A fixture cleaner than the thing it stands for
+  // #    measures the clean case only.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o'), host = document.getElementById('host');
+    const S = window.MyTermSheetStore, P = window.MyTermSheetPaper;
+    if (!S || typeof S.gate !== 'function') { o.textContent = 'FAIL the sheet store did not load'; return; }
+    if (!P || typeof P.settle !== 'function' || typeof P.decide !== 'function') {
+      o.textContent = 'FAIL the paper does not hand out its decision engine, so this guard would carry a copy';
+      return;
+    }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    // ---- the ladder, written the way the page is written
+    const AR = t => '<span class="fsAr">' + t + '</span>';
+    const WD = (en, arabic) => '<span class="fsWd">' + en + AR(arabic) + '</span>';
+    const AN = (parts, when) => '<span class="an"' + (when ? ' data-when="' + when + '"' : '') + '><b>0</b>'
+      + parts.map(p => Array.isArray(p) ? WD(p[0], p[1]) : ' ' + p + ' ').join('') + '</span>';
+    const MS = '<span class="miss"></span>';
+    const TR = (cells, cls, when) => '<tr' + (cls ? ' class="' + cls + '"' : '')
+      + (when ? ' data-when="' + when + '"' : '') + '>' + cells + '</tr>';
+    const C1 = (x, m, sp) => '<td class="c1' + (sp ? ' lbl' : '') + (m ? ' ' + m : '') + '"'
+      + (sp ? ' rowspan="' + sp + '"' : '') + '>' + (x || '') + '</td>';
+    const C2 = (x, m, i) => '<td class="c2' + (m ? ' ' + m : '') + (i ? ' in1' : '') + '">' + x + '</td>';
+    const C3 = (x, m) => '<td class="c3' + (m ? ' ' + m : '') + '">' + (x || '') + '</td>';
+    const step = (x, tag, when) => TR(C1('0.', 'u') + C2(x, 'u') + C3(tag, 'u'), 'tot', when);
+    const item = (x, tag, when) => TR(C1('') + C2(x, '', 1) + C3(tag || MS), '', when);
+
+    const company = '<tbody>'
+      + TR(C1('0.', 'u') + C2('Total revenues' + AR('إجماليُّ الإيرادات'), 'u') + C3('', 'u'))
+      + item('Less: cost of goods sold (COGS)' + AR('تكلفةُ البضاعة المباعة'))
+      + step('Gross profit' + AR('مجملُ الربح'), AN([['revenues', 'الإيرادات'], '−', ['COGS', 'التكلفة']]))
+      + TR(C1('Operating<br>expenses' + AR('مصروفاتُ التشغيل'), '', 5) + C2('Less:', '', 1) + C3(MS))
+      + TR(C2('Less:', '', 1) + C3(MS)) + TR(C2('Less:', '', 1) + C3(MS)) + TR(C2('Less:', '', 1) + C3(MS))
+      + TR(C2('Total operating expenses' + AR('إجماليُّ مصروفات التشغيل'), 'u', 1) + C3('', 'u'))
+      + step('Operating profit (EBIT)' + AR('الربحُ التشغيليّ'),
+             AN([['gross profit', 'مجملُ الربح'], '−', ['total operating expenses', 'مصروفاتُ التشغيل']]))
+      + item('Less: interest expense' + AR('مصروفُ الفوائد'))
+      + step('Net profit before taxes' + AR('الربحُ قبل الضريبة'),
+             AN([['EBIT', 'الربحُ التشغيليّ'], '−', ['interest expense', 'مصروفُ الفوائد']]))
+      // A RULE ON A LINE THAT IS NOT A RUNG - the case that broke the
+      // first renumbering, which counted badges off the steps
+      + item('Less: taxes' + AR('الضريبة'), AN([['tax rate', 'معدّلُ الضريبة'], '×', ['pre-tax profit', 'الربحُ قبل الضريبة']]))
+      + step('Net profit after taxes' + AR('صافي الربح بعد الضريبة'),
+             AN([['pre-tax profit', 'الربحُ قبل الضريبة'], '−', ['taxes', 'الضريبة']]))
+      + item('Less: preferred stock dividends' + AR('توزيعاتُ الأسهم الممتازة'), null, 'pfd')
+      + step('Earnings available for common stockholders' + AR('المتاحُ للمساهمين العاديين'),
+             AN([['net profit', 'صافي الربح'], '−', ['preferred dividends', 'توزيعاتُ الممتاز']]), 'pfd')
+      // ONE RUNG, TWO RULES: which numerator is right depends on another
+      // decision entirely, and exactly one of them may ever be showing
+      + step('Earnings per share (EPS)' + AR('ربحيّةُ السهم'),
+             AN([['earnings available', 'المتاحُ للعاديين'], '÷', ['shares outstanding', 'الأسهمُ القائمة']], 'pfd')
+             + AN([['net profit', 'صافي الربح'], '÷', ['shares outstanding', 'الأسهمُ القائمة']], '!pfd'))
+      + item('Less: common stock dividends' + AR('توزيعاتُ الأسهم العاديّة'), null, 'com')
+      + step('Dividends per share (DPS)' + AR('نصيبُ السهم من التوزيعات'),
+             AN([['common stock dividends', 'توزيعاتُ العاديّ'], '÷', ['shares outstanding', 'الأسهمُ القائمة']]), 'com')
+      + step('Addition to retained earnings' + AR('الإضافةُ إلى الأرباح المحتجزة'),
+             AN([['net profit', 'صافي الربح'], '−', ['preferred dividends', 'توزيعاتُ الممتاز'],
+                 '−', ['common stock dividends', 'توزيعاتُ العاديّ']], 'pfd,com')
+             + AN([['net profit', 'صافي الربح'], '−', ['preferred dividends', 'توزيعاتُ الممتاز']], 'pfd,!com')
+             + AN([['net profit', 'صافي الربح'], '−', ['common stock dividends', 'توزيعاتُ العاديّ']], '!pfd,com')
+             + AN([['all of the net profit', 'صافي الربح كلُّه']], '!pfd,!com'), 're')
+      + '</tbody>';
+    const household = '<tbody>'
+      + TR(C1('Income' + AR('الدخل'), 'u', 2) + C2('Salaries and wages' + AR('الرواتبُ والأجور'), 'u', 1) + C3(MS, 'u'))
+      + TR(C2('Other income' + AR('دخلٌ آخر'), '', 1) + C3(MS))
+      + step('Total income' + AR('إجماليُّ الدخل'), AN(['Σ', ['income', 'بنودُ الدخل']]))
+      + '</tbody>';
+    const frame = (when, co, title, body) => '<div class="finStmtWrap fsFrame" data-when="' + when + '">'
+      + '<table class="finStmt"><caption><span class="fsCo">' + co + '</span>'
+      + '<span class="fsTitle">' + title + '</span></caption>'
+      + '<thead><tr><th class="c1">#</th><th class="c2"></th><th class="c3"></th></tr></thead>'
+      + body + '</table></div>';
+    const opt = (pick, label, on) => '<span class="fsOpt" data-pick="' + pick + '"'
+      + (on ? ' data-on="1"' : '') + '>' + label + '</span>';
+    const page = '<div class="eqPage">'
+      + '<div class="fsAsk" data-ask="who" data-mode="one"><div class="fsQ">Whose statement?</div>'
+      +   opt('company', 'A company', true) + opt('household', 'A household') + '</div>'
+      + '<div class="fsAsk" data-ask="profit" data-when="company">'
+      +   '<div class="fsQ">What is done with the net profit after taxes?</div>'
+      +   opt('pfd', 'Paid to preferred stockholders') + opt('com', 'Paid to common stockholders')
+      +   opt('re', 'Kept in the company') + '</div>'
+      + frame('company', 'Company’s name', 'Income Statement', company)
+      + frame('household', 'Household’s name', 'Income and Expense Statement', household)
+      + '</div>';
+
+    // ---- 1  THE GATE KEEPS THE QUESTION, ITS CHOICES AND THEIR WIRING
+    const gated = S.gate(page);
+    const held = document.createElement('div'); held.innerHTML = gated;
+    say(held.querySelectorAll('.fsAsk').length === 2, 'the gate kept both questions: ' + held.querySelectorAll('.fsAsk').length);
+    say(held.querySelectorAll('.fsQ').length === 2, 'and the wording of each');
+    say(held.querySelectorAll('.fsOpt').length === 5, 'and all five choices: ' + held.querySelectorAll('.fsOpt').length);
+    say([...held.querySelectorAll('.fsOpt')].every(x => x.getAttribute('data-pick')),
+      'each choice still says what it turns on');
+    say(held.querySelectorAll('[data-when]').length === page.split('data-when="').length - 1,
+      'and every row and rule still says when it belongs: ' + held.querySelectorAll('[data-when]').length);
+    say(held.querySelector('.fsAsk[data-mode="one"]') && held.querySelector('.fsOpt[data-on]'),
+      'and the question that takes one answer, and the author’s opening position');
+    // and a stored `on` is still dropped: the author says `data-on`, the
+    // reader says press, and NEITHER is a stored class
+    const dirty = S.gate('<div class="fsAsk"><span class="fsOpt on" data-pick="x">y</span></div>');
+    say(!/class="[^"]*\bon\b/.test(dirty), 'a stored `on` is dropped, so only the paper lights a choice');
+
+    // ---- 2  THE SHEET'S OWN STYLESHEET, FETCHED
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
+    host.innerHTML = '<div class="msheet msheet-law">' + gated + '</div>';
+    const sheet = host.querySelector('.msheet');
+    void host.offsetHeight;
+
+    // ---- 3  THE OPENING POSITION, from the author and not from the store
+    P.decide(sheet);
+    const lit = () => [...sheet.querySelectorAll('.fsOpt.on')].map(x => x.getAttribute('data-pick')).sort().join(',');
+    const shown = () => [...sheet.querySelectorAll('.finStmtWrap')].filter(f => !f.hidden)
+      .map(f => f.getAttribute('data-when')).join(',');
+    const table = () => sheet.querySelector('.finStmtWrap:not([hidden]) table.finStmt');
+    const rungs = () => [...table().querySelectorAll('tbody tr')].filter(r => !r.hidden)
+      .map(r => { const c = r.querySelector('td.c1:not(.lbl)'); return c ? c.textContent.trim() : ''; })
+      .filter(Boolean);
+    const badges = () => [...table().querySelectorAll('tbody .an')].filter(a => !a.hidden && !a.closest('tr').hidden)
+      .map(a => a.querySelector(':scope > b').textContent);
+    const bottom = () => { const d = table().querySelector('td.d'); return d ? d.closest('tr').querySelector('td.c2').textContent.split('(')[0].trim() : '(none)'; };
+    const lastWord = t => t.replace(/[؀-ۿ\s]+$/, '').trim();
+
+    say(lit() === 'company', 'the page opens where the author left it: ' + lit());
+    say(shown() === 'company', 'so the company’s statement is the one drawn: ' + shown());
+    say(sheet.querySelector('.fsAsk[data-ask="profit"]').hidden === false,
+      'and the question about its profit is asked');
+
+    // ---- 4  THE LADDER WITH NOTHING DECIDED
+    const seq = n => Array.from({ length: n }, (_, i) => (i + 1) + '.');
+    say(rungs().join(' ') === seq(6).join(' '), 'six rungs, numbered 1 to 6 with no gap: ' + rungs().join(' '));
+    say(badges().join('') === '123456', 'and six rules, numbered as their own sequence: ' + badges().join(''));
+    say(/Earnings per share/.test(lastWord(bottom())), 'and the bottom line is EPS: ' + lastWord(bottom()));
+    say([...table().querySelectorAll('tbody tr')].filter(r => !r.hidden)
+             .every(r => r.querySelectorAll('.an:not([hidden])').length <= 1),
+      'and no line shows two rules at once');
+    // the EPS rule reads from the net profit, there being nothing above it
+    const eps = () => [...table().querySelectorAll('tbody tr')]
+      .find(r => !r.hidden && /Earnings per share/.test(r.textContent));
+    say(/net profit/.test(eps().querySelector('.an:not([hidden])').textContent),
+      'and it divides the NET PROFIT, there being no preferred slice taken out');
+
+    // ---- 5  PAID TO THE PREFERRED HOLDERS
+    const press = pick => {
+      const o = sheet.querySelector('.fsOpt[data-pick="' + pick + '"]');
+      const ask = o.closest('.fsAsk');
+      if (ask.getAttribute('data-mode') === 'one') ask.querySelectorAll('.fsOpt').forEach(x => x.classList.toggle('on', x === o));
+      else o.classList.toggle('on');
+      P.settle(sheet);
+    };
+    press('pfd');
+    say(rungs().join(' ') === seq(7).join(' '), 'the preferred slice adds a rung: ' + rungs().join(' '));
+    say(badges().join('') === '1234567', 'and a rule with it: ' + badges().join(''));
+    say(/earnings available/.test(eps().querySelector('.an:not([hidden])').textContent),
+      'and EPS now divides what is LEFT for the common holders');
+    say(eps().querySelectorAll('.an:not([hidden])').length === 1, 'and only that one reading of it is showing');
+    say(/Earnings per share/.test(lastWord(bottom())), 'the bottom line is still EPS: ' + lastWord(bottom()));
+
+    // ---- 6  AND TO THE COMMON HOLDERS, AT THE SAME TIME
+    press('com');
+    say(lit() === 'com,company,pfd', 'two answers to one question stand together: ' + lit());
+    say(rungs().join(' ') === seq(8).join(' '), 'and the ladder is eight rungs: ' + rungs().join(' '));
+    say(/Dividends per share/.test(lastWord(bottom())), 'and the bottom line has moved to DPS: ' + lastWord(bottom()));
+
+    // ---- 7  AND WHAT IS LEFT IS KEPT
+    press('re');
+    say(rungs().join(' ') === seq(9).join(' '), 'the retained line is the ninth rung: ' + rungs().join(' '));
+    const re = () => [...table().querySelectorAll('tbody tr')]
+      .find(r => !r.hidden && /retained earnings/.test(r.textContent));
+    say(re().querySelectorAll('.an:not([hidden])').length === 1,
+      'and it carries exactly one of its four rules: ' + re().querySelectorAll('.an:not([hidden])').length);
+    const reads = () => re().querySelector('.an:not([hidden])').textContent;
+    say(/preferred/.test(reads()) && /common/.test(reads()),
+      'the one that takes BOTH dividends out: ' + reads().replace(/[؀-ۿ]/g, '').replace(/\s+/g, ' ').trim());
+    say(/retained earnings/.test(lastWord(bottom())), 'and the bottom line is now the retained line');
+
+    // ---- 8  TAKE THE PREFERRED DECISION BACK, AND EVERYTHING FOLLOWS
+    press('pfd');
+    say(rungs().join(' ') === seq(8).join(' '), 'the ladder closes up with no gap: ' + rungs().join(' '));
+    say(!/preferred/.test(reads()) && /common/.test(reads()),
+      'and the retained rule is the one for common dividends alone: '
+      + reads().replace(/[؀-ۿ]/g, '').replace(/\s+/g, ' ').trim());
+    say(/net profit/.test(eps().querySelector('.an:not([hidden])').textContent),
+      'and EPS is back to dividing the net profit');
+    say([...table().querySelectorAll('tbody tr')].filter(r => !r.hidden)
+         .every(r => r.querySelectorAll('.an:not([hidden])').length <= 1),
+      'and still no line shows two rules');
+
+    // ---- 9  A WHOLE OTHER STATEMENT, AND THE QUESTION THAT DOES NOT APPLY
+    press('household');
+    say(shown() === 'household', 'the household’s statement takes its place: ' + shown());
+    say(sheet.querySelector('.fsAsk[data-ask="profit"]').hidden === true,
+      'and a company’s question is not asked of a household');
+    say(/Household/.test(table().querySelector('.fsCo').textContent), 'and the head names whose it is');
+    // ONE numbered rung here: the two income lines are gathered by a brace
+    // and carry no step of their own, exactly as the operating expenses do
+    say(rungs().join(' ') === seq(1).join(' '), 'and its own rungs are numbered from one: ' + rungs().join(' '));
+    say(table().querySelector('td.c1.lbl') && table().querySelector('td.c1.lbl').getAttribute('rowspan') === '2',
+      'its brace still spans the lines it gathers');
+    press('company');
+    say(shown() === 'company' && rungs().join(' ') === seq(8).join(' '),
+      'and going back finds the company’s ladder as it was left: ' + rungs().join(' '));
+
+    // ---- 10  A CHOSEN OPTION LOOKS CHOSEN
+    const chosenOne = sheet.querySelector('.fsOpt.on'), coldOne = sheet.querySelector('.fsOpt:not(.on)');
+    const cs = getComputedStyle(chosenOne), cold = getComputedStyle(coldOne);
+    say(cs.backgroundColor !== cold.backgroundColor,
+      'a chosen choice is not the colour of an unchosen one: ' + cs.backgroundColor + ' vs ' + cold.backgroundColor);
+    // A TICK AND NOT ONLY A COLOUR: two of these can be on at once, which
+    // a lit tab never is, so the look must say `chosen` and not `current`
+    const tick = getComputedStyle(chosenOne, '::before').content;
+    say(/2713|✓/.test(tick) || tick.indexOf('✓') > -1, 'and it wears a tick: ' + tick);
+    say(getComputedStyle(sheet.querySelector('.fsAsk')).justifyContent === 'center', 'the question is centred');
+    const q = sheet.querySelector('.fsQ'), first = sheet.querySelector('.fsOpt');
+    say(q.getBoundingClientRect().bottom <= first.getBoundingClientRect().top + 1,
+      'and its wording stands above the choices');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e + '\n' + (e && e.stack);
+  });
+</script>

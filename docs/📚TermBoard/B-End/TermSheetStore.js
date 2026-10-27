@@ -64,6 +64,11 @@
     // `fsAr` is that second line, and `fsFrame` the box that makes a
     // statement read as a table instead of as lines thrown on a page
     'fsAr', 'fsFrame',
+    // A gloss belongs to the TERM it stands under, not to the line:
+    // `fsWd` is one word with its Arabic word beneath it, so a rule
+    // reads term by term instead of being restated whole in Arabic.
+    // `fsBlank` is a blank to fill in with the word for what goes in it
+    'fsWd', 'fsBlank',
     // a law in its box
     'lawBox', 'lawDerived', 'lawNo', 'lawEq', 'lawNote', 'lawIco',
     'frac', 'fnum', 'fden', 'lhs', 'lhsRow',

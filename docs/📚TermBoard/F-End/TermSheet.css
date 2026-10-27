@@ -316,6 +316,37 @@
 .msheet table.finStmt td.c3, .msheet table.finStmt thead th.c3 {
   border-left:1px solid #e6eaf1; padding-left:10px;
 }
+
+/* ============================================================ */
+/* # 🎨 🧾  THE HEAD OF A STATEMENT, AND A GLOSS UNDER ITS TERM */
+/* # 🔤 CSS */
+/* # 🎯 Three things asked on 2026-10-27 after the first bilingual */
+/* #    draw: the head of the statement gets a ground of its own so it */
+/* #    reads as the head; its date line carries three blanks (month, */
+/* #    day, year) with the word for what goes in each; and a gloss in */
+/* #    a rule box sits under the TERM it translates. */
+/* # 🔗 `revenues − COGS` with `الإيرادات − التكلفة` under the whole of */
+/* #    it restates the rule in Arabic - which teaches the rule twice */
+/* #    and the vocabulary not at all. Under each word its own word, */
+/* #    and the operator stands between them once. */
+/* # 🔗 So `fsWd` is inline-block: a block gloss inside it falls under */
+/* #    that word's own box, not under the line. */
+/* # 🔗 And the head carries NO gloss at all now: a company's name is */
+/* #    not a term to learn, and `Income Statement` stands over the */
+/* #    thing it names in the language the exam is written in. */
+/* ============================================================ */
+.msheet .fsFrame table.finStmt caption {
+  background:#eef3fb; border:1px solid #dbe4f2; border-radius:8px;
+  padding:8px 10px 9px; margin:0 0 7px;
+}
+.msheet .fsBlank {
+  display:inline-block; min-width:50px; padding:0 7px; margin:0 2px;
+  border:1px dashed #bda34a; border-radius:4px; background:#fffbe9;
+  color:#8a7536; font-size:.92em; font-weight:400; text-align:center;
+}
+.msheet table.finStmt .fsWd {display:inline-block; vertical-align:top; text-align:center;}
+.msheet table.finStmt .fsWd .fsAr {text-align:center;}
+.msheet table.finStmt .an {line-height:1.4; padding:1px 7px;}
 .msheet table.finStmt .miss {
   display:inline-block; min-width:118px; height:1em;
   border-bottom:1.4px dashed #bda34a; background:#fffbe9;

@@ -408,6 +408,77 @@
   // #    fourteen cards once reported thirty-three and doubled the
   // #    hours the chapter claimed
   // ============================================================
+  // ============================================================
+  // # 🤔 🧾  THE DECISIONS A STATEMENT ANSWERS
+  // # 🔤 JavaScript
+  // # 🎯 Reads the choices that are lit, shows every row and rule whose
+  // #    `data-when` holds, renumbers the steps, and moves the double
+  // #    rule to wherever the ladder now ends.
+  // # 🔗 THE PAGE IS THE STATE. What is chosen is read back out of the
+  // #    strip itself and never kept in a variable beside it, so a
+  // #    redraw cannot disagree with what the reader can see is lit.
+  // # 🔗 AND THE STEPS RENUMBER. A ladder with a rung taken out of the
+  // #    middle that still reads 1, 2, 4 teaches the wrong thing twice:
+  // #    the number is the order of doing, not a label. The rule's own
+  // #    badge carries the same number, so both are set from one walk.
+  // ============================================================
+  const chosen = page => new Set([...page.querySelectorAll('.fsOpt.on')]
+    .map(o => o.getAttribute('data-pick')).filter(Boolean));
+
+  // `a, !b` - every token must hold, and `!` is `must be off`
+  const holds = (when, on) => String(when).split(',').map(t => t.trim()).filter(Boolean)
+    .every(t => t.charAt(0) === '!' ? !on.has(t.slice(1)) : on.has(t));
+
+  const settle = page => {
+    if (!page || !page.querySelector('.fsAsk')) return;
+    const on = chosen(page);
+    page.querySelectorAll('[data-when]').forEach(el => {
+      el.hidden = !holds(el.getAttribute('data-when'), on);
+    });
+    page.querySelectorAll('table.finStmt').forEach(table => {
+      if (table.closest('[hidden]')) return;
+      // TWO SEQUENCES, and they are not the same one. The step numbers
+      // the RUNGS of the ladder; the badge numbers the RULES, and a rule
+      // can sit on a line that is not a rung of its own (`Less: taxes`
+      // carries one). Counting badges off the steps put the fourth rule
+      // on the fifth step
+      const steps = [...table.querySelectorAll('tbody tr')].filter(row => {
+        if (row.hidden) return false;
+        const cell = row.querySelector('td.c1:not(.lbl)');
+        return Boolean(cell) && cell.textContent.trim() !== '';
+      });
+      steps.forEach((row, i) => {
+        row.querySelector('td.c1:not(.lbl)').textContent = (i + 1) + '.';
+      });
+      let rule = 0;
+      table.querySelectorAll('tbody .an').forEach(tag => {
+        if (tag.hidden || tag.closest('tr').hidden) return;
+        const badge = tag.querySelector(':scope > b');
+        if (badge) badge.textContent = String(++rule);
+      });
+      // the bottom line is a place in the ladder, not a row - so it is
+      // taken off every row first and given to the one that ends it now
+      table.querySelectorAll('td.d').forEach(td => td.classList.remove('d'));
+      const last = steps[steps.length - 1];
+      if (last) last.querySelectorAll('td').forEach(td => td.classList.add('d'));
+    });
+  };
+
+  // The opening position: what the AUTHOR left standing. Separate from
+  // `settle` on purpose - running the defaults on every settle would
+  // undo the reader's own press on the very next one
+  const decide = page => {
+    if (!page || !page.querySelector('.fsAsk')) return;
+    page.querySelectorAll('.fsAsk').forEach(ask => {
+      const opts = [...ask.querySelectorAll('.fsOpt')];
+      opts.forEach(o => o.classList.toggle('on', o.hasAttribute('data-on')));
+      // a question that takes one answer is never left with none
+      if (ask.getAttribute('data-mode') === 'one'
+          && !opts.some(o => o.classList.contains('on')) && opts[0]) opts[0].classList.add('on');
+    });
+    settle(page);
+  };
+
   const draw1 = one => {
     const box = document.createElement('div');
     box.className = 'msheet msheet-' + one.kind;
@@ -425,6 +496,10 @@
     // ONE SHAPE SHOWING, AND THE FIRST CHOICE LIT. Neither the `on` class
     // nor `hidden` survives the gate, which is deliberate: a stored page
     // cannot arrive half-open, and the paper decides what is showing
+    // AND THE AUTHOR'S OPENING POSITION, read from `data-on` - never
+    // from a stored `on`, which the gate drops
+    decide(box);
+
     const shapes = [...box.querySelectorAll('.fsShape')];
     if (shapes.length) {
       const tabs = [...box.querySelectorAll('.fsTab')];
@@ -540,6 +615,21 @@
       refit();
       return;
     }
+    // A CHOICE ON A LAW PAGE, answered before the card is looked for -
+    // one of these questions takes several answers at once, so a press
+    // turns its own choice over and leaves the others alone
+    const opt = e.target.closest('.fsOpt');
+    if (opt && where.contains(opt)) {
+      const ask = opt.closest('.fsAsk'), page = opt.closest('.msheet');
+      if (ask && ask.getAttribute('data-mode') === 'one') {
+        ask.querySelectorAll('.fsOpt').forEach(o => o.classList.toggle('on', o === opt));
+      } else {
+        opt.classList.toggle('on');
+      }
+      settle(page);
+      refit();
+      return;
+    }
     const card = e.target.closest('.qcard');
     if (!card || !where.contains(card)) return;
     if (e.target.closest('.ansToggle')) {
@@ -566,6 +656,12 @@
   };
 
   window.MyTermSheetPaper = {
+    // THE DECISION ENGINE, HANDED OUT so a guard can drive the real one.
+    // A guard that carried its own copy of `data-when` and of the
+    // renumbering would agree with itself for ever, and the first change
+    // to either would be measured against the old rule
+    decide, settle,
+
     // Where the sheets go. Said once, so a redraw does not hunt for it
     // Told where to draw, and what to call when a tick changes — the
     // same bargain the rows' paper is handed, and for the same reason:

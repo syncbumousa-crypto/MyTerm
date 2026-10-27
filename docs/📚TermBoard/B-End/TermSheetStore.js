@@ -69,6 +69,12 @@
     // reads term by term instead of being restated whole in Arabic.
     // `fsBlank` is a blank to fill in with the word for what goes in it
     'fsWd', 'fsBlank',
+    // A STATEMENT THAT ANSWERS A DECISION. `fsAsk` is one question,
+    // `fsQ` its wording, `fsOpt` a choice. What each choice turns on
+    // or off is `data-when` on the rows and the rules it governs, and
+    // the paper settles all of it - the steps renumber and the bottom
+    // line moves to wherever the ladder now ends
+    'fsAsk', 'fsQ', 'fsOpt',
     // a law in its box
     'lawBox', 'lawDerived', 'lawNo', 'lawEq', 'lawNote', 'lawIco',
     'frac', 'fnum', 'fden', 'lhs', 'lhsRow',
@@ -101,7 +107,14 @@
   // page DO something, and a page that carries one the site does not
   // answer is a page with a dead control on it
   const ATTRS = new Set(['data-ans', 'data-tb', 'data-icon', 'data-kind',
-                         'data-anchor', 'data-calc', 'data-tree', 'colspan', 'rowspan']);
+                         'data-anchor', 'data-calc', 'data-tree', 'colspan', 'rowspan',
+                         // what a choice turns on, what it is called, whether its
+                         // question takes one answer or several, and which choice the
+                         // AUTHOR leaves standing when the page is first drawn. That
+                         // last one is not runtime state: `on` and `hidden` are still
+                         // dropped, and the paper still decides - it only reads the
+                         // author's opening position from here
+                         'data-when', 'data-pick', 'data-mode', 'data-on', 'data-ask']);
 
   // ============================================================
   // AN INLINE STYLE IS LET THROUGH BY ITS PROPERTY, NOT BY ITS WORD

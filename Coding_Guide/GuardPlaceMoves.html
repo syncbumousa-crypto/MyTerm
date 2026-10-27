@@ -1,0 +1,130 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · a place in the book moves with its card</title>
+<pre id="o">pending</pre>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermSheetStore.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ 📖  WHEN A CARD CHANGES SEAT, ITS PAGE GOES WITH IT
+  // # 🔤 HTML + JavaScript
+  // # 🎯 The cards of a part were reordered on 2026-10-28 to run from the
+  // #    shortest descent to the one that builds the whole statement. A
+  // #    place in the book is keyed by the SEAT (`rules1:5`) and not by
+  // #    the card, so moving the cards without moving the places would
+  // #    leave every `source` button opening the page of the card that
+  // #    used to sit there - and the button would still work, which is
+  // #    why nothing would ever report it.
+  // # 🎯 What is measured: `setSrcs` writes a place, drops one, refuses a
+  // #    key that is not a key, and shapes what it is given exactly as
+  // #    the file is read - and a whole reorder of nine seats lands with
+  // #    every card's page still its own.
+  // # 🔗 The store's own reader is what reports the result (`srcsOf`), so
+  // #    the two ends of the move are not the same line of code twice.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const S = window.MyTermSheetStore;
+    if (!S || typeof S.setSrcs !== 'function') {
+      o.textContent = 'FAIL the store does not let a place be moved, so a reorder would strand every source button';
+      return;
+    }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    // IndexedDB is refused on file://, and the store's shelf would never
+    // settle - the stand-in the other store guards use
+    const kept = new Map(), later = fn => setTimeout(fn, 0);
+    Object.defineProperty(window, 'indexedDB', { configurable: true, value: {
+      open: () => { const ask = {};
+        later(() => { ask.result = { transaction: () => { const deal = {};
+          deal.objectStore = () => ({
+            get: k => { const r = { result: kept.get(k) }; later(() => deal.oncomplete && deal.oncomplete()); return r; },
+            put: (v, k) => { kept.set(k, v); later(() => deal.oncomplete && deal.oncomplete()); return {}; } });
+          return deal; } };
+          if (ask.onsuccess) ask.onsuccess(); });
+        return ask; } } });
+
+    // NINE CARDS, each with the page it came out of - the real shape of
+    // the part being reordered
+    const seats = {}, srcs = {};
+    for (let i = 2; i <= 10; i++) {
+      seats['rules1:' + i] = { group: 'rules1', at: i, kind: 'card',
+        html: '<div class="qcard"><div class="qh">card ' + i + '</div></div>', updatedAt: '2026-10-28T00:00:00.000Z' };
+      srcs['rules1:' + i] = [{ src: i === 2 || i > 8 ? 'book' : 'bank', page: 10 + i,
+        anchor: 'the words of card ' + i, what: 'ask', ref: '' }];
+    }
+    const sky = new Map();
+    sky.set('sheets-1', { app: 'MyTerm', kind: 'sheets', chapter: 'h-1', labels: { rules1: 'Income Statement' },
+                          srcs, sheets: seats });
+    window.MyTermCloud = {
+      readFile: async id => { const v = sky.get(id); return v ? JSON.parse(JSON.stringify(v)) : null; },
+      writeFile: async (id, body) => { sky.set(id, JSON.parse(JSON.stringify(body))); return true; },
+      createJson: async () => 'sheets-1', fileAlive: async () => true, now: () => new Date().toISOString()
+    };
+    const chapter = { id: 'h-1', name: 'Ch3', folderId: 'f-1', sheetsId: 'sheets-1' };
+    await S.ready('c-1', chapter);
+    say(S.openId() === 'h-1', 'the chapter opened on nine cards and nine places: ' + S.openId());
+    const pageOf = seat => (S.srcsOf('rules1:' + seat)[0] || {}).page;
+    const wordsOf = seat => (S.srcsOf('rules1:' + seat)[0] || {}).anchor;
+    say([...Array(9)].every((_, k) => pageOf(k + 2) === 12 + k),
+      'each card began on its own page: ' + [...Array(9)].map((_, k) => pageOf(k + 2)).join(' '));
+
+    // ---- 1  A PLACE CAN BE WRITTEN, AND IT IS SHAPED ON THE WAY IN
+    say(S.setSrcs('rules1:2', [{ src: 'bank', page: 99, anchor: 'moved here', what: 'ask' }]) === true,
+      'a place can be written');
+    say(pageOf(2) === 99 && wordsOf(2) === 'moved here', 'and it is what was written: p.' + pageOf(2));
+    // a place with no anchor is not a place - the file would not keep one
+    S.setSrcs('rules1:2', [{ src: 'bank', page: 98, anchor: '' }]);
+    say(S.srcsOf('rules1:2').length === 0, 'a place with nothing to point at is not kept');
+    // and an empty list clears the key rather than leaving an empty one
+    S.setSrcs('rules1:2', [{ src: 'bank', page: 12, anchor: 'the words of card 2', what: 'ask' }]);
+    say(pageOf(2) === 12, 'and it can be put back: p.' + pageOf(2));
+    S.setSrcs('rules1:2', []);
+    say(S.srcsOf('rules1:2').length === 0, 'an empty list clears the key');
+    S.setSrcs('rules1:2', [{ src: 'book', page: 12, anchor: 'the words of card 2', what: 'ask' }]);
+
+    // ---- 2  AND A KEY THAT IS NOT A KEY IS REFUSED
+    say(S.setSrcs('rules1', [{ src: 'book', page: 1, anchor: 'x' }]) === false,
+      'a group alone is not a key');
+    say(S.setSrcs('rules1:2 and more', [{ src: 'book', page: 1, anchor: 'x' }]) === false,
+      'nor is anything with a space in it');
+    say(S.setSrcs(null, []) === false, 'nor nothing at all');
+    say(pageOf(2) === 12, 'and none of the three touched the place that was there');
+
+    // ---- 3  THE WHOLE REORDER, done the way the part was reordered:
+    // read every seat and its place, then write both to where they go
+    const ORDER = { 2: 6, 3: 7, 4: 8, 5: 4, 6: 5, 7: 3, 8: 2, 9: 9, 10: 10 };  // seat <- came from
+    const before = {};
+    Object.values(ORDER).forEach(from => { before[from] = { html: S.one('rules1', from).html, places: S.srcsOf('rules1:' + from) }; });
+    Object.keys(ORDER).forEach(seat => {
+      const from = ORDER[seat];
+      S.put('rules1', +seat, { ...S.one('rules1', +seat), html: before[from].html });
+      S.setSrcs('rules1:' + seat, before[from].places);
+    });
+    const landed = Object.keys(ORDER).every(seat => {
+      const from = ORDER[seat];
+      return S.one('rules1', +seat).html === before[from].html
+          && wordsOf(seat) === before[from].places[0].anchor
+          && pageOf(seat) === before[from].places[0].page;
+    });
+    say(landed, 'nine cards changed seat and every one took its own page with it');
+    say([...Array(9)].map((_, k) => pageOf(k + 2)).join(' ') === '16 17 18 14 15 13 12 19 20',
+      'and the pages now read in the new order: ' + [...Array(9)].map((_, k) => pageOf(k + 2)).join(' '));
+    // the card and its place agree, which is the whole point
+    const agree = Object.keys(ORDER).every(seat =>
+      S.one('rules1', +seat).html.indexOf('card ' + ORDER[seat]) > -1
+      && wordsOf(seat) === 'the words of card ' + ORDER[seat]);
+    say(agree, 'each seat holds one card and the place that card came from');
+    say(Object.keys(ORDER).every(s => S.srcsOf('rules1:' + s).length === 1),
+      'and no seat ended with two places or none');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

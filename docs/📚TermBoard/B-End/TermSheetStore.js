@@ -455,6 +455,28 @@
       });
       return out;
     },
+    // ============================================================
+    // # 📖 🔁  A PLACE IN THE BOOK MOVES WITH THE SHEET IT BELONGS TO
+    // # 🔤 JavaScript
+    // # 🎯 Rewrites the places one key points at, so a card moved to
+    // #    another seat takes its page in the book with it.
+    // # 🔗 A PLACE IS KEYED BY THE SEAT (`rules1:5`) and not by the card,
+    // #    and the build is what normally writes them. Reorder the cards
+    // #    of a part for teaching and every `source` button would open
+    // #    the page of the card that used to sit there - a wrong answer
+    // #    the reader has no way to doubt, because the button works.
+    // # 🔗 Shaped through the same `shapeSrcs` the file is read with, so
+    // #    a place written here cannot be a shape the file could not hold
+    // ============================================================
+    setSrcs: (key, places) => {
+      if (!open || typeof key !== 'string' || !/^[\w-]{1,24}:[\w.-]{1,24}$/.test(key)) return false;
+      const kept = shapeSrcs({ [key]: Array.isArray(places) ? places : [] })[key] || [];
+      if (kept.length) open.doc.srcs[key] = kept;
+      else delete open.doc.srcs[key];
+      dirty = true; later();
+      return true;
+    },
+
     nameGroup: (group, name) => {
       if (!open || !/^[\w-]{1,24}$/.test(String(group))) return false;
       open.doc.labels[group] = String(name || '').slice(0, 80);

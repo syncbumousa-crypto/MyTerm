@@ -1,0 +1,121 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · a part says how many and how long</title>
+<pre id="o">pending</pre>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermChapterStore.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ ⏱️  A PART THAT WAS JUST FILLED MUST SAY SO
+  // # 🔤 HTML + JavaScript
+  // # 🎯 A rules part's size is its filled CARDS, and they live in
+  // #    another file that is read only when one of them is opened. So
+  // #    `sizeRules` is told the count once and the part keeps it.
+  // # 🎯 What is measured: the count lands on the right part, a law page
+  // #    and an empty seat are NOT counted, the number is written to the
+  // #    file so a device that never opens the part still knows it, and
+  // #    WHATEVER IS DRAWING THE PARTS IS TOLD - because a part filled in
+  // #    this session had no size when the strip was drawn, and showed a
+  // #    dash for its count and nothing for its hours while the right
+  // #    numbers sat in the file.
+  // # 🔗 Reported on 2026-10-28, by the reader, of a part made minutes
+  // #    earlier: `make sure the number of questions is in the part so
+  // #    its time is reckoned`. Everything else looked right because
+  // #    every other part had been sized in an earlier session.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const C = window.MyTermChapterStore;
+    if (!C || typeof C.sizeRules !== 'function') { o.textContent = 'FAIL the chapter store did not load'; return; }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    const kept = new Map(), later = fn => setTimeout(fn, 0);
+    Object.defineProperty(window, 'indexedDB', { configurable: true, value: {
+      open: () => { const ask = {};
+        later(() => { ask.result = { transaction: () => { const deal = {};
+          deal.objectStore = () => ({
+            get: k => { const r = { result: kept.get(k) }; later(() => deal.oncomplete && deal.oncomplete()); return r; },
+            put: (v, k) => { kept.set(k, v); later(() => deal.oncomplete && deal.oncomplete()); return {}; } });
+          return deal; } };
+          if (ask.onsuccess) ask.onsuccess(); });
+        return ask; } } });
+
+    const stamp = '2026-10-28T00:00:00.000Z';
+    const part = (id, name, kind, group, each) => ({ id, name, kind, group: group || '',
+      per: kind === 'part' ? 'row' : 'ask', each: each || 0, units: 0,
+      deleted: false, updatedAt: stamp, rows: [] });
+    const sky = new Map();
+    sky.set('content-1', { app: 'MyTerm', version: 2, sections: [
+      part('terms', 'Terms', 'part'),
+      part('p-new', 'Income Rules', 'rules', 'rules10', 5),
+      part('p-old', 'Income Statement', 'rules', 'rules1', 20)
+    ] });
+    sky.set('state-1', { app: 'MyTerm', marks: {}, covers: {}, updatedAt: stamp });
+    window.MyTermCloud = {
+      readFile: async id => { const v = sky.get(id); return v ? JSON.parse(JSON.stringify(v)) : null; },
+      writeFile: async (id, body) => { sky.set(id, JSON.parse(JSON.stringify(body))); return true; },
+      createJson: async () => 'made', makeFolder: async () => 'folder-1', rename: async () => true,
+      fileAlive: async () => true, findChild: async () => null, now: () => new Date().toISOString()
+    };
+    const course = { id: 'c-1', name: 'FIN', folderId: 'folder-course', chapters: [] };
+    const chapter = { id: 'h-1', name: 'Ch3', folderId: 'folder-1', folderName: 'Ch3',
+                      contentId: 'content-1', stateId: 'state-1', contentVersion: 2 };
+    course.chapters.push(chapter);
+    say(Boolean(await C.open({ app: 'MyTerm', courses: [course] }, course, chapter)),
+      'the chapter opened on two rules parts, neither sized');
+
+    // whatever draws the parts, listening the way the course screen does
+    let redrawn = 0;
+    C.onFold(() => { redrawn++; });
+
+    const sizeOf = id => (C.sections().find(s => s.id === id) || {}).rows;
+    const minutes = id => { const p = C.sections().find(s => s.id === id);
+      return p && p.each ? p.rows * p.each : 0; };
+    say(sizeOf('p-new') === 0 && minutes('p-new') === 0,
+      'a part with no size reckons no time: ' + sizeOf('p-new') + ' cards, ' + minutes('p-new') + ' minutes');
+
+    // ---- 1  THE COUNT LANDS, AND ON THE RIGHT PART
+    say(C.sizeRules({ rules10: 18, rules1: 6 }) === true, 'the sizes are taken');
+    say(sizeOf('p-new') === 18 && sizeOf('p-old') === 6,
+      'each part got its own: ' + sizeOf('p-new') + ' and ' + sizeOf('p-old'));
+    say(minutes('p-new') === 90 && minutes('p-old') === 120,
+      'and the time follows the rule set on it: ' + minutes('p-new') + ' and ' + minutes('p-old') + ' minutes');
+
+    // ---- 2  AND WHATEVER DRAWS THE PARTS IS TOLD
+    // The whole defect was here: the numbers were right in the file and the
+    // strip went on showing a dash, because nothing redrew it
+    say(redrawn > 0, 'and the strip is told to draw again: ' + redrawn + ' time(s)');
+    const before = redrawn;
+    C.sizeRules({ rules10: 18, rules1: 6 });
+    say(redrawn === before, 'but not told when nothing changed, which would redraw the screen for ever');
+
+    // ---- 3  AND IT IS WRITTEN, so a device that never opens the part knows
+    await new Promise(r => setTimeout(r, 1400));
+    const saved = sky.get('content-1');
+    const savedNew = saved.sections.find(s => s.id === 'p-new');
+    say(Boolean(savedNew) && savedNew.units === 18,
+      'the file carries the size: ' + (savedNew ? savedNew.units : 'nothing written'));
+    say(savedNew.each === 5, 'and the rule it is reckoned by: ' + savedNew.each + ' minutes a card');
+
+    // ---- 4  A LAW PAGE IS NOT A CARD, AND NEITHER IS AN EMPTY SEAT
+    // `sizeRules` is handed the count, so what is measured here is that the
+    // count it is handed is the count it keeps - the sheet store counts
+    // `kind === 'card' && html`, and counting sheets once turned fourteen
+    // cards into thirty-three
+    C.sizeRules({ rules10: 15 });
+    say(sizeOf('p-new') === 15 && minutes('p-new') === 75,
+      'a smaller count replaces the larger: ' + sizeOf('p-new') + ' cards, ' + minutes('p-new') + ' minutes');
+    C.sizeRules({ rules10: 0 });
+    say(sizeOf('p-new') === 0, 'and a part emptied of cards says nothing is left');
+    C.sizeRules({ rules10: 18 });
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

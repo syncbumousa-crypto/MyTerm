@@ -50,7 +50,8 @@
     // ---- the ladder, written the way the page is written
     const AR = t => '<span class="fsAr">' + t + '</span>';
     const WD = (en, arabic) => '<span class="fsWd">' + en + AR(arabic) + '</span>';
-    const AN = (parts, when) => '<span class="an"' + (when ? ' data-when="' + when + '"' : '') + '><b>0</b>'
+    const AN = (parts, when, hue) => '<span class="an' + (hue ? ' ' + hue : '') + '"'
+      + (when ? ' data-when="' + when + '"' : '') + '><b>0</b>'
       + parts.map(p => Array.isArray(p) ? WD(p[0], p[1]) : ' ' + p + ' ').join('') + '</span>';
     const MS = '<span class="miss"></span>';
     const TR = (cells, cls, when) => '<tr' + (cls ? ' class="' + cls + '"' : '')
@@ -59,8 +60,8 @@
       + (sp ? ' rowspan="' + sp + '"' : '') + '>' + (x || '') + '</td>';
     const C2 = (x, m, i) => '<td class="c2' + (m ? ' ' + m : '') + (i ? ' in1' : '') + '">' + x + '</td>';
     const C3 = (x, m) => '<td class="c3' + (m ? ' ' + m : '') + '">' + (x || '') + '</td>';
-    const step = (x, tag, when) => TR(C1('0.', 'u') + C2(x, 'u') + C3(tag, 'u'), 'tot', when);
-    const item = (x, tag, when) => TR(C1('') + C2(x, '', 1) + C3(tag || MS), '', when);
+    const step = (x, tag, when, hue) => TR(C1('0.', 'u') + C2(x, 'u') + C3(tag, 'u'), 'tot' + (hue ? ' ' + hue : ''), when);
+    const item = (x, tag, when, hue) => TR(C1('') + C2(x, '', 1) + C3(tag || MS), hue || '', when);
 
     const company = '<tbody>'
       + TR(C1('0.', 'u') + C2('Total revenues' + AR('إجماليُّ الإيرادات'), 'u') + C3('', 'u'))
@@ -79,23 +80,25 @@
       + item('Less: taxes' + AR('الضريبة'), AN([['tax rate', 'معدّلُ الضريبة'], '×', ['pre-tax profit', 'الربحُ قبل الضريبة']]))
       + step('Net profit after taxes' + AR('صافي الربح بعد الضريبة'),
              AN([['pre-tax profit', 'الربحُ قبل الضريبة'], '−', ['taxes', 'الضريبة']]))
-      + item('Less: preferred stock dividends' + AR('توزيعاتُ الأسهم الممتازة'), null, 'pfd')
+      + item('Less: preferred stock dividends' + AR('توزيعاتُ الأسهم الممتازة'), null, 'pfd', 'fsHueA')
       + step('Earnings available for common stockholders' + AR('المتاحُ للمساهمين العاديين'),
-             AN([['net profit', 'صافي الربح'], '−', ['preferred dividends', 'توزيعاتُ الممتاز']]), 'pfd')
+             AN([['net profit', 'صافي الربح'], '−', ['preferred dividends', 'توزيعاتُ الممتاز']]), 'pfd', 'fsHueA')
       // ONE RUNG, TWO RULES: which numerator is right depends on another
-      // decision entirely, and exactly one of them may ever be showing
+      // decision entirely, and exactly one of them may ever be showing. The
+      // RUNG is always there, so it wears no hue - but the reading of it
+      // that the preferred decision brings does
       + step('Earnings per share (EPS)' + AR('ربحيّةُ السهم'),
-             AN([['earnings available', 'المتاحُ للعاديين'], '÷', ['shares outstanding', 'الأسهمُ القائمة']], 'pfd')
+             AN([['earnings available', 'المتاحُ للعاديين'], '÷', ['shares outstanding', 'الأسهمُ القائمة']], 'pfd', 'fsHueA')
              + AN([['net profit', 'صافي الربح'], '÷', ['shares outstanding', 'الأسهمُ القائمة']], '!pfd'))
-      + item('Less: common stock dividends' + AR('توزيعاتُ الأسهم العاديّة'), null, 'com')
+      + item('Less: common stock dividends' + AR('توزيعاتُ الأسهم العاديّة'), null, 'com', 'fsHueB')
       + step('Dividends per share (DPS)' + AR('نصيبُ السهم من التوزيعات'),
-             AN([['common stock dividends', 'توزيعاتُ العاديّ'], '÷', ['shares outstanding', 'الأسهمُ القائمة']]), 'com')
+             AN([['common stock dividends', 'توزيعاتُ العاديّ'], '÷', ['shares outstanding', 'الأسهمُ القائمة']]), 'com', 'fsHueB')
       + step('Addition to retained earnings' + AR('الإضافةُ إلى الأرباح المحتجزة'),
              AN([['net profit', 'صافي الربح'], '−', ['preferred dividends', 'توزيعاتُ الممتاز'],
                  '−', ['common stock dividends', 'توزيعاتُ العاديّ']], 'pfd,com')
              + AN([['net profit', 'صافي الربح'], '−', ['preferred dividends', 'توزيعاتُ الممتاز']], 'pfd,!com')
              + AN([['net profit', 'صافي الربح'], '−', ['common stock dividends', 'توزيعاتُ العاديّ']], '!pfd,com')
-             + AN([['all of the net profit', 'صافي الربح كلُّه']], '!pfd,!com'), 're')
+             + AN([['all of the net profit', 'صافي الربح كلُّه']], '!pfd,!com'), 're', 'fsHueC')
       + '</tbody>';
     const household = '<tbody>'
       + TR(C1('Income' + AR('الدخل'), 'u', 2) + C2('Salaries and wages' + AR('الرواتبُ والأجور'), 'u', 1) + C3(MS, 'u'))
@@ -107,8 +110,10 @@
       + '<span class="fsTitle">' + title + '</span></caption>'
       + '<thead><tr><th class="c1">#</th><th class="c2"></th><th class="c3"></th></tr></thead>'
       + body + '</table></div>';
-    // a choice says itself twice, like every line of the statement does
-    const opt = (pick, label, arabic, on) => '<span class="fsOpt" data-pick="' + pick + '"'
+    // a choice says itself twice, like every line of the statement does -
+    // and wears the colour of the lines it will bring
+    const opt = (pick, label, arabic, on, hue) => '<span class="fsOpt' + (hue ? ' ' + hue : '')
+      + '" data-pick="' + pick + '"'
       + (on ? ' data-on="1"' : '') + '>' + label + AR(arabic) + '</span>';
     const why = '<span class="fsWhyBtn">؟</span>'
       + '<div class="fsWhy"><div class="exp">A company measures <b>profit</b>; a household measures '
@@ -119,9 +124,9 @@
       +   opt('company', 'A company', 'شركة', true) + opt('household', 'A household', 'أسرة') + '</div>'
       + '<div class="fsAsk" data-ask="profit" data-when="company">'
       +   '<div class="fsQ">What has a share of the net profit after taxes?' + AR('ما الذي له نصيب؟') + '</div>'
-      +   opt('pfd', 'Paid to preferred stockholders', 'الأسهمُ الممتازة')
-      +   opt('com', 'Paid to common stockholders', 'الأسهمُ العاديّة')
-      +   opt('re', 'Kept in the company', 'الشركةُ نفسُها') + '</div>'
+      +   opt('pfd', 'The preferred stockholders', 'الأسهمُ الممتازة', false, 'fsHueA')
+      +   opt('com', 'The common stockholders', 'الأسهمُ العاديّة', false, 'fsHueB')
+      +   opt('re', 'The company itself', 'الشركةُ نفسُها', false, 'fsHueC') + '</div>'
       + frame('company', 'Company’s name', 'Income Statement', company)
       + frame('household', 'Household’s name', 'Income and Expense Statement', household)
       + '</div>';
@@ -302,7 +307,54 @@
     say(pr.width >= ar2.width - 24, 'and it takes the width of the question: ' + Math.round(pr.width));
     panel.hidden = true;
 
-    // ---- 12  AND THE STATEMENT IS DRAWN SMALL ENOUGH TO WATCH IT CHANGE
+    // ---- 12  A CHOICE AND ITS LINES WEAR ONE COLOUR
+    // Everything must be showing for this. Said as `make it so` and not as
+    // three presses: by here the earlier sections have left two of them on
+    // already, and three blind presses would turn those two back off
+    const hueOf = el => getComputedStyle(el).getPropertyValue('--hue').trim();
+    const ensure = (pick, want) => {
+      const p = sheet.querySelector('.fsOpt[data-pick="' + pick + '"]');
+      if (p.classList.contains('on') !== want) press(pick);
+    };
+    ['pfd', 'com', 're'].forEach(p => ensure(p, true));
+    const pillOf = pick => sheet.querySelector('.fsOpt[data-pick="' + pick + '"]');
+    const rowsFor = pick => [...table().querySelectorAll('tbody tr')]
+      .filter(r => !r.hidden && r.getAttribute('data-when') === pick);
+    const three = ['pfd', 'com', 're'];
+    say(three.every(p => hueOf(pillOf(p))), 'each of the three choices has a colour of its own: '
+      + three.map(p => hueOf(pillOf(p))).join(' / '));
+    say(new Set(three.map(p => hueOf(pillOf(p)))).size === 3, 'and no two of them are the same colour');
+    say(three.every(p => rowsFor(p).length > 0), 'each brings lines with it: '
+      + three.map(p => p + '=' + rowsFor(p).length).join(' '));
+    // THE TIE ITSELF: the pill and every row it shows read the SAME variable,
+    // not two hex codes that agree until one of them is edited
+    const tied = three.every(p => rowsFor(p).every(r => hueOf(r) === hueOf(pillOf(p))));
+    say(tied, 'and every line it brings reads the same colour as the button that brought it');
+    say(three.every(p => {
+      const bg = getComputedStyle(rowsFor(p)[0].querySelector('td')).backgroundColor;
+      return bg && !/rgba\(0, 0, 0, 0\)|transparent/.test(bg);
+    }), 'the lines are really laid on it: '
+      + three.map(p => getComputedStyle(rowsFor(p)[0].querySelector('td')).backgroundColor).join(' / '));
+    say(new Set(three.map(p => getComputedStyle(rowsFor(p)[0].querySelector('td')).backgroundColor)).size === 3,
+      'and three different grounds, one per decision');
+    // a chosen pill is painted its own colour, not the page's blue
+    const litPill = pillOf('pfd');
+    say(getComputedStyle(litPill).backgroundColor !== getComputedStyle(pillOf('company')).backgroundColor,
+      'a chosen choice is painted ITS colour, not the one the page lights tabs with');
+    // AND WHAT IS ALWAYS THERE WEARS NONE: a rung nobody decided on is not
+    // a decision, and colouring it would say it was
+    const always = [...table().querySelectorAll('tbody tr')]
+      .filter(r => !r.hidden && !r.getAttribute('data-when'));
+    say(always.length > 0 && always.every(r => !/fsHue/.test(r.className)),
+      'the ladder that always stands wears no hue at all: ' + always.length + ' rows');
+    // and the reading of EPS that the preferred decision brings is hued
+    // though its rung is not
+    const epsTag = eps().querySelector('.an:not([hidden])');
+    say(/fsHue/.test(epsTag.className) && hueOf(epsTag) === hueOf(pillOf('pfd')),
+      'but the reading of EPS that the preferred decision brings is its colour');
+    ['pfd', 'com', 're'].forEach(p => ensure(p, false));
+
+    // ---- 13  AND THE STATEMENT IS DRAWN SMALL ENOUGH TO WATCH IT CHANGE
     // Measured as a RATIO against the same markup at full size, because a
     // number in the stylesheet proves only that the number is written
     const frame2 = sheet.querySelector('.finStmtWrap:not([hidden])');
@@ -315,9 +367,12 @@
     // NOT a ratio of exactly two: at half size the frame has twice the room
     // in its own units, so long lines wrap less and it comes out shorter
     // still. What matters is that it is drawn at most half as tall
-    say(small > 0 && full > 0 && small <= full / 2,
-      'the statement is drawn at half size or less: ' + Math.round(small) + 'px against ' + Math.round(full)
-      + ' at full, a ratio of ' + (full / small).toFixed(2));
+    // The ratio is not exactly two in either direction: at half size the
+    // frame has twice the room in its own units, so lines wrap differently -
+    // measured between 1.9 and 2.9 depending on how long the ladder is
+    say(small > 0 && full > 0 && full / small >= 1.8,
+      'the statement is drawn at about half the height: ' + Math.round(small) + 'px against '
+      + Math.round(full) + ' at full, a ratio of ' + (full / small).toFixed(2));
     say(String(getComputedStyle(frame2).zoom) === '0.5',
       'and the one number that says so is `--fsSize`: zoom ' + getComputedStyle(frame2).zoom);
     // AND THE CHOICES ARE NOT SHRUNK WITH IT: they are what is read and

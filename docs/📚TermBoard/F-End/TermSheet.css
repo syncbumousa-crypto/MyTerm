@@ -335,6 +335,7 @@
 /* #    not a term to learn, and `Income Statement` stands over the */
 /* #    thing it names in the language the exam is written in. */
 /* ============================================================ */
+.msheet .fsFrame .fsHead,
 .msheet .fsFrame table.finStmt caption {
   background:#eef3fb; border:1px solid #dbe4f2; border-radius:8px;
   padding:8px 10px 9px; margin:0 0 7px;
@@ -462,6 +463,19 @@
 .msheet table.finStmt .an[class*="fsHue"] {border-color:var(--hue); color:var(--hue);}
 .msheet table.finStmt tr[class*="fsHue"] .an b,
 .msheet table.finStmt .an[class*="fsHue"] b {border-inline-end-color:var(--hue);}
+
+/* ============================================================ */
+/* # 🧾 ⚖️  ONE HEAD OVER TWO HALVES */
+/* # 🔤 CSS */
+/* # 🎯 A balance sheet is one statement drawn as two ladders that must */
+/* #    meet, and the head names whose it is once - not twice. */
+/* # 🔗 A `<caption>` belongs to a table, so a head over a PAIR of them */
+/* #    cannot be one. `fsHead` is the same head standing outside both, */
+/* #    and it is given the caption's own ground by being named in the */
+/* #    same rule - one look, not a second copy of it. */
+/* ============================================================ */
+.msheet .fsHead {text-align:center; white-space:normal;}
+.msheet .fsHead + .eqPair {margin-top:0;}
 .msheet table.finStmt .miss {
   display:inline-block; min-width:118px; height:1em;
   border-bottom:1.4px dashed #bda34a; background:#fffbe9;

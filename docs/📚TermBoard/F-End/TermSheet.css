@@ -475,6 +475,7 @@
 .msheet .fsHueA {--hue:#6b3fa0; --hueWash:#f3edfb;}
 .msheet .fsHueB {--hue:#0f7a6c; --hueWash:#e8f6f3;}
 .msheet .fsHueC {--hue:#9a6212; --hueWash:#fdf3e4;}
+.msheet .fsHueD {--hue:#1f6fb2; --hueWash:#e9f2fa;}
 .msheet .fsOpt[class*="fsHue"] {border-color:var(--hue); color:var(--hue);}
 .msheet .fsOpt[class*="fsHue"]:hover {box-shadow:0 0 0 2px var(--hueWash);}
 .msheet .fsOpt[class*="fsHue"].on {background:var(--hue); border-color:var(--hue); color:#fff;}

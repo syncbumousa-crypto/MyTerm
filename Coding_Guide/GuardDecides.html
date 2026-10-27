@@ -429,6 +429,24 @@
     const pillOf = pick => sheet.querySelector('.fsOpt[data-pick="' + pick + '"]');
     const rowsFor = pick => [...table().querySelectorAll('tbody tr')]
       .filter(r => !r.hidden && r.getAttribute('data-when') === pick);
+    // EVERY HUE THE GATE KEEPS HAS A COLOUR, AND NO TWO SHARE ONE. A name
+    // added to the list and not to the stylesheet is a choice whose lines
+    // come out the colour of the page - and the page would look deliberate
+    const named = (S.gate('<div class="fsHueA"></div><div class="fsHueB"></div>'
+      + '<div class="fsHueC"></div><div class="fsHueD"></div><div class="fsHueE"></div>')
+      .match(/fsHue[A-Z]/g) || []);
+    // INSIDE a sheet, not wearing the sheet's own class: the rules are
+    // written `.msheet .fsHueA`, a descendant, and the first probe put both
+    // names on one box and read nothing at all
+    const painted = named.map(cls => { const probe = document.createElement('div');
+      probe.innerHTML = '<div class="' + cls + '"></div>';
+      probe.className = 'msheet'; host.appendChild(probe);
+      const hue = getComputedStyle(probe.firstElementChild).getPropertyValue('--hue').trim();
+      probe.remove(); return cls + '=' + hue; });
+    say(painted.every(x => x.split('=')[1]), 'every hue the gate keeps has a colour: ' + painted.join(' '));
+    say(new Set(painted.map(x => x.split('=')[1])).size === painted.length,
+      'and no two of them are the same colour');
+
     const three = ['pfd', 'com', 're'];
     say(three.every(p => hueOf(pillOf(p))), 'each of the three choices has a colour of its own: '
       + three.map(p => hueOf(pillOf(p))).join(' / '));

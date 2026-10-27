@@ -225,6 +225,41 @@
 .msheet table.finStmt td.u {border-top:1px solid #6b7280;}
 .msheet table.finStmt td.d {border-top:1px solid #6b7280; border-bottom:3px double #6b7280;}
 .msheet table.finStmt tr.fsKey td {background:#eef4ff;}
+/* ============================================================ */
+/* # 🔢 🧾  THE STATEMENT AS A NUMBERED LADDER */
+/* # 🔤 CSS */
+/* # 🎯 The reader's own model, drawn on paper: a numbered step for */
+/* #    each subtotal, a blank where a figure must be filled in from */
+/* #    the question, a brace holding the operating expenses together, */
+/* #    and the formula in a boxed tag on the right carrying the same */
+/* #    number as the step it computes. */
+/* # 🔗 Asked on 2026-10-27 with a photograph of the model. The first */
+/* #    skeleton put the formula in the amount column, which reads as */
+/* #    an amount; a tag at the right edge reads as a rule. */
+/* # 🔗 Three columns, and the names were already in the gate: c1 for */
+/* #    the step or the brace, c2 for the line, c3 for the rule. */
+/* ============================================================ */
+.msheet table.finStmt td.c1 {text-align:right; white-space:nowrap; padding:2px 8px 2px 2px; font-weight:700; color:#1c4e9c; vertical-align:top;}
+.msheet table.finStmt td.c2 {text-align:left; white-space:normal; padding-right:18px;}
+.msheet table.finStmt td.c3 {text-align:left; white-space:nowrap; vertical-align:top;}
+/* The brace: a label held against a rule down its right side, spanning the
+   rows it gathers - which is exactly what a hand-drawn bracket does */
+.msheet table.finStmt td.c1.lbl {
+  font-weight:600; color:#44557a; font-size:.86em; text-align:right;
+  border-right:1.6px solid #9aa0ab; padding-right:7px; vertical-align:middle;
+}
+/* The rule, boxed, numbered to match its step */
+.msheet table.finStmt .an {
+  display:inline-block; border:1.3px solid #b3261e; color:#b3261e;
+  border-radius:5px; padding:0 7px; font-size:.86em; line-height:1.5;
+}
+.msheet table.finStmt .an b {margin-inline-end:6px; padding-inline-end:6px; border-inline-end:1px solid #e0b4b0;}
+/* A blank is a place to write, so it looks like one */
+.msheet table.finStmt .miss {
+  display:inline-block; min-width:118px; height:1em;
+  border-bottom:1.4px dashed #bda34a; background:#fffbe9;
+}
+
 
 /* ============================================================
    THE THREE PRESSES A SHEET CARRIES

@@ -83,7 +83,7 @@
     // variable, not a colour written twice: the pill and every row it
     // shows carry the same class, so the tie between them is the same
     // `--hue` read from both - and a guard can measure that it IS the same
-    'fsHueA', 'fsHueB', 'fsHueC',
+    'fsHueA', 'fsHueB', 'fsHueC', 'fsHueD',
     // A head over TWO halves. A balance sheet is one statement drawn as
     // two ladders that must meet, and a `<caption>` belongs to one table
     // only - so `fsHead` is the same head, standing outside them both

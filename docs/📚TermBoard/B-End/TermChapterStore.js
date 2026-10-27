@@ -1699,6 +1699,34 @@
       return section;
     },
 
+    // ============================================================
+    // # 🔀 📑  A PART CAN BE PUT WHERE IT IS READ, NOT WHERE IT WAS MADE
+    // # 🔤 JavaScript
+    // # 🎯 Moves one part before another in the strip.
+    // # 🔗 `addSection` can only push, so a part made today lands after
+    // #    everything - and the order of the parts IS the reading order.
+    // #    Splitting `Income Statement` into the laws and the statement
+    // #    put the laws last, after the bank, where the reader meets them
+    // #    only once he no longer needs them.
+    // # 🔗 THE STORED ORDER IS WHAT MOVES, and the fold adopts the file's
+    // #    order, so a part put in its place stays there when the chapter
+    // #    comes back from another machine. The bank is sorted last when
+    // #    the parts are LISTED and not here, so moving a part never
+    // #    fights that.
+    // ============================================================
+    moveSection: (id, beforeId) => {
+      if (!open) return false;
+      const all = open.content.sections;
+      const from = all.findIndex(s => s.id === id);
+      if (from < 0) return false;
+      const [one] = all.splice(from, 1);
+      const to = beforeId ? all.findIndex(s => s.id === beforeId) : all.length;
+      all.splice(to < 0 ? all.length : to, 0, one);
+      one.updatedAt = now();
+      wrote();
+      return true;
+    },
+
     renameSection: (id, name) => {
       if (!open) return false;
       const section = open.content.sections.find(s => s.id === id);

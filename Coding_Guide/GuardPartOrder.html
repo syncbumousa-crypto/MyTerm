@@ -1,0 +1,133 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · a part sits where it is read</title>
+<pre id="o">pending</pre>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermChapterStore.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ 📑  A PART MADE TODAY DOES NOT HAVE TO BE READ LAST
+  // # 🔤 HTML + JavaScript
+  // # 🎯 `addSection` can only push, and the order of the parts IS the
+  // #    reading order. Splitting `Income Statement` into the laws and
+  // #    the statement on 2026-10-28 put the laws after the bank, where
+  // #    the reader meets them only once he no longer needs them.
+  // # 🎯 What is measured: a part moves before another and the ones
+  // #    between it and its old place keep their own order; a part moved
+  // #    to the end goes to the end; a part that does not exist is
+  // #    refused; and the BANK is still listed last however the parts are
+  // #    stored, because that sort happens where they are listed and not
+  // #    where they are kept - the one thing a move must not fight.
+  // # 🔗 The store's own `sections()` is what reports the order, so the
+  // #    move and the reading of it are not one line of code twice.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const C = window.MyTermChapterStore;
+    if (!C || typeof C.moveSection !== 'function') {
+      o.textContent = 'FAIL the store cannot put a part where it is read, so a part made today is read last';
+      return;
+    }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    // IndexedDB is refused on file:// and the shelf would never settle
+    const kept = new Map(), later = fn => setTimeout(fn, 0);
+    Object.defineProperty(window, 'indexedDB', { configurable: true, value: {
+      open: () => { const ask = {};
+        later(() => { ask.result = { transaction: () => { const deal = {};
+          deal.objectStore = () => ({
+            get: k => { const r = { result: kept.get(k) }; later(() => deal.oncomplete && deal.oncomplete()); return r; },
+            put: (v, k) => { kept.set(k, v); later(() => deal.oncomplete && deal.oncomplete()); return {}; } });
+          return deal; } };
+          if (ask.onsuccess) ask.onsuccess(); });
+        return ask; } } });
+
+    const stamp = '2026-10-28T00:00:00.000Z';
+    const part = (id, name, kind, group) => ({ id, name, kind, group: group || '',
+      per: kind === 'part' ? 'row' : 'ask', each: 0, deleted: false, updatedAt: stamp, rows: [] });
+    const sky = new Map();
+    sky.set('content-1', { app: 'MyTerm', version: 2, sections: [
+      part('terms', 'Terms', 'part'),
+      part('p-q', 'Questions', 'part'),
+      part('p-inc', 'Income Statement', 'rules', 'rules1'),
+      part('p-bal', 'Balance Sheet', 'rules', 'rules8'),
+      part('p-tb', 'TB', 'tb')
+    ] });
+    sky.set('state-1', { app: 'MyTerm', marks: {}, covers: {}, updatedAt: stamp });
+    window.MyTermCloud = {
+      readFile: async id => { const v = sky.get(id); return v ? JSON.parse(JSON.stringify(v)) : null; },
+      writeFile: async (id, body) => { sky.set(id, JSON.parse(JSON.stringify(body))); return true; },
+      createJson: async () => 'made', makeFolder: async () => 'folder-1', rename: async () => true,
+      fileAlive: async () => true, findChild: async () => null, now: () => new Date().toISOString()
+    };
+    const course = { id: 'c-1', name: 'FIN', folderId: 'folder-course', chapters: [] };
+    const chapter = { id: 'h-1', name: 'Ch3', folderId: 'folder-1', folderName: 'Ch3',
+                      contentId: 'content-1', stateId: 'state-1', contentVersion: 2 };
+    course.chapters.push(chapter);
+    const got = await C.open({ app: 'MyTerm', courses: [course] }, course, chapter);
+    say(Boolean(got), 'the chapter opened on five parts');
+
+    const order = () => C.sections().map(s => s.id).join(' ');
+    const names = () => C.sections().map(s => s.name).join(' · ');
+    say(order() === 'terms p-q p-inc p-bal p-tb', 'in the order they were stored: ' + order());
+
+    // ---- 1  A PART MADE TODAY LANDS LAST, which is the whole problem
+    const made = C.addSection('Income Rules', 'rules', 'rules10');
+    say(Boolean(made) && made.group === 'rules10', 'a new rules part is made, with its own stack of sheets');
+    // after everything EXCEPT the bank, which is sorted last wherever it
+    // is stored - so `last` in the strip is `last but the bank` in the file
+    say(order() === 'terms p-q p-inc p-bal ' + made.id + ' p-tb',
+      'and it lands after every part but the bank: ' + order());
+    say(C.content().sections[C.content().sections.length - 1].id === made.id,
+      'and in the file it is simply last');
+
+    // ---- 2  AND IT CAN BE PUT WHERE IT IS READ
+    say(C.moveSection(made.id, 'p-inc') === true, 'it can be moved before the statement it was split from');
+    say(order() === 'terms p-q ' + made.id + ' p-inc p-bal p-tb',
+      'and that is where it sits: ' + names());
+    // the ones it stepped over keep their own order - a move is not a sort
+    say(C.sections().map(s => s.id).filter(x => x !== made.id).join(' ') === 'terms p-q p-inc p-bal p-tb',
+      'and nothing else changed place');
+
+    // ---- 3  TO THE END, AND BACK AGAIN
+    say(C.moveSection(made.id, null) === true, 'a part can be sent to the end');
+    say(C.sections().map(s => s.id).indexOf(made.id) === C.sections().length - 1
+        || C.sections()[C.sections().length - 1].kind === 'tb',
+      'and it goes there: ' + order());
+    C.moveSection(made.id, 'p-inc');
+    say(order() === 'terms p-q ' + made.id + ' p-inc p-bal p-tb', 'and back where it belongs');
+
+    // ---- 4  AND A PART THAT IS NOT THERE IS REFUSED
+    say(C.moveSection('p-nothing', 'p-inc') === false, 'a part that does not exist cannot be moved');
+    say(order() === 'terms p-q ' + made.id + ' p-inc p-bal p-tb', 'and the refusal moved nothing');
+    // a target that does not exist is not a reason to lose the part
+    say(C.moveSection(made.id, 'p-nothing') === true && C.sections().some(s => s.id === made.id),
+      'and a part sent before something that is not there is still in the strip');
+    C.moveSection(made.id, 'p-inc');
+
+    // ---- 5  THE BANK IS STILL LAST, which the move must not fight
+    // It is sorted where the parts are LISTED and not where they are kept,
+    // so a part moved after it is still read before it
+    C.moveSection('p-tb', 'terms');
+    say(C.sections()[C.sections().length - 1].id === 'p-tb',
+      'the bank is listed last however it is stored: ' + order());
+    const raw = C.content().sections.map(s => s.id).join(' ');
+    say(raw.indexOf('p-tb') < raw.indexOf('terms'), 'though it is stored first now: ' + raw);
+    C.moveSection('p-tb', null);
+
+    // ---- 6  AND THE MOVE IS WRITTEN, not only shown
+    await new Promise(r => setTimeout(r, 1400));
+    const saved = sky.get('content-1');
+    say(Boolean(saved) && saved.sections.map(s => s.id).join(' ') === 'terms p-q ' + made.id + ' p-inc p-bal p-tb',
+      'and the file carries the new order: ' + (saved ? saved.sections.map(s => s.name).join(' · ') : 'nothing written'));
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

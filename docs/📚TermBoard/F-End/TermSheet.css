@@ -303,7 +303,14 @@
      a scrolling bar under it, wrapping every label onto two lines. */
   width:100%; box-sizing:border-box;
 }
-.msheet .fsFrame .eqPair {width:100%;}
+/* A PAIR INSIDE A FRAME SPLITS THE FRAME, not two columns of 390px. */
+/* The unframed pair on Ch2 was composed against an 800px sheet and its */
+/* columns are that wide by hand; put inside a box that is told to take */
+/* the whole page, those fixed columns left half the box empty and the */
+/* right-hand table ran out past its own side. */
+.msheet .fsFrame .eqPair {width:100%; max-width:none; grid-template-columns:1fr 1fr;}
+.msheet .fsFrame .eqSide {align-items:stretch;}
+
 .msheet .finStmtWrap.fsFrame table.finStmt {width:100%; margin:0;}
 .msheet .finStmtWrap.fsFrame td.c2, .msheet .finStmtWrap.fsFrame th.c2 {width:100%;}
 .msheet table.finStmt .fsAr {

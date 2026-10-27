@@ -338,6 +338,21 @@
     const sideBoxes = [...pairFrame.querySelectorAll('.eqSide')].map(s => s.getBoundingClientRect());
     say(halves.every((t, i) => t.getBoundingClientRect().right <= sideBoxes[i].right + 1),
       'and neither half spills past its own side');
+    // AND THE TWO HALVES SPLIT THE BOX. The unframed pair on Ch2 was
+    // composed against an 800px sheet and its columns are that wide BY HAND;
+    // inside a box told to take the whole page those fixed columns left half
+    // of it empty, and the right-hand table ran out past its own side
+    // MEASURED IN ONE UNIT. `getBoundingClientRect` is in CSS pixels and
+    // `clientWidth` in the element's own - and under `zoom` those differ by
+    // half, so the first reading of this called a correct layout broken
+    const pairRect = pairFrame.querySelector('.eqPair').getBoundingClientRect();
+    const frameBox = pairFrame.getBoundingClientRect();
+    say(pairRect.width >= frameBox.width * 0.9,
+      'the pair fills the box: ' + Math.round(pairRect.width) + ' of ' + Math.round(frameBox.width));
+    say(sideBoxes[0].width + sideBoxes[1].width >= pairRect.width - 2,
+      'and the halves divide it between them: ' + Math.round(sideBoxes[0].width) + ' + '
+      + Math.round(sideBoxes[1].width) + ' of ' + Math.round(pairRect.width));
+    say(Math.abs(sideBoxes[0].width - sideBoxes[1].width) <= 1, 'and they divide it equally');
 
     press('company');
     say(shown() === 'company' && rungs().join(' ') === seq(8).join(' '),

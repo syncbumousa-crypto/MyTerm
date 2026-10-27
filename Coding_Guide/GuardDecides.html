@@ -347,12 +347,20 @@
     // half, so the first reading of this called a correct layout broken
     const pairRect = pairFrame.querySelector('.eqPair').getBoundingClientRect();
     const frameBox = pairFrame.getBoundingClientRect();
-    say(pairRect.width >= frameBox.width * 0.9,
-      'the pair fills the box: ' + Math.round(pairRect.width) + ' of ' + Math.round(frameBox.width));
-    say(sideBoxes[0].width + sideBoxes[1].width >= pairRect.width - 2,
-      'and the halves divide it between them: ' + Math.round(sideBoxes[0].width) + ' + '
-      + Math.round(sideBoxes[1].width) + ' of ' + Math.round(pairRect.width));
-    say(Math.abs(sideBoxes[0].width - sideBoxes[1].width) <= 1, 'and they divide it equally');
+    // SHOULDER TO SHOULDER. The halves are NOT each given half the box and
+    // centred in it - that put all their spare room in the middle of the
+    // page, a gutter wider than a thumb between a statement and the one it
+    // must balance against. They are sized to their contents and the pair is
+    // centred, so the spare room goes to the outer edges
+    say(sideBoxes[1].left - sideBoxes[0].right <= 2,
+      'the two halves stand shoulder to shoulder: ' + Math.round(sideBoxes[1].left - sideBoxes[0].right) + 'px between them');
+    const leftAir = Math.round(sideBoxes[0].left - frameBox.left);
+    const rightAir = Math.round(frameBox.right - sideBoxes[1].right);
+    say(Math.abs(leftAir - rightAir) <= 3,
+      'and the spare room is shared by the two edges, not kept in the middle: '
+      + leftAir + 'px / ' + rightAir + 'px');
+    say(pairRect.width <= frameBox.width + 1,
+      'the pair sits inside the box: ' + Math.round(pairRect.width) + ' of ' + Math.round(frameBox.width));
 
     press('company');
     say(shown() === 'company' && rungs().join(' ') === seq(8).join(' '),

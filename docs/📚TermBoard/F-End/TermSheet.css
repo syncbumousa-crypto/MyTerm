@@ -308,7 +308,16 @@
 /* the whole page, those fixed columns left half the box empty and the */
 /* right-hand table ran out past its own side. */
 .msheet .finStmtWrap.fsFrame:has(.eqPair) {width:100%; box-sizing:border-box;}
-.msheet .fsFrame .eqPair {width:100%; max-width:none; grid-template-columns:1fr 1fr;}
+/* SHOULDER TO SHOULDER AT THE LINE BETWEEN THEM. Two halves each given */
+/* an equal fraction and centred in it put all their spare room in the */
+/* MIDDLE of the page - a gutter wider than a thumb between a statement */
+/* and the one it must balance against. Sized to their contents and */
+/* centred as a pair, the spare room goes to the outer edges, where it */
+/* reads as the margin of a page instead of a hole in one. */
+.msheet .fsFrame .eqPair {
+  width:100%; max-width:none; justify-content:center;
+  grid-template-columns:minmax(0, max-content) minmax(0, max-content);
+}
 .msheet .fsFrame .eqSide {align-items:center;}
 
 .msheet .finStmtWrap.fsFrame table.finStmt {margin:0 auto;}

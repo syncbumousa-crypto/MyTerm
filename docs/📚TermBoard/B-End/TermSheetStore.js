@@ -79,6 +79,11 @@
     // corner and `fsWhy` the panel it opens, which is closed at every
     // draw - the page may not arrive with it already open
     'fsWhy', 'fsWhyBtn',
+    // A CHOICE AND THE LINES IT BRINGS, IN ONE COLOUR. Each hue is a
+    // variable, not a colour written twice: the pill and every row it
+    // shows carry the same class, so the tie between them is the same
+    // `--hue` read from both - and a guard can measure that it IS the same
+    'fsHueA', 'fsHueB', 'fsHueC',
     // a law in its box
     'lawBox', 'lawDerived', 'lawNo', 'lawEq', 'lawNote', 'lawIco',
     'frac', 'fnum', 'fden', 'lhs', 'lhsRow',

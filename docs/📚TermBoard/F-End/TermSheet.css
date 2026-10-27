@@ -434,6 +434,34 @@
 .msheet .fsWhy .exp {margin:0 0 4px;}
 .msheet .fsWhy .exp:last-child {margin-bottom:0;}
 .msheet .fsWhy b {color:#1c4e9c;}
+
+/* ============================================================ */
+/* # 🎨 🤔  A CHOICE AND ITS LINES WEAR ONE COLOUR */
+/* # 🔤 CSS */
+/* # 🎯 Asked on 2026-10-28: press `the preferred stockholders` and the */
+/* #    rows it adds are the colour of the button that added them, so */
+/* #    the reader can tell at a glance which decision put which line */
+/* #    on the statement. Three decisions, three hues. */
+/* # 🔗 ONE VARIABLE AND NOT A COLOUR WRITTEN TWICE. `--hue` is set by */
+/* #    the class, and the pill and the row both read it - so the tie */
+/* #    between a button and its lines is a thing that can be MEASURED */
+/* #    equal, not two hex codes that agree until one of them is edited. */
+/* # 🔗 The always-standing ladder keeps the page's own blue: the three */
+/* #    hues are additions to it, and what is always there is not a */
+/* #    decision anybody made. */
+/* ============================================================ */
+.msheet .fsHueA {--hue:#6b3fa0; --hueWash:#f3edfb;}
+.msheet .fsHueB {--hue:#0f7a6c; --hueWash:#e8f6f3;}
+.msheet .fsHueC {--hue:#9a6212; --hueWash:#fdf3e4;}
+.msheet .fsOpt[class*="fsHue"] {border-color:var(--hue); color:var(--hue);}
+.msheet .fsOpt[class*="fsHue"]:hover {box-shadow:0 0 0 2px var(--hueWash);}
+.msheet .fsOpt[class*="fsHue"].on {background:var(--hue); border-color:var(--hue); color:#fff;}
+.msheet table.finStmt tr[class*="fsHue"] td {background:var(--hueWash);}
+.msheet table.finStmt tr[class*="fsHue"] td.c1 {color:var(--hue);}
+.msheet table.finStmt tr[class*="fsHue"] .an,
+.msheet table.finStmt .an[class*="fsHue"] {border-color:var(--hue); color:var(--hue);}
+.msheet table.finStmt tr[class*="fsHue"] .an b,
+.msheet table.finStmt .an[class*="fsHue"] b {border-inline-end-color:var(--hue);}
 .msheet table.finStmt .miss {
   display:inline-block; min-width:118px; height:1em;
   border-bottom:1.4px dashed #bda34a; background:#fffbe9;

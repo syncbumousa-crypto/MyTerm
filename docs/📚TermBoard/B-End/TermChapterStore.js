@@ -1616,7 +1616,17 @@
         s.units = n;
         moved = true;
       });
-      if (moved) wrote();
+      if (moved) {
+        wrote();
+        // AND WHATEVER IS DRAWING THE PARTS IS TOLD. The sheets are read
+        // only when one of them is opened, so a part whose cards were
+        // written in this session had no size when the strip was drawn —
+        // and the strip showed a dash for its count and nothing for its
+        // hours while the right numbers sat in the file. Everything else
+        // looked correct, because every OTHER part had been sized in some
+        // earlier session
+        toldFold();
+      }
       return moved;
     },
 

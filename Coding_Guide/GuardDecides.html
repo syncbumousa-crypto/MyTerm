@@ -100,6 +100,19 @@
              + AN([['net profit', 'صافي الربح'], '−', ['common stock dividends', 'توزيعاتُ العاديّ']], '!pfd,com')
              + AN([['all of the net profit', 'صافي الربح كلُّه']], '!pfd,!com'), 're', 'fsHueC')
       + '</tbody>';
+    // THE BOOK'S OWN FILLED EXAMPLE, on the same page as the skeleton it is
+    // drawn on: labels and amounts, no numbered step and no rule. It is on
+    // this fixture because `settle` walks every statement on the page, and
+    // the first version took this one's double rule off and, finding no
+    // numbered row to give it back to, left it with none
+    const example = '<div class="finStmtWrap fsFrame" data-when="household">'
+      + '<table class="finStmt"><caption><span class="fsCo">Jan and Jon Smith</span>'
+      + '<span class="fsTitle">Income and Expense Statement</span></caption><tbody>'
+      + '<tr><td class="acct">Income</td><td class="n"></td></tr>'
+      + '<tr><td class="acct in1">Salaries</td><td class="n">$91,500</td></tr>'
+      + '<tr class="tot"><td class="acct">(1) Total income</td><td class="n u">$91,815</td></tr>'
+      + '<tr class="tot"><td class="acct">(3) Cash surplus (or deficit)</td><td class="n d">$3,675</td></tr>'
+      + '</tbody></table></div>';
     const household = '<tbody>'
       + TR(C1('Income' + AR('الدخل'), 'u', 2) + C2('Salaries and wages' + AR('الرواتبُ والأجور'), 'u', 1) + C3(MS, 'u'))
       + TR(C2('Other income' + AR('دخلٌ آخر'), '', 1) + C3(MS))
@@ -129,6 +142,7 @@
       +   opt('re', 'The company itself', 'الشركةُ نفسُها', false, 'fsHueC') + '</div>'
       + frame('company', 'Company’s name', 'Income Statement', company)
       + frame('household', 'Household’s name', 'Income and Expense Statement', household)
+      + example
       + '</div>';
 
     // ---- 1  THE GATE KEEPS THE QUESTION, ITS CHOICES AND THEIR WIRING
@@ -162,9 +176,13 @@
     // ---- 3  THE OPENING POSITION, from the author and not from the store
     P.decide(sheet);
     const lit = () => [...sheet.querySelectorAll('.fsOpt.on')].map(x => x.getAttribute('data-pick')).sort().join(',');
-    const shown = () => [...sheet.querySelectorAll('.finStmtWrap')].filter(f => !f.hidden)
-      .map(f => f.getAttribute('data-when')).join(',');
-    const table = () => sheet.querySelector('.finStmtWrap:not([hidden]) table.finStmt');
+    // DISTINCT, because a view may hold more than one statement: the
+    // household's skeleton and the book's filled example stand together
+    const shown = () => [...new Set([...sheet.querySelectorAll('.finStmtWrap')].filter(f => !f.hidden)
+      .map(f => f.getAttribute('data-when')))].join(',');
+    // the LADDER, which is the one with numbered steps - not the example
+    const table = () => [...sheet.querySelectorAll('.finStmtWrap:not([hidden]) table.finStmt')]
+      .find(t => t.querySelector('td.c1'));
     const rungs = () => [...table().querySelectorAll('tbody tr')].filter(r => !r.hidden)
       .map(r => { const c = r.querySelector('td.c1:not(.lbl)'); return c ? c.textContent.trim() : ''; })
       .filter(Boolean);
@@ -253,6 +271,16 @@
     say(rungs().join(' ') === seq(1).join(' '), 'and its own rungs are numbered from one: ' + rungs().join(' '));
     say(table().querySelector('td.c1.lbl') && table().querySelector('td.c1.lbl').getAttribute('rowspan') === '2',
       'its brace still spans the lines it gathers');
+    // AND THE BOOK'S FILLED EXAMPLE, which is on the page too, is not a
+    // ladder and must be left exactly as it was written
+    const filled = [...sheet.querySelectorAll('.finStmtWrap')]
+      .find(f => !f.hidden && f.querySelector('td.acct'));
+    say(Boolean(filled), 'the book’s own filled example stands beside the skeleton');
+    const ruled = filled.querySelector('td.d');
+    say(Boolean(ruled) && /3,675/.test(ruled.textContent),
+      'and keeps the bottom line it was written with: ' + (ruled ? ruled.textContent : '(stripped)'));
+    say(getComputedStyle(ruled).borderBottomStyle === 'double', 'ruled twice, as a bottom line is');
+    say(!filled.querySelector('td.c1'), 'it carries no numbered step, which is why it is left alone');
     press('company');
     say(shown() === 'company' && rungs().join(' ') === seq(8).join(' '),
       'and going back finds the company’s ladder as it was left: ' + rungs().join(' '));

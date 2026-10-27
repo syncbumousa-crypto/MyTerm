@@ -447,6 +447,13 @@
         const cell = row.querySelector('td.c1:not(.lbl)');
         return Boolean(cell) && cell.textContent.trim() !== '';
       });
+      // A STATEMENT THAT IS NOT A LADDER IS LEFT ALONE. The book's own
+      // filled example sits on the same page as the skeleton, and it has
+      // labels and amounts, no numbered steps and no rules - so there is
+      // nothing here to renumber, and the bottom line it was written with
+      // is its own. The first version stripped it and gave it back to
+      // nothing, and the example lost its double rule in silence
+      if (!steps.length) return;
       steps.forEach((row, i) => {
         row.querySelector('td.c1:not(.lbl)').textContent = (i + 1) + '.';
       });

@@ -455,6 +455,30 @@
       'but the reading of EPS that the preferred decision brings is its colour');
     ['pfd', 'com', 're'].forEach(p => ensure(p, false));
 
+    // ---- 12b  AND NO HOLE OPENS IN THE MIDDLE OF A LINE
+    // A box told to take the page and a table told to fill the box stretch
+    // the LINE column across the paper, and a line ends up a hand's breadth
+    // from its own amount. Measured as the air between the longest line and
+    // the column that follows it, against the width of the table itself
+    const textEnd = td => { const r = document.createRange(); r.setStart(td, 0); r.setEnd(td, 1);
+      return r.getBoundingClientRect().right; };
+    const holeIn = t => {
+      const lines = [...t.querySelectorAll('tbody td.c2')].filter(td => td.firstChild && !td.hidden);
+      const after = t.querySelector('tbody td.c3, tbody td.n');
+      if (!lines.length || !after) return 0;
+      return after.getBoundingClientRect().left - Math.max(...lines.map(textEnd));
+    };
+    const oneLadder = sheet.querySelector('.finStmtWrap.fsFrame:not([hidden]) table.finStmt');
+    const air = holeIn(oneLadder), tw = oneLadder.getBoundingClientRect().width;
+    say(air <= tw * 0.15, 'a line sits beside its own amount, with no hole between them: '
+      + Math.round(air) + 'px of air across a ' + Math.round(tw) + 'px statement');
+    // ITS OWN BOX, and both read as rects: `clientWidth` on an element that
+    // is hidden at this point in the walk answers zero, and zero fails
+    // everything
+    const ownBox = oneLadder.closest('.fsFrame').getBoundingClientRect().width;
+    say(oneLadder.getBoundingClientRect().width <= ownBox + 1,
+      'and the ladder is its own width inside its box: ' + Math.round(tw) + ' in ' + Math.round(ownBox));
+
     // ---- 13  AND THE STATEMENT IS DRAWN SMALL ENOUGH TO WATCH IT CHANGE
     // Measured as a RATIO against the same markup at full size, because a
     // number in the stylesheet proves only that the number is written

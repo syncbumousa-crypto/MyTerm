@@ -53,6 +53,12 @@
     // class the gate does not know is DROPPED, so a layout that reads
     // correctly on the way in arrives as one column with no line
     'eqPair', 'eqSide', 'eqSideHead',
+    // One statement has more than one shape - a firm with preferred stock
+    // stops at `earnings available for common`, one without it stops at net
+    // profit, and a household has neither. So a page may carry several and
+    // offer them: `fsPick` is the strip, `fsTab` one choice, `fsShape` the
+    // statement it shows. Which one is showing is runtime state, not stored
+    'fsPick', 'fsTab', 'fsShape',
     // a law in its box
     'lawBox', 'lawDerived', 'lawNo', 'lawEq', 'lawNote', 'lawIco',
     'frac', 'fnum', 'fden', 'lhs', 'lhsRow',

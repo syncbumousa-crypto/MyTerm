@@ -422,6 +422,17 @@
       if (drawing) spot.innerHTML = drawing;
     });
 
+    // ONE SHAPE SHOWING, AND THE FIRST CHOICE LIT. Neither the `on` class
+    // nor `hidden` survives the gate, which is deliberate: a stored page
+    // cannot arrive half-open, and the paper decides what is showing
+    const shapes = [...box.querySelectorAll('.fsShape')];
+    if (shapes.length) {
+      const tabs = [...box.querySelectorAll('.fsTab')];
+      const first = (tabs[0] && tabs[0].getAttribute('data-kind')) || shapes[0].getAttribute('data-kind');
+      tabs.forEach(t => t.classList.toggle('on', t.getAttribute('data-kind') === first));
+      shapes.forEach(s => { s.hidden = s.getAttribute('data-kind') !== first; });
+    }
+
     // the book's wording to begin with, as their own pages open
     box.querySelectorAll('.qcard').forEach(card => {
       if (!card.getAttribute('data-ans')) card.setAttribute('data-ans', 'hidden');
@@ -517,6 +528,18 @@
   // #    and every redraw would have to take them all off again
   // ============================================================
   const pressed = e => {
+    // THE SHAPE STRIP SITS ON A LAW PAGE, NOT IN A CARD, so it is answered
+    // before the card is looked for - otherwise the one listener would
+    // walk past it
+    const tab = e.target.closest('.fsTab');
+    if (tab && where.contains(tab)) {
+      const page = tab.closest('.msheet') || tab.parentElement;
+      const kind = tab.getAttribute('data-kind');
+      page.querySelectorAll('.fsTab').forEach(t => t.classList.toggle('on', t === tab));
+      page.querySelectorAll('.fsShape').forEach(s => { s.hidden = s.getAttribute('data-kind') !== kind; });
+      refit();
+      return;
+    }
     const card = e.target.closest('.qcard');
     if (!card || !where.contains(card)) return;
     if (e.target.closest('.ansToggle')) {

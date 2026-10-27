@@ -210,7 +210,7 @@
   font-size:calc(11.5px * var(--fs)); font-variant-numeric:tabular-nums;
   min-width:min(420px, 100%);
 }
-.msheet table.finStmt caption {caption-side:top; text-align:left; padding:0 0 5px; white-space:normal;}
+.msheet table.finStmt caption {caption-side:top; text-align:center; padding:0 0 5px; white-space:normal;}
 .msheet .fsCo    {display:block; font-weight:700; color:#1c4e9c;}
 .msheet .fsTitle {display:block; font-weight:600;}
 .msheet .fsWhen  {display:block; font-size:.85em; color:#5a6472;}
@@ -255,6 +255,25 @@
 }
 .msheet table.finStmt .an b {margin-inline-end:6px; padding-inline-end:6px; border-inline-end:1px solid #e0b4b0;}
 /* A blank is a place to write, so it looks like one */
+
+/* ============================================================ */
+/* # 🔀 🧾  ONE STATEMENT, SEVERAL SHAPES */
+/* # 🔤 CSS */
+/* # 🎯 A strip of choices over the statement: with preferred stock, */
+/* #    without it, or a household's. The reader noticed that E3-1's */
+/* #    answer has no preferred or common stock line at all, only a */
+/* #    dividend - so the shape is not one shape. */
+/* # 🔗 Which one is showing is runtime state: the gate keeps no `on` */
+/* #    class and no `hidden` attribute, so the paper sets both when */
+/* #    it draws. A stored page therefore cannot arrive half-open. */
+/* ============================================================ */
+.msheet .fsPick {display:flex; flex-wrap:wrap; justify-content:center; gap:5px; margin:0 0 8px;}
+.msheet .fsTab {
+  cursor:pointer; user-select:none; border:1px solid #c3d0e4; border-radius:999px;
+  padding:2px 11px; font-size:calc(10.5px * var(--fs)); color:#44557a; background:#f7f9fc;
+}
+.msheet .fsTab:hover {border-color:#9db4d6;}
+.msheet .fsTab.on {background:#1c4e9c; border-color:#1c4e9c; color:#fff; font-weight:700;}
 .msheet table.finStmt .miss {
   display:inline-block; min-width:118px; height:1em;
   border-bottom:1.4px dashed #bda34a; background:#fffbe9;

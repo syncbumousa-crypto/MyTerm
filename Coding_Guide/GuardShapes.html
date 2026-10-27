@@ -1,0 +1,95 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>#host { width: 820px; }</style>
+<title>Guard · one statement, several shapes</title>
+<pre id="o">pending</pre>
+<div id="host"></div>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermSheetStore.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ 🔀  ONE SHAPE SHOWING, AND THE STRIP CHANGES IT
+  // # 🔤 HTML + JavaScript
+  // # 🎯 A statement has more than one shape - with preferred stock,
+  // #    without it, a household's - so a page carries several and
+  // #    offers them. What is measured: the gate keeps the three names,
+  // #    the stored page carries NO state about which is open, and the
+  // #    strip shows exactly one at a time.
+  // # 🔗 Asked on 2026-10-27: the reader noticed E3-1's answer has no
+  // #    preferred or common stock line at all, only a dividend.
+  // # 🔗 The `on` class and `hidden` are deliberately NOT whitelisted:
+  // #    a stored page must not be able to arrive half-open, so the
+  // #    paper decides. This guard checks that absence on purpose.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o'), host = document.getElementById('host');
+    const S = window.MyTermSheetStore;
+    if (!S || typeof S.gate !== 'function') { o.textContent = 'FAIL the sheet store did not load'; return; }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    const shape = (kind, label) => '<div class="fsShape" data-kind="' + kind + '">'
+      + '<div class="finStmtWrap"><table class="finStmt"><caption><span class="fsCo">Company’s name</span>'
+      + '<span class="fsTitle">Income Statement</span><span class="fsWhen">for the year ended</span></caption>'
+      + '<tbody><tr><td class="c1">1.</td><td class="c2">' + label + '</td><td class="c3"></td></tr></tbody></table></div></div>';
+    const page = '<div class="eqPage">'
+      + '<div class="fsPick">'
+      +   '<span class="fsTab" data-kind="full">With preferred stock</span>'
+      +   '<span class="fsTab" data-kind="plain">No preferred stock</span>'
+      +   '<span class="fsTab" data-kind="home">A household</span>'
+      + '</div>'
+      + shape('full', 'Total revenues') + shape('plain', 'Total revenues') + shape('home', 'Income')
+      + '</div>';
+
+    // ---- 1  THE GATE KEEPS THE STRIP
+    const gated = S.gate(page);
+    const held = document.createElement('div'); held.innerHTML = gated;
+    say(Boolean(held.querySelector('.fsPick')), 'the gate kept the strip');
+    say(held.querySelectorAll('.fsTab').length === 3, 'and all three choices: ' + held.querySelectorAll('.fsTab').length);
+    say(held.querySelectorAll('.fsShape').length === 3, 'and all three shapes');
+    say([...held.querySelectorAll('.fsTab')].every(t => t.getAttribute('data-kind')),
+      'each choice still names the shape it opens');
+    say(held.querySelectorAll('table.finStmt').length === 3, 'and each shape kept its statement');
+
+    // ---- 2  AND IT KEEPS NO STATE. A page that could arrive half-open would
+    // mean two places deciding what is showing, and they would disagree
+    const dirty = S.gate('<div class="fsPick"><span class="fsTab on" data-kind="a">x</span></div>'
+      + '<div class="fsShape" data-kind="b" hidden>y</div>');
+    say(!/\bon\b/.test((dirty.match(/class="[^"]*"/g) || []).join(' ')),
+      'a stored `on` is dropped, so only the paper lights a choice');
+    say(!/hidden/.test(dirty), 'and a stored `hidden` is dropped, so only the paper closes a shape');
+
+    // ---- 3  THE CENTRED HEADING, measured against the table it sits on
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
+    host.innerHTML = '<div class="msheet msheet-law">' + gated + '</div>';
+    void host.offsetHeight;
+    await new Promise(r => setTimeout(r, 50));
+    void host.offsetHeight;
+
+    const cap = host.querySelector('table.finStmt caption');
+    say(getComputedStyle(cap).textAlign === 'center', 'the heading is centred: ' + getComputedStyle(cap).textAlign);
+    const co = cap.querySelector('.fsCo');
+    const capBox = cap.getBoundingClientRect();
+    const r = document.createRange(); r.selectNodeContents(co);
+    const text = r.getBoundingClientRect();
+    const leftGap = Math.round(text.left - capBox.left), rightGap = Math.round(capBox.right - text.right);
+    say(Math.abs(leftGap - rightGap) <= 2,
+      'and the company name sits in the middle of it: ' + leftGap + 'px / ' + rightGap + 'px');
+    say(/Company/.test(co.textContent), 'and it is the company’s name that stands there: ' + co.textContent);
+
+    // ---- 4  THE STRIP IS ABOVE THE STATEMENT, AND CENTRED
+    const pick = host.querySelector('.fsPick'), firstTable = host.querySelector('table.finStmt');
+    say(pick.getBoundingClientRect().bottom <= firstTable.getBoundingClientRect().top + 1,
+      'the choices sit above the statement');
+    say(getComputedStyle(pick).justifyContent === 'center', 'and the strip is centred');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e;
+  });
+</script>

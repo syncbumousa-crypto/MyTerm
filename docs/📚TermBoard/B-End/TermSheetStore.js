@@ -59,6 +59,11 @@
     // offer them: `fsPick` is the strip, `fsTab` one choice, `fsShape` the
     // statement it shows. Which one is showing is runtime state, not stored
     'fsPick', 'fsTab', 'fsShape',
+    // THE SAME LADDER IN TWO LANGUAGES, LINE BY LINE: the English line
+    // and its Arabic translation directly under it in smaller type.
+    // `fsAr` is that second line, and `fsFrame` the box that makes a
+    // statement read as a table instead of as lines thrown on a page
+    'fsAr', 'fsFrame',
     // a law in its box
     'lawBox', 'lawDerived', 'lawNo', 'lawEq', 'lawNote', 'lawIco',
     'frac', 'fnum', 'fden', 'lhs', 'lhsRow',

@@ -380,6 +380,60 @@
 .msheet .fsOpt:hover {border-color:#9db4d6;}
 .msheet .fsOpt.on {background:#1c4e9c; border-color:#1c4e9c; color:#fff; font-weight:700;}
 .msheet .fsOpt.on::before {content:"\2713\00a0";}
+
+/* ============================================================ */
+/* # 🔍 🤔  THE WHOLE STATEMENT IN VIEW WHILE THE DECISION IS MADE */
+/* # 🔤 CSS */
+/* # 🎯 The statement is drawn at HALF size. Asked on 2026-10-27 and */
+/* #    for a reason that is the point of the whole feature: a reader */
+/* #    pressing a choice must see the ladder change in front of him, */
+/* #    and a ladder taller than the window changes out of sight. */
+/* # 🔗 `zoom` and not `transform`: a transform leaves the full-size */
+/* #    box behind it, so the page would keep a column of dead space */
+/* #    where the statement used to be. `zoom` takes the layout with it. */
+/* # 🔗 ONE NUMBER, `--fsSize`, and the questions above are NOT in it: */
+/* #    the choices stay full size, because they are what is being read */
+/* #    and pressed while the statement moves. */
+/* ============================================================ */
+.msheet .finStmtWrap.fsFrame {zoom: var(--fsSize, .5);}
+
+/* ============================================================ */
+/* # 🪧 🤔  A CHOICE SAYS ITSELF TWICE, AND A QUESTION CAN BE ASKED */
+/* # 🔤 CSS */
+/* # 🎯 `household` is not a word a reader of the Arabic summary knows, */
+/* #    so a choice carries its own word under it like every line of */
+/* #    the statement does. And the first question - a company or a */
+/* #    household - earns an explanation: a box in its corner opens a */
+/* #    panel saying why the two statements are not the same statement. */
+/* # 🔗 The panel is POP-IN and not a window: it takes its place in the */
+/* #    page under the choices, because a window over the statement */
+/* #    would hide the very thing the question is about. */
+/* ============================================================ */
+.msheet .fsAsk {position:relative;}
+/* OUTSIDE A TABLE `fsAr` HAS NO STYLE AT ALL: the rule that gives it a */
+/* line of its own is scoped to `table.finStmt`, so the first gloss put */
+/* on a pill ran on inline beside the English and read as part of it */
+.msheet .fsOpt .fsAr, .msheet .fsQ .fsAr {
+  display:block; margin-top:1px; font-size:.84em; line-height:1.35; font-weight:400;
+  direction:rtl; unicode-bidi:isolate; text-align:center; color:inherit; opacity:.9;
+}
+.msheet .fsWhyBtn {
+  position:absolute; top:5px; inset-inline-end:6px; cursor:pointer; user-select:none;
+  width:17px; height:17px; line-height:15px; text-align:center; border-radius:5px;
+  border:1px solid #c3d0e4; background:#fff; color:#44557a; font-weight:700;
+  font-size:calc(10px * var(--fs));
+}
+.msheet .fsWhyBtn:hover {border-color:#9db4d6;}
+.msheet .fsWhyBtn.on {background:#1c4e9c; border-color:#1c4e9c; color:#fff;}
+.msheet .fsWhy {
+  width:100%; order:9; margin:7px 0 0; padding:8px 11px 9px; text-align:start;
+  border:1px solid #dbe4f2; border-radius:8px; background:#fff;
+  font-size:calc(10px * var(--fs)); line-height:1.65; color:#2a3444;
+}
+.msheet .fsWhy[hidden] {display:none;}
+.msheet .fsWhy .exp {margin:0 0 4px;}
+.msheet .fsWhy .exp:last-child {margin-bottom:0;}
+.msheet .fsWhy b {color:#1c4e9c;}
 .msheet table.finStmt .miss {
   display:inline-block; min-width:118px; height:1em;
   border-bottom:1.4px dashed #bda34a; background:#fffbe9;

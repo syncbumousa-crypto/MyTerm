@@ -107,15 +107,21 @@
       + '<span class="fsTitle">' + title + '</span></caption>'
       + '<thead><tr><th class="c1">#</th><th class="c2"></th><th class="c3"></th></tr></thead>'
       + body + '</table></div>';
-    const opt = (pick, label, on) => '<span class="fsOpt" data-pick="' + pick + '"'
-      + (on ? ' data-on="1"' : '') + '>' + label + '</span>';
+    // a choice says itself twice, like every line of the statement does
+    const opt = (pick, label, arabic, on) => '<span class="fsOpt" data-pick="' + pick + '"'
+      + (on ? ' data-on="1"' : '') + '>' + label + AR(arabic) + '</span>';
+    const why = '<span class="fsWhyBtn">؟</span>'
+      + '<div class="fsWhy"><div class="exp">A company measures <b>profit</b>; a household measures '
+      + '<b>cash</b>.</div><div class="exp">فقاعُ قائمةِ الشركة مملوكٌ لأحد، وقاعُ قائمةِ الأسرة فائضٌ أو عجز.</div></div>';
     const page = '<div class="eqPage">'
-      + '<div class="fsAsk" data-ask="who" data-mode="one"><div class="fsQ">Whose statement?</div>'
-      +   opt('company', 'A company', true) + opt('household', 'A household') + '</div>'
+      + '<div class="fsAsk" data-ask="who" data-mode="one">' + why
+      +   '<div class="fsQ">Whose statement?' + AR('قائمةُ مَن؟') + '</div>'
+      +   opt('company', 'A company', 'شركة', true) + opt('household', 'A household', 'أسرة') + '</div>'
       + '<div class="fsAsk" data-ask="profit" data-when="company">'
-      +   '<div class="fsQ">What is done with the net profit after taxes?</div>'
-      +   opt('pfd', 'Paid to preferred stockholders') + opt('com', 'Paid to common stockholders')
-      +   opt('re', 'Kept in the company') + '</div>'
+      +   '<div class="fsQ">What has a share of the net profit after taxes?' + AR('ما الذي له نصيب؟') + '</div>'
+      +   opt('pfd', 'Paid to preferred stockholders', 'الأسهمُ الممتازة')
+      +   opt('com', 'Paid to common stockholders', 'الأسهمُ العاديّة')
+      +   opt('re', 'Kept in the company', 'الشركةُ نفسُها') + '</div>'
       + frame('company', 'Company’s name', 'Income Statement', company)
       + frame('household', 'Household’s name', 'Income and Expense Statement', household)
       + '</div>';
@@ -132,6 +138,10 @@
       'and every row and rule still says when it belongs: ' + held.querySelectorAll('[data-when]').length);
     say(held.querySelector('.fsAsk[data-mode="one"]') && held.querySelector('.fsOpt[data-on]'),
       'and the question that takes one answer, and the author’s opening position');
+    say(Boolean(held.querySelector('.fsWhyBtn')) && Boolean(held.querySelector('.fsWhy')),
+      'and the box in the corner with the panel it opens');
+    say(held.querySelectorAll('.fsOpt .fsAr').length === 5, 'and the Arabic word under every choice: '
+      + held.querySelectorAll('.fsOpt .fsAr').length);
     // and a stored `on` is still dropped: the author says `data-on`, the
     // reader says press, and NEITHER is a stored class
     const dirty = S.gate('<div class="fsAsk"><span class="fsOpt on" data-pick="x">y</span></div>');
@@ -157,6 +167,10 @@
       .map(a => a.querySelector(':scope > b').textContent);
     const bottom = () => { const d = table().querySelector('td.d'); return d ? d.closest('tr').querySelector('td.c2').textContent.split('(')[0].trim() : '(none)'; };
     const lastWord = t => t.replace(/[؀-ۿ\s]+$/, '').trim();
+    // the first line of an element, which is the English one - a Range over
+    // the whole of it would take the Arabic word in with it
+    const firstLine = el => { const r = document.createRange(); r.setStart(el, 0); r.setEnd(el, 1);
+      return r.getBoundingClientRect(); };
 
     say(lit() === 'company', 'the page opens where the author left it: ' + lit());
     say(shown() === 'company', 'so the company’s statement is the one drawn: ' + shown());
@@ -251,6 +265,67 @@
     const q = sheet.querySelector('.fsQ'), first = sheet.querySelector('.fsOpt');
     say(q.getBoundingClientRect().bottom <= first.getBoundingClientRect().top + 1,
       'and its wording stands above the choices');
+    // AND A CHOICE SAYS ITSELF TWICE. `household` is not a word a reader
+    // of the Arabic summary knows, and a pill is where he first meets it
+    const gloss = first.querySelector('.fsAr');
+    say(Boolean(gloss) && [...sheet.querySelectorAll('.fsOpt')].every(x => x.querySelector('.fsAr')),
+      'every choice carries its own Arabic word');
+    say(getComputedStyle(gloss).display === 'block' && getComputedStyle(gloss).textAlign === 'center',
+      'under the English and centred on it: ' + getComputedStyle(gloss).textAlign);
+    const gr = gloss.getBoundingClientRect(), er = firstLine(first);
+    say(gr.top >= er.bottom - 1, 'and below it, not beside it: ' + Math.round(gr.top - er.bottom) + 'px down');
+
+    // ---- 11  THE BOX IN THE CORNER, AND THE PANEL IT OPENS
+    const ask = sheet.querySelector('.fsAsk[data-ask="who"]');
+    const btn = ask.querySelector('.fsWhyBtn'), panel = ask.querySelector('.fsWhy');
+    say(Boolean(btn) && Boolean(panel), 'the first question carries a box and a panel');
+    // CLOSED ON ARRIVAL, and that is the engine's doing: `hidden` does not
+    // survive the gate, so `decide` is the only thing that can close it
+    say(panel.hidden === true, 'the panel is closed when the page is drawn');
+    say(getComputedStyle(panel).display === 'none', 'and the stylesheet really hides it');
+    const ar2 = ask.getBoundingClientRect(), br2 = btn.getBoundingClientRect();
+    say(getComputedStyle(btn).position === 'absolute', 'the box is taken out of the flow');
+    say(Math.abs(br2.right - ar2.right) < 24 && Math.abs(br2.top - ar2.top) < 24,
+      'and sits in the corner of the question: ' + Math.round(ar2.right - br2.right) + 'px in, '
+      + Math.round(br2.top - ar2.top) + 'px down');
+    // OPENED, and measured where it lands: a POP-IN takes its place in the
+    // page under the choices. A window over the statement would hide the
+    // very thing the question is about
+    panel.hidden = false;
+    void sheet.offsetHeight;
+    const pr = panel.getBoundingClientRect();
+    say(getComputedStyle(panel).display !== 'none', 'pressed open, it is drawn');
+    say(pr.top >= first.getBoundingClientRect().bottom - 1,
+      'under the choices and not over them: ' + Math.round(pr.top - first.getBoundingClientRect().bottom) + 'px below');
+    const stmt = sheet.querySelector('.finStmtWrap:not([hidden])').getBoundingClientRect();
+    say(pr.bottom <= stmt.top + 1, 'and above the statement, covering none of it');
+    say(pr.width >= ar2.width - 24, 'and it takes the width of the question: ' + Math.round(pr.width));
+    panel.hidden = true;
+
+    // ---- 12  AND THE STATEMENT IS DRAWN SMALL ENOUGH TO WATCH IT CHANGE
+    // Measured as a RATIO against the same markup at full size, because a
+    // number in the stylesheet proves only that the number is written
+    const frame2 = sheet.querySelector('.finStmtWrap:not([hidden])');
+    const small = frame2.getBoundingClientRect().height;
+    frame2.style.setProperty('--fsSize', '1');
+    void sheet.offsetHeight;
+    const full = frame2.getBoundingClientRect().height;
+    frame2.style.removeProperty('--fsSize');
+    void sheet.offsetHeight;
+    // NOT a ratio of exactly two: at half size the frame has twice the room
+    // in its own units, so long lines wrap less and it comes out shorter
+    // still. What matters is that it is drawn at most half as tall
+    say(small > 0 && full > 0 && small <= full / 2,
+      'the statement is drawn at half size or less: ' + Math.round(small) + 'px against ' + Math.round(full)
+      + ' at full, a ratio of ' + (full / small).toFixed(2));
+    say(String(getComputedStyle(frame2).zoom) === '0.5',
+      'and the one number that says so is `--fsSize`: zoom ' + getComputedStyle(frame2).zoom);
+    // AND THE CHOICES ARE NOT SHRUNK WITH IT: they are what is read and
+    // pressed while the statement moves under them
+    say(parseFloat(getComputedStyle(first).fontSize)
+        > parseFloat(getComputedStyle(frame2.querySelector('td.c2')).fontSize) * 0.9,
+      'while the choices stay their own size: ' + getComputedStyle(first).fontSize
+      + ' against ' + getComputedStyle(frame2.querySelector('td.c2')).fontSize + ' in the ladder');
 
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
       + ' (' + out.length + ' checks)\n' + out.join('\n');

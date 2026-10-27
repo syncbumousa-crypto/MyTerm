@@ -476,6 +476,10 @@
       if (ask.getAttribute('data-mode') === 'one'
           && !opts.some(o => o.classList.contains('on')) && opts[0]) opts[0].classList.add('on');
     });
+    // A PANEL IS NEVER OPEN ON ARRIVAL. `hidden` does not survive the
+    // gate either, so this is the only place that decides it
+    page.querySelectorAll('.fsWhy').forEach(w => { w.hidden = true; });
+    page.querySelectorAll('.fsWhyBtn').forEach(x => x.classList.remove('on'));
     settle(page);
   };
 
@@ -615,6 +619,18 @@
       refit();
       return;
     }
+    // THE BOX IN THE CORNER OF A QUESTION, which opens the panel under it
+    const why = e.target.closest('.fsWhyBtn');
+    if (why && where.contains(why)) {
+      const panel = why.closest('.fsAsk')?.querySelector('.fsWhy');
+      if (panel) {
+        panel.hidden = !panel.hidden;
+        why.classList.toggle('on', !panel.hidden);
+        refit();
+      }
+      return;
+    }
+
     // A CHOICE ON A LAW PAGE, answered before the card is looked for -
     // one of these questions takes several answers at once, so a press
     // turns its own choice over and leaves the others alone

@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
 <style>#host { width: 820px; }</style>
-<title>Guard · one statement, several shapes</title>
+<title>Guard · one statement, several shapes, two languages</title>
 <pre id="o">pending</pre>
 <div id="host"></div>
 <script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermSheetStore.js"></script>
@@ -19,6 +19,14 @@
   // # 🔗 The `on` class and `hidden` are deliberately NOT whitelisted:
   // #    a stored page must not be able to arrive half-open, so the
   // #    paper decides. This guard checks that absence on purpose.
+  // #
+  // # 🎯 AND THE SAME LADDER IN TWO LANGUAGES (asked the same day):
+  // #    every line carries its Arabic translation under it, smaller
+  // #    and close, inside a framed box under a header row. The
+  // #    closeness is measured AGAINST THE ROW PITCH and not against a
+  // #    number I chose: a translation as far from its line as the next
+  // #    line is belongs to neither of them, and that was the whole
+  // #    complaint - lines thrown on a page.
   // ============================================================
   window.onerror = (m, s, l, c) => {
     document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
@@ -31,17 +39,34 @@
     const faults = [], out = [];
     const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
 
-    const shape = (kind, label) => '<div class="fsShape" data-kind="' + kind + '">'
-      + '<div class="finStmtWrap"><table class="finStmt"><caption><span class="fsCo">Company’s name</span>'
-      + '<span class="fsTitle">Income Statement</span><span class="fsWhen">for the year ended</span></caption>'
-      + '<tbody><tr><td class="c1">1.</td><td class="c2">' + label + '</td><td class="c3"></td></tr></tbody></table></div></div>';
+    const ar = t => '<span class="fsAr">' + t + '</span>';
+    const line = (en, arabic) => en + ar(arabic);
+    const thead = '<thead><tr>'
+      + '<th class="c1">#' + ar('خطوة') + '</th>'
+      + '<th class="c2">Line of the statement' + ar('بندُ القائمة') + '</th>'
+      + '<th class="c3">How it is found' + ar('كيف يُوجَد') + '</th></tr></thead>';
+    const tbody = '<tbody>'
+      + '<tr><td class="c1 u">1.</td><td class="c2 u">' + line('Total revenues', 'إجماليُّ الإيرادات')
+      +   '</td><td class="c3 u"></td></tr>'
+      + '<tr><td class="c1"></td><td class="c2 in1">' + line('Less: cost of goods sold', 'ناقصًا: تكلفةُ البضاعة')
+      +   '</td><td class="c3"><span class="miss"></span></td></tr>'
+      + '<tr class="tot"><td class="c1 u">2.</td><td class="c2 u">' + line('Gross profit', 'مجملُ الربح')
+      +   '</td><td class="c3 u"><span class="an"><b>1</b>revenues − COGS' + ar('الإيرادات − التكلفة')
+      +   '</span></td></tr></tbody>';
+    const shape = (kind, title) => '<div class="fsShape" data-kind="' + kind + '">'
+      + '<div class="finStmtWrap fsFrame"><table class="finStmt"><caption>'
+      + '<span class="fsCo">Company’s name' + ar('اسمُ الشركة') + '</span>'
+      + '<span class="fsTitle">' + title + ar('قائمةُ الدخل') + '</span>'
+      + '<span class="fsWhen">for the year ended' + ar('للسنةِ المنتهية') + '</span>'
+      + '</caption>' + thead + tbody + '</table></div></div>';
     const page = '<div class="eqPage">'
       + '<div class="fsPick">'
       +   '<span class="fsTab" data-kind="full">With preferred stock</span>'
       +   '<span class="fsTab" data-kind="plain">No preferred stock</span>'
       +   '<span class="fsTab" data-kind="home">A household</span>'
       + '</div>'
-      + shape('full', 'Total revenues') + shape('plain', 'Total revenues') + shape('home', 'Income')
+      + shape('full', 'Income Statement') + shape('plain', 'Income Statement')
+      + shape('home', 'Income and Expense Statement')
       + '</div>';
 
     // ---- 1  THE GATE KEEPS THE STRIP
@@ -54,7 +79,21 @@
       'each choice still names the shape it opens');
     say(held.querySelectorAll('table.finStmt').length === 3, 'and each shape kept its statement');
 
-    // ---- 2  AND IT KEEPS NO STATE. A page that could arrive half-open would
+    // ---- 2  AND THE TWO LANGUAGES, THE FRAME AND THE HEADER ROW
+    const asked = page.split('class="fsAr"').length - 1;
+    say(held.querySelectorAll('.fsAr').length === asked && asked > 0,
+      'every translation survived the gate: ' + held.querySelectorAll('.fsAr').length + ' of ' + asked);
+    say(held.querySelectorAll('.finStmtWrap.fsFrame').length === 3, 'and the box round each statement');
+    say(held.querySelectorAll('thead th').length === 9,
+      'and the header row of each: ' + held.querySelectorAll('thead th').length + ' cells');
+    // ONE ladder per shape, not two. Two were the old way - an English
+    // table and an Arabic one switched by `data-rlang` - and the reader
+    // never saw a line's two names together, which is the thing learnt
+    say([...held.querySelectorAll('.fsShape')].every(s => s.querySelectorAll('table.finStmt').length === 1),
+      'and each shape carries ONE bilingual ladder, not one per language');
+    say(!/enOnly|arOnly/.test(gated), 'so no half of it is hidden by a language switch');
+
+    // ---- 3  AND IT KEEPS NO STATE. A page that could arrive half-open would
     // mean two places deciding what is showing, and they would disagree
     const dirty = S.gate('<div class="fsPick"><span class="fsTab on" data-kind="a">x</span></div>'
       + '<div class="fsShape" data-kind="b" hidden>y</div>');
@@ -62,7 +101,7 @@
       'a stored `on` is dropped, so only the paper lights a choice');
     say(!/hidden/.test(dirty), 'and a stored `hidden` is dropped, so only the paper closes a shape');
 
-    // ---- 3  THE CENTRED HEADING, measured against the table it sits on
+    // ---- 4  THE SHEET'S OWN STYLESHEET, FETCHED
     const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
     document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
     host.innerHTML = '<div class="msheet msheet-law">' + gated + '</div>';
@@ -70,22 +109,75 @@
     await new Promise(r => setTimeout(r, 50));
     void host.offsetHeight;
 
+    // the first line of a span, which is the English one - a Range over
+    // the whole span would take the translation in with it
+    const firstLine = el => { const r = document.createRange(); r.setStart(el, 0); r.setEnd(el, 1);
+      return r.getBoundingClientRect(); };
+
     const cap = host.querySelector('table.finStmt caption');
     say(getComputedStyle(cap).textAlign === 'center', 'the heading is centred: ' + getComputedStyle(cap).textAlign);
     const co = cap.querySelector('.fsCo');
     const capBox = cap.getBoundingClientRect();
-    const r = document.createRange(); r.selectNodeContents(co);
-    const text = r.getBoundingClientRect();
-    const leftGap = Math.round(text.left - capBox.left), rightGap = Math.round(capBox.right - text.right);
+    const en = firstLine(co);
+    const leftGap = Math.round(en.left - capBox.left), rightGap = Math.round(capBox.right - en.right);
     say(Math.abs(leftGap - rightGap) <= 2,
       'and the company name sits in the middle of it: ' + leftGap + 'px / ' + rightGap + 'px');
-    say(/Company/.test(co.textContent), 'and it is the company’s name that stands there: ' + co.textContent);
+    say(/Company/.test(co.textContent), 'and it is the company name that stands there');
 
-    // ---- 4  THE STRIP IS ABOVE THE STATEMENT, AND CENTRED
+    // ---- 5  THE STRIP IS ABOVE THE STATEMENT, AND CENTRED
     const pick = host.querySelector('.fsPick'), firstTable = host.querySelector('table.finStmt');
     say(pick.getBoundingClientRect().bottom <= firstTable.getBoundingClientRect().top + 1,
       'the choices sit above the statement');
     say(getComputedStyle(pick).justifyContent === 'center', 'and the strip is centred');
+
+    // ---- 6  THE FRAME IS A REAL BOX, AND THE STATEMENT IS INSIDE IT
+    const frame = host.querySelector('.finStmtWrap.fsFrame');
+    const fs = getComputedStyle(frame);
+    say(parseFloat(fs.borderTopWidth) >= 1 && !/rgba\(0, 0, 0, 0\)|transparent/.test(fs.borderTopColor),
+      'the statement sits in a drawn box: ' + fs.borderTopWidth + ' ' + fs.borderTopColor);
+    say(parseFloat(fs.borderRadius) > 0 && parseFloat(fs.paddingLeft) >= 6,
+      'and the box has room inside it: ' + fs.paddingTop + ' ' + fs.paddingLeft);
+    const fr = frame.getBoundingClientRect(), tb = frame.querySelector('table').getBoundingClientRect();
+    say(tb.left >= fr.left && tb.right <= fr.right + 1 && tb.bottom <= fr.bottom + 1,
+      'and the table is drawn inside the box, not spilling out of it');
+    // a box much wider than its table reads as dead space, which is the
+    // look being fixed - so the ladder is made to fill it
+    say(tb.width >= fr.width - parseFloat(fs.paddingLeft) - parseFloat(fs.paddingRight) - 2,
+      'and fills it: table ' + Math.round(tb.width) + ' in box ' + Math.round(fr.width));
+
+    // ---- 7  THE HEADER ROW IS DRAWN, ABOVE THE FIRST LINE
+    const th = [...frame.querySelectorAll('thead th')];
+    say(th.length === 3, 'the ladder has a header over its three columns: ' + th.length);
+    const firstBody = frame.querySelector('tbody tr td');
+    say(th[0].getBoundingClientRect().bottom <= firstBody.getBoundingClientRect().top + 1,
+      'and it stands above the first line of the statement');
+    say(parseFloat(getComputedStyle(th[1]).borderBottomWidth) >= 1,
+      'and a rule divides it from them: ' + getComputedStyle(th[1]).borderBottomWidth);
+    say(Number(getComputedStyle(th[1]).fontWeight) >= 600, 'and it reads as a heading');
+    // the ONE vertical line a statement may carry: the rule is not part
+    // of the statement's body, and the amounts still share one borderless
+    // column, which is what GuardStatement measures
+    say(parseFloat(getComputedStyle(frame.querySelector('td.c3')).borderLeftWidth) >= 1,
+      'a hairline sets the rule column apart, so the box reads as a table');
+
+    // ---- 8  THE TRANSLATION BELONGS TO THE LINE ABOVE IT
+    const c2 = [...frame.querySelectorAll('tbody td.c2')];
+    const pairs = c2.map(td => ({ td, arab: td.querySelector('.fsAr') })).filter(p => p.arab);
+    say(pairs.length >= 2, 'the lines carry their translations: ' + pairs.length);
+    const gaps = pairs.map(p => Math.round(p.arab.getBoundingClientRect().top - firstLine(p.td).bottom));
+    say(gaps.every(g => g >= -1), 'each translation sits BELOW its line: ' + gaps.join('/'));
+    // MEASURED AGAINST THE PITCH, not against a number I chose
+    const pitch = Math.round(firstLine(pairs[1].td).top - pairs[0].arab.getBoundingClientRect().bottom);
+    say(Math.max(...gaps) < pitch,
+      'and closer to it than the next line is: ' + Math.max(...gaps) + 'px under vs ' + pitch + 'px to the next');
+    const smaller = pairs.every(p => parseFloat(getComputedStyle(p.arab).fontSize)
+                                   < parseFloat(getComputedStyle(p.td).fontSize));
+    say(smaller, 'and it is set smaller: ' + getComputedStyle(pairs[0].arab).fontSize
+      + ' under ' + getComputedStyle(pairs[0].td).fontSize);
+    say(getComputedStyle(pairs[0].arab).display === 'block', 'and on a line of its own, not an inline tail');
+    say(getComputedStyle(pairs[0].arab).direction === 'rtl', 'and laid out right to left, as Arabic is');
+    // the formula is a text too, and the reader answers in one language
+    say(Boolean(frame.querySelector('.an .fsAr')), 'the rule in its box is translated as well');
 
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
       + ' (' + out.length + ' checks)\n' + out.join('\n');

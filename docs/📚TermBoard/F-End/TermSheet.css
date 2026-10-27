@@ -274,6 +274,48 @@
 }
 .msheet .fsTab:hover {border-color:#9db4d6;}
 .msheet .fsTab.on {background:#1c4e9c; border-color:#1c4e9c; color:#fff; font-weight:700;}
+
+/* ============================================================ */
+/* # 🔠 🧾  TWO LANGUAGES DOWN ONE LADDER, AND A BOX ROUND IT */
+/* # 🔤 CSS */
+/* # 🎯 Every line of the statement carries its Arabic translation */
+/* #    directly under it - smaller, and close enough to belong to it - */
+/* #    and the whole statement sits in a framed box under a header */
+/* #    row, so it reads as a table and not as loose lines. */
+/* # 🔗 Asked on 2026-10-27, and it REPLACES the two separate ladders */
+/* #    (one English, one Arabic, switched by `data-rlang`): the reader */
+/* #    had to learn the same shape twice and never saw the two names */
+/* #    of a line together, which is the thing being learnt. */
+/* # 🔗 The gap is 1px on purpose. A translation sitting as far from */
+/* #    its line as the next line does belongs to neither of them. */
+/* # 🔗 The hairline before the rule column is the ONE vertical line a */
+/* #    statement may carry: the rule is not part of its body. The */
+/* #    amounts still share one column with no borders between cells, */
+/* #    which is what `GuardStatement` measures and what makes a */
+/* #    statement a statement rather than a data grid. */
+/* ============================================================ */
+.msheet .finStmtWrap.fsFrame {
+  border:1px solid #d7dde8; border-radius:10px; padding:9px 13px 11px;
+  background:#fcfdff; margin:10px 0 4px;
+}
+.msheet .finStmtWrap.fsFrame table.finStmt {width:100%; margin:0;}
+.msheet .finStmtWrap.fsFrame td.c2, .msheet .finStmtWrap.fsFrame th.c2 {width:100%;}
+.msheet table.finStmt .fsAr {
+  display:block; margin-top:1px; font-size:.82em; line-height:1.35;
+  color:#6b7280; font-weight:400; direction:rtl; unicode-bidi:isolate;
+  text-align:inherit;
+}
+.msheet table.finStmt caption .fsAr {text-align:center;}
+.msheet table.finStmt .an .fsAr {color:#b3261e;}
+/* The header row says what each column of the ladder is for */
+.msheet table.finStmt thead th {
+  text-align:left; font-size:.86em; font-weight:700; color:#44557a;
+  padding:0 6px 5px; border-bottom:1.4px solid #c3cddd; vertical-align:bottom;
+}
+.msheet table.finStmt thead th.c1 {text-align:right; white-space:nowrap;}
+.msheet table.finStmt td.c3, .msheet table.finStmt thead th.c3 {
+  border-left:1px solid #e6eaf1; padding-left:10px;
+}
 .msheet table.finStmt .miss {
   display:inline-block; min-width:118px; height:1em;
   border-bottom:1.4px dashed #bda34a; background:#fffbe9;

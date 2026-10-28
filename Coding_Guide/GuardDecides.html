@@ -60,13 +60,17 @@
       + (sp ? ' rowspan="' + sp + '"' : '') + '>' + (x || '') + '</td>';
     const C2 = (x, m, i) => '<td class="c2' + (m ? ' ' + m : '') + (i ? ' in1' : '') + '">' + x + '</td>';
     const C3 = (x, m) => '<td class="c3' + (m ? ' ' + m : '') + '">' + (x || '') + '</td>';
-    const step = (x, tag, when, hue) => TR(C1('0.', 'u') + C2(x, 'u') + C3(tag, 'u'), 'tot' + (hue ? ' ' + hue : ''), when);
+    // THE READER'S OWN MNEMONIC - a margin note, not a line of the
+    // statement: it is written by him, it sits past the rule, and a
+    // rung without one is not given an empty box to look at
+    const C4 = x => x ? '<td class="c4">' + x + '</td>' : '';
+    const step = (x, tag, when, hue, note) => TR(C1('0.', 'u') + C2(x, 'u') + C3(tag, 'u') + C4(note), 'tot' + (hue ? ' ' + hue : ''), when);
     const item = (x, tag, when, hue) => TR(C1('') + C2(x, '', 1) + C3(tag || MS), hue || '', when);
 
     const company = '<tbody>'
-      + TR(C1('0.', 'u') + C2('Total revenues' + AR('إجماليُّ الإيرادات'), 'u') + C3('', 'u'))
+      + TR(C1('0.', 'u') + C2('Total revenues' + AR('إجماليُّ الإيرادات'), 'u') + C3('', 'u') + C4('1 ت:سوجس'))
       + item('Less: cost of goods sold (COGS)' + AR('تكلفةُ البضاعة المباعة'))
-      + step('Gross profit' + AR('مجملُ الربح'), AN([['revenues', 'الإيرادات'], '−', ['COGS', 'التكلفة']]))
+      + step('Gross profit' + AR('مجملُ الربح'), AN([['revenues', 'الإيرادات'], '−', ['COGS', 'التكلفة']]), null, null, '2 جب:وي')
       + TR(C1('Operating<br>expenses' + AR('مصروفاتُ التشغيل'), '', 5) + C2('Less:', '', 1) + C3(MS))
       + TR(C2('Less:', '', 1) + C3(MS)) + TR(C2('Less:', '', 1) + C3(MS)) + TR(C2('Less:', '', 1) + C3(MS))
       + TR(C2('Total operating expenses' + AR('إجماليُّ مصروفات التشغيل'), 'u', 1) + C3('', 'u'))
@@ -546,6 +550,38 @@
     say(first.getBoundingClientRect().height >= 14,
       'and a pill is still big enough to press: ' + Math.round(first.getBoundingClientRect().height) + 'px tall');
 
+
+    // ---- 15  AND THE READER'S OWN MNEMONIC SITS BESIDE THE RUNG IT NAMES
+    // He asked for it on 2026-10-28 in his own letters - `1 ت:سوجس` is
+    // `Total revenues, less COGS` as HE hears it. Nothing here shapes the
+    // words: what is guarded is WHERE they sit and that they are his
+    const notes = [...sheet.querySelectorAll('.finStmtWrap:not([hidden]) td.c4')];
+    say(notes.length === 2, 'the notes he wrote are drawn: ' + notes.length);
+    const ruleCol = frame2.querySelector('td.c3');
+    say(notes.every(n => n.getBoundingClientRect().left >= ruleCol.getBoundingClientRect().right - 1),
+      'each sits past the rule and not inside it');
+    say(notes.every(n => n.closest('table') === frame2.querySelector('table.finStmt')),
+      'inside the statement, so it moves and shrinks with it');
+    // beside ITS OWN rung: the note and the step it names share a row
+    const beside = notes.map(n => { const c = n.closest('tr').querySelector('td.c2'); return c ? c.textContent.slice(0, 14) : ''; });
+    say(beside[0].indexOf('Total revenues') === 0 && beside[1].indexOf('Gross profit') === 0,
+      'and each beside the rung it names: ' + beside.join(' · '));
+    say(getComputedStyle(notes[0]).direction === 'rtl' && getComputedStyle(notes[0]).textAlign === 'right',
+      'read right to left, the way it is written');
+    // A RUNG WITHOUT ONE IS NOT GIVEN AN EMPTY BOX: the column is his to
+    // fill, and the rungs he has not named must look untouched
+    const bare = [...frame2.querySelectorAll('tbody tr')].filter(r => !r.hidden && !r.querySelector('td.c4'));
+    say(bare.length > 0, 'the rungs he has not named carry no note at all: ' + bare.length + ' of them');
+    // and it does not push the statement out of its own box
+    say(frame2.querySelector('table.finStmt').getBoundingClientRect().width
+        <= frame2.getBoundingClientRect().width / Number(getComputedStyle(frame2).zoom) + 1,
+      'and the notes do not push the ladder out of its frame');
+    // and a decision that hides rows leaves the notes on their own rungs
+    press('pfd'); press('com');
+    const stillBeside = [...sheet.querySelectorAll('.finStmtWrap:not([hidden]) td.c4')]
+      .map(n => n.closest('tr').querySelector('td.c2').textContent.slice(0, 14));
+    say(stillBeside.join('|') === beside.join('|'), 'and a decision does not move them: ' + stillBeside.join(' · '));
+    press('pfd'); press('com');
 
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
       + ' (' + out.length + ' checks)\n' + out.join('\n');

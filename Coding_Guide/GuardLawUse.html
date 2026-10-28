@@ -68,10 +68,15 @@
     say(getComputedStyle(use).display !== 'none' && use.getBoundingClientRect().width > 0,
       'the badge is drawn: ' + Math.round(use.getBoundingClientRect().width) + 'px wide');
     // BOTH WORDS AT ONCE, because a law page shows both languages and a
-    // badge that hides one of them reads as half a label
-    say(getComputedStyle(use.querySelector('.arOnly')).display === 'inline'
-        && getComputedStyle(use.querySelector('.enOnly')).display === 'inline',
-      'and it says both at once');
+    // badge that hides one of them reads as half a label. Measured as
+    // DRAWN and APART: the first reading of this asked for `display:inline`
+    // and cried the moment the badge was laid out as a flex row, though
+    // nothing the reader sees had changed
+    const ar = use.querySelector('.arOnly').getBoundingClientRect();
+    const en = use.querySelector('.enOnly').getBoundingClientRect();
+    say(ar.width > 0 && en.width > 0, 'and it says both at once');
+    say(en.left >= ar.right + 2 || ar.left >= en.right + 2,
+      'with air between the two words: ' + Math.round(Math.abs(en.left - ar.right)) + 'px');
 
     // ---- 3  ON THE BOX, AND OPPOSITE THE NUMBER
     const br = marked.getBoundingClientRect(), ur = use.getBoundingClientRect(), nr = no.getBoundingClientRect();

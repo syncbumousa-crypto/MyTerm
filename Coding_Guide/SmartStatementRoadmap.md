@@ -400,7 +400,7 @@ Earnings available for common   = Sales revenue − COGS − Operating expenses 
 | `GuardPlaceMoves.html` | أنّ السؤالَ يَنتقل بمواضعه إلى القسم الذي يَخصُّه | ١٥ |
 | `GuardPartOrder.html` | أنّ قسمًا صُنع اليومَ يَجلس حيث يُقرأ لا آخرَ الشريط | ١٧ |
 | `GuardPartSize.html` | أنّ القسمَ يَقول كم بطاقةً فيه فيُحسَب زمنُه | ١٣ |
-| `GuardLawUse.html` | أنّ ما لا يُحفَظ يقول ذلك على نفسه وعلى أسئلته | ١٤ |
+| `GuardLawUse.html` | أنّ ما لا يُحفَظ يقول ذلك على نفسه وعلى أسئلته | ١٥ |
 
 **وGuardDecides يُشغِّل الآلةَ الحقيقيّة**: `decide` و`settle` تُسلَّمان من
 `MyTermSheetPaper`. حارسٌ يَحمل نسخةً من قارئ `data-when` ومن الترقيم يُوافق نفسَه

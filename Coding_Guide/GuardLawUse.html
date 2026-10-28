@@ -1,0 +1,104 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · a law he does not have to memorise says so</title>
+<pre id="o">pending</pre>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermSheetStore.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ 🔢  WHAT IS READ TO BE UNDERSTOOD, AND WHAT IS CARRIED IN THE HEAD
+  // # 🔤 HTML + JavaScript
+  // # 🎯 Some laws between Ch4 and Ch8 are never written out in an
+  // #    answer: the figure comes off the calculator keys. The reader
+  // #    must be able to tell those apart AT A GLANCE, on the law and
+  // #    on every question solved that way - a sentence at the top of
+  // #    the page is forgotten by the third box.
+  // # 🎯 What is measured: the badge survives the gate, it is drawn,
+  // #    it sits ON the box and opposite its number without covering
+  // #    it, a law without one is untouched, and the chip on a question
+  // #    rides in the card's own title line.
+  // # 🔗 Asked on 2026-10-28: `the laws are put there for understanding
+  // #    only, and I should not have to memorise them, because the
+  // #    answer comes through the calculator - I want that clear at
+  // #    those laws and at their questions`.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const S = window.MyTermSheetStore;
+    if (!S || typeof S.gate !== 'function') { o.textContent = 'FAIL the gate did not load'; return; }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    const badge = '<span class="lawUse"><span class="arOnly">بالآلة</span>'
+      + '<span class="enOnly">by calculator</span></span>';
+    const box = (no, body, mark) => '<div class="lawBox"><span class="lawNo">' + no + '</span>'
+      + (mark ? badge : '') + '<div class="lawEq">' + body + '</div></div>';
+    const page = '<div class="eqPage">'
+      + box('5.1', '<span class="tt v-a lhs">FV</span> = PV × (1 + r)<sup>n</sup>', true)
+      + box('5.2', '<span class="tt v-a lhs">EAR</span> = (1 + r/m)<sup>m</sup> − 1', false)
+      + '<div class="qcard" data-ans="hidden"><div class="qh">Test Bank — the value of a lump sum'
+      +   '<span class="qUse"><span class="arOnly">بالآلة</span><span class="enOnly">calculator</span></span>'
+      +   '</div><div class="qb">a question</div></div>'
+      + '</div>';
+
+    // ---- 1  IT SURVIVES THE GATE, which is where a new class dies first
+    const kept = S.gate(page);
+    say(/class="lawUse"/.test(kept), 'the badge is kept by the gate');
+    say(/class="qUse"/.test(kept), 'and so is the chip on the question');
+    say((kept.match(/class="lawUse"/g) || []).length === 1,
+      'one badge in, one badge out: ' + (kept.match(/class="lawUse"/g) || []).length);
+    say(/بالآلة/.test(kept) && /by calculator/.test(kept), 'with both of its words');
+
+    // ---- 2  AND IT IS DRAWN
+    const css = await (await fetch('../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css?t=' + Date.now())).text();
+    document.head.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
+    const host = document.createElement('div');
+    host.style.width = '900px';
+    document.body.appendChild(host);
+    host.innerHTML = '<div class="msheet msheet-law">' + kept + '</div>';
+    const sheet = host.querySelector('.msheet');
+    void host.offsetHeight;
+
+    const marked = sheet.querySelector('.lawBox');
+    const use = marked.querySelector('.lawUse');
+    const no = marked.querySelector('.lawNo');
+    say(getComputedStyle(use).display !== 'none' && use.getBoundingClientRect().width > 0,
+      'the badge is drawn: ' + Math.round(use.getBoundingClientRect().width) + 'px wide');
+    // BOTH WORDS AT ONCE, because a law page shows both languages and a
+    // badge that hides one of them reads as half a label
+    say(getComputedStyle(use.querySelector('.arOnly')).display === 'inline'
+        && getComputedStyle(use.querySelector('.enOnly')).display === 'inline',
+      'and it says both at once');
+
+    // ---- 3  ON THE BOX, AND OPPOSITE THE NUMBER
+    const br = marked.getBoundingClientRect(), ur = use.getBoundingClientRect(), nr = no.getBoundingClientRect();
+    say(ur.left >= br.left && ur.right <= br.right + 1,
+      'it sits within the width of the box it marks');
+    say(Math.abs(ur.top - nr.top) <= 2, 'at the height of the number, on the same rail');
+    say(ur.left > nr.right + 8,
+      'but at the far end of it: ' + Math.round(ur.left - nr.right) + 'px clear of the number');
+    say(ur.top < br.top + 2, 'and it rides the border rather than eating the room inside');
+
+    // ---- 4  AND A LAW WITHOUT ONE IS UNTOUCHED
+    const plain = sheet.querySelectorAll('.lawBox')[1];
+    say(!plain.querySelector('.lawUse'), 'a law that must be carried in the head wears nothing');
+    say(Math.abs(plain.getBoundingClientRect().width - br.width) <= 1,
+      'and is drawn at the same width as one that does: '
+      + Math.round(plain.getBoundingClientRect().width) + ' against ' + Math.round(br.width));
+
+    // ---- 5  AND THE QUESTION SAYS IT TOO, in its own title line
+    const qh = sheet.querySelector('.qh'), chip = sheet.querySelector('.qUse');
+    const qr = qh.getBoundingClientRect(), cr = chip.getBoundingClientRect();
+    say(cr.width > 0 && cr.top >= qr.top - 1 && cr.bottom <= qr.bottom + 1,
+      'the chip rides inside the question’s own title line');
+    say(cr.left > qr.left, 'after the title and not before it');
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e + '\n' + (e && e.stack);
+  });
+</script>

@@ -113,6 +113,19 @@
     say(sizeOf('p-new') === 0, 'and a part emptied of cards says nothing is left');
     C.sizeRules({ rules10: 18 });
 
+    // ---- 5  AND A STACK THAT WAS NOT MENTIONED IS LEFT ALONE
+    // The count comes from the sheet store, which hands over every
+    // stack it holds. But a caller sizing ONE part hands over one
+    // number, and `Number(undefined) || 0` quietly emptied all the
+    // rest: on 2026-10-28, splitting the balance sheet in two sized
+    // the two new parts and reported `0 cards` for the ten others -
+    // ten right numbers in the file replaced by zeroes, no error
+    say(sizeOf('p-old') === 6, 'the other part still has its six cards: ' + sizeOf('p-old'));
+    C.sizeRules({ rules10: 12 });
+    say(sizeOf('p-new') === 12 && sizeOf('p-old') === 6,
+      'and sizing one part does not empty the other: ' + sizeOf('p-new') + ' and ' + sizeOf('p-old'));
+    C.sizeRules({ rules10: 18, rules1: 6 });
+
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
       + ' (' + out.length + ' checks)\n' + out.join('\n');
   })().catch(e => {

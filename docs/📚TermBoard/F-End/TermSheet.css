@@ -1,10 +1,10 @@
 /* ============================================================
-   # 🎨 📄  THE LOOK OF A SHEET
-   # 🔤 CSS
-   # 🎯 The ninety-two rules that ARE a law sheet and a practice card:
+   # Ã°ÂÂÂ¨ Ã°ÂÂÂ  THE LOOK OF A SHEET
+   # Ã°ÂÂÂ¤ CSS
+   # Ã°ÂÂÂ¯ The ninety-two rules that ARE a law sheet and a practice card:
    #    the box, its number, the fraction, the coloured letters, the
    #    table of givens, the financial statement, the journal entry
-   # 🔗 TAKEN FROM THE READER'S OWN STYLESHEET, NOT WRITTEN AGAIN.
+   # Ã°ÂÂÂ TAKEN FROM THE READER'S OWN STYLESHEET, NOT WRITTEN AGAIN.
    #    Every one of these pages was drawn against these rules; a
    #    second hand's idea of what they should look like would be a
    #    different page wearing the same words.
@@ -32,7 +32,7 @@
 /* Their own stack, off their own body, and Arial first: every law line,
    every fraction and every Arabic gloss on these sheets was set and
    measured in it. This file named no font at all, so the sheets came
-   out in the site's system-ui — a different face, a different width per
+   out in the site's system-ui Ã¢ÂÂ a different face, a different width per
    character, and lines that had been fitted to their paper no longer
    were. The sheet is paper, and paper does not change its type because
    it was carried to another desk. */
@@ -44,7 +44,7 @@
 .msheet .cf-out {color:#cc0000; font-weight:700;}
 .msheet .eqPage {display:flex; flex-direction:column; align-items:center; justify-content:center; gap:calc(15px * var(--eqScale,1)); height:100%; --eqScale:1;}
 .msheet .eqHead {font-size:calc(13px * var(--fs)); font-weight:700; color:#1c4e9c; text-align:center; letter-spacing:.2px; margin-bottom:3px;}
-.msheet .lawBox {position:relative; width:100%; max-width:600px; /* الحشوةُ الجانبية تحجز شريطَ الزرّين (المصدر والشرح) في الزاوية — وهي متساويةٌ على الجانبين فيبقى مركزُ المعادلة مركزَ المربّع. وبدونها تمرّ المعادلةُ الطويلة تحت الزرّين (0.3 في ورقة التأصيل، 2026-09-30). */ padding:calc(17px * var(--eqScale,1)) 46px calc(14px * var(--eqScale,1)); border:1.6px solid #1c4e9c; border-radius:9px; background:#eef3fb; text-align:center; font-size:calc(14px * var(--fs) * var(--eqScale,1)); line-height:1.35;}
+.msheet .lawBox {position:relative; width:100%; max-width:600px; /* ÃÂ§ÃÂÃÂ­ÃÂ´ÃÂÃÂ©ÃÂ ÃÂ§ÃÂÃÂ¬ÃÂ§ÃÂÃÂ¨ÃÂÃÂ© ÃÂªÃÂ­ÃÂ¬ÃÂ² ÃÂ´ÃÂ±ÃÂÃÂ·ÃÂ ÃÂ§ÃÂÃÂ²ÃÂ±ÃÂÃÂÃÂ (ÃÂ§ÃÂÃÂÃÂµÃÂ¯ÃÂ± ÃÂÃÂ§ÃÂÃÂ´ÃÂ±ÃÂ­) ÃÂÃÂ ÃÂ§ÃÂÃÂ²ÃÂ§ÃÂÃÂÃÂ© Ã¢ÂÂ ÃÂÃÂÃÂ ÃÂÃÂªÃÂ³ÃÂ§ÃÂÃÂÃÂ©ÃÂ ÃÂ¹ÃÂÃÂ ÃÂ§ÃÂÃÂ¬ÃÂ§ÃÂÃÂ¨ÃÂÃÂ ÃÂÃÂÃÂ¨ÃÂÃÂ ÃÂÃÂ±ÃÂÃÂ²ÃÂ ÃÂ§ÃÂÃÂÃÂ¹ÃÂ§ÃÂ¯ÃÂÃÂ© ÃÂÃÂ±ÃÂÃÂ²ÃÂ ÃÂ§ÃÂÃÂÃÂ±ÃÂ¨ÃÂÃÂ¹. ÃÂÃÂ¨ÃÂ¯ÃÂÃÂÃÂÃÂ§ ÃÂªÃÂÃÂ±ÃÂ ÃÂ§ÃÂÃÂÃÂ¹ÃÂ§ÃÂ¯ÃÂÃÂ©ÃÂ ÃÂ§ÃÂÃÂ·ÃÂÃÂÃÂÃÂ© ÃÂªÃÂ­ÃÂª ÃÂ§ÃÂÃÂ²ÃÂ±ÃÂÃÂÃÂ (0.3 ÃÂÃÂ ÃÂÃÂ±ÃÂÃÂ© ÃÂ§ÃÂÃÂªÃÂ£ÃÂµÃÂÃÂÃÂ 2026-09-30). */ padding:calc(17px * var(--eqScale,1)) 46px calc(14px * var(--eqScale,1)); border:1.6px solid #1c4e9c; border-radius:9px; background:#eef3fb; text-align:center; font-size:calc(14px * var(--fs) * var(--eqScale,1)); line-height:1.35;}
 .msheet .lawBox.lawDerived {border-style:dashed; background:#f3f7ee; border-color:#4a7a2c;}
 .msheet .lawBox.lawDerived .lawNo {background:#4a7a2c;}
 .msheet .lawNo {position:absolute; top:-9px; left:16px; background:#1c4e9c; color:#fff; border-radius:10px; padding:1px 8px; font-size:calc(10px * var(--fs)); font-weight:700; letter-spacing:.4px;}
@@ -78,13 +78,13 @@
 .msheet .eqRule {display:flex; align-items:center; gap:10px; width:100%; max-width:700px; font-size:calc(11.5px * var(--fs) * var(--eqScale,1)); font-weight:700; color:#1c4e9c; margin:calc(6px * var(--eqScale,1)) 0 calc(2px * var(--eqScale,1)); flex:0 0 auto;}
 .msheet .eqRule::before, .msheet .eqRule::after {content:''; flex:1 1 auto; height:1px; background:#c3d0e4;}
 /* ============================================================ */
-/* # 🧱 ⚖️  TWO SIDES OF ONE PAGE, AND THE LINE WHERE THEY MEET */
-/* # 🔤 CSS */
-/* # 🎯 A law page split down the middle: one trade seen two ways, each */
+/* # Ã°ÂÂ§Â± Ã¢ÂÂÃ¯Â¸Â  TWO SIDES OF ONE PAGE, AND THE LINE WHERE THEY MEET */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ A law page split down the middle: one trade seen two ways, each */
 /* #    side with its own execution price over its own cost. */
-/* # 🔗 Asked for Ch2's trades page on 2026-10-25 - six laws stacked in */
+/* # Ã°ÂÂÂ Asked for Ch2's trades page on 2026-10-25 - six laws stacked in */
 /* #    one column said nothing about which belonged to whom. */
-/* # 🔗 THE GAP IS ZERO AND THE PADDING IS ON THE SIDES, so the border */
+/* # Ã°ÂÂÂ THE GAP IS ZERO AND THE PADDING IS ON THE SIDES, so the border */
 /* #    falls exactly halfway and not at the edge of a gutter. And the */
 /* #    direction is pinned: the page turns with the language and the */
 /* #    reader asked for dealers on the RIGHT, which a flipped grid */
@@ -114,10 +114,10 @@
    THE ARABIC SITS UNDER THE ENGLISH, AND THAT IS ONE DECLARATION
 
    A term on a law line is an English name with its Arabic beneath it,
-   and the whole of what makes that happen is `<small>` being a BLOCK —
+   and the whole of what makes that happen is `<small>` being a BLOCK Ã¢ÂÂ
    their own comment says so in one line. Inline, as every browser has
    it by default, the two run together and the line reads
-   "Depreciable value of an assetالقيمة القابلة للإهلاك".
+   "Depreciable value of an assetÃÂ§ÃÂÃÂÃÂÃÂÃÂ© ÃÂ§ÃÂÃÂÃÂ§ÃÂ¨ÃÂÃÂ© ÃÂÃÂÃÂ¥ÃÂÃÂÃÂ§ÃÂ".
 
    The refinements of these two rules were carried over in the first
    transfer and the two rules themselves were not: `.tt.lhs` and
@@ -140,7 +140,7 @@
    `background: var(--panel)`. A problem card on a sheet is paper, and
    its writing is near-black. The quiz rule is one class deep and
    unscoped, so it reached in here and painted every problem card
-   #212227 under text of #111 — dark on dark, and the invert that the
+   #212227 under text of #111 Ã¢ÂÂ dark on dark, and the invert that the
    dark switch puts over the sheet turned it into pale on pale. Neither
    is readable, and nothing in this file said anything about a
    background, which is why it was so hard to see.
@@ -176,7 +176,7 @@
 .msheet .qTableWrap table.qTable {margin:0;}
 /* `width:100%` squeezes a twelve-column table until its cells spill into
    one another, and no width at all lets a narrow one shrink to its text
-   — which is how "Property class" came to be drawn as "Propert / y
+   Ã¢ÂÂ which is how "Property class" came to be drawn as "Propert / y
    class" in a column two words wide. Their own answer, and the right
    one: auto with a floor of the full width, and the wrapper scrolls
    whatever is wider. */
@@ -190,17 +190,17 @@
 .msheet table.qTable th {background:#eef0f4; font-weight:700;}
 .msheet table.qTable tbody tr:nth-child(even) td {background:#f7f8fa;}
 /* ============================================================ */
-/* # 🧾 📄  A FINANCIAL STATEMENT IS NOT A GRID */
-/* # 🔤 CSS */
-/* # 🎯 Labels down the left, amounts in one right-aligned column, a */
+/* # Ã°ÂÂ§Â¾ Ã°ÂÂÂ  A FINANCIAL STATEMENT IS NOT A GRID */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ Labels down the left, amounts in one right-aligned column, a */
 /* #    rule above each subtotal and a double rule under the bottom */
 /* #    line - the shape the reader must reproduce in an exam. */
-/* # 🔗 The class names were whitelisted long ago (`finStmt`, `acct`, */
+/* # Ã°ÂÂÂ The class names were whitelisted long ago (`finStmt`, `acct`, */
 /* #    `tot`, `in1`, `u`, `d`) and the styling was never ported, so a */
 /* #    statement written with them rendered as a heap of text. The */
 /* #    refinements travelled and the base rule did not, which is the */
 /* #    same fault this project has paid for before. */
-/* # 🔗 `qTable` was the alternative and it is the wrong one: its */
+/* # Ã°ÂÂÂ `qTable` was the alternative and it is the wrong one: its */
 /* #    borders and striped rows say `data table`, and a statement is */
 /* #    read down one column, not across a grid. */
 /* ============================================================ */
@@ -226,22 +226,37 @@
 .msheet table.finStmt td.d {border-top:1px solid #6b7280; border-bottom:3px double #6b7280;}
 .msheet table.finStmt tr.fsKey td {background:#eef4ff;}
 /* ============================================================ */
-/* # 🔢 🧾  THE STATEMENT AS A NUMBERED LADDER */
-/* # 🔤 CSS */
-/* # 🎯 The reader's own model, drawn on paper: a numbered step for */
+/* # Ã°ÂÂÂ¢ Ã°ÂÂ§Â¾  THE STATEMENT AS A NUMBERED LADDER */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ The reader's own model, drawn on paper: a numbered step for */
 /* #    each subtotal, a blank where a figure must be filled in from */
 /* #    the question, a brace holding the operating expenses together, */
 /* #    and the formula in a boxed tag on the right carrying the same */
 /* #    number as the step it computes. */
-/* # 🔗 Asked on 2026-10-27 with a photograph of the model. The first */
+/* # Ã°ÂÂÂ Asked on 2026-10-27 with a photograph of the model. The first */
 /* #    skeleton put the formula in the amount column, which reads as */
 /* #    an amount; a tag at the right edge reads as a rule. */
-/* # 🔗 Three columns, and the names were already in the gate: c1 for */
+/* # Ã°ÂÂÂ Three columns, and the names were already in the gate: c1 for */
 /* #    the step or the brace, c2 for the line, c3 for the rule. */
 /* ============================================================ */
 .msheet table.finStmt td.c1 {text-align:right; white-space:nowrap; padding:2px 8px 2px 2px; font-weight:700; color:#1c4e9c; vertical-align:top;}
 .msheet table.finStmt td.c2 {text-align:left; white-space:normal; padding-right:18px;}
 .msheet table.finStmt td.c3 {text-align:left; white-space:nowrap; vertical-align:top;}
+/* ============================================================ */
+/* # ð ð§¾  A RULE WIDER THAN ITS HALF WRAPS BETWEEN TERMS      */
+/* # ð¤ CSS */
+/* # ð¯ One ladder has the whole page to stretch in, so its rule */
+/* #    may stay on one line. TWO ladders under one head share that */
+/* #    width, and `preferred + common + paid-in + retained` is wider */
+/* #    than the half it sits in - so the balance sheet was pushing a */
+/* #    scrollbar under itself and cutting its own right edge off. */
+/* # ð It wraps BETWEEN terms and never inside one: a term and its */
+/* #    Arabic gloss are one word to the eye, and a line break through */
+/* #    the middle of `paid-in capital` would read as two lines. */
+/* ============================================================ */
+.msheet .eqPair table.finStmt td.c3 {white-space:normal;}
+.msheet .eqPair table.finStmt td.c3 .fsWd,
+.msheet .eqPair table.finStmt td.c3 .an > b {white-space:nowrap;}
 /* The brace: a label held against a rule down its right side, spanning the
    rows it gathers - which is exactly what a hand-drawn bracket does */
 .msheet table.finStmt td.c1.lbl {
@@ -257,13 +272,13 @@
 /* A blank is a place to write, so it looks like one */
 
 /* ============================================================ */
-/* # 🔀 🧾  ONE STATEMENT, SEVERAL SHAPES */
-/* # 🔤 CSS */
-/* # 🎯 A strip of choices over the statement: with preferred stock, */
+/* # Ã°ÂÂÂ Ã°ÂÂ§Â¾  ONE STATEMENT, SEVERAL SHAPES */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ A strip of choices over the statement: with preferred stock, */
 /* #    without it, or a household's. The reader noticed that E3-1's */
 /* #    answer has no preferred or common stock line at all, only a */
 /* #    dividend - so the shape is not one shape. */
-/* # 🔗 Which one is showing is runtime state: the gate keeps no `on` */
+/* # Ã°ÂÂÂ Which one is showing is runtime state: the gate keeps no `on` */
 /* #    class and no `hidden` attribute, so the paper sets both when */
 /* #    it draws. A stored page therefore cannot arrive half-open. */
 /* ============================================================ */
@@ -276,19 +291,19 @@
 .msheet .fsTab.on {background:#1c4e9c; border-color:#1c4e9c; color:#fff; font-weight:700;}
 
 /* ============================================================ */
-/* # 🔠 🧾  TWO LANGUAGES DOWN ONE LADDER, AND A BOX ROUND IT */
-/* # 🔤 CSS */
-/* # 🎯 Every line of the statement carries its Arabic translation */
+/* # Ã°ÂÂÂ  Ã°ÂÂ§Â¾  TWO LANGUAGES DOWN ONE LADDER, AND A BOX ROUND IT */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ Every line of the statement carries its Arabic translation */
 /* #    directly under it - smaller, and close enough to belong to it - */
 /* #    and the whole statement sits in a framed box under a header */
 /* #    row, so it reads as a table and not as loose lines. */
-/* # 🔗 Asked on 2026-10-27, and it REPLACES the two separate ladders */
+/* # Ã°ÂÂÂ Asked on 2026-10-27, and it REPLACES the two separate ladders */
 /* #    (one English, one Arabic, switched by `data-rlang`): the reader */
 /* #    had to learn the same shape twice and never saw the two names */
 /* #    of a line together, which is the thing being learnt. */
-/* # 🔗 The gap is 1px on purpose. A translation sitting as far from */
+/* # Ã°ÂÂÂ The gap is 1px on purpose. A translation sitting as far from */
 /* #    its line as the next line does belongs to neither of them. */
-/* # 🔗 The hairline before the rule column is the ONE vertical line a */
+/* # Ã°ÂÂÂ The hairline before the rule column is the ONE vertical line a */
 /* #    statement may carry: the rule is not part of its body. The */
 /* #    amounts still share one column with no borders between cells, */
 /* #    which is what `GuardStatement` measures and what makes a */
@@ -339,20 +354,20 @@
 }
 
 /* ============================================================ */
-/* # 🎨 🧾  THE HEAD OF A STATEMENT, AND A GLOSS UNDER ITS TERM */
-/* # 🔤 CSS */
-/* # 🎯 Three things asked on 2026-10-27 after the first bilingual */
+/* # Ã°ÂÂÂ¨ Ã°ÂÂ§Â¾  THE HEAD OF A STATEMENT, AND A GLOSS UNDER ITS TERM */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ Three things asked on 2026-10-27 after the first bilingual */
 /* #    draw: the head of the statement gets a ground of its own so it */
 /* #    reads as the head; its date line carries three blanks (month, */
 /* #    day, year) with the word for what goes in each; and a gloss in */
 /* #    a rule box sits under the TERM it translates. */
-/* # 🔗 `revenues − COGS` with `الإيرادات − التكلفة` under the whole of */
+/* # Ã°ÂÂÂ `revenues Ã¢ÂÂ COGS` with `ÃÂ§ÃÂÃÂ¥ÃÂÃÂ±ÃÂ§ÃÂ¯ÃÂ§ÃÂª Ã¢ÂÂ ÃÂ§ÃÂÃÂªÃÂÃÂÃÂÃÂ©` under the whole of */
 /* #    it restates the rule in Arabic - which teaches the rule twice */
 /* #    and the vocabulary not at all. Under each word its own word, */
 /* #    and the operator stands between them once. */
-/* # 🔗 So `fsWd` is inline-block: a block gloss inside it falls under */
+/* # Ã°ÂÂÂ So `fsWd` is inline-block: a block gloss inside it falls under */
 /* #    that word's own box, not under the line. */
-/* # 🔗 And the head carries NO gloss at all now: a company's name is */
+/* # Ã°ÂÂÂ And the head carries NO gloss at all now: a company's name is */
 /* #    not a term to learn, and `Income Statement` stands over the */
 /* #    thing it names in the language the exam is written in. */
 /* ============================================================ */
@@ -371,18 +386,18 @@
 .msheet table.finStmt .an {line-height:1.4; padding:1px 7px;}
 
 /* ============================================================ */
-/* # 🤔 🧾  A STATEMENT THAT ANSWERS A DECISION */
-/* # 🔤 CSS */
-/* # 🎯 One statement, and over it the questions it answers: what is */
+/* # Ã°ÂÂ¤Â Ã°ÂÂ§Â¾  A STATEMENT THAT ANSWERS A DECISION */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ One statement, and over it the questions it answers: what is */
 /* #    done with the net profit after taxes. Press `paid to preferred */
 /* #    stockholders` and the two rungs that follow from it appear; */
 /* #    press `kept in the company` and the retained-earnings line */
 /* #    appears with the rule that fits what else is chosen. */
-/* # 🔗 It replaces three pre-drawn shapes picked from a strip. Three */
+/* # Ã°ÂÂÂ It replaces three pre-drawn shapes picked from a strip. Three */
 /* #    shapes are three answers already given; a reader who presses */
 /* #    the decision himself is the one who learns which rungs follow */
 /* #    from it - and the combinations are more than three. */
-/* # 🔗 A chosen option wears a tick, because a pill that only changes */
+/* # Ã°ÂÂÂ A chosen option wears a tick, because a pill that only changes */
 /* #    colour reads as `selected tab`, and these are not tabs: two of */
 /* #    them can be on at once. */
 /* ============================================================ */
@@ -404,34 +419,51 @@
 .msheet .fsOpt.on::before {content:"\2713\00a0";}
 
 /* ============================================================ */
-/* # 🔍 🤔  THE WHOLE STATEMENT IN VIEW WHILE THE DECISION IS MADE */
-/* # 🔤 CSS */
-/* # 🎯 The statement is drawn at HALF size. Asked on 2026-10-27 and */
+/* # Ã°ÂÂÂ Ã°ÂÂ¤Â  THE WHOLE STATEMENT IN VIEW WHILE THE DECISION IS MADE */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ The statement is drawn at HALF size. Asked on 2026-10-27 and */
 /* #    for a reason that is the point of the whole feature: a reader */
 /* #    pressing a choice must see the ladder change in front of him, */
 /* #    and a ladder taller than the window changes out of sight. */
-/* # 🔗 `zoom` and not `transform`: a transform leaves the full-size */
+/* # Ã°ÂÂÂ `zoom` and not `transform`: a transform leaves the full-size */
 /* #    box behind it, so the page would keep a column of dead space */
 /* #    where the statement used to be. `zoom` takes the layout with it. */
-/* # 🔗 ONE NUMBER, `--fsSize`, and the questions above are NOT in it: */
+/* # Ã°ÂÂÂ ONE NUMBER, `--fsSize`, and the questions above are NOT in it: */
 /* #    the choices stay full size, because they are what is being read */
 /* #    and pressed while the statement moves. */
 /* ============================================================ */
 .msheet .finStmtWrap.fsFrame {zoom: var(--fsSize, .65);}
 
 /* ============================================================ */
-/* # 🪧 🤔  A CHOICE SAYS ITSELF TWICE, AND A QUESTION CAN BE ASKED */
-/* # 🔤 CSS */
-/* # 🎯 `household` is not a word a reader of the Arabic summary knows, */
+/* # Ã°ÂÂªÂ§ Ã°ÂÂ¤Â  A CHOICE SAYS ITSELF TWICE, AND A QUESTION CAN BE ASKED */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ `household` is not a word a reader of the Arabic summary knows, */
 /* #    so a choice carries its own word under it like every line of */
 /* #    the statement does. And the first question - a company or a */
 /* #    household - earns an explanation: a box in its corner opens a */
 /* #    panel saying why the two statements are not the same statement. */
-/* # 🔗 The panel is POP-IN and not a window: it takes its place in the */
+/* # Ã°ÂÂÂ The panel is POP-IN and not a window: it takes its place in the */
 /* #    page under the choices, because a window over the statement */
 /* #    would hide the very thing the question is about. */
 /* ============================================================ */
 .msheet .fsAsk {position:relative;}
+/* ============================================================ */
+/* # 🙈 🚪  WHAT THE DECISION HIDES MUST ACTUALLY GO              */
+/* # 🔤 CSS */
+/* # 🎯 The engine hides a question or a statement by setting the */
+/* #    `hidden` property on it. `hidden` is only `display:none` in */
+/* #    the browser's own stylesheet, and ANY author rule beats it - */
+/* #    so `.fsAsk {display:flex}` kept every hidden question on the */
+/* #    page. The balance sheet asked `which lines does this balance */
+/* #    sheet carry` while drawing the statement of retained */
+/* #    earnings, and the income page asked who gets a share of the */
+/* #    profit while drawing a household's statement. */
+/* # 🔗 Found on 2026-10-28 by rendering the page, not by reading */
+/* #    the property: `el.hidden` was true the whole time. A guard */
+/* #    that asks the element whether it is hidden learns nothing - */
+/* #    it has to ask what is DRAWN. */
+/* ============================================================ */
+.msheet [hidden] {display:none !important;}
 /* OUTSIDE A TABLE `fsAr` HAS NO STYLE AT ALL: the rule that gives it a */
 /* line of its own is scoped to `table.finStmt`, so the first gloss put */
 /* on a pill ran on inline beside the English and read as part of it */
@@ -458,17 +490,17 @@
 .msheet .fsWhy b {color:#1c4e9c;}
 
 /* ============================================================ */
-/* # 🎨 🤔  A CHOICE AND ITS LINES WEAR ONE COLOUR */
-/* # 🔤 CSS */
-/* # 🎯 Asked on 2026-10-28: press `the preferred stockholders` and the */
+/* # Ã°ÂÂÂ¨ Ã°ÂÂ¤Â  A CHOICE AND ITS LINES WEAR ONE COLOUR */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ Asked on 2026-10-28: press `the preferred stockholders` and the */
 /* #    rows it adds are the colour of the button that added them, so */
 /* #    the reader can tell at a glance which decision put which line */
 /* #    on the statement. Three decisions, three hues. */
-/* # 🔗 ONE VARIABLE AND NOT A COLOUR WRITTEN TWICE. `--hue` is set by */
+/* # Ã°ÂÂÂ ONE VARIABLE AND NOT A COLOUR WRITTEN TWICE. `--hue` is set by */
 /* #    the class, and the pill and the row both read it - so the tie */
 /* #    between a button and its lines is a thing that can be MEASURED */
 /* #    equal, not two hex codes that agree until one of them is edited. */
-/* # 🔗 The always-standing ladder keeps the page's own blue: the three */
+/* # Ã°ÂÂÂ The always-standing ladder keeps the page's own blue: the three */
 /* #    hues are additions to it, and what is always there is not a */
 /* #    decision anybody made. */
 /* ============================================================ */
@@ -487,11 +519,11 @@
 .msheet table.finStmt .an[class*="fsHue"] b {border-inline-end-color:var(--hue);}
 
 /* ============================================================ */
-/* # 🧾 ⚖️  ONE HEAD OVER TWO HALVES */
-/* # 🔤 CSS */
-/* # 🎯 A balance sheet is one statement drawn as two ladders that must */
+/* # Ã°ÂÂ§Â¾ Ã¢ÂÂÃ¯Â¸Â  ONE HEAD OVER TWO HALVES */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ A balance sheet is one statement drawn as two ladders that must */
 /* #    meet, and the head names whose it is once - not twice. */
-/* # 🔗 A `<caption>` belongs to a table, so a head over a PAIR of them */
+/* # Ã°ÂÂÂ A `<caption>` belongs to a table, so a head over a PAIR of them */
 /* #    cannot be one. `fsHead` is the same head standing outside both, */
 /* #    and it is given the caption's own ground by being named in the */
 /* #    same rule - one look, not a second copy of it. */
@@ -500,16 +532,16 @@
 .msheet .fsHead + .eqPair {margin-top:0;}
 
 /* ============================================================ */
-/* # 🗝️ 🧾  THE READER'S OWN MNEMONIC, BESIDE THE RUNG IT NAMES */
-/* # 🔤 CSS */
-/* # 🎯 A fourth column, after the rule: the few letters the reader */
+/* # Ã°ÂÂÂÃ¯Â¸Â Ã°ÂÂ§Â¾  THE READER'S OWN MNEMONIC, BESIDE THE RUNG IT NAMES */
+/* # Ã°ÂÂÂ¤ CSS */
+/* # Ã°ÂÂÂ¯ A fourth column, after the rule: the few letters the reader */
 /* #    says to himself to recall the order of the lines. */
-/* # 🔗 Asked on 2026-10-28 and written by him, not by me - `1 ت:سوجس` */
+/* # Ã°ÂÂÂ Asked on 2026-10-28 and written by him, not by me - `1 ÃÂª:ÃÂ³ÃÂÃÂ¬ÃÂ³` */
 /* #    is `Total revenues, less COGS` in the letters HE hears. A */
 /* #    mnemonic that is not the reader's own is one more thing to */
 /* #    learn, so this column holds whatever he puts in it and nothing */
 /* #    here shapes the words. */
-/* # 🔗 It sits past the hairline, reads right to left, and carries no */
+/* # Ã°ÂÂÂ It sits past the hairline, reads right to left, and carries no */
 /* #    rule of its own: it is a margin note, not a line of the */
 /* #    statement - which is why it is quiet and not coloured like one. */
 /* ============================================================ */
@@ -594,7 +626,7 @@
    THE WRAPPER THIS BOARD PUTS AROUND EACH SHEET
    A sheet arrives as a finished page; what is added here is only
    where it sits on this board and the one thing it did not have
-   before — a box to tick when you can do it.
+   before Ã¢ÂÂ a box to tick when you can do it.
 
    AND IT IS AN 800-PIXEL A4, DRAWN SMALLER -- NEVER A NARROWER PAGE.
    This is their own geometry, to the pixel, and the summary sheet on
@@ -648,7 +680,7 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
                background: #fff; cursor: pointer; padding: 0; }
 .msheet-tick.on { background: #2f7d4f; border-color: #2f7d4f; }
 
-/* The bank's last word about this card, ON the card's own box — the
+/* The bank's last word about this card, ON the card's own box Ã¢ÂÂ the
    same rule as the rows: the colour is the bank's and the tick drawn
    inside it is the reader's. The green of a tick and the green of a
    right answer are deliberately the same green; they are not in
@@ -656,8 +688,8 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
 .msheet-tick.ok { background: #3f9a52; border-color: #2f7d4f; }
 .msheet-tick.no { background: #c0392b; border-color: #96281b; }
 
-/* A LAW PAGE HAS NO TICK — nothing on it is "done", it is the page you
-   work from — so the one thing that can be said about it gets a square
+/* A LAW PAGE HAS NO TICK Ã¢ÂÂ nothing on it is "done", it is the page you
+   work from Ã¢ÂÂ so the one thing that can be said about it gets a square
    of its own, standing where a card's tick would be */
 .msheet-bank { position: absolute; z-index: 3;
                top: calc(38px / var(--sheetScale, 1));
@@ -670,7 +702,7 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
 .msheet-bank.no { background: #c0392b; }
 /* A TICK HAS ONE SHORT ARM AND ONE LONG ONE. Drawn inside a box as wide
    as it is tall, the two arms come out equal and what the reader sees
-   is a chevron — an arrow pointing down, which reads as "open this",
+   is a chevron Ã¢ÂÂ an arrow pointing down, which reads as "open this",
    not as "I have done this". Reported as exactly that. So the box the
    arms are drawn in is narrow and tall (32% by 60%), and the corner
    turns to the bottom: short arm up to the left, long arm up to the
@@ -694,7 +726,7 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
    around, and a second drawing of it would be a second thing to keep
    in step. It sits in a sheet of its own over the page rather than
    inside the explanation window, because what it holds is not an
-   explanation — it is this problem's own numbers and the keys the
+   explanation Ã¢ÂÂ it is this problem's own numbers and the keys the
    book presses on them.
    ============================================================ */
 .mcalc-veil { position: fixed; inset: 0; z-index: 60; background: rgba(12,13,16,.55);
@@ -706,7 +738,7 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
 .mcalc-name { font-weight: 700; font-size: 13.5px; flex: 1 1 auto; }
 .mcalc-shut { border: 1px solid #c9ccd2; background: #fff; color: #6b6d75; width: 24px; height: 24px;
               border-radius: 6px; cursor: pointer; flex: 0 0 auto; font-size: 15px; line-height: 1; }
-/* ---------- الحاسبة المالية (BA II Plus) — الشكل 5.3 في الكتاب ---------- */
+/* ---------- ÃÂ§ÃÂÃÂ­ÃÂ§ÃÂ³ÃÂ¨ÃÂ© ÃÂ§ÃÂÃÂÃÂ§ÃÂÃÂÃÂ© (BA II Plus) Ã¢ÂÂ ÃÂ§ÃÂÃÂ´ÃÂÃÂ 5.3 ÃÂÃÂ ÃÂ§ÃÂÃÂÃÂªÃÂ§ÃÂ¨ ---------- */
 .w5Calc{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;margin-top:6px}
 .w5CalcBody{flex:0 0 268px;background:#23252b;border:1px solid #3a3d45;border-radius:14px;padding:12px 11px 13px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .w5Disp{background:#c9d6c2;border:1px solid #2c2f35;border-radius:5px;padding:7px 9px;margin-bottom:10px;min-height:44px;direction:ltr;text-align:right;font-family:ui-monospace,Consolas,monospace}
@@ -739,12 +771,12 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
 .w5CalcMsg b{color:#1c4e9c}
 
 /* ============================================================ */
-/* # 🖊️ 📐  THE NOTEBOOK UNDER A PRACTICE CARD                  */
-/* # 🔤 CSS                                                      */
-/* # 🎯 The writing area, its toolbar, and the two canvases       */
-/* # 🔗 MEASURED BEFORE IT WAS DRAWN (2026-10-20): the card is a  */
-/* #    page of 800 × 1131 whose question is 160 tall, so the     */
-/* #    room under it runs 825–979 with a median of 963 — within  */
+/* # Ã°ÂÂÂÃ¯Â¸Â Ã°ÂÂÂ  THE NOTEBOOK UNDER A PRACTICE CARD                  */
+/* # Ã°ÂÂÂ¤ CSS                                                      */
+/* # Ã°ÂÂÂ¯ The writing area, its toolbar, and the two canvases       */
+/* # Ã°ÂÂÂ MEASURED BEFORE IT WAS DRAWN (2026-10-20): the card is a  */
+/* #    page of 800 ÃÂ 1131 whose question is 160 tall, so the     */
+/* #    room under it runs 825Ã¢ÂÂ979 with a median of 963 Ã¢ÂÂ within  */
 /* #    two per cent of the same measurement on the reader's own  */
 /* #    machine. So the box FILLS what is left rather than being  */
 /* #    given a height of its own: the page already has the room, */
@@ -780,7 +812,7 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
          border: 1px solid rgba(0, 0, 0, .25); }
 .inkSw.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3a6bb0; }
 /* The number is ON the slot, because a nib you cannot read is a nib you
-   cannot choose — and these three are meant to be adjusted later */
+   cannot choose Ã¢ÂÂ and these three are meant to be adjusted later */
 .inkWz { font-variant-numeric: tabular-nums; }
 
 /* Squared paper, as the working is done on squared paper: 24px to the
@@ -792,11 +824,11 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
                     repeating-linear-gradient(to left,   transparent 0 23px, #e9ecf1 23px 24px);
 }
 
-/* ★ LAID OUT BY ITS BOX, NOT BY ITS OWN SIZE.
+/* Ã¢ÂÂ LAID OUT BY ITS BOX, NOT BY ITS OWN SIZE.
    With `height:100%` inside a flex item whose height is not definite,
-   the percentage falls back to the canvas's INTRINSIC size — so every
-   time the store was set to `offsetHeight × density` the layout grew by
-   the density, and the next pass grew it again: measured 1597 → 3513 →
+   the percentage falls back to the canvas's INTRINSIC size Ã¢ÂÂ so every
+   time the store was set to `offsetHeight ÃÂ density` the layout grew by
+   the density, and the next pass grew it again: measured 1597 Ã¢ÂÂ 3513 Ã¢ÂÂ
    7729 pixels in three passes, which on a pinch is a notebook growing
    without bound until the memory runs out. Absolutely positioned, the
    size comes from the pad's box alone and nothing feeds back.
@@ -804,7 +836,7 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
    settled both readings identically and showed nothing */
 .inkDry {
   /* AND THE TWO PERCENTAGES STAY. `inset:0` alone does not stretch a
-     REPLACED element — a canvas with `width:auto` takes its intrinsic
+     REPLACED element Ã¢ÂÂ a canvas with `width:auto` takes its intrinsic
      size and the opposite inset is simply ignored, which is the same
      3194-pixel runaway by another road. Absolute positioning is what
      makes the percentages resolve against the pad's box instead of
@@ -818,11 +850,11 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
   cursor: crosshair;
 }
 
-/* The live stroke, above the dry page and catching nothing — every event
+/* The live stroke, above the dry page and catching nothing Ã¢ÂÂ every event
    belongs to the canvas underneath.
    AND IT IS NOT DISPLAYED UNLESS THE PEN IS DOWN: this is a low-latency
    surface, and emptying its store frees memory without committing a
-   frame — so the last stroke drawn on it can stay visible above the dry
+   frame Ã¢ÂÂ so the last stroke drawn on it can stay visible above the dry
    page as a ghost. The reader's own machine met exactly that ("I erased
    the line and it stayed until I drew something else"), and the cure is
    not to bet on compositor semantics: an element that is not displayed
@@ -831,18 +863,18 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
           pointer-events: none; }
 .inkBox.penDown .inkWet { display: block; }
 
-/* ═══ THE ATTEMPTS: A TAB FOR EACH, AND SAVE SEALS THE ONE IN HAND ═══
-   ★ Save sits at the RIGHT end and the tabs run leftwards from it, the
+/* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ THE ATTEMPTS: A TAB FOR EACH, AND SAVE SEALS THE ONE IN HAND Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+   Ã¢ÂÂ Save sits at the RIGHT end and the tabs run leftwards from it, the
    way the reader asked for it on his own machine ("a Save button above
    the box on the right, and a tab to its left named 1"). The board's own
    direction is left-to-right, so the strip declares its own: DOM order
-   then IS the visual order from the right — Save first, then 1, then 2.
+   then IS the visual order from the right Ã¢ÂÂ Save first, then 1, then 2.
    Written as a direction rather than as `margin-inline-start:auto`, so
    it stays true if the board ever turns around.
-   ★ And the fit is on the CONTAINER, not the tab: `margin-bottom:-1px`
+   Ã¢ÂÂ And the fit is on the CONTAINER, not the tab: `margin-bottom:-1px`
    drops the strip a pixel onto the paper's edge and the open tab's own
    background covers that pixel of it, so the tab opens onto the page as
-   a browser's does. On the tab itself it would be CLIPPED — a tab lives
+   a browser's does. On the tab itself it would be CLIPPED Ã¢ÂÂ a tab lives
    inside a strip that scrolls, and overflow out of a scrolling box is
    cut and does not float. */
 .inkTabs {
@@ -856,7 +888,7 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
 }
 .inkSaveBtn:hover { background: #315c99; border-color: #315c99; }
 /* The whole name is the identity of an attempt, so the overflow is
-   SCROLLED and never cut — and the scrollbar is hidden on purpose: with
+   SCROLLED and never cut Ã¢ÂÂ and the scrollbar is hidden on purpose: with
    `align-items:flex-end` its eleven pixels come off the bottom of the
    box and lift the tabs off the paper, which breaks the join at the
    exact moment the attempts become many. Finger and wheel still scroll
@@ -868,7 +900,7 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
 }
 .inkTabStrip::-webkit-scrollbar { display: none; }
 /* And a tab's own text reads left-to-right inside the right-to-left
-   strip: "2 · 2026/10/20 4:38 PM" is numbers and separators, and the
+   strip: "2 ÃÂ· 2026/10/20 4:38 PM" is numbers and separators, and the
    opposite direction would turn their order around under the reader */
 .inkTab {
   flex: 0 0 auto; direction: ltr; unicode-bidi: isolate;
@@ -895,10 +927,10 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
   border-radius: 999px; padding: 1px 8px 2px;
 }
 
-/* ═══ SELECTING WHAT WAS WRITTEN ═══
+/* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ SELECTING WHAT WAS WRITTEN Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
    An ELEMENT over the pad and not a drawing on it: the live canvas is
    the running stroke's and adds without clearing, and the dry one is
-   wiped by every repaint — a box drawn on either would fight them. Over
+   wiped by every repaint Ã¢ÂÂ a box drawn on either would fight them. Over
    the pad it also follows the page's own scaling with no arithmetic */
 .inkMarq {
   position: absolute; z-index: 4; box-sizing: border-box;
@@ -919,8 +951,8 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
   background: #fff; cursor: nwse-resize; touch-action: none;
 }
 
-/* ═══ THE WHOLE SCREEN ═══
-   ★ The LAYOUT size is untouched — only a transform — because every
+/* Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ THE WHOLE SCREEN Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+   Ã¢ÂÂ The LAYOUT size is untouched Ã¢ÂÂ only a transform Ã¢ÂÂ because every
    stored coordinate means "this far across a pad of this layout size".
    And the bottom margin gives back the room the transform does not take
    from the flow, or the page is cut off at the bottom */
@@ -932,7 +964,7 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
 .inkBox.inkFull .inkBar, .inkBox.inkFull .inkTabs { flex: 0 0 auto; }
 .inkBox.inkFull .inkPad {
   /* The size it had OUTSIDE full screen, pinned in pixels by the script
-     before the class went on — not a size of this stylesheet's choosing.
+     before the class went on Ã¢ÂÂ not a size of this stylesheet's choosing.
      Every stored coordinate means "this far across a pad of this layout
      size", so this is the one number that must not move */
   flex: 0 0 auto;
@@ -949,9 +981,9 @@ body.darkpaper .msheet { filter: invert(1) hue-rotate(180deg); }
    it", and the reader had to drag once to find out which tool he held */
 .inkSelBtn.on { box-shadow: 0 0 0 2px rgba(58, 107, 176, .32); }
 .inkSelBtn.on svg rect { fill: rgba(255, 255, 255, .38); stroke-dasharray: none; }
-/* ★ AND THE DARK PAGE IS REAPPLIED HERE. The dark look is a filter on
+/* Ã¢ÂÂ AND THE DARK PAGE IS REAPPLIED HERE. The dark look is a filter on
    `.msheet`, and an element raised into the top layer is NOT touched by
-   its ancestors' filters — so the notebook came out light while the rest
+   its ancestors' filters Ã¢ÂÂ so the notebook came out light while the rest
    of the page was dark. Put back on the box itself, and only when it is
    full-screen, so nothing is inverted twice */
 body.darkpaper .inkBox.inkFull { filter: invert(1) hue-rotate(180deg); }

@@ -286,8 +286,16 @@
     // ---- 9  A WHOLE OTHER STATEMENT, AND THE QUESTION THAT DOES NOT APPLY
     press('household');
     say(shown() === 'household', 'the household’s statement takes its place: ' + shown());
-    say(sheet.querySelector('.fsAsk[data-ask="profit"]').hidden === true,
-      'and a company’s question is not asked of a household');
+    const gone = sheet.querySelector('.fsAsk[data-ask="profit"]');
+    say(gone.hidden === true, 'and a company’s question is not asked of a household');
+    // AND IT IS ACTUALLY GONE FROM THE PAGE. `hidden` is only
+    // `display:none` in the BROWSER's stylesheet, and any author rule
+    // beats it - `.fsAsk {display:flex}` kept every hidden question on
+    // screen, property and all, until 2026-10-28. Asking the element
+    // whether it is hidden learns nothing; ask what is drawn
+    say(getComputedStyle(gone).display === 'none' && gone.offsetParent === null,
+      'and the stylesheet really takes it off the page: display '
+      + getComputedStyle(gone).display);
     say(/Household/.test(table().querySelector('.fsCo').textContent), 'and the head names whose it is');
     // ONE numbered rung here: the two income lines are gathered by a brace
     // and carry no step of their own, exactly as the operating expenses do

@@ -393,11 +393,11 @@
 }
 .msheet .fsQ {
   width:100%; text-align:center; font-weight:700; color:#44557a;
-  font-size:calc(10.5px * var(--fs)); margin:0 0 1px;
+  font-size:calc(9.5px * var(--fs)); margin:0 0 1px;
 }
 .msheet .fsOpt {
   cursor:pointer; user-select:none; border:1px solid #c3d0e4; border-radius:999px;
-  padding:2px 11px; font-size:calc(10.5px * var(--fs)); color:#44557a; background:#fff;
+  padding:1px 9px; font-size:calc(9px * var(--fs)); color:#44557a; background:#fff;
 }
 .msheet .fsOpt:hover {border-color:#9db4d6;}
 .msheet .fsOpt.on {background:#1c4e9c; border-color:#1c4e9c; color:#fff; font-weight:700;}
@@ -417,7 +417,7 @@
 /* #    the choices stay full size, because they are what is being read */
 /* #    and pressed while the statement moves. */
 /* ============================================================ */
-.msheet .finStmtWrap.fsFrame {zoom: var(--fsSize, .5);}
+.msheet .finStmtWrap.fsFrame {zoom: var(--fsSize, .65);}
 
 /* ============================================================ */
 /* # 🪧 🤔  A CHOICE SAYS ITSELF TWICE, AND A QUESTION CAN BE ASKED */
@@ -498,6 +498,27 @@
 /* ============================================================ */
 .msheet .fsHead {text-align:center; white-space:normal;}
 .msheet .fsHead + .eqPair {margin-top:0;}
+
+/* ============================================================ */
+/* # 🗝️ 🧾  THE READER'S OWN MNEMONIC, BESIDE THE RUNG IT NAMES */
+/* # 🔤 CSS */
+/* # 🎯 A fourth column, after the rule: the few letters the reader */
+/* #    says to himself to recall the order of the lines. */
+/* # 🔗 Asked on 2026-10-28 and written by him, not by me - `1 ت:سوجس` */
+/* #    is `Total revenues, less COGS` in the letters HE hears. A */
+/* #    mnemonic that is not the reader's own is one more thing to */
+/* #    learn, so this column holds whatever he puts in it and nothing */
+/* #    here shapes the words. */
+/* # 🔗 It sits past the hairline, reads right to left, and carries no */
+/* #    rule of its own: it is a margin note, not a line of the */
+/* #    statement - which is why it is quiet and not coloured like one. */
+/* ============================================================ */
+.msheet table.finStmt td.c4 {
+  text-align:right; white-space:nowrap; direction:rtl; vertical-align:top;
+  padding-inline-start:16px; padding-inline-end:2px;
+  font-size:.95em; font-weight:700; color:#44557a; letter-spacing:.2px;
+}
+.msheet table.finStmt td.c4:empty {padding:0;}
 .msheet table.finStmt .miss {
   display:inline-block; min-width:118px; height:1em;
   border-bottom:1.4px dashed #bda34a; background:#fffbe9;

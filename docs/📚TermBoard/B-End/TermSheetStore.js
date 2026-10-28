@@ -102,7 +102,7 @@
     // them. Nothing styles it here or on the reader's own pages, so losing
     // it costs no look; it is kept because it is the author's own name for
     // what that table IS, and a name dropped once cannot be styled later
-    'qTable', 'qTableWrap', 'qTSec', 'qTbl', 'c1', 'c2', 'c3', 'n', 'u', 'd', 'r',
+    'qTable', 'qTableWrap', 'qTSec', 'qTbl', 'c1', 'c2', 'c3', 'c4', 'n', 'u', 'd', 'r',
     'in1', 'in2', 'an', 'lc', 'lcOp', 'dt', 'cr', 'tot', 'no', 'yes',
     // the financial statements, the journal and the cash flows
     'finStmt', 'finStmtWrap', 'fsKey', 'fsTitle', 'fsCo', 'fsWhen', 'acct',

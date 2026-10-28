@@ -1611,6 +1611,13 @@
       let moved = false;
       livingSections().forEach(s => {
         if (s.kind !== 'rules' || !s.group) return;
+        // A STACK THAT WAS NOT MENTIONED IS NOT A STACK OF NOTHING.
+        // `Number(undefined)` is NaN and NaN || 0 is 0, so handing
+        // this two counts used to empty every other part in the
+        // chapter - ten of them, silently, while the two named ones
+        // took the right numbers. 2026-10-28, splitting the balance
+        // sheet: `Income Rules 21` became `Income Rules 0`
+        if (!Object.prototype.hasOwnProperty.call(counts, s.group)) return;
         const n = Math.max(0, Math.trunc(Number(counts[s.group])) || 0);
         if (n === s.units) return;
         s.units = n;

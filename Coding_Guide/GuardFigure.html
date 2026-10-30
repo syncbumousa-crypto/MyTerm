@@ -1,0 +1,114 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · a figure page is shown whole, and shut out</title>
+<pre id="o">pending</pre>
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermSheetStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermSheetPaper.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ 🖼️  THE PAGE RUNS, AND IT RUNS SHUT OUT
+  // # 🔤 HTML + JavaScript
+  // # 🎯 An explanation that is a whole page - drawings, sliders, live
+  // #    numbers - cannot be stored in a sheet: the gate keeps no
+  // #    script and no svg, and that is the one thing protecting a
+  // #    reader from text that arrives through his own Drive.
+  // # 🎯 So the page is published under `Figs/` and the sheet carries
+  // #    an empty slot naming it. What is measured here: the slot
+  // #    survives the gate with its name and nothing else, it becomes
+  // #    an iframe pointing at that file, the frame is SANDBOXED
+  // #    WITHOUT same-origin, a second draw does not stack a second
+  // #    frame, a sheet with no slot is left alone, and the height the
+  // #    page reports is taken while a message that names no figure or
+  // #    an absurd height is not.
+  // # 🔗 Asked on 2026-10-30: the `?` on law 1.6 must open the page he
+  // #    wrote, with its own code and look, not a retelling of it.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (async () => {
+    const o = document.getElementById('o');
+    const S = window.MyTermSheetStore, P = window.MyTermSheetPaper;
+    if (!S || !P || typeof P.decide !== 'function') { o.textContent = 'FAIL the store or the paper did not load'; return; }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+
+    // ---- 1  WHAT THE GATE KEEPS OF A SLOT
+    const raw = '<div class="eqPage"><div class="lawBox"><span class="lawNo">1.6</span>'
+      + '<span class="fsWhyBtn">?</span><div class="fsWhy">'
+      + '<div class="fig" data-fig="two-roads" data-h="1500" onclick="alert(1)" src="x"></div>'
+      + '</div></div></div>';
+    const kept = S.gate(raw);
+    say(/class="fig"/.test(kept), 'the slot survives the gate');
+    say(/data-fig="two-roads"/.test(kept) && /data-h="1500"/.test(kept),
+      'with the page it names and the height to start at');
+    say(!/onclick/.test(kept) && !/alert/.test(kept), 'and nothing it was not asked to carry');
+    // A SCRIPT NEVER TRAVELS IN A SHEET, which is the whole reason the
+    // page lives in a file of its own
+    say(!/script/i.test(S.gate('<div class="fig" data-fig="x"><script>alert(1)<\/script></div>')),
+      'and a script in a sheet is still dropped at the door');
+
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    host.innerHTML = '<div class="msheet msheet-law">' + kept + '</div>';
+    const sheet = host.querySelector('.msheet');
+
+    // ---- 2  THE SLOT BECOMES THE PAGE
+    P.decide(sheet);
+    const frames = sheet.querySelectorAll('.fig iframe');
+    say(frames.length === 1, 'the slot is drawn as one frame: ' + frames.length);
+    const f = frames[0];
+    say(/Figs\/two-roads\.html$/.test(f.getAttribute('src') || ''),
+      'pointing at the page it named: ' + (f.getAttribute('src') || '').split('/').slice(-2).join('/'));
+    say(parseInt(f.style.height, 10) === 1500, 'at the height the sheet asked for: ' + f.style.height);
+
+    // ---- 3  AND IT IS SHUT OUT
+    const box = (f.getAttribute('sandbox') || '');
+    say(/\ballow-scripts\b/.test(box), 'its own code runs: sandbox "' + box + '"');
+    say(!/allow-same-origin/.test(box),
+      'but it cannot reach the chapter, the store, or his Drive');
+
+    // ---- 4  DRAWN TWICE IS STILL ONE
+    P.decide(sheet);
+    say(sheet.querySelectorAll('.fig iframe').length === 1,
+      'a second drawing does not stack a second frame');
+
+    // ---- 5  AND THE PANEL IT SITS IN IS CLOSED ON ARRIVAL
+    // A law page has no question on it, and `decide` used to leave before
+    // reaching this - so the panel was drawn open with the page inside it
+    say(sheet.querySelector('.fsWhy').hidden === true,
+      'the panel of a LAW is shut when the page is drawn');
+    say(!sheet.querySelector('.fsWhyBtn').classList.contains('on'),
+      'and its question mark is not lit');
+
+    // ---- 6  A SHEET WITH NO SLOT IS LEFT ALONE
+    const plain = document.createElement('div');
+    plain.className = 'msheet';
+    plain.innerHTML = S.gate('<div class="eqPage"><div class="lawBox"><span class="lawNo">1.1</span>'
+      + '<div class="lawEq">a = b</div></div></div>');
+    document.body.appendChild(plain);
+    const before = plain.innerHTML;
+    P.decide(plain);
+    say(plain.querySelectorAll('iframe').length === 0 && plain.innerHTML === before,
+      'a sheet that names no page is not touched');
+
+    // ---- 7  THE HEIGHT IT REPORTS IS TAKEN, AND ONLY THAT
+    const tell = d => { window.dispatchEvent(new MessageEvent('message', { data: d })); };
+    tell({ fig: 'two-roads', h: 1234 });
+    await new Promise(r => setTimeout(r, 0));
+    say(parseInt(f.style.height, 10) === 1234, 'the page sets its own height: ' + f.style.height);
+    tell({ h: 400 });                 // names no figure
+    tell({ fig: 'something-else', h: 400 });
+    tell({ fig: 'two-roads', h: 99999 });   // absurd
+    tell({ fig: 'two-roads' });
+    await new Promise(r => setTimeout(r, 0));
+    say(parseInt(f.style.height, 10) === 1234,
+      'and a message that names nothing, names another, or asks for the sky is ignored: ' + f.style.height);
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })().catch(e => {
+    document.getElementById('o').textContent = 'FAIL the guard itself threw: ' + e + '\n' + (e && e.stack);
+  });
+</script>

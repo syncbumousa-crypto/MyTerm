@@ -474,8 +474,72 @@
   // The opening position: what the AUTHOR left standing. Separate from
   // `settle` on purpose - running the defaults on every settle would
   // undo the reader's own press on the very next one
+  // ============================================================
+  // # 🖼️ 🧩  A WHOLE EXPLAINING PAGE, SHOWN INSIDE A SHEET
+  // # 🔤 JavaScript
+  // # 🎯 Some explanations are a page of their own - drawings, sliders,
+  // #    numbers that move. None of that can be STORED in a sheet: the
+  // #    gate keeps seventeen tags and no script, and it must stay so,
+  // #    because a sheet's text comes out of a file in his Drive.
+  // # 🎯 So the page is published as a file of its own under `Figs/`,
+  // #    and the sheet carries one empty slot naming it. Here that slot
+  // #    becomes a SANDBOXED iframe: the page runs its own code and
+  // #    wears its own look, and cannot touch the chapter around it.
+  // # 🔗 Asked on 2026-10-30, for the `?` on law 1.6 of Ch6: put what
+  // #    is at this link behind it, with its own code and look, not
+  // #    rewritten.
+  // ============================================================
+  const figHome = () => {
+    const tag = document.querySelector('script[src*="TermSheetPaper.js"]');
+    const here = tag ? tag.getAttribute('src') : 'F-End/TermSheetPaper.js';
+    return new URL(here.replace(/F-End\/TermSheetPaper\.js.*$/, 'Figs/'), location.href).href;
+  };
+  const figures = page => {
+    if (!page) return;
+    page.querySelectorAll('.fig[data-fig]').forEach(slot => {
+      if (slot.querySelector('iframe')) return;
+      const name = String(slot.getAttribute('data-fig') || '').replace(/[^\w-]/g, '');
+      if (!name) return;
+      const frame = document.createElement('iframe');
+      frame.setAttribute('sandbox', 'allow-scripts');   // no same-origin: it cannot read him
+      frame.setAttribute('loading', 'lazy');
+      frame.setAttribute('title', name);
+      frame.src = figHome() + name + '.html';
+      frame.style.width = '100%';
+      frame.style.border = '0';
+      frame.style.display = 'block';
+      frame.style.height = Math.max(120, Number(slot.getAttribute('data-h')) || 900) + 'px';
+      frame.dataset.fig = name;
+      slot.appendChild(frame);
+    });
+  };
+  // THE PAGE MEASURES ITSELF. A sandboxed frame cannot be measured from
+  // outside, so it says how tall it is and this sets the frame to match
+  if (!window.__figHeard) {
+    window.__figHeard = true;
+    window.addEventListener('message', e => {
+      const d = e && e.data;
+      if (!d || typeof d !== 'object' || typeof d.fig !== 'string') return;
+      // NOT CLAMPED, IGNORED. A page that reports no height, or one no
+      // page has, has gone wrong - and clamping would quietly draw it
+      // at 120px or at six thousand instead of leaving it as it was
+      const h = Number(d.h);
+      if (!isFinite(h) || h < 120 || h > 6000) return;
+      const name = String(d.fig).replace(/[^\w-]/g, '');
+      document.querySelectorAll('iframe[data-fig="' + name + '"]')
+        .forEach(f => { f.style.height = h + 'px'; });
+    });
+  }
+
   const decide = page => {
-    if (!page || !page.querySelector('.fsAsk')) return;
+    if (!page) return;
+    // A PANEL AND A FIGURE BELONG TO A LAW TOO, NOT ONLY TO A QUESTION.
+    // This left the moment it found no question on the page, so a law
+    // that carried a `?` was drawn with its panel hanging open
+    figures(page);
+    page.querySelectorAll('.fsWhy').forEach(w => { w.hidden = true; });
+    page.querySelectorAll('.fsWhyBtn').forEach(x => x.classList.remove('on'));
+    if (!page.querySelector('.fsAsk')) return;
     page.querySelectorAll('.fsAsk').forEach(ask => {
       const opts = [...ask.querySelectorAll('.fsOpt')];
       opts.forEach(o => o.classList.toggle('on', o.hasAttribute('data-on')));

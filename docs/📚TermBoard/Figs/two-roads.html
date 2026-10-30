@@ -1,0 +1,303 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Two Roads to Year 2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=IBM+Plex+Sans+Arabic:wght@500&display=swap">
+<style>
+/* Layout: graph paper (chalkboard in dark mode). Header: question + title left, formula right.
+   Then the two roads side by side, each with its own drawing and working; then both drawings merged into one to solve. */
+:root{
+  --paper:#fbfaf5; --grid:#e6e9ef; --ink:#17203a; --faint:#6b7486;
+  --r1:#1a56c4; --r2:#16784a; --er:#c23a25; --hl:rgba(255,206,40,.5);
+  --hand:"Patrick Hand","Segoe Print","Comic Sans MS",cursive;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#1b2420; --grid:#24302a; --ink:#f1f4ee; --faint:#a9b8ae;
+  --r1:#93bbff; --r2:#8ee3ab; --er:#ff9d88; --hl:rgba(255,206,40,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#1b2420; --grid:#24302a; --ink:#f1f4ee; --faint:#a9b8ae;
+  --r1:#93bbff; --r2:#8ee3ab; --er:#ff9d88; --hl:rgba(255,206,40,.25); color-scheme:dark}
+body{background:var(--paper);color:var(--ink);font-family:var(--hand);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px}
+.sheet{max-width:900px;margin:0 auto;padding-block:20px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:26px}
+h1{font-weight:400;font-size:clamp(28px,4.6vw,38px);margin:0;line-height:1.15;text-wrap:balance}
+p{margin:0}
+.c1{color:var(--r1)} .c2{color:var(--r2)} .ce{color:var(--er)} .fa{color:var(--faint)}
+.hl{background:linear-gradient(transparent 55%,var(--hl) 55%);padding:0 4px}
+sup{font-size:.6em}
+
+/* header */
+.head{display:grid;gap:20px}
+.formulas{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media (max-width:860px){.formulas{grid-template-columns:1fr}}
+.formulas .eqn{font-size:clamp(18px,2.1vw,23px);--lh:30px}
+.formulas .sy small{font-size:11px}
+.formulas .sy small i{font-size:10.5px;direction:rtl;unicode-bidi:isolate}
+.formulas{margin-inline:calc(-1 * min(140px, max(0px, (100vw - 900px) / 2)))}
+.fcap{font-size:19px;color:var(--faint);text-align:center}
+.eqn sub{font-size:.6em;vertical-align:-.25em}
+.case{display:grid;gap:8px;min-width:0}
+#caseIntro{font-size:22px;line-height:1.4}
+.ask{font-size:22px;line-height:1.3;color:var(--faint)}
+.stepper{display:inline-flex;flex-direction:column-reverse;gap:2px;vertical-align:middle;margin:0 1px 0 4px}
+.stepper button{font-family:var(--hand);font-size:15px;line-height:1;width:20px;height:16px;border:1.5px solid var(--ink);border-radius:6px 8px 7px 5px;background:var(--paper);color:var(--ink);cursor:pointer;padding:0}
+.stepper button:disabled{opacity:.3;cursor:default}
+@media (max-width:720px){.head{grid-template-columns:1fr}}
+
+/* formula */
+.formula{display:grid;justify-items:center;min-width:0;max-width:100%}
+.eqn{--lh:32px;display:flex;align-items:flex-start;font-size:clamp(26px,4.6vw,32px);line-height:1.2;white-space:nowrap;overflow-x:auto;max-width:100%;padding:calc(var(--lh) + .6em + 10px) 4px 6px}
+.grp,.num,.den{display:inline-flex;align-items:flex-start}
+.sy{display:inline-flex;flex-direction:column;align-items:center}
+.sy small{height:var(--lh);margin-top:3px;font-size:12px;line-height:1.3;text-align:center;white-space:nowrap;opacity:.9}
+.sy small i{display:block;font-style:normal;font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;font-size:11px;line-height:1.3}
+.frac2{display:inline-flex;flex-direction:column;align-items:center;margin-top:calc(-.6em - var(--lh) - 9px)}
+.num{padding:0 6px 5px;border-bottom:2.5px solid var(--ink)}
+.den{padding:5px 6px 0}
+.eqn sup{font-size:.6em;line-height:1}
+.eqn{padding-top:6px}
+.op{align-self:center}
+.fsub{font-size:18px;color:var(--faint);text-align:center}
+.br{display:inline-flex;align-items:stretch}
+.inr{display:inline-flex;align-items:center;padding:0 3px}
+.pr{width:.2em;align-self:stretch;flex:none;margin-block:2px}
+.pl{border-left:2.2px solid var(--ink);border-radius:100% 0 0 100% / 50% 0 0 50%}
+.prr{border-right:2.2px solid var(--ink);border-radius:0 100% 100% 0 / 0 50% 50% 0}
+
+/* compounding band */
+.comp{display:grid;gap:4px;padding-bottom:18px;border-bottom:2px dashed var(--faint)}
+.ct{font-size:30px;line-height:1.2}
+.supsy{font-size:.6em;line-height:1;margin-top:-6px;margin-left:8px}
+.supsy .sy small{font-size:12px;height:auto}
+.supsy .sy small i{font-size:11px}
+
+/* roads */
+.roads{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media (max-width:720px){.roads{grid-template-columns:1fr}}
+.road{display:grid;gap:6px;align-content:start;min-width:0}
+.rt{font-size:30px;line-height:1.1}
+.rd{font-size:21px;line-height:1.35}
+.work{font-size:24px;line-height:1.45;white-space:nowrap;overflow-x:auto}
+.ans{font-size:22px}
+
+/* drawings */
+svg{font-family:var(--hand);display:block;width:100%;height:auto;overflow:visible}
+svg .ink{stroke:var(--ink);fill:none;stroke-width:2.6;stroke-linecap:round}
+svg .t{fill:var(--ink)}
+svg .c1{fill:var(--r1)} svg .c2{fill:var(--r2)} svg .ce{fill:var(--er)}
+svg .p1{stroke:var(--r1)} svg .p2{stroke:var(--r2)} svg .pe{stroke:var(--er)}
+svg .arc{fill:none;stroke-width:2.8;stroke-linecap:round}
+svg.mini{max-width:400px}
+svg.mini text{font-size:17px}
+.mergewrap{overflow-x:auto}
+svg.merged{min-width:540px}
+svg.merged text{font-size:26px}
+
+/* solve */
+.solve{display:grid;gap:4px}
+.solve .big{font-size:34px}
+.line{font-size:26px;line-height:1.5}
+.m{white-space:nowrap;overflow-x:auto}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.15;margin:0 4px}
+.frac > span:first-child{padding:0 6px 3px;border-bottom:2.5px solid var(--ink)}
+.frac > span:last-child{padding:3px 6px 0}
+.ctl{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:26px}
+.ctl label{min-width:34px}
+.ctl input{flex:1;min-width:160px}
+.ctl b{font-weight:400;min-width:72px}
+#rM{accent-color:var(--r1)} #rN{accent-color:var(--r2)}
+button:focus-visible,input:focus-visible{outline:2px dashed var(--r1);outline-offset:3px}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="h2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" style="stroke:var(--r2)" stroke-width="2" stroke-linecap="round"/></marker>
+    <marker id="h1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" style="stroke:var(--r1)" stroke-width="2" stroke-linecap="round"/></marker>
+    <marker id="he" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" style="stroke:var(--er)" stroke-width="2" stroke-linecap="round"/></marker>
+  </defs>
+</svg>
+
+<div class="sheet">
+  <section class="comp" aria-label="Why there is a power">
+    <div class="formula" id="compF"></div>
+    <div class="mergewrap"><svg class="merged" id="compSvg" viewBox="0 0 720 175" role="img" aria-label="Money growing year by year"></svg></div>
+  </section>
+
+  <div class="head">
+    <div class="case">
+      <p id="caseIntro"></p>
+      <p class="ask">What return would you get &amp; when?</p>
+      <h1>Two Roads to Get Your Return During the Period</h1>
+    </div>
+  </div>
+  <div class="formulas">
+    <div class="formula" id="fTop"></div>
+    <div class="formula" id="fGen"></div>
+  </div>
+
+  <div class="roads">
+    <section class="road" id="road1" aria-label="Road 1"></section>
+    <section class="road" id="road2" aria-label="Road 2"></section>
+  </div>
+
+  <section class="solve" aria-label="Putting the roads together">
+    <p class="line">Same start, same finish → both roads must give <span class="hl">the same result</span>.</p>
+    <p class="line fa">(If one paid more, everyone would take it and prices would adjust.)</p>
+    <div class="mergewrap"><svg class="merged" id="merged" viewBox="0 0 720 310" role="img" aria-label="Both roads on one timeline"></svg></div>
+    <div id="solveLines"></div>
+    <div class="gap" style="height:10px"></div>
+    <p class="line">Try it yourself:</p>
+    <div class="ctl"><label for="rM" class="c1" id="rMl">r1</label><input id="rM" type="range" min="0" max="15" step="0.1" value="4"><b class="c1" id="rMv">4.0%</b></div>
+    <div class="ctl"><label for="rN" class="c2" id="rNl">r2</label><input id="rN" type="range" min="0" max="15" step="0.1" value="5"><b class="c2" id="rNv">5.0%</b></div>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let N=2;
+const rates=[4,5,5.5,5.8,6,6.1];       // r1..r6 in percent
+const pct=x=>(x*100).toFixed(2)+'%';
+const trim=x=>{const s=x.toFixed(2);return s.endsWith('.00')?s.slice(0,-3):s};
+const dec=x=>(+x.toFixed(4)).toString();
+const pow=k=>k>1?`<sup>${k}</sup>`:'';
+const yrs=k=>k===1?'1 year':k+' years';
+function nums(){
+  const M=N-1, rN=rates[N-1]/100, rM=rates[M-1]/100;
+  const A=100*(1+rN)**N, B=100*(1+rM)**M, m=A/B;
+  return {M,rN,rM,A,B,m,E:m-1};
+}
+function arE(n){return 'المعدّل المتوقّع للسنة '+n}
+function enYears(n){return n===1?'one-year rate today':n===2?'two-year rate today':n+'-year rate today'}
+function arYears(n){return n===1?'معدّل سنة اليوم':n===2?'معدّل سنتين اليوم':'معدّل '+n+' سنوات اليوم'}
+
+function drawHead(){
+  const M=N-1;
+  document.title='Two Roads to Year '+N;
+  $('caseIntro').innerHTML=`You invest <b>100</b> for <span class="stepper"><button type="button" data-d="-1" aria-label="Fewer years" ${N<=2?'disabled':''}>−</button><button type="button" data-d="1" aria-label="More years" ${N>=6?'disabled':''}>+</button></span> <b>${N} years</b>.`;
+  const sy=(cls,s,en,ar)=>`<span class="sy ${cls}"><span>${s}</span><small>${en}<i>${ar}</i></small></span>`;
+  const PL='<span class="pr pl" aria-hidden="true"></span>', PR='<span class="pr prr" aria-hidden="true"></span>';
+  const br=inner=>`<span class="br">${PL}<span class="inr">${inner}</span>${PR}</span>`;
+  const sub=(s,k)=>`${s}<sub>${k}</sub>`;
+  $('fGen').innerHTML=`<p class="fcap">General: any number of years <i>n</i></p><div class="eqn"><span class="grp">${br('1 +&nbsp;'+sy('c2',sub('r','n'),'n-year rate today','معدّل <bdi>n</bdi> سنوات اليوم'))}<sup>n</sup><span class="op">&nbsp;=&nbsp;</span>${br('1 +&nbsp;'+sy('c1',sub('r','n−1'),'(n−1)-year rate today','معدّل <bdi>n−1</bdi> سنوات اليوم'))}<sup>n−1</sup><span class="op">&nbsp;×&nbsp;</span>${br('1 +&nbsp;'+sy('ce','E('+sub('r','n')+')','expected rate for Year n','المعدّل المتوقّع للسنة <bdi>n</bdi>'))}</span></div><p class="fsub"><span class="c2">Road 1</span> = <span class="c1">Road 2</span></p>`;
+  $('fTop').innerHTML=`<p class="fcap">This case: n = ${N}</p><div class="eqn"><span class="grp">${br('1 +&nbsp;'+sy('c2','r'+N,enYears(N),arYears(N)))}${pow(N)}<span class="op">&nbsp;=&nbsp;</span>${br('1 +&nbsp;'+sy('c1','r'+M,enYears(M),arYears(M)))}${pow(M)}<span class="op">&nbsp;×&nbsp;</span>${br('1 +&nbsp;'+sy('ce','E(r)','expected rate for Year '+N,arE(N)))}</span></div>
+  <p class="fsub"><span class="c2">Road 1</span> = <span class="c1">Road 2</span></p>`;
+  $('rMl').textContent='r'+M; $('rNl').textContent='r'+N;
+  $('rM').value=rates[M-1]; $('rN').value=rates[N-1];
+}
+
+/* a small timeline for one road */
+function mini(which){
+  const {M,A,B}=nums();
+  const x=t=>48+t*(250/N);
+  let s=`<svg class="mini" viewBox="0 0 370 150" role="img" aria-label="Road ${which} on a timeline"><path class="ink" d="M${x(0)} 96 L${x(N)} 96"/>`;
+  for(let t=0;t<=N;t++) s+=`<path class="ink" d="M${x(t)} 89 L${x(t)} 103"/><text class="t" x="${x(t)}" y="122" text-anchor="middle">Year ${t}</text>`;
+  s+=`<text class="t" x="${x(0)-8}" y="101" text-anchor="end">100</text>`;
+  if(which===1){
+    const mid=(x(0)+x(N))/2;
+    s+=`<path class="arc p2" marker-end="url(#h2)" d="M${x(0)+4} 86 Q ${mid} -6 ${x(N)-4} 86"/><text class="c2" x="${mid}" y="30" text-anchor="middle">r${N} × ${N}</text>`;
+    s+=`<text class="c2" x="${x(N)+8}" y="101">${trim(A)}</text>`;
+  } else {
+    const a=(x(0)+x(M))/2, b=(x(M)+x(N))/2;
+    s+=`<path class="arc p1" marker-end="url(#h1)" d="M${x(0)+4} 86 Q ${a} ${M>1?14:30} ${x(M)-4} 86"/><text class="c1" x="${a}" y="${M>1?42:52}" text-anchor="middle">r${M}${M>1?' × '+M:''}</text>`;
+    s+=`<path class="arc pe" marker-end="url(#he)" d="M${x(M)+4} 86 Q ${b} 30 ${x(N)-4} 86"/><text class="ce" x="${b}" y="52" text-anchor="middle">E(r)</text>`;
+    s+=`<text class="c1" x="${x(M)}" y="144" text-anchor="middle">${trim(B)}</text>`;
+    s+=`<text class="ce" x="${x(N)+8}" y="101">?</text>`;
+  }
+  return s+'</svg>';
+}
+
+function drawRoads(){
+  const {M,rN,rM,A,B}=nums();
+  $('road1').innerHTML=`
+    <div class="rt c2">Road 1</div>
+    <p class="rd">One deal for all ${N} years, at the ${N}-year rate <span class="c2">r${N}</span> = ${(rN*100).toFixed(1)}% per year.</p>
+    ${mini(1)}
+    <div class="work">100 × (1 + <span class="c2">${dec(rN)}</span>)${pow(N)} = <span class="c2">${trim(A)}</span></div>
+    <p class="ans">You get <span class="c2">${trim(A)}</span> at <b>Year ${N}</b>, known today.</p>`;
+  $('road2').innerHTML=`
+    <div class="rt c1">Road 2</div>
+    <p class="rd">A ${M}-year deal at <span class="c1">r${M}</span> = ${(rM*100).toFixed(1)}% per year, then a new deal for Year ${N} at a rate nobody knows yet, <span class="ce">E(r)</span>.</p>
+    ${mini(2)}
+    <div class="work">100 × (1 + <span class="c1">${dec(rM)}</span>)${pow(M)} = <span class="c1">${trim(B)}</span> <span class="fa">at Year ${M}</span></div>
+    <div class="work"><span class="c1">${trim(B)}</span> × (1 + <span class="ce">E(r)</span>) = <span class="ce">?</span> <span class="fa">at Year ${N}</span></div>
+    <p class="ans">You get <span class="c1">${trim(B)}</span> at <b>Year ${M}</b>; Year ${N} is still unknown.</p>`;
+}
+
+/* both roads on one timeline */
+function drawMerged(){
+  const {M,A,B,E}=nums();
+  const x=t=>80+t*(520/N), fsz=N>=5?20:24;
+  let s=`<path class="ink" d="M80 162 C 200 160, 300 164, 420 161 S 560 163, 600 162"/>`;
+  for(let t=0;t<=N;t++) s+=`<path class="ink" d="M${x(t)} 149 L${x(t)+1} 175"/><text class="t" x="${x(t)}" y="204" text-anchor="middle" style="font-size:${fsz}px">Year ${t}</text>`;
+  s+=`<text class="t" x="64" y="170" text-anchor="end">100</text>`;
+  const ma=(x(0)+x(N))/2;
+  s+=`<path class="arc p2" marker-end="url(#h2)" d="M${x(0)+6} 142 Q ${ma} 6 ${x(N)-6} 142"/><text class="c2" x="${ma}" y="56" text-anchor="middle">Road 1:  r${N} × ${N}</text>`;
+  s+=`<text class="c2" x="612" y="170">${trim(A)}</text>`;
+  const mb=(x(0)+x(M))/2;
+  s+=`<path class="arc p1" marker-end="url(#h1)" d="M${x(0)+8} 218 Q ${mb} 296 ${x(M)-8} 218"/><text class="c1" x="${mb}" y="296" text-anchor="middle">Road 2:  r${M}${M>1?' × '+M:''}</text>`;
+  s+=`<text class="c1" x="${x(M)}" y="138" text-anchor="middle">${trim(B)}</text>`;
+  const me=(x(M)+x(N))/2;
+  s+=`<path class="arc pe" marker-end="url(#he)" d="M${x(M)+8} 218 Q ${me} 296 ${x(N)-8} 218"/><text class="ce" x="${me}" y="296" text-anchor="middle" style="font-size:${fsz}px">E(r) = ${pct(E)}</text>`;
+  $('merged').innerHTML=s;
+}
+
+function drawSolve(){
+  const {M,rM,A,B,m,E}=nums();
+  const trend = E>rM+1e-9 ? `<span class="ce">E(r)</span> &gt; <span class="c1">r${M}</span> → the market expects rates to <span class="hl">rise</span>.`
+    : E<rM-1e-9 ? `<span class="ce">E(r)</span> &lt; <span class="c1">r${M}</span> → the market expects rates to <span class="hl">fall</span>.`
+    : `<span class="ce">E(r)</span> = <span class="c1">r${M}</span> → the market expects rates to stay the same.`;
+  $('solveLines').innerHTML=`
+    <p class="line m big"><span class="c1">${trim(B)}</span> × (1 + <span class="ce">E(r)</span>) = <span class="c2">${trim(A)}</span></p>
+    <p class="line">Divide both sides by <span class="c1">${trim(B)}</span>:</p>
+    <p class="line m">1 + <span class="ce">E(r)</span> = <span class="frac"><span class="c2">${trim(A)}</span><span class="c1">${trim(B)}</span></span> = ${m.toFixed(4)}</p>
+    <p class="line m big"><span class="ce">E(r)</span> = ${m.toFixed(4)} − 1 = <span class="hl ce">${pct(E)}</span></p>
+    <p class="line">${trend}</p>
+    <p class="line">Written with symbols, solved for <span class="ce">E(r)</span>:</p>
+    <p class="line m big">1 + <span class="ce">E(r)</span> = <span class="frac"><span>(1 + <span class="c2">r${N}</span>)${pow(N)}</span><span>(1 + <span class="c1">r${M}</span>)${pow(M)}</span></span></p>`;
+  $('rMv').textContent=rates[N-2].toFixed(1)+'%'; $('rNv').textContent=rates[N-1].toFixed(1)+'%';
+}
+
+function drawCompound(){
+  const r=rates[N-1]/100, g=(1+r).toFixed(3).replace(/0+$/,'');
+  const x=t=>80+t*(520/N), fsz=N>=5?18:22;
+  let s=`<path class="ink" d="M80 100 L600 100"/>`;
+  for(let t=0;t<=N;t++){
+    s+=`<path class="ink" d="M${x(t)} 90 L${x(t)} 110"/><text class="t" x="${x(t)}" y="136" text-anchor="middle" style="font-size:${fsz}px">Year ${t}</text>`;
+    s+=`<text class="c2" x="${x(t)}" y="164" text-anchor="middle" style="font-size:${fsz}px">${trim(100*(1+r)**t)}</text>`;
+  }
+  for(let t=0;t<N;t++){
+    const a=x(t)+6, b=x(t+1)-6, m=(a+b)/2;
+    s+=`<path class="arc p2" marker-end="url(#h2)" d="M${a} 86 Q ${m} 30 ${b} 86"/><text class="c2" x="${m}" y="44" text-anchor="middle" style="font-size:${fsz}px">× ${g}</text>`;
+  }
+  $('compSvg').innerHTML=s;
+  const sy=(cls,t,en,ar)=>`<span class="sy ${cls}"><span>${t}</span><small>${en}<i>${ar}</i></small></span>`;
+  const br=inner=>`<span class="br"><span class="pr pl" aria-hidden="true"></span><span class="inr">${inner}</span><span class="pr prr" aria-hidden="true"></span></span>`;
+  $('compF').innerHTML=`<div class="eqn"><span class="grp">${sy('c2','FV','future value','القيمة المستقبلية')}<span class="op">&nbsp;=&nbsp;</span>${sy('','PV','amount today','المبلغ اليوم')}<span class="op">&nbsp;×&nbsp;</span>${br('1 +&nbsp;'+sy('c2','r','rate per year','المعدّل السنوي'))}<span class="supsy">${sy('','n','years','عدد السنين')}</span></span></div>`;
+}
+
+function refresh(){ drawCompound(); drawRoads(); drawMerged(); drawSolve(); }
+function rebuild(){ drawHead(); refresh(); }
+
+$('caseIntro').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-d]'); if(!b||b.disabled) return;
+  N=Math.min(6,Math.max(2,N + +b.dataset.d));
+  rebuild();
+  const again=$('caseIntro').querySelector(`button[data-d="${b.dataset.d}"]`); if(again&&!again.disabled) again.focus();
+});
+$('rM').addEventListener('input',e=>{rates[N-2]=+e.target.value;refresh()});
+$('rN').addEventListener('input',e=>{rates[N-1]=+e.target.value;refresh()});
+rebuild();
+
+/* ---- the only line added for MyTerm: tell the frame how tall to be.
+   The sheet shows this page inside a sandboxed iframe, which cannot be
+   measured from outside, so the page measures itself and says so. */
+(function tellHeight(){
+  const say=()=>{ try{ parent.postMessage({fig:'two-roads', h:document.documentElement.scrollHeight}, '*'); }catch(e){} };
+  say();
+  addEventListener('load',say);
+  new ResizeObserver(say).observe(document.documentElement);
+  document.addEventListener('input',()=>setTimeout(say,0),true);
+  document.addEventListener('click',()=>setTimeout(say,0),true);
+})();
+</script>
+
+</body></html>

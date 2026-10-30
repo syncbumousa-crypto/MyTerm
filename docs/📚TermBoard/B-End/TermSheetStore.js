@@ -91,6 +91,7 @@
     // a law in its box
     'lawBox', 'lawDerived', 'lawNo', 'lawEq', 'lawNote', 'lawIco', 'lawUse', 'qUse',
     'roadFig', 'rA', 'rB', 'rE', 'rY',
+    'fig',
     'frac', 'fnum', 'fden', 'lhs', 'lhsRow',
     // the letters of a law, each in its own colour
     'tt', 'ttNote', 'v-a', 'v-b', 'v-c', 'v-d', 'v-e', 'v-f', 'v-g',
@@ -128,7 +129,11 @@
                          // last one is not runtime state: `on` and `hidden` are still
                          // dropped, and the paper still decides - it only reads the
                          // author's opening position from here
-                         'data-when', 'data-pick', 'data-mode', 'data-on', 'data-ask']);
+                         'data-when', 'data-pick', 'data-mode', 'data-on', 'data-ask',
+                         // an empty slot that names a page published under
+                         // `Figs`, and how tall to draw it until that page
+                         // says its own height
+                         'data-fig', 'data-h']);
 
   // ============================================================
   // AN INLINE STYLE IS LET THROUGH BY ITS PROPERTY, NOT BY ITS WORD

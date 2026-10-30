@@ -106,6 +106,24 @@
     say(parseInt(f.style.height, 10) === 1234,
       'and a message that names nothing, names another, or asks for the sky is ignored: ' + f.style.height);
 
+    // ---- 8  THE OTHER SLOT: a widget in an explanation window
+    // His own pages carried interactive pieces, and the explanations keep
+    // their place with `epWidget`. One that this site now HAS is drawn the
+    // same way; one it has never had keeps the sentence that stands for it
+    const win = document.createElement('div');
+    win.className = 'msheet';
+    win.innerHTML = '<div class="epWidget" data-widget="two-roads"></div>'
+      + '<div class="epWidget" data-widget="some-old-thing">a place kept</div>';
+    document.body.appendChild(win);
+    P.figures(win);
+    const slots = win.querySelectorAll('.epWidget');
+    say(Boolean(slots[0].querySelector('iframe')),
+      'a widget whose page exists is drawn as that page');
+    say(/Figs\/two-roads\.html$/.test(slots[0].querySelector('iframe').getAttribute('src')),
+      'from the file it names');
+    say(!slots[1].querySelector('iframe') && slots[1].textContent === 'a place kept',
+      'and a widget this site never had is left exactly as it was');
+
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
       + ' (' + out.length + ' checks)\n' + out.join('\n');
   })().catch(e => {

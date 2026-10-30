@@ -629,7 +629,7 @@
     // THE BOX IN THE CORNER OF A QUESTION, which opens the panel under it
     const why = e.target.closest('.fsWhyBtn');
     if (why && where.contains(why)) {
-      const panel = why.closest('.fsAsk')?.querySelector('.fsWhy');
+      const panel = why.closest('.fsAsk, .lawBox')?.querySelector('.fsWhy');
       if (panel) {
         panel.hidden = !panel.hidden;
         why.classList.toggle('on', !panel.hidden);

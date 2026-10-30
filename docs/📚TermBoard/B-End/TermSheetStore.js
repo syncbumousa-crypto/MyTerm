@@ -90,6 +90,7 @@
     'fsHead',
     // a law in its box
     'lawBox', 'lawDerived', 'lawNo', 'lawEq', 'lawNote', 'lawIco', 'lawUse', 'qUse',
+    'roadFig', 'rA', 'rB', 'rE', 'rY',
     'frac', 'fnum', 'fden', 'lhs', 'lhsRow',
     // the letters of a law, each in its own colour
     'tt', 'ttNote', 'v-a', 'v-b', 'v-c', 'v-d', 'v-e', 'v-f', 'v-g',

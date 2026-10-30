@@ -172,6 +172,10 @@
   // reader's own pages. Their place is kept and SAID, so a reader who
   // knows one stood here is not left thinking the explanation is short
   const sayWidgets = () => {
+    // WHAT THIS SITE CAN NOW BUILD, IT BUILDS. A widget whose page is
+    // published under `Figs` is drawn here in a sandboxed frame, with
+    // its own code and its own look; the rest keep the old sentence
+    window.MyTermSheetPaper?.figures?.(body);
     body.querySelectorAll('.epWidget').forEach(spot => {
       if (spot.childNodes.length) return;
       spot.textContent = lang === 'ar'

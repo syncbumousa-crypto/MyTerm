@@ -494,12 +494,20 @@
     const here = tag ? tag.getAttribute('src') : 'F-End/TermSheetPaper.js';
     return new URL(here.replace(/F-End\/TermSheetPaper\.js.*$/, 'Figs/'), location.href).href;
   };
+  // THE PAGES THERE ARE. A slot naming a page that was never published
+  // would draw a frame on a 404; and the explanations carry widget
+  // slots from his own pages whose pieces this site has never had.
+  // So a name is drawn only if it is on this list, and anything else
+  // is left exactly as it was - a place kept and said
+  const FIGS = new Set(['two-roads']);
   const figures = page => {
     if (!page) return;
-    page.querySelectorAll('.fig[data-fig]').forEach(slot => {
+    page.querySelectorAll('.fig[data-fig], .epWidget[data-widget]').forEach(slot => {
       if (slot.querySelector('iframe')) return;
-      const name = String(slot.getAttribute('data-fig') || '').replace(/[^\w-]/g, '');
-      if (!name) return;
+      const asked = slot.getAttribute('data-fig') || slot.getAttribute('data-widget') || '';
+      const name = String(asked).replace(/[^\w-]/g, '');
+      if (!name || !FIGS.has(name)) return;
+      slot.textContent = '';
       const frame = document.createElement('iframe');
       frame.setAttribute('sandbox', 'allow-scripts');   // no same-origin: it cannot read him
       frame.setAttribute('loading', 'lazy');
@@ -747,7 +755,7 @@
     // A guard that carried its own copy of `data-when` and of the
     // renumbering would agree with itself for ever, and the first change
     // to either would be measured against the old rule
-    decide, settle,
+    decide, settle, figures,
 
     // Where the sheets go. Said once, so a redraw does not hunt for it
     // Told where to draw, and what to call when a tick changes — the

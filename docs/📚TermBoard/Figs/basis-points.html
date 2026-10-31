@@ -1,0 +1,197 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>نقاط الأساس bp</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=IBM+Plex+Sans+Arabic:wght@500;600&display=swap">
+<style>
+/* Layout: graph-paper notebook, one column of four hand-drawn cards; same family as the loans page. */
+:root{
+  --paper:#fbfaf5; --grid:#e6e9ef; --ink:#17203a; --faint:#6b7486; --box:#ffffff;
+  --blue:#1d4fc4; --green:#16784a; --red:#c23a25; --gold:#a87a12; --gold-bg:#f6ecd0; --hl:rgba(255,206,40,.45);
+  --hand:"Patrick Hand","IBM Plex Sans Arabic","Segoe Print",cursive;
+  --ar:"IBM Plex Sans Arabic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#1b2420; --grid:#24302a; --ink:#f1f4ee; --faint:#a9b8ae; --box:#202b26;
+  --blue:#93bbff; --green:#8ee3ab; --red:#ff9d88; --gold:#f0c95a; --gold-bg:#3a3420; --hl:rgba(255,206,40,.22); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#1b2420; --grid:#24302a; --ink:#f1f4ee; --faint:#a9b8ae; --box:#202b26;
+  --blue:#93bbff; --green:#8ee3ab; --red:#ff9d88; --gold:#f0c95a; --gold-bg:#3a3420; --hl:rgba(255,206,40,.22); color-scheme:dark}
+body{background:var(--paper);color:var(--ink);font-family:var(--hand);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px}
+.sheet{direction:rtl;max-width:760px;margin:0 auto;padding-block:28px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+p{margin:0}
+h1{margin:0;text-align:center;font-weight:400;font-size:clamp(28px,5vw,38px);text-wrap:balance}
+h1 small{display:block;font-size:18px;color:var(--faint);direction:ltr}
+.card{background:var(--box);border:1.6px solid var(--ink);border-radius:14px;padding:18px clamp(14px,3vw,24px);display:grid;gap:12px;box-shadow:4px 5px 0 var(--grid)}
+.card h2{margin:0;font-weight:400;font-size:24px;display:flex;gap:10px;align-items:baseline}
+.card h2 .n{font-size:15px;color:var(--faint);border:1.2px solid var(--faint);border-radius:999px;padding:0 8px}
+.lead{font-family:var(--ar);font-size:15px;color:var(--faint);line-height:1.7}
+.ltr{direction:ltr;unicode-bidi:isolate}
+.blue{color:var(--blue)} .green{color:var(--green)} .red{color:var(--red)} .gold{color:var(--gold)}
+svg{display:block;width:100%;height:auto;font-family:var(--hand);overflow:visible}
+svg text{fill:var(--ink);direction:ltr}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+input[type=range]{flex:1;min-width:180px;accent-color:var(--blue);height:28px;cursor:pointer}
+.out{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:22px}
+.big{font-size:34px;line-height:1}
+.res{display:inline-block;border:1.8px solid var(--gold);background:var(--gold-bg);color:var(--gold);border-radius:8px;padding:2px 12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.chip{font:inherit;font-size:16px;padding:3px 12px;border-radius:999px;border:1.4px solid var(--faint);background:var(--box);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 16%,var(--box));color:var(--blue)}
+.chip:focus-visible,input:focus-visible{outline:2px dashed var(--blue);outline-offset:2px}
+.say{font-family:var(--ar);font-size:15px;text-align:center;line-height:1.8}
+.vs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:560px){.vs{grid-template-columns:minmax(0,1fr)}}
+.vbox{border:1.4px dashed var(--faint);border-radius:12px;padding:12px;display:grid;gap:8px;justify-items:center;text-align:center}
+.vbox.bad{border-color:var(--red)} .vbox.good{border-color:var(--green)}
+.vbox .q{font-size:20px}
+.vbox .ans{font-size:22px}
+.sum{text-align:center;font-family:var(--ar);font-size:16px;line-height:1.8}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pbx{display:flex;gap:8px;justify-content:center;align-items:baseline;font-size:24px;border:1.4px dashed var(--faint);border-radius:10px;padding:8px}
+.pbx.blue{border-color:var(--blue)}
+.lensbox{display:grid;justify-items:center;gap:2px}
+.lab2{font-family:var(--ar);font-size:14px;color:var(--faint)}
+.rate{font-size:clamp(48px,11vw,72px);line-height:1.1;letter-spacing:.02em}
+.lens{display:inline-block;color:var(--blue);border:2.4px solid var(--blue);border-radius:50%;padding:0 .18em;margin-inline:.05em;background:color-mix(in srgb,var(--blue) 10%,var(--box))}
+.arrow{color:var(--blue);font-size:22px;line-height:1;margin-left:.6em}
+.easy{width:100%;border-collapse:collapse;font-size:19px;text-align:center}
+.easy th{font-family:var(--ar);font-size:13px;color:var(--faint);font-weight:500;padding:4px}
+.easy td{padding:6px;border-top:1px dashed var(--grid)}
+.short{display:grid;gap:10px;justify-items:center;font-size:clamp(22px,4.4vw,28px);text-align:center}
+.short b{font-weight:400}
+.hops{display:grid;gap:4px;max-width:520px;margin:0 auto;width:100%}
+.tw{overflow-x:auto}
+.cmp{width:100%;border-collapse:collapse;font-size:18px;text-align:center;min-width:300px}
+.cmp th{font-family:var(--ar);font-size:13px;color:var(--faint);font-weight:500;padding:6px;border-bottom:1.4px solid var(--ink)}
+.cmp td{padding:8px 6px;border-bottom:1px dashed var(--grid)}
+.cmp td:first-child{text-align:start} .cmp td small{font-family:var(--ar);font-size:12px;color:var(--faint)}
+.cmp .res{font-size:18px;padding:1px 8px}
+.offers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.offer{display:grid;justify-items:center;gap:2px;border:1.4px solid var(--faint);border-radius:10px;padding:10px}
+.tick-on{fill:var(--blue)} .tick-off{fill:var(--grid)}
+</style>
+
+<div class="sheet">
+  <h1>ليش نقاط الأساس مهمة؟<small>Basis points (bp)</small></h1>
+
+  <!-- 1. the ruler -->
+  <section class="card" aria-labelledby="h1a">
+    <h2 id="h1a"><span class="n">1</span> الاختصار</h2>
+    <p class="say">الـ bp تنقل الفاصلة <b class="gold">خانتين</b> لليمين، فيختفي الكسر ويصير الرقم صحيح.</p>
+    <div class="hops" dir="ltr">
+      <svg class="hop" data-n="1.75" data-u="متر" data-r="175" data-ru="سم" viewBox="0 0 560 96" role="img" aria-label="1.75 metres becomes 175 centimetres"></svg>
+      <svg class="hop" data-n="0.05" data-u="%" data-r="5" data-ru="bp" viewBox="0 0 560 96" role="img" aria-label="0.05 percent becomes 5 basis points"></svg>
+      <svg class="hop" data-n="0.75" data-u="%" data-r="75" data-ru="bp" viewBox="0 0 560 96" role="img" aria-label="0.75 percent becomes 75 basis points"></svg>
+    </div>
+  </section>
+
+  <!-- 2. small bp, big money -->
+  <section class="card" aria-labelledby="h2a">
+    <h2 id="h2a"><span class="n">2</span> فرق صغير… فلوس كبيرة</h2>
+    <p class="lead">الحكومة تبي تستلف <b>1 مليار</b> لمدة سنة، وجاها عرضين:</p>
+    <div class="offers">
+      <div class="offer"><span class="lab2">عرض بنك A</span><span class="big ltr">6.25%</span></div>
+      <div class="offer"><span class="lab2">عرض بنك B</span><span class="big ltr">6.30%</span></div>
+    </div>
+    <div class="vs">
+      <div class="vbox bad">
+        <p class="q">لو تكلمت بالنسب</p>
+        <p class="ans">«تقريبًا نفس الشي، <span class="ltr">6%</span> وشوي»</p>
+        <p class="lead">الفرق <span class="ltr">0.05%</span> يبان تافه وتتجاهله.</p>
+      </div>
+      <div class="vbox good">
+        <p class="q">لو تكلمت بالـ bp</p>
+        <p class="ans">«بنك <span class="ltr">B</span> أغلى بـ <b class="blue ltr">5 bp</b>»</p>
+        <p class="lead">رقم صحيح وواضح، تشوفه على طول وتفاوض عليه.</p>
+      </div>
+    </div>
+    <div class="out"><span class="ltr"><span class="blue">5 bp</span> × 1,000,000,000</span><span>=</span><span class="res big ltr">500,000</span><span>ريال كل سنة</span></div>
+    <p class="say">الـ bp تخلّي الفروقات الصغيرة <b>تنشاف</b>، لأن وراها فلوس كبيرة.</p>
+  </section>
+
+  <!-- 3. no confusion -->
+  <section class="card" aria-labelledby="h3a">
+    <h2 id="h3a"><span class="n">3</span> تمنع اللخبطة</h2>
+    <p class="lead">الفائدة كانت <span class="ltr">5%</span>، وجاك خبر إنها زادت.</p>
+    <div class="vs">
+      <div class="vbox bad">
+        <p class="q">«زادت <span class="ltr">1%</span>»</p>
+        <svg viewBox="0 0 240 90" aria-hidden="true">
+          <text x="120" y="18" text-anchor="middle" font-size="18">5%</text>
+          <path d="M110 26 L55 58" stroke="currentColor" style="color:var(--red)" stroke-width="1.8" fill="none"/>
+          <path d="M130 26 L185 58" stroke="currentColor" style="color:var(--red)" stroke-width="1.8" fill="none"/>
+          <text x="50" y="80" text-anchor="middle" font-size="20" style="fill:var(--red)">6% ؟</text>
+          <text x="190" y="80" text-anchor="middle" font-size="20" style="fill:var(--red)">5.05% ؟</text>
+        </svg>
+        <p class="lead">معنيين. ما تدري أي واحد يقصد.</p>
+      </div>
+      <div class="vbox good">
+        <p class="q">«زادت <span class="ltr">100 bp</span>»</p>
+        <svg viewBox="0 0 240 90" aria-hidden="true">
+          <text x="120" y="18" text-anchor="middle" font-size="18">5%</text>
+          <path d="M120 26 L120 58" stroke="currentColor" style="color:var(--green)" stroke-width="1.8" fill="none"/>
+          <text x="120" y="80" text-anchor="middle" font-size="22" style="fill:var(--green)">6% ✓</text>
+        </svg>
+        <p class="lead">معنى واحد بس.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. spread ladder -->
+  <section class="card" aria-labelledby="h4a">
+    <h2 id="h4a"><span class="n">4</span> لغة السوق: الـ spread</h2>
+    <p class="lead">كل سند يقيسونه بكم نقطة فوق الـ T-bill. وهذا الفرق هو الـ RP نفسه.</p>
+    <svg viewBox="0 0 640 300" role="img" aria-label="Yield ladder: T-bill 4.5 percent, AAA 5.5 percent, BB 8.5 percent">
+      <g id="ladder"></g>
+    </svg>
+    <p class="sum">سند الشركة BB يعطي <b class="ltr red">400 bp</b> فوق الحكومي، يعني <span class="ltr">RP = 4%</span>.</p>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id), f=n=>Math.round(n).toLocaleString('en-US');
+/* 1 hops: the decimal point jumps two places */
+document.querySelectorAll('svg.hop').forEach(sv=>{
+  const n=sv.dataset.n, u=sv.dataset.u, r=sv.dataset.r, ru=sv.dataset.ru, cw=30, x0=40, y=72;
+  let o='', x=x0, dot=0; const xs=[];
+  [...n].forEach((ch,i)=>{ if(ch==='.'){dot=x; o+=`<text x="${x}" y="${y}" font-size="40" style="fill:var(--gold)">.</text>`; x+=14;}
+    else {xs.push(x+cw/2); o+=`<text x="${x+cw/2}" y="${y}" text-anchor="middle" font-size="40">${ch}</text>`; x+=cw;} });
+  const after=xs.filter(v=>v>dot);
+  let from=dot+5; after.slice(0,2).forEach(cx=>{const to=cx+cw/2-2;
+    o+=`<path d="M${from} ${y-36} Q ${(from+to)/2} ${y-62} ${to} ${y-36}" fill="none" stroke="var(--gold)" stroke-width="2.2" marker-end="url(#ah)"/>`; from=to;});
+  o+=`<text x="${x+8}" y="${y}" font-size="26" style="fill:var(--faint)">${u}</text>`;
+  o+=`<text x="${x+62}" y="${y}" font-size="34" style="fill:var(--faint)">=</text>`;
+  o+=`<text x="${x+110}" y="${y}" font-size="44" style="fill:${ru==='bp'?'var(--blue)':'var(--ink)'}">${r}</text>`;
+  o+=`<text x="${x+110+r.length*24+10}" y="${y}" font-size="26" style="fill:${ru==='bp'?'var(--blue)':'var(--faint)'}">${ru}</text>`;
+  o+=`<text x="${(dot+from)/2}" y="${y-56}" text-anchor="middle" font-size="15" style="fill:var(--gold)">× 100</text>`;
+  sv.innerHTML=`<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" style="stroke:var(--gold)" stroke-width="2"/></marker></defs>`+o;
+});
+/* 4 ladder */
+(function(){const L=$('ladder'), y=v=>270-(v-4)*48, xa=150;let o='';
+  for(let v=4;v<=9;v++){o+=`<line x1="${xa}" y1="${y(v)}" x2="${xa+8}" y2="${y(v)}" stroke="var(--faint)"/><text x="${xa-10}" y="${y(v)+5}" text-anchor="end" font-size="15" style="fill:var(--faint)">${v}%</text>`;}
+  o+=`<line x1="${xa+4}" y1="${y(4)}" x2="${xa+4}" y2="${y(9)}" stroke="var(--ink)" stroke-width="1.6"/>`;
+  const pts=[['T-bill',4.5,'var(--ink)'],['AAA',5.5,'var(--blue)'],['BB',8.5,'var(--red)']];
+  pts.forEach(([n,v,c])=>{o+=`<line x1="${xa+4}" y1="${y(v)}" x2="420" y2="${y(v)}" stroke="${c}" stroke-width="2.2" stroke-dasharray="${n==='T-bill'?'0':'6 5'}"/><circle cx="${xa+4}" cy="${y(v)}" r="5" fill="${c}"/><text x="430" y="${y(v)+6}" font-size="18" style="fill:${c}">${n} · ${v}%</text>`;});
+  const br=(x,a,b,t,c)=>`<path d="M${x-8} ${y(a)} L${x} ${y(a)} L${x} ${y(b)} L${x-8} ${y(b)}" stroke="${c}" stroke-width="1.8" fill="none"/><text x="${x+8}" y="${(y(a)+y(b))/2+6}" font-size="18" style="fill:${c}">${t}</text>`;
+  o+=br(250,4.5,5.5,'100 bp','var(--blue)');
+  o+=br(330,4.5,8.5,'400 bp','var(--red)');
+  L.innerHTML=o;})();
+</script>
+
+<script>
+/* ---- the only line added for MyTerm: tell the frame how tall to be. */
+(function tellHeight(){
+  var say=function(){ try{ parent.postMessage({fig:'basis-points', h:document.documentElement.scrollHeight}, '*'); }catch(e){} };
+  say();
+  addEventListener('load',say);
+  try{ new ResizeObserver(say).observe(document.documentElement); }catch(e){}
+  document.addEventListener('input',function(){setTimeout(say,0)},true);
+  document.addEventListener('click',function(){setTimeout(say,0)},true);
+})();
+</script>
+
+</body></html>

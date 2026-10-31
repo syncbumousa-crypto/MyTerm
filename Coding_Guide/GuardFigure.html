@@ -124,6 +124,28 @@
     say(!slots[1].querySelector('iframe') && slots[1].textContent === 'a place kept',
       'and a widget this site never had is left exactly as it was');
 
+    // ---- 9  EVERY NAME ON THE LIST IS A PAGE THAT WAS PUBLISHED
+    // A name on the allow-list with no file behind it draws a frame on a
+    // 404 - an empty white box where his page should be. And a page
+    // copied without the height reporter is drawn at the default height
+    // and cut off, with no error anywhere. Both are silent, so the list
+    // is DRIVEN, not retyped: every name it holds is asked for its file
+    const body = url => new Promise(done => {
+      const x = new XMLHttpRequest();
+      x.open('GET', url, true);
+      x.onload = () => done((x.status === 0 || (x.status >= 200 && x.status < 300)) ? (x.responseText || '') : '');
+      x.onerror = () => done('');
+      try { x.send(); } catch (e) { done(''); }
+    });
+    const names = (typeof P.figNames === 'function') ? P.figNames() : [];
+    say(names.length > 0, 'the allow-list is handed out: ' + names.join(', '));
+    for (const name of names) {
+      const page = await body('../docs/%F0%9F%93%9ATermBoard/Figs/' + name + '.html');
+      say(page.length > 1000, name + '.html is published: ' + page.length + ' chars');
+      say(new RegExp('fig:\s*.' + name + '.').test(page),
+        'and ' + name + ' reports its own height under its own name');
+    }
+
     o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
       + ' (' + out.length + ' checks)\n' + out.join('\n');
   })().catch(e => {

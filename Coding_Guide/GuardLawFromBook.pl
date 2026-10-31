@@ -130,6 +130,23 @@ my @far = grep { $citedPage{$_} < $first + 1 || $citedPage{$_} > $first + @text 
 $say->(!@far, 'every page a badge cites is inside the chapter'
   . (@far ? ': ' . join(' ', map { "$_->p$citedPage{$_}" } @far) : ''));
 
+# ---- 6  AND NOTHING OF THE TOOL THAT BUILT IT IS LEFT ON THE PAGE
+# A perl escape written inside single quotes is not an escape: `\x{00F7}`
+# went into a sheet as five characters, reached his Drive, and read as
+# that on the page - and in the data file a JS template literal refused
+# to parse at all. A numeric entity is the quieter twin: the gate decodes
+# `&#8722;` on the way in, so the copy on disk stops matching Drive and
+# the mirror drifts for ever. (`&lt;` and `&gt;` are not that: they are
+# how the calculator steps carry their own angle brackets.)
+my $bs = chr(92);
+my @esc = $t =~ /(\Q$bs\Ex\{[0-9A-Fa-f]+\})/g;
+$say->(!@esc, 'no escape text of the builder reached a sheet'
+  . (@esc ? ': ' . scalar(@esc) . ' of them, first ' . $esc[0] : ''));
+my @ents = $t =~ /(&#\d+;)/g;
+my %ents; $ents{$_}++ for @ents;
+$say->(!@ents, 'and no numeric entity, which the gate would decode and the mirror then miss'
+  . (@ents ? ': ' . join(' ', map { "$_ x$ents{$_}" } sort keys %ents) : ''));
+
 printf "%s (%d checks)\n%s\n", (@faults ? 'FAIL ' . scalar(@faults) . ' fault(s)' : 'OK'),
   scalar(@out), join("\n", @out);
 exit(@faults ? 1 : 0);

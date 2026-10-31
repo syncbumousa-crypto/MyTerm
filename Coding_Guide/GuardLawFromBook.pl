@@ -42,8 +42,12 @@ my $rd = sub {
   open(my $h, '<:encoding(UTF-8)', $p) or die "cannot read $_[0]: $!\n";
   local $/; my $s = <$h>; close $h; $s;
 };
-my $data = $rd->('ch6_data.js') if $ch eq 'Ch6';
-$data = $rd->(lc($ch) . '_data.js') unless defined $data;
+# THE CHAPTER IS A NUMBER THE BOOK OWNS, not a folder name - and this
+# guard was written for chapter 6 and had `6.` in five places, so it
+# would have passed chapter 7 by measuring nothing
+my ($chNo) = $ch =~ /(\d+)/;
+die "cannot read a chapter number out of '$ch'\n" unless $chNo;
+my $data = $rd->(lc($ch) . '_data.js');
 my $words = $rd->('book_words.js');
 
 my (@faults, @out);
@@ -77,17 +81,23 @@ $say->($first > 0, 'and its first page is printed ' . ($first + 1) . ' (offset '
 
 my %printed;
 for my $i (0 .. $#text) {
-  while ($text[$i] =~ /\((6\.\d+[a-z]?)\)/g) { $printed{$1} = $i + 1 + $first }
+  while ($text[$i] =~ /\(($chNo\.\d+[a-z]?)\)/g) { $printed{$1} = $i + 1 + $first }
 }
 my @nums = sort keys %printed;
 $say->(scalar(@nums) > 0, 'the equations it numbers: ' . join(' ', map { "$_/p$printed{$_}" } @nums));
 
 # ---- 2  WHAT THE SHEETS SAY
+# TO WHERE THE STACKS END, not to the fifth of them. Chapter 6 had four
+# and an empty fifth, so `RULES_BLOCKS_5` marked the end there - and in
+# chapter 7, which has five full stacks, that cut the last sheet off and
+# the guard said two equations were missing that are plainly cited
 my $a = index($data, 'const RULES_BLOCKS_1');
-my $b = index($data, 'const RULES_BLOCKS_5');
+my $b = index($data, 'const RULES_GROUPS');
 die "the chapter has no rules stacks\n" if $a < 0 || $b < 0;
 my $t = substr($data, $a, $b - $a);
 my @boxes = split /(?=<div class="lawBox)/, $t; shift @boxes;
+# the words that make a number a citation of the book, in either language
+my $EQW = qr/(?:\x{0627}\x{0644}?\x{0645}\x{0639}\x{0627}\x{062F}\x{0644}\x{0629}|\x{0645}\x{0639}\x{0627}\x{062F}\x{0644}\x{062A}(?:\x{0627}|\x{0627}\x{0646}|\x{064A})|Equations?|Eq\.?)/;
 my %ok = map { $_ => 1 } qw(eq case text added);
 my (%cited, %citedPage, %fromCh, @bare, @odd);
 for my $box (@boxes) {
@@ -105,7 +115,22 @@ for my $box (@boxes) {
   # AND NOT WITH `\b`: in Arabic the second number is glued to a waw -
   # `6.5a و6.5` - and there is no word boundary between a letter and a
   # digit, so three equations that are plainly named read as missing
-  while ($ar =~ /(?<![\d.])(\d\.\d+[a-z]?)(?![\d])/g) { my $n = $1; $cited{$n} = $no if $n =~ /^[56]\./ }
+  # A NUMBER IS A BOOK EQUATION ONLY IF THE WORD BEFORE IT SAYS SO.
+  # `حالة من 4.1` points at a law on this sheet, not at an equation of
+  # chapter 4, and counting it made the guard shout about a chapter 4 law
+  # that does not exist. One word can carry two numbers joined by a waw
+  while ($ar =~ /$EQW[^\d]{0,12}(\d+\.\d+[a-z]?)((?:[^\d]{0,6}\d+\.\d+[a-z]?)*)/g) {
+    my ($one, $rest) = ($1, $2);
+    $cited{$one} = $no;
+    while ($rest =~ /\G([^\d]{0,6})(\d+\.\d+[a-z]?)/gc) {
+      # HOLD BOTH CAPTURES FIRST: testing $1 with a regex resets $2, and
+      # the second number then lands under undef - three equations that
+      # are plainly named read as missing
+      my ($gap, $num) = ($1, $2);
+      last unless $gap =~ /^[\s\x{0648}\x{060C},\x{00B7}\x{2013}&-]*(?:and)?\s*$/;
+      $cited{$num} = $no;
+    }
+  }
   while ($ar =~ /\x{0635}(\d\d\d)/g) { $citedPage{$no} = $1 }
   # A BADGE THAT SAYS "ANOTHER CHAPTER" AND NAMES NOTHING. `from chapter
   # 5` with no equation number was how the annuity factor sat here for
@@ -114,7 +139,7 @@ for my $box (@boxes) {
   ($said) = $body =~ /Chapter\s*(\d+)/ unless defined $said;
   $fromCh{$no} = $said if defined $said;
   if ($kind eq 'eq') {
-    for my $n ($ar =~ /\b(6\.\d+[a-z]?)\b/g) {
+    for my $n ($ar =~ /(?<![\d.])($chNo\.\d+[a-z]?)(?![\d])/g) {
       my $pg = $citedPage{$no};
       $say->(defined $printed{$n}, "law $no names equation $n, and the book prints it");
       $say->(defined $pg && defined $printed{$n} && abs($printed{$n} - $pg) <= 1,
@@ -131,7 +156,7 @@ $say->(!@lost, 'no numbered equation of the book is missing from the sheets'
   . (@lost ? ': ' . join(' ', map { "$_ (p$printed{$_})" } @lost) : ''));
 
 # ---- 4  BACKWARD: a badge of this chapter cannot name what is not there
-my @ghost = grep { /^6\./ && !$printed{$_} } sort keys %cited;
+my @ghost = grep { /^$chNo\./ && !$printed{$_} } sort keys %cited;
 $say->(!@ghost, 'and no badge names an equation the book does not print'
   . (@ghost ? ': ' . join(' ', map { "$_ on law $cited{$_}" } @ghost) : ''));
 
@@ -146,10 +171,6 @@ $say->(!@far, 'every page a badge cites is inside the chapter'
 # For the annuity factor there was none: I put it there to name a bracket.
 # So the test is not "is it useful" but "does THIS chapter's text cite
 # it", and the chapter's own words are the judge
-# the chapter's own number, read off the numbers the book prints here and
-# not off the folder name - `Ch6` is a folder, `6.5` is the book talking
-my ($chNo) = (sort keys %printed)[0] =~ /^(\d+)\./;
-die "cannot tell which chapter this is from the book\n" unless $chNo;
 my @foreign = grep { !/^$chNo\./ } sort keys %cited;
 my @unasked;
 for my $n (@foreign) {

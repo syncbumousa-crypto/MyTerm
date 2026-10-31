@@ -69,6 +69,31 @@
   letter-spacing:.2px; white-space:nowrap;
 }
 .msheet .lawUse .enOnly, .msheet .lawUse .arOnly {display:inline;}
+/* ============================================================ */
+/* # 1F4D8 1F9ED   EVERY LAW SAYS WHERE IT CAME FROM */
+/* # CSS */
+/* # A line above the equation naming its place in the book: a */
+/* #    numbered equation of this chapter, a case or shortcut of */
+/* #    one, a rule the book states in prose without numbering */
+/* #    it, or something the book does not have at all. */
+/* # Asked on 2026-10-31: `there are laws I cannot find in the */
+/* #    book, and laws the book has that you did not put - why?` */
+/* #    The content was right. Nothing on the box said which was */
+/* #    which, so a case of 6.4 and an invention looked alike. */
+/* #    Put ABOVE the equation and not on the top edge: the edge */
+/* #    already carries the number, the calculator badge and the */
+/* #    question mark, and a fourth pill there would collide. */
+/* ============================================================ */
+.msheet .lawFrom {
+  display:block; text-align:center; white-space:normal;
+  font-size:calc(9.5px * var(--fs)); font-weight:700; letter-spacing:.1px;
+  color:#4a5a6a !important; margin:0 0 calc(7px * var(--eqScale,1));
+}
+.msheet .lawFrom[data-kind="eq"] {color:#1c4e9c !important;}
+.msheet .lawFrom[data-kind="case"] {color:#4a7a2c !important;}
+.msheet .lawFrom[data-kind="text"] {color:#6a6a6a !important;}
+.msheet .lawFrom[data-kind="added"] {color:#8a5a1e !important;}
+.msheet .lawFrom .enOnly, .msheet .lawFrom .arOnly {display:inline;}
 .msheet .qh .qUse {
   display:inline-flex; gap:5px; align-items:baseline;
   margin-inline-start:8px; vertical-align:middle;

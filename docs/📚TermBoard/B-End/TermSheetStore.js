@@ -90,6 +90,7 @@
     'fsHead',
     // a law in its box
     'lawBox', 'lawDerived', 'lawNo', 'lawEq', 'lawNote', 'lawIco', 'lawUse', 'qUse',
+    'lawFrom',
     'roadFig', 'rA', 'rB', 'rE', 'rY',
     'fig',
     'frac', 'fnum', 'fden', 'lhs', 'lhsRow',

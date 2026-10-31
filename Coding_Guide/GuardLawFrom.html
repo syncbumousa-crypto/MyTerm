@@ -1,0 +1,140 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Guard · a law says where it came from</title>
+<pre id="o">pending</pre>
+<link rel="stylesheet" href="../docs/%F0%9F%93%9ATermBoard/F-End/TermSheet.css">
+<script src="../docs/%F0%9F%93%9ATermBoard/B-End/TermSheetStore.js"></script>
+<script src="../docs/%F0%9F%93%9ATermBoard/F-End/TermSheetPaper.js"></script>
+<script>
+  // ============================================================
+  // # 🛡️ 📘  A LAW SAYS WHERE IT CAME FROM
+  // # 🔤 HTML + JavaScript
+  // # 🎯 The sheets number laws by their own sheet (1.x .. 4.x), so
+  // #    nothing on a box said whether it is an equation the book
+  // #    numbers, a case of one, a rule the book states in prose,
+  // #    or something added that the book does not have. Four kinds
+  // #    that look alike is what he hit: a case of 6.4 and an
+  // #    invention were impossible to tell apart.
+  // # 🎯 What is measured: the badge survives the gate with its kind
+  // #    and nothing else, it is drawn ABOVE the equation and not on
+  // #    the crowded top edge, it does not overlap the number or the
+  // #    calculator pill, one language shows at a time, every box
+  // #    carries exactly one and a bare box is NAMED, and each of
+  // #    the four kinds is drawn its own colour.
+  // # 🔗 Asked on 2026-10-31: `there are laws I cannot find in the
+  // #    book, and laws the book mentions that you did not put -
+  // #    why?` Then: `do not delete laws, put marks over each one
+  // #    showing its source, and make sure none is missing`.
+  // # 🔗 The chapter's own completeness - every numbered equation
+  // #    the book prints is on a badge - is measured against the
+  // #    book's words by `GuardLawFromBook.pl`, which this page
+  // #    cannot do: a guard in a browser has no book.
+  // ============================================================
+  window.onerror = (m, s, l, c) => {
+    document.getElementById('o').textContent = 'FAIL ' + m + ' @' + l + ':' + c;
+    return true;
+  };
+  (() => {
+    const o = document.getElementById('o');
+    const S = window.MyTermSheetStore, P = window.MyTermSheetPaper;
+    if (!S || !P) { o.textContent = 'FAIL the store or the paper did not load'; return; }
+    const faults = [], out = [];
+    const say = (ok, line) => { out.push((ok ? 'PASS ' : 'FAIL ') + line); if (!ok) faults.push(line); };
+    const KINDS = ['eq', 'case', 'text', 'added'];
+
+    // ---- 1  WHAT THE GATE KEEPS OF THE BADGE
+    const raw = '<div class="eqPage"><div class="lawBox"><span class="lawNo">4.1</span>'
+      + '<span class="lawUse"><span class="arOnly">calc</span><span class="enOnly">calc</span></span>'
+      + '<span class="lawFrom" data-kind="eq" onclick="alert(1)" style="color:red">'
+      + '<span class="arOnly">AR 6.5a</span><span class="enOnly">EN 6.5a</span></span>'
+      + '<div class="lawEq"><span class="tt v-b">B0<small>a</small><small>b</small></span> = 1</div>'
+      + '</div></div>';
+    const kept = S.gate(raw);
+    say(/class="lawFrom"/.test(kept), 'the badge survives the gate');
+    say(/data-kind="eq"/.test(kept), 'with the kind it was given');
+    say(!/onclick/.test(kept) && !/alert/.test(kept), 'and nothing it was not asked to carry');
+    // The colour IS the meaning here - which of the four kinds this is -
+    // so a sheet must not be able to repaint it. The gate keeps `color` for
+    // other uses, so the stylesheet is what refuses: measured, not assumed
+    const red = document.createElement('div');
+    red.className = 'msheet';
+    red.innerHTML = S.gate('<div class="lawBox"><span class="lawFrom" data-kind="eq" style="color:red">x</span></div>');
+    document.body.appendChild(red);
+    const painted = getComputedStyle(red.querySelector('.lawFrom')).color;
+    red.remove();
+    say(painted === 'rgb(28, 78, 156)', 'and no colour of its own: the kind decides that - ' + painted);
+
+    const host = document.createElement('div');
+    host.innerHTML = '<div class="msheet msheet-law" data-rlang="ar" style="width:800px">' + kept + '</div>';
+    document.body.appendChild(host);
+    const box = host.querySelector('.lawBox');
+    const badge = box.querySelector('.lawFrom');
+    const eq = box.querySelector('.lawEq');
+
+    // ---- 2  ABOVE THE EQUATION, NOT ON THE TOP EDGE
+    say(Boolean(badge.compareDocumentPosition(eq) & Node.DOCUMENT_POSITION_FOLLOWING),
+      'the badge stands before the equation in the box');
+    const cs = getComputedStyle(badge);
+    say(cs.display === 'block', 'and is drawn as its own line: display ' + cs.display);
+    say(cs.textAlign === 'center', 'centred over it: text-align ' + cs.textAlign);
+    const rb = badge.getBoundingClientRect(), re = eq.getBoundingClientRect();
+    say(rb.bottom <= re.top + 1, 'and sits above the equation, not across it');
+
+    // ---- 3  AND IT DOES NOT LAND ON THE PILLS ALREADY THERE
+    // The top edge carries the law number, the calculator badge and the
+    // question mark. A fourth thing up there would cover one of them
+    const hits = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    ['.lawNo', '.lawUse'].forEach(sel => {
+      const el = box.querySelector(sel);
+      say(Boolean(el) && !hits(rb, el.getBoundingClientRect()), 'it does not overlap ' + sel);
+    });
+
+    // ---- 4  ONE LANGUAGE AT A TIME
+    const sheet = host.querySelector('.msheet');
+    const seen = () => [...badge.children].filter(c => getComputedStyle(c).display !== 'none')
+      .map(c => c.textContent.slice(0, 2)).join(',');
+    say(seen() === 'AR', 'in Arabic the sheet shows the Arabic half: ' + seen());
+    sheet.setAttribute('data-rlang', 'en');
+    say(seen() === 'EN', 'and in English the English half: ' + seen());
+
+    // ---- 5  EVERY BOX CARRIES EXACTLY ONE, AND A BARE ONE IS NAMED
+    const many = document.createElement('div');
+    many.className = 'msheet';
+    many.innerHTML = S.gate('<div class="eqPage">'
+      + '<div class="lawBox"><span class="lawNo">1.1</span><span class="lawFrom" data-kind="eq">'
+      + '<span class="arOnly">a</span><span class="enOnly">a</span></span><div class="lawEq">a = b</div></div>'
+      + '<div class="lawBox"><span class="lawNo">1.2</span><div class="lawEq">c = d</div></div>'
+      + '</div>');
+    document.body.appendChild(many);
+    const boxes = [...many.querySelectorAll('.lawBox')];
+    const counted = boxes.map(b => b.querySelectorAll('.lawFrom').length);
+    say(counted.join(',') === '1,0', 'the count is read off the box: ' + counted.join(','));
+    const bare = boxes.filter(b => b.querySelectorAll('.lawFrom').length !== 1)
+      .map(b => b.querySelector('.lawNo').textContent);
+    say(bare.length === 1 && bare[0] === '1.2', 'and a law with no source is named: ' + bare.join(' '));
+
+    // ---- 6  AN UNKNOWN KIND IS A FAULT, NOT A COLOURLESS BADGE
+    const odd = document.createElement('div');
+    odd.className = 'msheet';
+    odd.innerHTML = S.gate('<div class="lawBox"><span class="lawNo">9.9</span>'
+      + '<span class="lawFrom" data-kind="whatever"><span class="arOnly">a</span>'
+      + '<span class="enOnly">a</span></span><div class="lawEq">a = b</div></div>');
+    document.body.appendChild(odd);
+    const k = odd.querySelector('.lawFrom').getAttribute('data-kind');
+    say(!KINDS.includes(k), 'a kind outside the four is detectable: "' + k + '"');
+    const known = KINDS.map(kind => {
+      const t = document.createElement('div');
+      t.className = 'msheet';
+      t.innerHTML = '<div class="lawBox"><span class="lawFrom" data-kind="' + kind + '">x</span></div>';
+      document.body.appendChild(t);
+      const c = getComputedStyle(t.querySelector('.lawFrom')).color;
+      t.remove();
+      return kind + ' ' + c.replace(/\s/g, '');
+    });
+    say(new Set(known.map(x => x.split(' ')[1])).size === KINDS.length,
+      'and each of the four is drawn its own colour: ' + known.join(' · '));
+
+    o.textContent = (faults.length ? 'FAIL ' + faults.length + ' fault(s)' : 'OK')
+      + ' (' + out.length + ' checks)\n' + out.join('\n');
+  })();
+</script>

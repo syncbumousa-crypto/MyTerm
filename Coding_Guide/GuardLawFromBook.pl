@@ -33,6 +33,10 @@ my $here = $0; $here =~ s{[^/\\]+$}{}; $here =~ s{[\\]}{/}g; $here = './' unless
 my $desk = $here . '../../';
 my $dir  = $desk . "\x{0627}\x{0644}\x{062A}\x{0644}\x{062E}\x{064A}\x{0635} \x{0627}\x{0644}\x{0630}\x{0643}\x{064A}/"
          . "\x{0645}\x{0644}\x{062E}\x{0635}\x{0627}\x{062A} $code/$ch/";
+# A THIRD ARGUMENT, SO THE GUARD CAN BE PROVED TO FAIL. A check that has
+# only ever been run on the clean state is a claim, not a measurement -
+# point it at a spoiled copy of the chapter and it must shout
+$dir = $ARGV[2] . '/' if defined $ARGV[2] && length $ARGV[2];
 my $rd = sub {
   my $p = $dir . $_[0]; utf8::encode($p);
   open(my $h, '<:encoding(UTF-8)', $p) or die "cannot read $_[0]: $!\n";
@@ -85,7 +89,7 @@ die "the chapter has no rules stacks\n" if $a < 0 || $b < 0;
 my $t = substr($data, $a, $b - $a);
 my @boxes = split /(?=<div class="lawBox)/, $t; shift @boxes;
 my %ok = map { $_ => 1 } qw(eq case text added);
-my (%cited, %citedPage, @bare, @odd);
+my (%cited, %citedPage, %fromCh, @bare, @odd);
 for my $box (@boxes) {
   my ($no) = $box =~ /lawNo">([\d.]+[a-z]?)</;
   $no = '?' unless defined $no;
@@ -103,6 +107,12 @@ for my $box (@boxes) {
   # digit, so three equations that are plainly named read as missing
   while ($ar =~ /(?<![\d.])(\d\.\d+[a-z]?)(?![\d])/g) { my $n = $1; $cited{$n} = $no if $n =~ /^[56]\./ }
   while ($ar =~ /\x{0635}(\d\d\d)/g) { $citedPage{$no} = $1 }
+  # A BADGE THAT SAYS "ANOTHER CHAPTER" AND NAMES NOTHING. `from chapter
+  # 5` with no equation number was how the annuity factor sat here for
+  # weeks: nothing to check, so nothing was checked
+  my ($said) = $ar =~ /\x{0641}\x{0635}\x{0644}\s*(\d+)/;
+  ($said) = $body =~ /Chapter\s*(\d+)/ unless defined $said;
+  $fromCh{$no} = $said if defined $said;
   if ($kind eq 'eq') {
     for my $n ($ar =~ /\b(6\.\d+[a-z]?)\b/g) {
       my $pg = $citedPage{$no};
@@ -130,7 +140,38 @@ my @far = grep { $citedPage{$_} < $first + 1 || $citedPage{$_} > $first + @text 
 $say->(!@far, 'every page a badge cites is inside the chapter'
   . (@far ? ': ' . join(' ', map { "$_->p$citedPage{$_}" } @far) : ''));
 
-# ---- 6  AND NOTHING OF THE TOOL THAT BUILT IT IS LEFT ON THE PAGE
+# ---- 6  A LAW FROM ANOTHER CHAPTER ONLY IF THIS CHAPTER REACHES FOR IT
+# He asked: why is a chapter 5 law on a chapter 6 sheet? For 5.7 there is
+# an answer the book gives - its own example 6.6 says 6.4 reduces to 5.7.
+# For the annuity factor there was none: I put it there to name a bracket.
+# So the test is not "is it useful" but "does THIS chapter's text cite
+# it", and the chapter's own words are the judge
+# the chapter's own number, read off the numbers the book prints here and
+# not off the folder name - `Ch6` is a folder, `6.5` is the book talking
+my ($chNo) = (sort keys %printed)[0] =~ /^(\d+)\./;
+die "cannot tell which chapter this is from the book\n" unless $chNo;
+my @foreign = grep { !/^$chNo\./ } sort keys %cited;
+my @unasked;
+for my $n (@foreign) {
+  my $asked = grep { /Equation\s+\Q$n\E\b/ } @text;
+  push @unasked, "$n (law $cited{$n})" unless $asked;
+}
+$say->(!@unasked, 'every law borrowed from another chapter is one this chapter cites'
+  . (@foreign ? ': borrowed ' . join(' ', @foreign) : ': none borrowed')
+  . (@unasked ? ' - UNCITED: ' . join(' ', @unasked) : ''));
+
+# and a badge may not claim another chapter WITHOUT naming the equation,
+# which is unfalsifiable and was exactly how the annuity factor stayed
+my @vague;
+for my $law (sort keys %fromCh) {
+  next if $fromCh{$law} == $chNo;
+  my $names = grep { $cited{$_} eq $law } grep { /^$fromCh{$law}\./ } keys %cited;
+  push @vague, "$law (says chapter $fromCh{$law})" unless $names;
+}
+$say->(!@vague, 'and none of them says "another chapter" without naming which equation'
+  . (@vague ? ': ' . join(' ', @vague) : ''));
+
+# ---- 7  AND NOTHING OF THE TOOL THAT BUILT IT IS LEFT ON THE PAGE
 # A perl escape written inside single quotes is not an escape: `\x{00F7}`
 # went into a sheet as five characters, reached his Drive, and read as
 # that on the page - and in the data file a JS template literal refused

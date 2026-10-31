@@ -499,7 +499,7 @@
   // slots from his own pages whose pieces this site has never had.
   // So a name is drawn only if it is on this list, and anything else
   // is left exactly as it was - a place kept and said
-  const FIGS = new Set(['two-roads']);
+  const FIGS = new Set(['two-roads', 'interest-vs-coupon', 'basis-points']);
   const figures = page => {
     if (!page) return;
     page.querySelectorAll('.fig[data-fig], .epWidget[data-widget]').forEach(slot => {
@@ -756,6 +756,12 @@
     // renumbering would agree with itself for ever, and the first change
     // to either would be measured against the old rule
     decide, settle, figures,
+
+    // THE PAGES THE ALLOW-LIST HOLDS, handed out for one reason: a
+    // guard must be able to ask every name on it whether its file was
+    // really published. A list kept twice drifts, and the half that
+    // drifts is the one nobody drives
+    figNames: () => [...FIGS],
 
     // Where the sheets go. Said once, so a redraw does not hunt for it
     // Told where to draw, and what to call when a tick changes — the

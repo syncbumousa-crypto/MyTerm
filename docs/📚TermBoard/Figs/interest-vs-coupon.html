@@ -1,0 +1,578 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>Interest vs Coupon</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=IBM+Plex+Sans+Arabic:wght@500&display=swap">
+<style>
+/* Layout: graph paper (chalkboard in dark). One hand-drawn scene: Mohammed on the right,
+   a bank (top) and a company (bottom) far to the left, four arrows from Mohammed, one per kind of loan.
+   The bond paper sits under the scene. */
+:root{
+  --paper:#fbfaf5; --grid:#e6e9ef; --ink:#17203a; --faint:#6b7486; --box:#ffffff;
+  --blue:#1d4fc4; --green:#16784a; --red:#c23a25; --hl:rgba(255,206,40,.45); --c-bond:#1d4fc4; --c-dep:#7a3fb0; --c-loan:#b8660b; --c-inst:#0d7f86; --c-eq:#b02a78;
+  --hand:"Patrick Hand","IBM Plex Sans Arabic","Segoe Print",cursive;
+  --ar:"IBM Plex Sans Arabic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#1b2420; --grid:#24302a; --ink:#f1f4ee; --faint:#a9b8ae; --box:#202b26;
+  --blue:#93bbff; --green:#8ee3ab; --red:#ff9d88; --hl:rgba(255,206,40,.22); --c-bond:#93bbff; --c-dep:#d0a8f5; --c-loan:#f3b866; --c-inst:#7fd6dc; --c-eq:#f59ccd; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#1b2420; --grid:#24302a; --ink:#f1f4ee; --faint:#a9b8ae; --box:#202b26;
+  --blue:#93bbff; --green:#8ee3ab; --red:#ff9d88; --hl:rgba(255,206,40,.22); --c-bond:#93bbff; --c-dep:#d0a8f5; --c-loan:#f3b866; --c-inst:#7fd6dc; --c-eq:#f59ccd; color-scheme:dark}
+body{background:var(--paper);color:var(--ink);font-family:var(--hand);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px}
+.sheet{direction:rtl;max-width:1040px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+p{margin:0}
+.ar{font-family:var(--ar);font-size:14px;color:var(--faint)}
+.bl{color:var(--blue)} .gr{color:var(--green)} .rd{color:var(--red)}
+.hl{background:linear-gradient(transparent 55%,var(--hl) 55%);padding:0 3px}
+.rule{text-align:center;font-size:clamp(24px,3.6vw,30px);line-height:1.3}
+.rule small{display:block;font-size:18px;color:var(--faint)}
+
+/* scene */
+.wrap{overflow-x:auto;direction:ltr;max-width:630px;width:100%;margin:0 auto}
+svg{display:block;width:100%;height:auto;font-family:var(--hand);overflow:visible}
+svg.scene{min-width:530px}
+svg text{fill:var(--ink);font-size:22px;direction:rtl;unicode-bidi:plaintext}
+svg .small{font-size:15px}
+svg .tt{font-size:19px}
+svg .tag{fill:var(--paper);stroke:var(--faint);stroke-width:1;opacity:.75}
+svg .brace{fill:none;stroke:var(--faint);stroke-width:1.8;stroke-linecap:round}
+svg .halo{paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round}
+svg .group{fill:none;stroke:var(--faint);stroke-width:1.2;stroke-dasharray:6 6;opacity:.7}
+svg .tagt{font-size:14px;fill:var(--faint)}
+svg .role{stroke-width:1.2} svg rect.lend{fill:var(--green);fill-opacity:.14;stroke:var(--green)} svg rect.borr{fill:var(--red);fill-opacity:.12;stroke:var(--red)} svg text.lend{fill:var(--green)} svg text.borr{fill:var(--red)}
+svg .tb{fill:var(--blue)} svg .tg{fill:var(--green)} svg .tr{fill:var(--red)} svg .tf{fill:var(--faint)}
+svg .am{fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+svg .ar-red{stroke:var(--red)} svg .ar-ink{stroke:var(--ink)} svg .ar-blue{stroke:var(--blue)} svg .ar-green{stroke:var(--green)}
+svg use{color:var(--ink)}
+svg .paper{fill:var(--box);stroke:var(--ink);stroke-width:1.8}
+svg .pl{stroke:var(--ink);stroke-width:1.4;fill:none}
+
+
+/* cases: dim until Mohammed is tapped */
+svg .case{transition:opacity .3s}
+svg .case .who:hover{opacity:.8}
+svg .hit{fill:transparent;stroke:none}
+svg .who:focus{outline:none} svg .who:focus-visible .hit{stroke:var(--blue);stroke-width:2;stroke-dasharray:4 4}
+.hint{text-align:center;color:var(--faint);font-size:18px}
+@media (prefers-reduced-motion:reduce){svg .case,svg .case .body,svg .case .who{transition:none}}
+
+/* bond certificate */
+.sub{text-align:center;color:var(--faint);font-size:20px}
+.cert{max-width:440px;width:100%;margin:0 auto;background:var(--box);border:3px double var(--ink);border-radius:6px;padding:10px;display:grid;gap:10px;transform:rotate(-.4deg);box-shadow:5px 6px 0 var(--grid)}
+.cert-in{border:1.5px solid var(--faint);border-radius:4px;padding:14px 16px;display:grid;gap:12px}
+.cert-top{font-size:16px;letter-spacing:.14em;color:var(--faint);text-align:center}
+.cert-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.field{display:grid;gap:2px;text-align:center;min-width:0}
+.lab{font-size:17px;color:var(--faint)}
+.val{font-size:24px;line-height:1.1}
+.stubs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:2.5px dashed var(--ink)}
+.stub{display:grid;gap:2px;text-align:center;padding:8px 4px;font-size:20px;border-right:2.5px dashed var(--ink);min-width:0}
+.stub:last-child{border-right:none}
+.stub .lab{font-size:15px}
+
+/* clickable case tags + deal panel */
+svg .pick{cursor:pointer}
+svg .case.no{opacity:.3} svg .case.no .pick{cursor:default}
+svg .xmark{fill:none;stroke:var(--red);stroke-width:5;stroke-linecap:round}
+svg .xt{font-size:24px;fill:var(--red)}
+svg .pick .tag{stroke:var(--c);fill:color-mix(in srgb,var(--c) 12%,var(--box));stroke-width:1.5;opacity:1}
+svg .pick .tagt{font-size:20px;fill:var(--c)}
+svg .pick .tagen{font-size:17px;fill:var(--c);direction:ltr;letter-spacing:.02em}
+svg .pick use{color:var(--c)}
+svg .pick:hover .tag{fill:color-mix(in srgb,var(--c) 24%,var(--box))}
+svg .pick.sel .tag{fill:color-mix(in srgb,var(--c) 30%,var(--box));stroke-width:2.6}
+svg .pick:focus{outline:none} svg .pick:focus-visible .tag{stroke-dasharray:4 3}
+.t-bond{--c:var(--c-bond)} .t-dep{--c:var(--c-dep)} .t-loan{--c:var(--c-loan)} .t-inst{--c:var(--c-inst)} .t-eq{--c:var(--c-eq)}
+svg .ar-eq{stroke:var(--c-eq)} svg .te{fill:var(--c-eq)} svg rect.own{fill:var(--c-eq);fill-opacity:.12;stroke:var(--c-eq)} svg text.own{fill:var(--c-eq)}
+.who2.own{color:var(--c-eq);border-color:var(--c-eq);background:color-mix(in srgb,var(--c-eq) 12%,transparent)} .who2.plain{color:var(--ink);border-color:var(--faint)}
+.deal .cert{border-color:var(--c,var(--ink))} .deal .cert-top{color:var(--c,var(--faint));display:flex;gap:6px;align-items:center;justify-content:center}
+.deal .cert-top svg{width:18px;height:18px;color:var(--c)}
+.dbt{margin:0;text-align:center;font-weight:400;font-size:clamp(24px,3.4vw,30px)}
+.row2{display:flex;align-items:center;justify-content:center;gap:28px;width:fit-content;max-width:100%;position:relative}
+.row2 .cert{margin:0;position:relative;z-index:1}
+.row2 .pbox{position:relative;z-index:1;background:color-mix(in srgb,var(--c-bond) 6%,var(--paper))}
+.row2:has(.pbox)::before{content:"";position:absolute;left:40px;right:40px;top:50%;border-top:1.6px solid var(--c-bond);z-index:0}
+.pbox{border:1.4px dashed var(--c-bond);border-radius:10px;padding:6px 10px;display:grid;gap:2px;justify-items:center;background:color-mix(in srgb,var(--c-bond) 6%,transparent);max-width:none}
+.pbox p{margin:0}
+.plab{font-size:12px;color:var(--faint);text-align:center}
+.pval{font-size:24px;line-height:1.1;color:var(--c-bond)}
+.pbox .pval,.pbox .ptag,.pbox .plab{display:none}
+.pbox .pfx{border-top:none;padding-top:0;margin-top:0;display:grid;grid-template-columns:auto auto auto auto auto;align-items:center;justify-items:center;column-gap:5px;row-gap:6px}
+.pfx{font-size:12px;text-align:center;line-height:1.9;border-top:1px dashed var(--faint);padding-top:4px;margin-top:2px;white-space:nowrap}
+.mtogs{display:flex;gap:4px;justify-content:center;margin-bottom:4px}
+.mtog{font:inherit;font-size:13px;padding:1px 10px;border-radius:999px;border:1.2px solid var(--faint);background:var(--box);color:var(--ink);cursor:pointer}
+.mtog[aria-pressed="true"]{border-color:var(--c-bond);background:color-mix(in srgb,var(--c-bond) 18%,var(--box));color:var(--c-bond)}
+.val.gold{color:#a87a12}
+.qres{--gold:#a87a12;display:inline-block;font-weight:400;font-size:16px;color:var(--gold);border:1.8px solid var(--gold);border-radius:6px;padding:1px 7px;background:color-mix(in srgb,#e8b931 22%,var(--box))}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .qres{--gold:#f0c95a}}
+:root[data-theme="dark"] .qres{--gold:#f0c95a}
+.pm,.fr .pm small{color:var(--blue)}
+.lw{display:inline-flex;flex-direction:column;vertical-align:middle;line-height:1.15;text-align:center}
+.lw small{font-size:6px;color:var(--faint)}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.15;margin:0 2px}
+.fr>span{display:flex;flex-direction:column;align-items:center}
+.fr small{font-size:6px;color:var(--faint);line-height:1.1}
+.fr span:first-child{border-bottom:1px solid currentColor;padding:0 2px}
+.ptag{font-size:12px;text-align:center;line-height:1.3;white-space:pre-line}
+.chips{display:flex;gap:4px;margin-top:2px}
+.chip{font:inherit;font-size:13px;padding:1px 7px;border-radius:999px;border:1.2px solid var(--faint);background:var(--box);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--c-bond);background:color-mix(in srgb,var(--c-bond) 18%,var(--box));color:var(--c-bond)}
+.story{width:100%;max-width:640px;display:grid;gap:8px;grid-template-columns:minmax(0,1fr)}
+.story svg{width:100%;height:auto;display:block;font-family:var(--hand);overflow:visible}
+.story .line{stroke:var(--ink);stroke-width:1.6}
+.story .tick{font-size:16px;fill:var(--faint)}
+.story .sgot{font-size:15px;fill:var(--green)}
+.story .smo{transition:transform 1.1s ease-in-out}
+.story #sgive,.story #snews,.story #ssale{transition:opacity .5s}
+.story #spaper,.story #skh,.story #smo{transition:transform 1.1s ease-in-out,opacity .5s}
+.story .sname{font-size:15px;fill:var(--faint)}
+.story .sstr{stroke:var(--c-bond);stroke-width:1.4}
+.story .stag{fill:var(--paper);stroke:var(--ink);stroke-width:1.6;transition:stroke .4s}
+.story .stag.dn{stroke:var(--red)} .story .stag.up{stroke:var(--green)}
+.story .sprice{font-size:20px;fill:var(--ink)} .story .sprice.dn{fill:var(--red)} .story .sprice.up{fill:var(--green)}
+.story .spap{fill:var(--box);stroke:var(--c-bond);stroke-width:1.6}
+.story .spapt{font-size:9px;fill:var(--c-bond);letter-spacing:.05em}
+.story .scoin{font-size:17px;fill:var(--green)}
+.story .slbl{font-size:15px;fill:var(--ink)}
+.story .smk{font-size:15px;fill:var(--faint);direction:ltr}
+.story svg text{direction:ltr} .story .snews text{direction:rtl}
+.story .snews rect{fill:var(--hl);stroke:var(--ink);stroke-width:1.2}
+.story .snews text{font-size:16px;fill:var(--ink);direction:rtl}
+.story .cgrid{stroke:var(--grid);stroke-width:1.2}
+.story .cpar{stroke:var(--faint);stroke-width:1.2;stroke-dasharray:5 5}
+.story .clab{font-size:13px;fill:var(--faint)}
+.story .cline{fill:none;stroke:var(--c-bond);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.story .cdot{fill:var(--ink)} .story .cdot.up{fill:var(--green)} .story .cdot.dn{fill:var(--red)}
+.story .cb0{font-size:11px;fill:var(--faint)}
+.story .cval{font-size:16px;fill:var(--ink)} .story .cval.up{fill:var(--green)} .story .cval.dn{fill:var(--red)}
+.story .cs{fill:none;stroke-width:2.4;stroke-linecap:round;opacity:.55}
+.story .cs.cur{opacity:1;stroke-width:3.4}
+.story .cs.rise{stroke:var(--c-bond)} .story .cs.cpn{stroke:var(--green)} .story .cs.mkt{stroke:var(--c-loan)}
+.story .cl{font-size:14px;opacity:.6;direction:rtl;unicode-bidi:plaintext} .story .cl.cur{opacity:1;font-size:16px}
+.story .cl.rise{fill:var(--c-bond)} .story .cl.cpn{fill:var(--green)} .story .cl.mkt{fill:var(--c-loan)}
+.story .cconn{fill:none;stroke:var(--green);stroke-width:1.6;stroke-dasharray:4 4}
+.story .sstr{fill:none;stroke:var(--faint);stroke-width:1.2;stroke-dasharray:3 4}
+.clegend{margin:0;text-align:center;font-size:14px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.clegend .rise{color:var(--c-bond)} .clegend .cpn{color:var(--green)} .clegend .mkt{color:var(--c-loan)}
+.sbar{display:flex;align-items:center;gap:12px;padding:0 4%}
+.sbar input{flex:1;accent-color:var(--c-bond);height:28px;cursor:pointer}
+.tval{font-size:15px;color:var(--faint);min-width:92px;text-align:center}
+.story .ev{font-size:15px} .story .ev.cpn{fill:var(--green)} .story .ev.mkt{fill:var(--c-loan)}
+.story .cs{opacity:1;stroke-width:2.6}
+.story .smo,.story #spaper,.story #skh,.story #smo{transition:opacity .3s}
+.duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:100%;max-width:860px}
+@media (max-width:640px){.duo{grid-template-columns:minmax(0,1fr)}}
+.pane{border:1.5px solid var(--faint);border-radius:14px;padding:10px 8px;background:var(--paper);min-height:300px;display:grid}
+.ptitle{margin:0 0 4px;text-align:center;font-size:16px}
+.pane{align-content:start}
+.pane.empty{border-style:dashed;place-items:center;color:var(--faint);font-size:15px;opacity:.7}
+.pane .story{max-width:none;gap:4px}
+.pane .stext{font-size:14px;line-height:1.5;min-height:4.5em;padding:0 4px}
+.pane .clegend{font-size:12px;gap:8px}
+.pane .tval{font-size:12px;min-width:70px}
+.pane .sbar{padding:0 2%}
+.stext{padding:0 12px;margin:0;text-align:center;font-size:18px;line-height:1.55;min-height:3.2em}
+.sctl{display:flex;justify-content:center;align-items:center;gap:12px}
+.sctl .chip{font-size:16px;padding:3px 16px} .sctl .chip:disabled{opacity:.35;cursor:default}
+.scount{font-size:14px;color:var(--faint)}
+@media (prefers-reduced-motion:reduce){.story .smo{transition:none}}
+.deal{display:grid;gap:14px;justify-items:center}
+.deal .cert{zoom:.5}
+.dt{margin:0;font-size:26px;font-weight:400;text-align:center}
+.dt small{display:block;font-size:16px;color:var(--faint)}
+.dx{margin:0;text-align:center;font-size:19px;max-width:520px;line-height:1.5}
+.who2{display:inline-block;padding:0 8px;border-radius:6px;border:1.2px solid}
+.who2.lend{color:var(--green);border-color:var(--green);background:color-mix(in srgb,var(--green) 12%,transparent)}
+.who2.borr{color:var(--red);border-color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}
+.parties{display:grid;grid-template-columns:1fr 1fr;gap:10px;border-bottom:1.5px dashed var(--faint);padding-bottom:10px}
+.tl{width:100%;max-width:600px}
+.tl svg .tick{font-size:15px;fill:var(--faint)}
+.tl svg .lbl{font-size:16px}
+.tl svg .line{stroke:var(--ink);stroke-width:1.6}
+.legend{text-align:center;font-size:15px;color:var(--faint);margin:2px 0 0}
+.sum{margin:0;text-align:center;font-size:19px}
+.note{margin:0;text-align:center;font-size:16px;color:var(--faint);max-width:520px}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="mk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" style="stroke:var(--ink)" stroke-width="2" stroke-linecap="round"/></marker>
+    <marker id="mr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" style="stroke:var(--red)" stroke-width="2" stroke-linecap="round"/></marker>
+    <marker id="mb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" style="stroke:var(--blue)" stroke-width="2" stroke-linecap="round"/></marker>
+    <marker id="me" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" style="stroke:var(--c-eq)" stroke-width="2" stroke-linecap="round"/></marker>
+    <marker id="mg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" style="stroke:var(--green)" stroke-width="2" stroke-linecap="round"/></marker>
+    <symbol id="man" viewBox="0 0 80 120">
+      <circle fill="none" stroke="currentColor" stroke-width="2.4" cx="40" cy="22" r="14"/>
+      <circle fill="currentColor" cx="35" cy="20" r="1.8"/><circle fill="currentColor" cx="45" cy="20" r="1.8"/>
+      <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M34 28 Q40 33 46 28"/>
+      <path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M40 36 L40 78 M40 48 L22 66 M40 48 L58 66 M40 78 L26 110 M40 78 L54 110"/>
+    </symbol>
+    <symbol id="bank" viewBox="0 0 110 120">
+      <path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" d="M10 42 L55 12 L100 42 Z M14 42 L96 42 M14 104 L96 104 M8 114 L102 114 M28 50 L28 98 M46 50 L46 98 M64 50 L64 98 M82 50 L82 98"/>
+      <text fill="currentColor" x="55" y="37" text-anchor="middle" style="font-size:12px;direction:ltr">BANK</text>
+    </symbol>
+    <symbol id="company" viewBox="0 0 110 120">
+      <path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" d="M18 114 L18 30 L62 30 L62 114 M62 60 L94 60 L94 114 M8 114 L102 114 M28 42 L36 42 M44 42 L52 42 M28 58 L36 58 M44 58 L52 58 M28 74 L36 74 M44 74 L52 74 M72 72 L84 72 M72 88 L84 88 M34 114 L34 96 L46 96 L46 114"/>
+      <text fill="currentColor" x="40" y="24" text-anchor="middle" style="font-size:12px;direction:ltr">COMPANY</text>
+    </symbol>
+    <symbol id="gov" viewBox="0 0 110 120">
+      <path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" d="M14 46 L96 46 M28 46 A27 24 0 0 1 82 46 M55 22 L55 6 M55 6 L68 10 L55 14 M14 104 L96 104 M8 114 L102 114 M26 54 L26 98 M44 54 L44 98 M66 54 L66 98 M84 54 L84 98"/>
+      <text fill="currentColor" x="55" y="42" text-anchor="middle" style="font-size:11px;direction:ltr">GOV</text>
+    </symbol>
+    <symbol id="i-bond" viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M4 2 L13 2 L16 5 L16 18 L4 18 Z M7 8 L13 8 M7 11 L13 11 M7 14 L10 14"/></symbol>
+    <symbol id="i-dep" viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M3 5 L17 5 L17 17 L3 17 Z M10 8.5 A2.5 2.5 0 1 1 9.99 8.5 M3 2 L17 2"/></symbol>
+    <symbol id="i-loan" viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M10 2.5 A7.5 7.5 0 1 0 10.01 2.5 M12.5 7 Q10 5.5 8 7 Q7 9 10 10 Q13 11 12 13 Q10 14.5 7.5 13 M10 4.5 L10 15.5"/></symbol>
+    <symbol id="i-inst" viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M3 4 L17 4 L17 18 L3 18 Z M3 8 L17 8 M7 2 L7 6 M13 2 L13 6 M6 11 L8 11 M10 11 L12 11 M14 11 L15 11 M6 14 L8 14 M10 14 L12 14"/></symbol>
+    <symbol id="i-eq" viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M10 2.5 A7.5 7.5 0 1 0 17.5 10 L10 10 Z M12.5 1.5 L12.5 7.5 L18.5 7.5 A6 6 0 0 0 12.5 1.5 Z"/></symbol>
+  </defs>
+</svg>
+
+<div class="sheet">
+
+
+
+  <h2 class="dbt" dir="ltr">Debt instruments</h2>
+  <div class="wrap">
+    <svg class="scene" viewBox="0 0 1270 740" role="img" aria-label="Bank, company, government: ways each gets money from Mohammed or lends to him. Only banks can take deposits">
+      <rect class="group" x="5" y="8" width="410" height="722" rx="14"/>
+      <use href="#gov" x="165" y="556" width="90" height="98"/>
+      <text class="tt" x="210" y="680" text-anchor="middle">حكومة</text>
+      <g class="case">
+        <use href="#man" x="45" y="25" width="70" height="105"/>
+        <text class="tt" x="80" y="152" text-anchor="middle">محمد</text>
+        <rect class="role borr" x="53" y="158" width="54" height="22" rx="6"/><text class="small rt borr" x="80" y="174" text-anchor="middle">مستلف</text>
+        <path class="am ar-ink" marker-end="url(#mk)" d="M65 545 L65 182"/>
+        <path class="am ar-ink" marker-end="url(#mk)" d="M95 182 L95 545"/>
+        <text class="small halo" x="95" y="400" text-anchor="middle">50,000</text>
+        <text class="tf small halo" x="95" y="425" text-anchor="middle">بدون</text>
+        <text class="tf small halo" x="95" y="443" text-anchor="middle">interest</text>
+        <text class="small halo" x="65" y="300" text-anchor="middle">50,000</text>
+        <g class="pick t-loan" data-k="govloan" role="button" tabindex="0" aria-label="اتفاق قرض"><rect class="tag" x="34" y="478" width="91" height="54" rx="8"/><text class="tagen" x="79.5" y="499" text-anchor="middle">Loan</text><use href="#i-loan" x="94" y="507" width="18" height="18"/><text class="tagt" x="69" y="523" text-anchor="middle">قرض</text></g>
+        <rect class="role lend" x="53" y="694" width="54" height="22" rx="6"/><text class="small rt lend" x="80" y="710" text-anchor="middle">مسلف</text>
+      </g>
+      <g class="case">
+        <use href="#man" x="175" y="25" width="70" height="105"/>
+        <text class="tt" x="210" y="152" text-anchor="middle">محمد</text>
+        <rect class="role lend" x="183" y="158" width="54" height="22" rx="6"/><text class="small rt lend" x="210" y="174" text-anchor="middle">مسلف</text>
+        <path class="am ar-ink" marker-end="url(#mk)" d="M195 182 L195 545"/>
+        <path class="am ar-green" marker-end="url(#mg)" d="M225 545 L225 182"/>
+        <text class="small halo" x="195" y="300" text-anchor="middle">1,000</text>
+        <text class="tg small halo" x="225" y="400" text-anchor="middle">coupon</text>
+        <g class="pick t-bond" data-k="govbond" role="button" tabindex="0" aria-label="اتفاق سند"><rect class="tag" x="164" y="478" width="91" height="54" rx="8"/><text class="tagen" x="209.5" y="499" text-anchor="middle">Bond</text><use href="#i-bond" x="224" y="507" width="18" height="18"/><text class="tagt" x="199" y="523" text-anchor="middle">سند</text></g>
+        <rect class="role borr" x="183" y="694" width="54" height="22" rx="6"/><text class="small rt borr" x="210" y="710" text-anchor="middle">مستلف</text>
+      </g>
+      <g class="case no">
+        <use href="#man" x="305" y="25" width="70" height="105"/>
+        <text class="tt" x="340" y="152" text-anchor="middle">محمد</text>
+        <rect class="role lend" x="313" y="158" width="54" height="22" rx="6"/><text class="small rt lend" x="340" y="174" text-anchor="middle">مسلف</text>
+        <path class="am ar-ink" marker-end="url(#mk)" d="M325 182 L325 545"/>
+        <path class="am ar-green" marker-end="url(#mg)" d="M355 545 L355 182"/>
+        <text class="small halo" x="325" y="300" text-anchor="middle">1,000</text>
+        <text class="tg small halo" x="355" y="400" text-anchor="middle">interest</text>
+        <g class="pick t-dep" aria-hidden="true"><rect class="tag" x="282" y="478" width="117" height="54" rx="8"/><text class="tagen" x="340.5" y="499" text-anchor="middle">Deposit</text><use href="#i-dep" x="366" y="507" width="18" height="18"/><text class="tagt" x="329" y="523" text-anchor="middle">وديعة</text></g>
+      </g>
+      <path class="xmark" d="M302 262 L378 362 M378 262 L302 362"/>
+      <text class="xt halo" x="340" y="400" text-anchor="middle">لا يمكن</text>
+      <rect class="group" x="430" y="8" width="410" height="722" rx="14"/>
+      <use href="#company" x="590" y="556" width="90" height="98"/>
+      <text class="tt" x="635" y="680" text-anchor="middle">شركة</text>
+      <g class="case">
+        <use href="#man" x="470" y="25" width="70" height="105"/>
+        <text class="tt" x="505" y="152" text-anchor="middle">محمد</text>
+        <rect class="role borr" x="478" y="158" width="54" height="22" rx="6"/><text class="small rt borr" x="505" y="174" text-anchor="middle">مستلف</text>
+        <path class="am ar-ink" marker-end="url(#mk)" d="M490 545 L490 182"/>
+        <path class="am ar-red" marker-end="url(#mr)" d="M520 182 L520 545"/>
+        <text class="tr small halo" x="520" y="400" text-anchor="middle">interest</text>
+        <text class="small halo" x="490" y="300" text-anchor="middle">80,000</text>
+        <g class="pick t-inst" data-k="inst" role="button" tabindex="0" aria-label="اتفاق تقسيط"><rect class="tag" x="438" y="478" width="134" height="54" rx="8"/><text class="tagen" x="504.5" y="499" text-anchor="middle">Installment</text><use href="#i-inst" x="532" y="507" width="18" height="18"/><text class="tagt" x="494" y="523" text-anchor="middle">تقسيط</text></g>
+        <rect class="role lend" x="478" y="694" width="54" height="22" rx="6"/><text class="small rt lend" x="505" y="710" text-anchor="middle">مسلف</text>
+      </g>
+      <g class="case">
+        <use href="#man" x="600" y="25" width="70" height="105"/>
+        <text class="tt" x="635" y="152" text-anchor="middle">محمد</text>
+        <rect class="role lend" x="608" y="158" width="54" height="22" rx="6"/><text class="small rt lend" x="635" y="174" text-anchor="middle">مسلف</text>
+        <path class="am ar-ink" marker-end="url(#mk)" d="M620 182 L620 545"/>
+        <path class="am ar-green" marker-end="url(#mg)" d="M650 545 L650 182"/>
+        <text class="small halo" x="620" y="300" text-anchor="middle">1,000</text>
+        <text class="tg small halo" x="650" y="400" text-anchor="middle">coupon</text>
+        <g class="pick t-bond" data-k="cobond" role="button" tabindex="0" aria-label="اتفاق سند"><rect class="tag" x="590" y="478" width="91" height="54" rx="8"/><text class="tagen" x="635.5" y="499" text-anchor="middle">Bond</text><use href="#i-bond" x="648" y="507" width="18" height="18"/><text class="tagt" x="624" y="523" text-anchor="middle">سند</text></g>
+        <rect class="role borr" x="608" y="694" width="54" height="22" rx="6"/><text class="small rt borr" x="635" y="710" text-anchor="middle">مستلف</text>
+      </g>
+      <g class="case no">
+        <use href="#man" x="730" y="25" width="70" height="105"/>
+        <text class="tt" x="765" y="152" text-anchor="middle">محمد</text>
+        <rect class="role lend" x="738" y="158" width="54" height="22" rx="6"/><text class="small rt lend" x="765" y="174" text-anchor="middle">مسلف</text>
+        <path class="am ar-ink" marker-end="url(#mk)" d="M750 182 L750 545"/>
+        <path class="am ar-green" marker-end="url(#mg)" d="M780 545 L780 182"/>
+        <text class="small halo" x="750" y="300" text-anchor="middle">1,000</text>
+        <text class="tg small halo" x="780" y="400" text-anchor="middle">interest</text>
+        <g class="pick t-dep" aria-hidden="true"><rect class="tag" x="706" y="478" width="117" height="54" rx="8"/><text class="tagen" x="764.5" y="499" text-anchor="middle">Deposit</text><use href="#i-dep" x="792" y="507" width="18" height="18"/><text class="tagt" x="754" y="523" text-anchor="middle">وديعة</text></g>
+      </g>
+      <path class="xmark" d="M727 262 L803 362 M803 262 L727 362"/>
+      <text class="xt halo" x="765" y="400" text-anchor="middle">لا يمكن</text>
+      <rect class="group" x="855" y="8" width="410" height="722" rx="14"/>
+      <use href="#bank" x="1015" y="556" width="90" height="98"/>
+      <text class="tt" x="1060" y="680" text-anchor="middle">بنك</text>
+      <g class="case">
+        <use href="#man" x="895" y="25" width="70" height="105"/>
+        <text class="tt" x="930" y="152" text-anchor="middle">محمد</text>
+        <rect class="role borr" x="903" y="158" width="54" height="22" rx="6"/><text class="small rt borr" x="930" y="174" text-anchor="middle">مستلف</text>
+        <path class="am ar-ink" marker-end="url(#mk)" d="M915 545 L915 182"/>
+        <path class="am ar-red" marker-end="url(#mr)" d="M945 182 L945 545"/>
+        <text class="tr small halo" x="945" y="400" text-anchor="middle">interest</text>
+        <text class="small halo" x="915" y="300" text-anchor="middle">600,000</text>
+        <g class="pick t-loan" data-k="loan" role="button" tabindex="0" aria-label="اتفاق قرض"><rect class="tag" x="884" y="478" width="91" height="54" rx="8"/><text class="tagen" x="929.5" y="499" text-anchor="middle">Loan</text><use href="#i-loan" x="944" y="507" width="18" height="18"/><text class="tagt" x="919" y="523" text-anchor="middle">قرض</text></g>
+        <rect class="role lend" x="903" y="694" width="54" height="22" rx="6"/><text class="small rt lend" x="930" y="710" text-anchor="middle">مسلف</text>
+      </g>
+      <g class="case">
+        <use href="#man" x="1025" y="25" width="70" height="105"/>
+        <text class="tt" x="1060" y="152" text-anchor="middle">محمد</text>
+        <rect class="role lend" x="1033" y="158" width="54" height="22" rx="6"/><text class="small rt lend" x="1060" y="174" text-anchor="middle">مسلف</text>
+        <path class="am ar-ink" marker-end="url(#mk)" d="M1045 182 L1045 545"/>
+        <path class="am ar-green" marker-end="url(#mg)" d="M1075 545 L1075 182"/>
+        <text class="small halo" x="1045" y="300" text-anchor="middle">1,000</text>
+        <text class="tg small halo" x="1075" y="400" text-anchor="middle">coupon</text>
+        <g class="pick t-bond" data-k="bbond" role="button" tabindex="0" aria-label="اتفاق سند"><rect class="tag" x="1014" y="478" width="91" height="54" rx="8"/><text class="tagen" x="1059.5" y="499" text-anchor="middle">Bond</text><use href="#i-bond" x="1074" y="507" width="18" height="18"/><text class="tagt" x="1049" y="523" text-anchor="middle">سند</text></g>
+        <rect class="role borr" x="1033" y="694" width="54" height="22" rx="6"/><text class="small rt borr" x="1060" y="710" text-anchor="middle">مستلف</text>
+      </g>
+      <g class="case">
+        <use href="#man" x="1155" y="25" width="70" height="105"/>
+        <text class="tt" x="1190" y="152" text-anchor="middle">محمد</text>
+        <rect class="role lend" x="1163" y="158" width="54" height="22" rx="6"/><text class="small rt lend" x="1190" y="174" text-anchor="middle">مسلف</text>
+        <path class="am ar-ink" marker-end="url(#mk)" d="M1175 182 L1175 545"/>
+        <path class="am ar-green" marker-end="url(#mg)" d="M1205 545 L1205 182"/>
+        <text class="small halo" x="1175" y="300" text-anchor="middle">1,000</text>
+        <text class="tg small halo" x="1205" y="400" text-anchor="middle">interest</text>
+        <g class="pick t-dep" data-k="dep" role="button" tabindex="0" aria-label="اتفاق وديعة"><rect class="tag" x="1132" y="478" width="117" height="54" rx="8"/><text class="tagen" x="1190.5" y="499" text-anchor="middle">Deposit</text><use href="#i-dep" x="1216" y="507" width="18" height="18"/><text class="tagt" x="1179" y="523" text-anchor="middle">وديعة</text></g>
+        <rect class="role borr" x="1163" y="694" width="54" height="22" rx="6"/><text class="small rt borr" x="1190" y="710" text-anchor="middle">مستلف</text>
+      </g>
+    </svg>
+  </div>
+
+  <div id="deal" class="deal" aria-live="polite"></div>
+</div>
+
+<script>
+const TY={govloan:'loan',govbond:'bond',inst:'inst',equity:'eq',cobond:'bond',loan:'loan',dep:'dep',bbond:'bond'};
+const D={
+ bbond:{t:'BOND',ar:'سند بنك',en:'Bank bond',lend:'محمد',borr:'البنك',
+  x:'محمد يعطي البنك 1,000، والبنك يعطيه coupon كل سنة، وبالنهاية يرجّع له الـ 1,000.',
+  f:[['Par value (M)','1,000','القيمة الاسمية','bl'],['Coupon rate','6%','معدّل الكوبون','gr'],['Maturity','3 years','مدة الاستحقاق',''],['Call price (CP)','1,060','سعر الاستدعاء','gold']],
+  unit:'years',pts:[['0',-1,[['1,000','k']]],['1',1,[['60','g']]],['2',1,[['60','g']]],['3',1,[['60','g'],['1,000','k']]]],
+  sum:'دفع 1,000 ← استلم 1,180 (الزيادة 180 = coupon)',
+  n:'يقدر يبيع السند لشخص ثاني قبل الـ maturity (secondary market).'},
+ dep:{t:'DEPOSIT',ar:'وديعة',en:'Term deposit',lend:'محمد',borr:'البنك',
+  x:'محمد يحط 1,000 في البنك سنة، وبعد السنة ياخذها مع interest.',
+  f:[['Amount','1,000','المبلغ','bl'],['Interest rate','5%','نسبة الفائدة','gr'],['Term','1 year','المدة','']],
+  unit:'years',pts:[['0',-1,[['1,000','k']]],['1',1,[['50','g'],['1,000','k']]]],
+  sum:'دفع 1,000 ← استلم 1,050 (الزيادة 50 = interest)',
+  n:'لو سحبها قبل نهاية السنة، غالبًا يخسر الـ interest.'},
+ loan:{t:'LOAN',ar:'قرض بنك',en:'Bank loan (home / car)',lend:'البنك',borr:'محمد',
+  x:'البنك يعطي محمد 600,000 مرة وحدة، ومحمد يرجّعها أقساط شهرية مع interest.',
+  f:[['Principal','600,000','أصل القرض','bl'],['Interest rate','6% / year','نسبة الفائدة','rd'],['Term','20 years','المدة (240 شهر)','']],
+  unit:'months',pts:[['0',1,[['600,000','k']]],['1',-1,[['4,299','r']]],['2',-1,[['4,299','r']]],['…',0,[]],['240',-1,[['4,299','r']]]],
+  sum:'استلم 600,000 ← دفع 1,031,661 (الزيادة 431,661 = interest)',
+  n:'كل قسط فيه جزء يرجّع الأصل وجزء interest.'},
+ cobond:{t:'BOND',ar:'سند شركة',en:'Corporate bond',lend:'محمد',borr:'الشركة',
+  x:'نفس سند البنك، بس المستلف شركة.',
+  f:[['Par value (M)','1,000','القيمة الاسمية','bl'],['Coupon rate','9%','معدّل الكوبون','gr'],['Maturity','3 years','مدة الاستحقاق',''],['Call price (CP)','1,090','سعر الاستدعاء','gold']],
+  unit:'years',pts:[['0',-1,[['1,000','k']]],['1',1,[['90','g']]],['2',1,[['90','g']]],['3',1,[['90','g'],['1,000','k']]]],
+  sum:'دفع 1,000 ← استلم 1,270 (الزيادة 270 = coupon)',
+  n:'الشركة أخطر من البنك والحكومة، عشان كذا الـ coupon أعلى (RP أكبر).'},
+ equity:{t:'SHARES',ar:'أسهم',en:'Equity',lend:'محمد',borr:'الشركة',pl:[['Shareholder','المساهم (شريك)','own'],['Issuer','الشركة','plain']],
+  x:'',
+  f:[['Investment','1,000','المبلغ','bl'],['Shares','100 × 10','عدد الأسهم × السعر',''],['Maturity','none','ما فيه تاريخ استحقاق','']],
+  unit:'years',pts:[['0',-1,[['1,000','k']]],['1',1,[['30?','e']]],['2',1,[['30?','e']]],['…',0,[]],['؟',1,[['يبيع بسعر السوق','k']]]],
+  sum:'ما فيه مبلغ ثابت يرجع ولا ربح مضمون',
+  n:'الشركة ما ترجّع الفلوس أبد. محمد يسترجعها لو باع أسهمه لشخص ثاني بسعر السوق، ممكن أعلى أو أقل من 1,000.'},
+ inst:{t:'INSTALLMENT',ar:'تقسيط',en:'Installment sale',lend:'الشركة',borr:'محمد',
+  x:'الشركة ما تعطي محمد فلوس، تعطيه السيارة الحين، وهو يدفع قيمتها أقساط شهرية.',
+  f:[['Car price','80,000','سعر السيارة','bl'],['Rate (flat)','5% / year','نسبة الربح','rd'],['Term','4 years','المدة (48 شهر)','']],
+  unit:'months',pts:[['0',1,[['سيارة 80,000','k']]],['1',-1,[['2,000','r']]],['2',-1,[['2,000','r']]],['…',0,[]],['48',-1,[['2,000','r']]]],
+  sum:'استلم سيارة بـ 80,000 ← دفع 96,000 (الزيادة 16,000)',
+  n:'80,000 × 5% × 4 = 16,000 ، والمجموع 96,000 ÷ 48 = 2,000 كل شهر.'},
+ govbond:{t:'BOND',ar:'سند حكومي',en:'Government bond',lend:'محمد',borr:'الحكومة',
+  x:'محمد يسلّف الحكومة 1,000، وتعطيه coupon كل سنة، وترجّع الـ 1,000 بالنهاية.',
+  f:[['Par value (M)','1,000','القيمة الاسمية','bl'],['Coupon rate','4%','معدّل الكوبون','gr'],['Maturity','3 years','مدة الاستحقاق',''],['Call price (CP)','1,040','سعر الاستدعاء','gold']],
+  unit:'years',pts:[['0',-1,[['1,000','k']]],['1',1,[['40','g']]],['2',1,[['40','g']]],['3',1,[['40','g'],['1,000','k']]]],
+  sum:'دفع 1,000 ← استلم 1,120 (الزيادة 120 = coupon)',
+  n:'الحكومة أقل خطر، فالـ coupon أقل (قريب من RF).'},
+ govloan:{t:'LOAN',ar:'قرض حكومي',en:'Government loan',lend:'الحكومة',borr:'محمد',
+  x:'الحكومة تسلّف محمد 50,000، ويرجّع نفس المبلغ بالضبط على 5 سنين.',
+  f:[['Amount','50,000','المبلغ','bl'],['Interest rate','0%','بدون فائدة',''],['Term','5 years','المدة','']],
+  unit:'years',pts:[['0',1,[['50,000','k']]],['1',-1,[['10,000','k']]],['2',-1,[['10,000','k']]],['3',-1,[['10,000','k']]],['4',-1,[['10,000','k']]],['5',-1,[['10,000','k']]]],
+  sum:'استلم 50,000 ← رجّع 50,000 بس (ما فيه interest)',
+  n:'الهدف دعم الناس، مو الربح.'}
+};
+const C={k:'var(--ink)',g:'var(--green)',r:'var(--red)',e:'var(--c-eq)'}, M={k:'mk',g:'mg',r:'mr',e:'me'};
+function tl(d){
+  const W=600,m=50,n=d.pts.length,st=(W-2*m)/(n-1);let o='';
+  o+=`<line class="line" x1="20" y1="100" x2="${W-20}" y2="100"/>`;
+  d.pts.forEach((p,i)=>{const x=W-m-i*st,[t,dir,parts]=p;
+    if(!dir){o+=`<text class="lbl" x="${x}" y="106" text-anchor="middle" style="fill:var(--faint);paint-order:stroke;stroke:var(--paper);stroke-width:8px">…</text>`;return;}
+    o+=`<line class="line" x1="${x}" y1="94" x2="${x}" y2="106"/>`;
+    o+=`<text class="tick" x="${x}" y="198" text-anchor="middle">${t}</text>`;
+    const c=parts[0][1], y2=dir>0?44:156, ly=dir>0?32:176;
+    o+=`<path class="am" style="stroke:${C[c]}" marker-end="url(#${M[c]})" d="M${x} 100 L${x} ${y2}"/>`;
+    o+=`<text class="lbl" x="${x}" y="${ly}" text-anchor="middle">`+parts.map((q,j)=>`<tspan style="fill:${C[q[1]]}">${j?' + ':''}${q[0]}</tspan>`).join('')+`</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} 210" role="img" aria-label="Timeline">${o}</svg>`;
+}
+
+function cr(d){return parseFloat(d.f[1][1]);}
+function price(c,m){let p=0;for(let t=1;t<=3;t++)p+=(10*c)/Math.pow(1+m/100,t);return p+1000/Math.pow(1+m/100,3);}
+function priceBox(d){const c=cr(d);
+  return `<div class="pbox" dir="rtl">
+    <p class="plab" dir="ltr">Quote</p>
+    <p class="plab">السعر المُعلَن</p>
+    <p class="pval" id="pval"></p>
+    <p class="ptag" id="ptag" dir="ltr"></p>
+    <div class="mtogs" dir="ltr" role="group" aria-label="طريقة عرض السعر"><button type="button" class="mtog" data-v="b0">B0</button><button type="button" class="mtog" data-v="q">Quote</button></div>
+    <p class="pfx" id="pfx" dir="ltr"></p>
+  </div>`;}
+let view='q';
+function wirePrice(d){const bx=document.querySelector('.pbox'); if(!bx)return; const c=cr(d); let cur=c;
+  const set=m=>{cur=m;const p=price(c,m);
+    document.getElementById('pval').textContent=(p/10).toFixed(1);
+    const B=Math.round(p).toLocaleString('en-US'), Q=(p/10).toFixed(1);
+    document.getElementById('pfx').innerHTML = view==='q'
+      ? `<span class="lw">Quote<small>السعر المُعلَن</small></span><span>=</span><span class="fr"><span>B0<small>سعر السند اليوم</small></span><span class="pm">M<small>القيمة الاسمية</small></span></span><span>× 100</span><span></span>`+`<span></span><span>=</span><span class="fr"><span>${B}</span><span class="pm">1,000</span></span><span>× 100</span><span>= <b class="qres">${Q}</b></span>`
+      : `<span class="lw">B0<small>سعر السند اليوم</small></span><span>=</span><span class="fr"><span>Quote<small>السعر المُعلَن</small></span><span>100</span></span><span>× <span class="pm lw" style="display:inline-flex">M<small>القيمة الاسمية</small></span></span><span></span>`+`<span></span><span>=</span><span class="fr"><span>${Q}</span><span>100</span></span><span>× <span class="pm">1,000</span></span><span>= <b class="qres">${B}</b></span>`;
+    bx.querySelectorAll('.mtog').forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===view));
+    const t=document.getElementById('ptag'), b0='B0 = '+Math.round(p).toLocaleString('en-US');
+    if(m===c){t.textContent=b0+'\npar';t.className='ptag';}
+    else if(m>c){t.textContent=b0+'\ndiscount';t.className='ptag rd';}
+    else{t.textContent=b0+'\npremium';t.className='ptag gr';}
+    bx.querySelectorAll('.chip').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.m===m));};
+  bx.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>set(+b.dataset.m)));
+  bx.querySelectorAll('.mtog').forEach(x=>x.addEventListener('click',()=>{view=x.dataset.v;set(cur);document.querySelectorAll('.story [data-r=bar]').forEach(b=>b.dispatchEvent(new Event('input')));}));
+  set(c);}
+
+/* ---------- bond story (configurable: m coupons a year) ---------- */
+const TX=[660,470,280,90], BY=300;
+const XT=t=>TX[0]+(TX[3]-TX[0])*t/3;
+const PY=v=>v<900?212:190-(v-940);
+const f0=n=>Math.round(n).toLocaleString('en-US');
+const ORD=['الأولى','الثانية','الثالثة','الرابعة','الخامسة','السادسة'];
+function mkStory(id,m,N1,N2,SALE){
+  const cm=60/m, CPN=[]; for(let k=1;k<=3*m;k++) CPN.push(+(k/m).toFixed(4));
+  const RATE=t=>t<N1?6:t<N2?10:4;
+  const PR=(t,rr)=>{const r=(rr??RATE(t))/100/m;let p=0;CPN.forEach(T=>{if(T>t+1e-9)p+=(cm+(T===3?1000:0))/Math.pow(1+r,m*(T-t));});return p;};
+  const SP=PR(SALE);
+  const BRK=[...CPN.map(T=>[T,'cpn']),[N1,'mkt'],[N2,'mkt']].sort((x,y)=>x[0]-y[0]);
+  const moC=CPN.filter(T=>T<=SALE).length, khC=CPN.length-moC;
+  function curve(t){let o='',a=0;
+    for(const [b,k] of BRK){const end=Math.min(t,b);
+      if(end>a){let d='';for(let u=a;u<=end+1e-9;u=+(u+0.02).toFixed(2)){const uu=Math.min(u,b-1e-6);d+=(d?'L':'M')+XT(uu).toFixed(1)+' '+PY(PR(uu)).toFixed(1)+' ';}
+        const ue=Math.min(end,b-1e-6); d+='L'+XT(ue).toFixed(1)+' '+PY(PR(ue)).toFixed(1); o+=`<path class="cs rise" d="${d}"/>`;}
+      if(t>=b-1e-9){const x=XT(b),y1=PY(PR(b-1e-6,RATE(b-1e-6))),y2=PY(PR(b));
+        o+=`<path class="cs ${k}" d="M${x} ${y1} L${x} ${y2}"/>`;
+        const lab=k==='cpn'?(b===3?'−'+f0(cm+1000):'−'+f0(cm)):(RATE(b)+'%');
+        o+=k==='cpn'?`<text class="ev cpn" x="${x+6}" y="${(y1+y2)/2+5}">${lab}</text>`:`<text class="ev mkt" x="${x-7}" y="${(y1+y2)/2+5}" text-anchor="end">${lab}</text>`;}
+      a=b; if(t<b)break;}
+    return o;}
+  const atCpn=t=>CPN.findIndex(T=>t>=T&&t<T+0.08);
+  function cap(t){
+    if(t<0.03) return `نقطة 0: محمد يعطي البنك 1,000 وياخذ الورقة. السعر 1,000، لأن الـ coupon (6%) = السوق (6%). والـ coupon السنوي 60 ${m>1?`ينقسم على ${m} دفعات، كل دفعة ${f0(cm)}`:'ينصرف مرة وحدة في نهاية السنة'}.`;
+    if(t>=3) return `الـ maturity: البنك يدفع لخالد ${f0(cm)} + 1,000، والورقة صارت 0. الخلاصة: محمد استلم ${moC} × ${f0(cm)} + ${f0(SP)} = ${f0(moC*cm+SP)}، وخالد دفع ${f0(SP)} واستلم ${f0(khC*cm+1000)}.`;
+    const ci=atCpn(t); if(ci>=0){const who=CPN[ci]<=SALE?'محمد':'خالد';return `الدفعة ${ORD[ci]||''}: ${who} استلم coupon ‎+${f0(cm)}، فنزل السعر ${f0(cm)} مرة وحدة.`;}
+    if(t>=N1&&t<N1+0.1) return 'خبر: السوق صار 10%، فورقة محمد اللي تعطي 6% صارت أقل مرغوبة، ونزل سعرها فجأة.';
+    if(t>=N2&&t<SALE) return 'خبر: السوق نزل إلى 4%، فورقة محمد صارت أحسن من السندات الجديدة، وطلع سعرها فجأة.';
+    if(t>=SALE&&t<SALE+0.1) return `محمد احتاج فلوسه، فباع الورقة لخالد بـ ${f0(SP)}، وهو سعر السوق الحين. هذا الـ secondary market.`;
+    const nxt=CPN.find(T=>T>t), last=nxt===3;
+    return `الوقت يمر، والسعر يطلع شوي شوي لأن ${last?`آخر دفعة (${f0(cm)} + 1,000)`:`الـ coupon الجاي (${f0(cm)})`} قاعد يقرّب.`;}
+  function html(){
+    const ticks=TX.map((x,i)=>`<line class="line" x1="${x}" y1="${BY-6}" x2="${x}" y2="${BY+6}"/><text class="tick" x="${x}" y="${BY+24}" text-anchor="middle">${i}</text>`).join('')
+      +CPN.filter(T=>T%1).map(T=>`<line class="line" x1="${XT(T)}" y1="${BY-5}" x2="${XT(T)}" y2="${BY+5}"/><text class="tick" x="${XT(T)}" y="${BY+24}" text-anchor="middle" style="font-size:12px">${T}</text>`).join('')
+      +[N1,N2].map(T=>`<line class="line" x1="${XT(T)}" y1="${BY-3}" x2="${XT(T)}" y2="${BY+3}" style="opacity:.4"/>`).join('')
+      +CPN.map((T,i)=>`<text class="sgot" data-r="g${i}" x="${XT(T)}" y="${BY+46}" text-anchor="middle"></text>`).join('');
+    const grid=TX.map(x=>`<line class="cgrid" x1="${x}" y1="56" x2="${x}" y2="${BY}"/>`).join('');
+    const kx=XT(SALE);
+    return `<div class="story" dir="rtl" id="${id}">
+    <svg viewBox="0 0 760 360" dir="ltr" role="img" aria-label="Bond story: drag the bar to move through time and watch the bond price">
+      ${grid}
+      <line class="cpar" x1="30" y1="${PY(1000)}" x2="750" y2="${PY(1000)}"/>
+      <text class="clab" data-r="parl" x="34" y="${PY(1000)-5}">par = 100 (1,000)</text>
+      <text class="smk" data-r="mk" x="30" y="24"></text>
+      <g data-r="news" class="snews"><rect x="250" y="6" width="300" height="32" rx="8"/><text data-r="newst" x="400" y="28" text-anchor="middle"></text></g>
+      <g data-r="segs"></g>
+      <line class="line" x1="30" y1="${BY}" x2="750" y2="${BY}"/>${ticks}
+      <use href="#bank" x="696" y="${BY-78}" width="64" height="78"/>
+      <g data-r="give"><path class="am ar-ink" marker-end="url(#mk)" d="M688 ${BY-42} L700 ${BY-42}"/></g>
+      <g data-r="sale"><path class="am ar-ink" marker-end="url(#mk)" d="M${kx+14} ${BY-92} L${kx+44} ${BY-92}"/><text class="slbl" x="${kx+29}" y="${BY-100}" text-anchor="middle">${f0(SP)}</text></g>
+      <g data-r="kh" class="smo"><use href="#man" x="-26" y="${BY-78}" width="52" height="78"/><text class="sname" x="0" y="${BY-82}" text-anchor="middle">خالد</text><text class="scoin" data-r="kcoin" x="0" y="${BY-100}" text-anchor="middle"></text></g>
+      <g data-r="mo" class="smo"><use href="#man" x="-26" y="${BY-78}" width="52" height="78"/><text class="sname" x="0" y="${BY-82}" text-anchor="middle">محمد</text><text class="scoin" data-r="mcoin" x="30" y="${BY-60}" text-anchor="start"></text></g>
+      <g data-r="paper" class="smo"><rect class="spap" x="-54" y="${BY-56}" width="36" height="26" rx="2"/><text class="spapt" data-r="papt" x="-36" y="${BY-39}" text-anchor="middle">BOND</text></g>
+      <g data-r="dot"></g>
+    </svg>
+    <div class="sbar"><input type="range" data-r="bar" min="0" max="3" step="0.01" value="0" dir="rtl" aria-label="الوقت بالسنين"><span class="tval" data-r="tval"></span></div>
+    <p class="clegend"><span class="rise">━ الوقت يمر</span> <span class="cpn">━ دفعة انصرفت</span> <span class="mkt">━ السوق تغيّر</span></p>
+    <p class="stext" data-r="text"></p>
+  </div>`;}
+  function wire(){
+    const root=document.getElementById(id), $=r=>root.querySelector(`[data-r="${r}"]`), bar=$('bar');
+    const draw=()=>{const t=+bar.value, kh=t>=SALE;
+      const mx=kh?XT(SALE)+58:XT(t), kx=XT(t);
+      $('mo').style.transform=`translate(${mx}px,0)`; $('mo').style.opacity=kh?.35:1;
+      $('kh').style.transform=`translate(${kx}px,0)`; $('kh').style.opacity=kh?1:0;
+      $('paper').style.transform=`translate(${kh?kx:mx}px,0)`;
+      $('give').style.opacity=t<0.03?1:0; $('sale').style.opacity=(t>=SALE&&t<SALE+0.1)?1:0;
+      $('mk').textContent=`market rate: ${RATE(t)}%  ·  coupon: 6%  ·  m = ${m}`;
+      const nw=(t>=N1&&t<N1+0.1)?'خبر: الفائدة في السوق ارتفعت إلى 10%':(t>=N2&&t<N2+0.1)?'خبر: الفائدة في السوق نزلت إلى 4%':'';
+      $('news').style.opacity=nw?1:0; $('newst').textContent=nw;
+      $('papt').textContent=t>=3?'PAID':'BOND';
+      CPN.forEach((T,i)=>{$('g'+i).textContent=t>=T?('+'+f0(cm)+(T===3?' +1,000':'')):'';});
+      const ci=atCpn(t), amt=ci>=0?('+'+f0(cm)+(CPN[ci]===3?' +1,000':'')):'';
+      $('mcoin').textContent=(ci>=0&&CPN[ci]<=SALE)?amt:''; $('kcoin').textContent=(ci>=0&&CPN[ci]>SALE)||t>=3?('+'+f0(cm)+(t>=3?' +1,000':'')):'';
+      $('segs').innerHTML=curve(t);
+      const p=PR(t), c=p>1000.5?'up':p<999.5?'dn':'eq', x=XT(t), y=PY(p);
+      $('dot').innerHTML=`<circle class="cdot ${c}" cx="${x}" cy="${y}" r="6"/><text class="cval ${c}" x="${x-10}" y="${y-10}" text-anchor="end">${view==='q'?(p/10).toFixed(1):f0(p)}<tspan class="cb0" dx="4">(${view==='q'?f0(p):(p/10).toFixed(1)})</tspan></text>`;
+      $('tval').textContent=`t = ${t.toFixed(2)} سنة`;
+      $('parl').textContent=view==='q'?'par = 100 (1,000)':'par = 1,000 (100)';
+      $('text').textContent=cap(t);};
+    bar.addEventListener('input',draw); draw();}
+  return {html,wire};
+}
+const S1=mkStory('st1',1,1.5,2.5,2.6), S2=mkStory('st2',2,1.25,2.25,2.35);
+function show(k){
+  const d=D[k], P=d.pl||[['Lender','المسلف','lend'],['Borrower','المستلف','borr']], lr=x=>x==='محمد'?'':'';
+  document.getElementById('deal').innerHTML=`
+   <div class="row2" dir="ltr">${TY[k]==='bond'?priceBox(d):''}
+   <section dir="ltr" class="cert t-${TY[k]}" aria-label="Agreement"><div class="cert-in">
+     <p class="cert-top"><svg viewBox="0 0 20 20" aria-hidden="true"><use href="#i-${TY[k]}"/></svg>${d.t}</p>
+     <div class="parties">
+       <div class="field"><span class="lab">${P[0][0]}</span><span class="val"><span class="who2 ${P[0][2]}">${d.lend}</span></span><span class="ar">${P[0][1]}</span></div>
+       <div class="field"><span class="lab">${P[1][0]}</span><span class="val"><span class="who2 ${P[1][2]}">${d.borr}</span></span><span class="ar">${P[1][1]}</span></div>
+     </div>
+     <div class="cert-grid" style="grid-template-columns:repeat(${d.f.length},minmax(0,1fr))">${d.f.map(f=>`<div class="field"><span class="lab">${f[0]}</span><span class="val ${f[3]}">${f[1]}</span><span class="ar">${f[2]}</span></div>`).join('')}</div>
+   </div></section></div>
+   ${k==='bbond'?`<div class="duo"><div class="pane"><p class="ptitle">في حال كان الـ coupon يُدفع نهاية كل سنة</p>${S1.html()}</div><div class="pane"><p class="ptitle">في حال كان الـ coupon السنوي مقسوم على دفعتين بالسنة (كل 6 شهور)</p>${S2.html()}</div></div>`:''}
+   <div class="tl" dir="ltr"${k==='bbond'?' hidden':''}>${tl(d)}<p class="legend" dir="rtl">الأرقام تحت = ${d.unit==='years'?'سنين (years)':'شهور (months)'} · ↑ محمد يستلم · ↓ محمد يدفع</p></div>
+   ${k==='bbond'?'':`<p class="sum">${d.sum}</p>
+   <p class="note">${d.n}</p>`}`;
+  wirePrice(d); if(k==='bbond'){S1.wire();S2.wire();}
+  document.querySelectorAll('.pick').forEach(g=>{const on=g.dataset.k===k;g.classList.toggle('sel',on);g.setAttribute('aria-pressed',on);});
+}
+document.querySelectorAll('.pick').forEach(g=>{
+  g.addEventListener('click',()=>show(g.dataset.k));
+  g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();show(g.dataset.k);}});
+});
+show('bbond');
+</script>
+
+
+<script>
+/* ---- the only line added for MyTerm: tell the frame how tall to be. */
+(function tellHeight(){
+  var say=function(){ try{ parent.postMessage({fig:'interest-vs-coupon', h:document.documentElement.scrollHeight}, '*'); }catch(e){} };
+  say();
+  addEventListener('load',say);
+  try{ new ResizeObserver(say).observe(document.documentElement); }catch(e){}
+  document.addEventListener('input',function(){setTimeout(say,0)},true);
+  document.addEventListener('click',function(){setTimeout(say,0)},true);
+})();
+</script>
+</body></html>
